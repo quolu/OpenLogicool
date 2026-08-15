@@ -31,11 +31,19 @@ EXP-MIG-01 段2（F3 無変更 write-back）を実行した。
 2. Migration Safety Gate の設計（backup 必須・開始条件照合・stop-on-mismatch）は機能した。破壊は F3 一枚に封じ込められ、backup が完全である
 3. R-02（G600 write で profile を壊す）は現実の risk だった。EXP-MIG-01 を全 write の前に置いた計画順序は正しかった
 
-## restore の選択肢（裁定待ち）
+## restore の選択肢と経過
 
-- **案A: 補償 write 1回**。挿入が決定的なら、左に 1 byte ずらした payload を書けば格納結果が backup と一致する。fresh read で検証、不一致なら即停止。ただし「決定的」の根拠は現状 1 観測のみ
-- **案B: LGS 純正経路で restore**。LGS UI で profile 1 の onboard 設定を再 push させる（Logitech 自身の動作実績ある write 経路）。実機手番が要る
-- **案C: 現状凍結で F6 コマンド系を先に解明**。時間を要するが、正規 write 経路の理解は方式A/B の成立判定にどのみち必要
+- **案A: 補償 write 1回 → 実施し反証された（2026-08-15、オーナー裁定で実施）**。`g600-f3-compensated-restore`（開始条件: 現 F3 が既知ずれ値と一致・F4/F5 が backup 一致）を実行。補償 write 自体は成功したが、fresh open の検証 read が backup と不一致。**2回の write で格納のずれ方が異なり（1回目: data 先頭へ 00 挿入 / 2回目: 別の位置ずれ）、「挿入は決定的」というモデルは反証された**。probe は設計どおり追加 write なしで停止。第2観測の実データ: `probe-output/g600-f3-compensated-restore-*.json`
+- **案B: LGS 純正経路で restore（現在の唯一の推奨経路）**。LGS UI で G600 の onboard profile を再 push させる。実機手番が要る
+- **案C: F6 コマンド系の解明**。direct SET_FEATURE は write 経路として反証済みのため、方式A/B の成立判定にはどのみち F6 系（LGS 正規経路）の理解が必要になった
+
+## 方式判定への含意（G0-Device-W の材料）
+
+direct SET_FEATURE による onboard write は、**書くたびに格納結果が異なる（非決定的または内部状態依存）**ことが2観測で確定した。したがって:
+
+- 方式A（active slot 切替の F0 write）・方式B残存変種（中間 usage への書換え）は、**direct SET_FEATURE を write 手段とする限り成立しない**
+- 成立の残り道は F6 コマンド系（LGS 正規経路）の解明だけ。これは protocol 調査（rag の公開実装・USB キャプチャ）を要する
+- EXP-G600-04（154-byte 全量 write）は direct 経路では **不成立と判定**
 
 ## 参照
 

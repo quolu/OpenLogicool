@@ -18,6 +18,7 @@ return command switch
     "g600-writeback" => G600Writeback(args[1..]),
     "g600-led-apply-restore" => G600LedApplyRestore(args[1..]),
     "g600-slot" => G600Slot(args[1..]),
+    "g600-f3-compensated-restore" => G600F3CompensatedRestore(args[1..]),
     "record" => OpenLogicool.Probe.RawInputRecorder.Run(
         args.Length > 1 ? args[1] : "session",
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output")),
@@ -203,6 +204,110 @@ static int G600Writeback(string[] arguments)
                 precondition,
                 new[] { Step("writeback", before, null, false) },
                 "F3 SetFeature was sent; readback failed and no retry or restore was attempted."), 2);
+        }
+    }
+}
+
+// incident 2026-08-15-g600-f3-writeback-shift の補償 restore（オーナー裁定 案A）。
+// 前提: direct SET_FEATURE は data 先頭へ 0x00 を1個挿入し末尾1 byteを落として格納する（1観測）。
+// 開始条件: F3 が「既知のずれ値」と byte 一致し、F4/F5 が backup 一致。それ以外は何も書かず停止。
+static int G600F3CompensatedRestore(string[] arguments)
+{
+    const string probe = "g600-f3-compensated-restore";
+    string? backupPath = null;
+    for (var index = 0; index < arguments.Length; index++)
+    {
+        if (arguments[index] == "--backup" && index + 1 < arguments.Length)
+            backupPath = arguments[++index];
+    }
+    if (backupPath is null)
+        return EmitWriteResult(NewWriteResult(probe, "argument-validation", "--backup <path> is required."), 1);
+
+    G600BackupSnapshot snapshot;
+    try
+    {
+        snapshot = G600BackupSnapshot.Load(backupPath);
+    }
+    catch (Exception ex)
+    {
+        return EmitWriteResult(NewWriteResult(probe, "backup-load", $"{ex.GetType().Name}: {ex.Message}"), 1);
+    }
+
+    var backupF3 = snapshot.Reports[0xF3];
+    // 既知のずれ値: [F3][00][B1..B152]（B153 が押し出し）
+    var expectedShifted = new byte[154];
+    expectedShifted[0] = 0xF3;
+    expectedShifted[1] = 0x00;
+    backupF3.AsSpan(1, 152).CopyTo(expectedShifted.AsSpan(2));
+    // 補償 payload: 格納結果 = [00][sent_data 先頭152] となる観測に合わせ、sent_data = [B2..B153][pad 00]
+    var compensated = new byte[154];
+    compensated[0] = 0xF3;
+    backupF3.AsSpan(2, 152).CopyTo(compensated.AsSpan(1));
+    compensated[153] = 0x00;
+
+    var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+    if (device is null)
+        return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection was not found."), 2);
+
+    if (!device.TryOpen(out var stream))
+        return EmitWriteResult(NewWriteResult(probe, "device-open", $"cannot open device: {device.DevicePath}"), 2);
+
+    byte[] currentF3;
+    using (stream)
+    {
+        try
+        {
+            currentF3 = ReadFeature(stream, 0xF3);
+            var currentF4 = ReadFeature(stream, 0xF4);
+            var currentF5 = ReadFeature(stream, 0xF5);
+
+            if (!currentF4.AsSpan().SequenceEqual(snapshot.Reports[0xF4]) ||
+                !currentF5.AsSpan().SequenceEqual(snapshot.Reports[0xF5]))
+                return EmitWriteResult(NewWriteResult(probe, "precondition", "F4/F5 do not match backup; device state is not the known incident state. Nothing was written.",
+                    steps: new[] { Step("verify-f4-f5", snapshot.Reports[0xF4], currentF4, false) }), 2);
+
+            if (!currentF3.AsSpan().SequenceEqual(expectedShifted))
+                return EmitWriteResult(NewWriteResult(probe, "precondition", "current F3 does not equal the known shifted value; the shift model does not hold. Nothing was written.",
+                    steps: new[] { Step("verify-known-shift", expectedShifted, currentF3, false) }), 2);
+
+            SetWritableFeature(stream, compensated);
+        }
+        catch (Exception ex)
+        {
+            return EmitWriteResult(NewWriteResult(probe, "compensated-write", $"{ex.GetType().Name}: {ex.Message}",
+                deviceState: "compensated SetFeature may or may not have reached the device; no retry attempted."), 2);
+        }
+    }
+
+    // 検証は必ず fresh open（incident の教訓: 同一 stream の直後 read は証拠にしない）
+    if (!device.TryOpen(out var verifyStream))
+        return EmitWriteResult(NewWriteResult(probe, "verify-open", "compensated write sent, but device could not be reopened for fresh verification."), 2);
+
+    using (verifyStream)
+    {
+        try
+        {
+            var after = ReadFeature(verifyStream, 0xF3);
+            var matches = after.AsSpan().SequenceEqual(backupF3);
+            return EmitWriteResult(NewWriteResult(
+                probe,
+                "fresh-verify",
+                matches ? null : "F3 after compensated restore does not match backup. No further write attempted.",
+                steps: new[]
+                {
+                    Step("compensated-write", compensated, null, true),
+                    Step("fresh-verify", backupF3, after, matches),
+                },
+                deviceState: matches
+                    ? "F3 matches backup after compensated restore (fresh open)."
+                    : "F3 differs from backup; shift model refuted or non-deterministic. Stopped."),
+                matches ? 0 : 2);
+        }
+        catch (Exception ex)
+        {
+            return EmitWriteResult(NewWriteResult(probe, "fresh-verify", $"{ex.GetType().Name}: {ex.Message}",
+                deviceState: "compensated write sent; fresh verification read failed."), 2);
         }
     }
 }
