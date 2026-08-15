@@ -1,0 +1,34 @@
+{
+  "Probe": "wgc-window",
+  "CapturedAtUtc": "2026-08-15T06:12:15.8760270Z",
+  "Machine": "FOX",
+  "Backend": "Windows.Graphics.Capture (IGraphicsCaptureItemInterop.CreateForWindow)",
+  "Target": {
+    "Hwnd": 791100,
+    "WindowTitle": "*\u65B0\u898F \u30C6\u30AD\u30B9\u30C8 \u30C9\u30AD\u30E5\u30E1\u30F3\u30C8 (2).txt - \u30E1\u30E2\u5E33",
+    "IsIconic": false,
+    "ItemDisplayName": "*\u65B0\u898F \u30C6\u30AD\u30B9\u30C8 \u30C9\u30AD\u30E5\u30E1\u30F3\u30C8 (2).txt - \u30E1\u30E2\u5E33",
+    "ItemWidth": 918,
+    "ItemHeight": 1021
+  },
+  "Frames": [
+    {
+      "Sequence": 0,
+      "MonotonicMs": 28.8068,
+      "Width": 918,
+      "Height": 1021,
+      "PixelFormat": "B8G8R8A8_UNorm",
+      "AverageLuminance": 241.37203512868254,
+      "PngFile": "capture-wgc-window-20260815-151215-frame0.png"
+    },
+    {
+      "Sequence": 1,
+      "MonotonicMs": 3340.9234,
+      "Width": 918,
+      "Height": 1021,
+      "PixelFormat": "B8G8R8A8_UNorm",
+      "AverageLuminance": 241.37203512868254,
+      "PngFile": "capture-wgc-window-20260815-151215-frame1.png"
+    }
+  ]
+}

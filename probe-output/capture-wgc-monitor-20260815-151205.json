@@ -1,0 +1,32 @@
+{
+  "Probe": "wgc-monitor",
+  "CapturedAtUtc": "2026-08-15T06:12:05.2155627Z",
+  "Machine": "FOX",
+  "Backend": "Windows.Graphics.Capture (IGraphicsCaptureItemInterop.CreateForMonitor)",
+  "Target": {
+    "HMonitor": 38603935,
+    "ItemDisplayName": "\u30C7\u30A3\u30B9\u30D7\u30EC\u30A4 1",
+    "ItemWidth": 5120,
+    "ItemHeight": 1440
+  },
+  "Frames": [
+    {
+      "Sequence": 0,
+      "MonotonicMs": 220.8103,
+      "Width": 5120,
+      "Height": 1440,
+      "PixelFormat": "B8G8R8A8_UNorm",
+      "AverageLuminance": 164.37695168840844,
+      "PngFile": "capture-wgc-monitor-20260815-151205-frame0.png"
+    },
+    {
+      "Sequence": 1,
+      "MonotonicMs": 382.0092,
+      "Width": 5120,
+      "Height": 1440,
+      "PixelFormat": "B8G8R8A8_UNorm",
+      "AverageLuminance": 164.3747242691819,
+      "PngFile": "capture-wgc-monitor-20260815-151205-frame1.png"
+    }
+  ]
+}

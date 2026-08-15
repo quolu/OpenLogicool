@@ -1,0 +1,32 @@
+{
+  "Probe": "wgc-window",
+  "CapturedAtUtc": "2026-08-15T06:12:49.6569323Z",
+  "Machine": "FOX",
+  "Backend": "Windows.Graphics.Capture (IGraphicsCaptureItemInterop.CreateForWindow)",
+  "Target": {
+    "Hwnd": 856344,
+    "WindowTitle": "*\u65B0\u898F \u30C6\u30AD\u30B9\u30C8 \u30C9\u30AD\u30E5\u30E1\u30F3\u30C8 (2).txt - \u30E1\u30E2\u5E33",
+    "IsIconic": true,
+    "ItemDisplayName": "*\u65B0\u898F \u30C6\u30AD\u30B9\u30C8 \u30C9\u30AD\u30E5\u30E1\u30F3\u30C8 (2).txt - \u30E1\u30E2\u5E33",
+    "ItemWidth": 150,
+    "ItemHeight": 23
+  },
+  "Frames": [
+    {
+      "Sequence": 0,
+      "MonotonicMs": 6239.1955,
+      "Error": {
+        "Type": "System.TimeoutException",
+        "Message": "no frame arrived within 5000ms"
+      }
+    },
+    {
+      "Sequence": 1,
+      "MonotonicMs": 12469.84,
+      "Error": {
+        "Type": "System.TimeoutException",
+        "Message": "no frame arrived within 5000ms"
+      }
+    }
+  ]
+}

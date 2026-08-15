@@ -1,0 +1,33 @@
+{
+  "Probe": "dup",
+  "CapturedAtUtc": "2026-08-15T06:07:56.4413071Z",
+  "Machine": "FOX",
+  "Backend": "DXGI Desktop Duplication (IDXGIOutputDuplication)",
+  "Target": {
+    "MonitorDeviceName": "\\\\.\\DISPLAY1",
+    "DesktopCoordinatesLeft": 0,
+    "DesktopCoordinatesTop": 0,
+    "DesktopCoordinatesRight": 5120,
+    "DesktopCoordinatesBottom": 1440
+  },
+  "Frames": [
+    {
+      "Sequence": 0,
+      "MonotonicMs": 231.3216,
+      "Width": 5120,
+      "Height": 1440,
+      "PixelFormat": "B8G8R8A8_UNorm",
+      "AverageLuminance": 164.45271658972968,
+      "PngFile": "capture-dup-20260815-150756-frame0.png"
+    },
+    {
+      "Sequence": 1,
+      "MonotonicMs": 387.2514,
+      "Width": 5120,
+      "Height": 1440,
+      "PixelFormat": "B8G8R8A8_UNorm",
+      "AverageLuminance": 164.46360291659093,
+      "PngFile": "capture-dup-20260815-150756-frame1.png"
+    }
+  ]
+}

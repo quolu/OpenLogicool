@@ -1,0 +1,32 @@
+{
+  "Probe": "gdi",
+  "CapturedAtUtc": "2026-08-15T06:03:46.7489125Z",
+  "Machine": "FOX",
+  "Backend": "GDI BitBlt (System.Drawing.Graphics.CopyFromScreen)",
+  "Target": {
+    "VirtualScreenX": 0,
+    "VirtualScreenY": -1440,
+    "VirtualScreenWidth": 5120,
+    "VirtualScreenHeight": 2880
+  },
+  "Frames": [
+    {
+      "Sequence": 0,
+      "MonotonicMs": 342.1062,
+      "Width": 5120,
+      "Height": 2880,
+      "PixelFormat": "Format32bppArgb",
+      "AverageLuminance": 123.11291704804637,
+      "PngFile": "capture-gdi-20260815-150346-frame0.png"
+    },
+    {
+      "Sequence": 1,
+      "MonotonicMs": 663.0389,
+      "Width": 5120,
+      "Height": 2880,
+      "PixelFormat": "Format32bppArgb",
+      "AverageLuminance": 123.12700644602621,
+      "PngFile": "capture-gdi-20260815-150346-frame1.png"
+    }
+  ]
+}
