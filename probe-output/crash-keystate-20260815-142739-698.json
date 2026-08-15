@@ -1,0 +1,229 @@
+{
+  "Probe": "crash-keystate",
+  "CapturedAtUtc": "2026-08-15T14:27:39.6976390Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "VirtualKey": "0x7C",
+  "DownConfirmedWhileChildAlive": true,
+  "ResidualAfterHardKill": true,
+  "ResidualAtObservationEnd": true,
+  "ReleasedByExternalKeyUp": true,
+  "FinalStateIsDown": false,
+  "Samples": [
+    {
+      "Phase": "baseline",
+      "ElapsedMs": 0,
+      "IsDown": false
+    },
+    {
+      "Phase": "child-holding",
+      "ElapsedMs": 42,
+      "IsDown": true
+    },
+    {
+      "Phase": "immediately-after-kill",
+      "ElapsedMs": 45,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 301,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 551,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 816,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 1082,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 1345,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 1611,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 1875,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 2126,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 2389,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 2640,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 2904,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 3169,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 3435,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 3687,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 3950,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 4213,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 4476,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 4742,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 5007,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 5259,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 5510,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 5774,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 6037,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 6302,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 6564,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 6830,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 7094,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 7359,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 7621,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 7871,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 8134,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 8384,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 8647,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 8912,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 9175,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 9428,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 9693,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 9957,
+      "IsDown": true
+    },
+    {
+      "Phase": "post-crash-observation",
+      "ElapsedMs": 10212,
+      "IsDown": true
+    },
+    {
+      "Phase": "after-external-key-up",
+      "ElapsedMs": 10478,
+      "IsDown": false
+    }
+  ]
+}

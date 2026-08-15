@@ -23,6 +23,10 @@ return command switch
     "g600-apply-verify" => G600ApplyVerify(args[1..]),
     "g600-slot-cycle" => G600SlotCycle(args[1..]),
     "g600-g9-remap" => G600G9Remap(args[1..]),
+    "crash-keystate" => OpenLogicool.Probe.CrashKeyStateProbe.Run(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "hold-key" => OpenLogicool.Probe.CrashKeyStateProbe.RunHold(args[1..]),
     "record" => OpenLogicool.Probe.RawInputRecorder.Run(
         args.Length > 1 ? args[1] : "session",
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output")),
