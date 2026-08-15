@@ -14,7 +14,7 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 - **Phase 1 完了（Exit 4条件成立）**。判定は [docs/phase1-exit-assessment.md](docs/phase1-exit-assessment.md)。次は Phase 2 だが、**G0-Device-W（実機 write 実験）を他実装より先に単独実施**する順序であり、実機手番とオーナー裁定を要する。
 - **G0-Device-RO 通過（オーナー裁定 2026-08-15）**: G13 入力経路・G600 profile read（F6 のみ read 不能を記録）・G600 live input route（全20 control）・Migration Safety Gate 手順定義（[docs/migration-safety-gate.md](docs/migration-safety-gate.md)）・方式 read-only 判定（[docs/g600-route-assessment-2026-08-15.md](docs/g600-route-assessment-2026-08-15.md)）の5条件成立。
 - **G0-Automation 通過（オーナー裁定 2026-08-15）**: 実frame連鎖・Data Flow Contract 項目決定・NIKKE 混同なしの3条件成立（[docs/g0-automation-assessment.md](docs/g0-automation-assessment.md)）。
-- G0-Device-W（write 実験）は未通過。**device write 禁止は継続中**。0A UI照合（LGS 画面突合）は実機手番待ち。
+- **G0-Device-W 着手（オーナー裁定 2026-08-15「解除するよ」= device write 禁止の解除）**。実施順は EXP-MIG-01 → EXP-G600-03 → 方式B残存時の write 拡張（[docs/migration-safety-gate.md](docs/migration-safety-gate.md) §4 の受入・停止条件に従う）。**F6 への write は性質未確定のため引き続き全面禁止**。backup なしの write・readback なしの apply・restore test なしの本適用も禁止のまま。0A UI照合（LGS 画面突合）は実機手番待ち。
 
 ## プロジェクト固有の裁定（要旨）
 
