@@ -9,7 +9,7 @@
 | 1 | LGS version・mode・process/service 一覧 | LGS UI 表示＋`Get-Process`/`Get-Service`（LCore 等） | 手段確立済み（9.04.49 稼働を実測済み） |
 | 2 | Logitech driver・G HUB・Dynamic Lighting の有無と版 | PnP 列挙＋インストール済みプログラム一覧 | 手段確立済み |
 | 3 | G13/G600 descriptor・firmware release・device path | probe `enumerate`（実装済み） | **取得実証済み**（`probe-output/enumerate-2026-08-15.json`） |
-| 4 | LGS host profile・macro・app association | LGS プロファイル格納ファイルの丸ごと複製（格納場所は `%LOCALAPPDATA%\Logitech` 配下と推定——**EXP-MIG-01 の最初の作業で実パスを確定する**） | 未確認（read-only で確定可能） |
+| 4 | LGS host profile・macro・app association | `%LOCALAPPDATA%\Logitech\Logitech Gaming Software\` 配下の丸ごと複製（`profiles\{GUID}.xml` が profile 本体、`settings.json`・`ghubDevices.json` も同梱） | **確認済み**（実パスと構造を実測。[lgs-parity-inventory-2026-08-15.md](lgs-parity-inventory-2026-08-15.md)） |
 | 5 | G600 F0〜F5 完全 Feature Report | probe `g600-backup`（実装済み） | **取得実証済み**（`probe-output/g600-backup-2026-08-15.json`） |
 | 6 | 各 backup の SHA-256・取得日時 UTC・機体名 | backup 生成時に manifest として同梱 | 未実装（機械作業） |
 
