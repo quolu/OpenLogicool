@@ -1,4 +1,6 @@
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using OpenLogicool.Contracts.AI;
 using OpenLogicool.Contracts.Capture;
 using OpenLogicool.Contracts.Devices.Shared;
@@ -6,6 +8,7 @@ using OpenLogicool.Contracts.Domain;
 using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Domain;
 using OpenLogicool.Fakes;
+using OpenLogicool.GameLab;
 using Xunit;
 
 namespace OpenLogicool.Conformance.Tests;
@@ -59,6 +62,55 @@ public sealed class FakeAndFixtureConformanceTests
         ContractConformanceSuite.Verify(proposal);
     }
 
+    [Fact]
+    public void Scenario_manifest_drives_recorded_fixture_and_live_gamelab_conformance()
+    {
+        var scenario = ScenarioManifestLoader.Load(Path.Combine(RepositoryRoot(), "fixtures", "scenarios", "scenario-basic-claim.v1.json"));
+        var observation = ContractFixtureDeserializer.DeserializeObservation(File.ReadAllText(FixtureReferencePath(scenario.ExpectedObservationReference)));
+        ContractConformanceSuite.Verify(observation);
+
+        var framePath = FixtureReferencePath(scenario.ExpectedFrameReference);
+        Assert.True(File.Exists(framePath));
+        using var frameMetadata = JsonDocument.Parse(File.ReadAllText(Path.ChangeExtension(framePath, ".metadata.json")));
+        Assert.True(frameMetadata.RootElement.GetProperty("Frames").GetArrayLength() > 0);
+
+        Assert.True(ScenarioRunner.Run(scenario).MatchesExpectedEventSequence);
+    }
+
+    [Fact]
+    public void Fixture_deserialization_rejects_type_mismatch_unknown_action_shape_and_extra_fields()
+    {
+        var proposalJson = File.ReadAllText(FixturePath("next-action-proposal.sample.json"));
+        var typeMismatch = JsonNode.Parse(File.ReadAllText(FixturePath("observation-result.sample.json")))!.AsObject();
+        typeMismatch["schemaVersion"] = 1;
+        Assert.Throws<JsonException>(() => ContractFixtureDeserializer.DeserializeObservation(typeMismatch.ToJsonString()));
+
+        var unknownAction = JsonNode.Parse(proposalJson)!.AsObject();
+        unknownAction["action"] = new JsonObject
+        {
+            ["schemaVersion"] = "0.1.0",
+            ["unsupportedAction"] = "value",
+        };
+        Assert.Throws<JsonException>(() => ContractFixtureDeserializer.DeserializeProposal(unknownAction.ToJsonString()));
+
+        var extraField = JsonNode.Parse(proposalJson)!.AsObject();
+        extraField["unexpected"] = true;
+        Assert.Throws<JsonException>(() => ContractFixtureDeserializer.DeserializeProposal(extraField.ToJsonString()));
+    }
+
+    [Fact]
+    public void Gate_manifest_rejects_failed_supported_combination_and_accepts_g0_automation_sample()
+    {
+        AssertGateManifestSemantics(File.ReadAllText(Path.Combine(RepositoryRoot(), "fixtures", "gate-manifests", "g0-automation.sample.json")));
+
+        Assert.Throws<InvalidDataException>(() => AssertGateManifestSemantics("""
+            {
+              "result": { "outcome": "Failed" },
+              "verificationStatus": "Supported"
+            }
+            """));
+    }
+
     private static CapturedFrame Frame() =>
         new(
             "0.1.0",
@@ -78,6 +130,21 @@ public sealed class FakeAndFixtureConformanceTests
 
     private static string FixturePath(string fileName) =>
         Path.Combine(RepositoryRoot(), "fixtures", "contracts", fileName);
+
+    private static string FixtureReferencePath(string fixtureReference) =>
+        Path.Combine(RepositoryRoot(), "fixtures", fixtureReference);
+
+    private static void AssertGateManifestSemantics(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var result = document.RootElement.GetProperty("result").GetProperty("outcome").GetString();
+        var verificationStatus = document.RootElement.GetProperty("verificationStatus").GetString();
+
+        if (result == "Failed" && verificationStatus == "Supported")
+        {
+            throw new InvalidDataException("Failed gate must not be classified as Supported.");
+        }
+    }
 
     private static string RepositoryRoot()
     {

@@ -1,14 +1,17 @@
 {
-  "_note": "実測由来 fixture。frame は probe-output/capture-wgc-window-20260815-161541.json の frame0、stateId は同時刻の probe-output/gamelab-oracle-7-*.jsonl（oracle ground truth）に対応する。手で作った値は confidence と evidenceRegions だけ（recognizer 未実装のため）。",
+  "_note": "実測用 fixture。_ で始まる property は provenance 注記であり contract payload ではない。",
   "schemaVersion": "0.1.0",
   "observationId": "obs-gamelab-20260815-161541-0",
   "frame": {
+    "schemaVersion": "0.1.0",
     "source": "window:GameLab Prototype",
     "backend": "WindowsGraphicsCapture",
     "sequence": 0,
     "monotonicTimeMs": 81.1103,
     "wallClockUtc": "2026-08-15T07:15:41Z",
     "transformRevision": 1,
+    "freshnessMs": 0,
+    "lastChangeMs": 0,
     "_measured": {
       "width": 706,
       "height": 473,
@@ -19,10 +22,16 @@
   "status": "Known",
   "stateCandidates": [
     {
+      "schemaVersion": "0.1.0",
       "stateId": "state.main-menu",
       "confidence": 0.95,
       "evidenceRegions": [
-        { "shape": "rect", "normalized": [0.1, 0.35, 0.9, 0.65], "recognizer": "text.state-label" }
+        {
+          "schemaVersion": "0.1.0",
+          "shape": "rect",
+          "normalized": [0.1, 0.35, 0.9, 0.65],
+          "recognizer": "text.state-label"
+        }
       ]
     }
   ],

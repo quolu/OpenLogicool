@@ -2,27 +2,43 @@
   "schemaVersion": "0.1.0",
   "proposalId": "prop-01J5X3GAMELAB0002",
   "plannerContext": {
+    "schemaVersion": "0.1.0",
     "goal": "goal.open-event-screen",
     "observationId": "obs-01J5X3GAMELAB0001",
-    "budgetRemaining": { "proposals": 18, "costUsd": 0.42 }
+    "allowedActionIds": ["action.close-popup"],
+    "historySummary": "popup is visible",
+    "budgetRemaining": {
+      "schemaVersion": "0.1.0",
+      "proposals": 18,
+      "costUsd": 0.42
+    }
   },
   "mode": "VerifiedRun",
   "action": {
+    "schemaVersion": "0.1.0",
     "semanticActionId": "action.close-popup"
   },
   "precondition": {
+    "schemaVersion": "0.1.0",
     "stateId": "state.main-menu.event-popup",
     "maxObservationAgeMs": 500
   },
   "expectedOutcome": {
+    "schemaVersion": "0.1.0",
     "stateId": "state.main-menu",
-    "stabilityWindow": { "frames": 3, "minDurationMs": 300 }
+    "stabilityWindow": {
+      "schemaVersion": "0.1.0",
+      "frames": 3,
+      "minDurationMs": 300
+    }
   },
   "stopCondition": {
+    "schemaVersion": "0.1.0",
     "timeoutMs": 5000,
     "onObservationUnavailable": "stop"
   },
   "validity": {
+    "schemaVersion": "0.1.0",
     "frameSequence": 4211,
     "transformRevision": 3
   }

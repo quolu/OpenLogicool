@@ -1,0 +1,21 @@
+{
+  "scenarioId": "scenario.invalid-schema",
+  "schema": "scenario-v0",
+  "seed": 0,
+  "virtualClock": { "initialMonotonicMs": 0, "dayLengthMs": 1 },
+  "initialState": "state.main-menu",
+  "allowedActions": [],
+  "expectedFrameReference": "frames/gamelab-main-menu-20260815.png",
+  "expectedObservationReference": "contracts/observation-result.gamelab-live.json",
+  "expectedEventSequence": [],
+  "irreversibleEffectCount": 0,
+  "resetMethod": "virtual-day-boundary",
+  "viewport": { "width": 1, "height": 1 },
+  "dpi": 96,
+  "frameTimeMs": 1,
+  "popup": { "numerator": 0, "denominator": 1 },
+  "delay": { "transitionDelayMs": 0 },
+  "unknown": { "numerator": 0, "denominator": 1 },
+  "manualIntervention": { "invokeAfterActions": false },
+  "crashPoint": "none"
+}

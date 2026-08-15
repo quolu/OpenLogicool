@@ -39,6 +39,16 @@ public sealed class GameLabScenarioTests
     }
 
     [Fact]
+    public void Same_day_claim_done_rejects_another_claim_path()
+    {
+        var machine = ExecuteActions(LoadBasicScenario());
+
+        Assert.True(machine.RewardClaimed);
+        Assert.False(machine.TryAction("OpenRewards"));
+        Assert.Equal(GameLabStateId.ClaimDone, machine.CurrentState);
+    }
+
+    [Fact]
     public void Manual_intervention_is_recorded_by_the_oracle()
     {
         var machine = new GameLabStateMachine(LoadBasicScenario());
@@ -52,10 +62,31 @@ public sealed class GameLabScenarioTests
     [Fact]
     public void Basic_claim_scenario_matches_its_expected_event_sequence()
     {
-        var result = ScenarioRunner.Run(LoadBasicScenario());
+        var scenario = LoadBasicScenario();
+        var result = ScenarioRunner.Run(scenario);
 
         Assert.True(result.MatchesExpectedEventSequence);
-        Assert.Equal(1, result.IrreversibleEffectCount);
+        Assert.Equal(scenario.IrreversibleEffectCount, result.IrreversibleEffectCount);
+    }
+
+    [Fact]
+    public void Unknown_glitch_scenario_locks_the_seeded_unknown_event_and_runner_manual_intervention()
+    {
+        var scenario = LoadUnknownGlitchScenario();
+
+        var result = ScenarioRunner.Run(scenario);
+
+        Assert.True(result.MatchesExpectedEventSequence);
+        Assert.Contains(result.Oracle, entry => entry.Cause == "auto:unknown-glitch");
+        Assert.Equal("manual-intervention", result.Oracle[^1].Cause);
+    }
+
+    [Fact]
+    public void Loader_rejects_an_unsupported_scenario_schema()
+    {
+        var path = Path.Combine(RepositoryRoot(), "tests", "OpenLogicool.GameLab.Tests", "Fixtures", "scenario-invalid-schema.json");
+
+        Assert.Throws<InvalidDataException>(() => ScenarioManifestLoader.Load(path));
     }
 
     private static GameLabStateMachine ExecuteActions(ScenarioManifest scenario)
@@ -72,6 +103,9 @@ public sealed class GameLabScenarioTests
 
     private static ScenarioManifest LoadBasicScenario() =>
         ScenarioManifestLoader.Load(Path.Combine(RepositoryRoot(), "fixtures", "scenarios", "scenario-basic-claim.v1.json"));
+
+    private static ScenarioManifest LoadUnknownGlitchScenario() =>
+        ScenarioManifestLoader.Load(Path.Combine(RepositoryRoot(), "fixtures", "scenarios", "scenario-unknown-glitch.v1.json"));
 
     private static string RepositoryRoot()
     {

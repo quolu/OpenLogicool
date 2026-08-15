@@ -1,0 +1,25 @@
+{
+  "scenarioId": "scenario.unknown-glitch.v1",
+  "schema": "scenario-v1",
+  "seed": 7133,
+  "virtualClock": { "initialMonotonicMs": 0, "dayLengthMs": 86400000 },
+  "initialState": "state.main-menu",
+  "allowedActions": ["OpenRewards"],
+  "expectedFrameReference": "frames/gamelab-main-menu-20260815.png",
+  "expectedObservationReference": "contracts/observation-result.gamelab-live.json",
+  "expectedEventSequence": [
+    { "seq": 1, "monotonicMs": 0, "stateId": "state.main-menu", "cause": "scenario:start", "scenarioId": "scenario.unknown-glitch.v1" },
+    { "seq": 2, "monotonicMs": 0, "stateId": "state.unknown-glitch", "cause": "auto:unknown-glitch", "scenarioId": "scenario.unknown-glitch.v1" },
+    { "seq": 3, "monotonicMs": 100, "stateId": "state.main-menu", "cause": "manual-intervention", "scenarioId": "scenario.unknown-glitch.v1" }
+  ],
+  "irreversibleEffectCount": 0,
+  "resetMethod": "virtual-day-boundary",
+  "viewport": { "width": 706, "height": 473 },
+  "dpi": 96,
+  "frameTimeMs": 16.6667,
+  "popup": { "numerator": 0, "denominator": 10 },
+  "delay": { "transitionDelayMs": 100 },
+  "unknown": { "numerator": 1, "denominator": 10 },
+  "manualIntervention": { "invokeAfterActions": true },
+  "crashPoint": "none"
+}

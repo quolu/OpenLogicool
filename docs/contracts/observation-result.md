@@ -29,3 +29,4 @@ fixture: [fixtures/contracts/observation-result.sample.json](../../fixtures/cont
 - evidenceRegions の形状表現（矩形のみ / polygon 許容）
 - confidence calibration dataset の格納形式（Knowledge Pack `recognizers` 節との分担）
 - Unavailable の診断カテゴリ一覧（CAP-002 の状態分類と同一 enum を共有するか）
+- fixture の `_` で始まる property は provenance 注記として明示的に読み飛ばし、それ以外の未定義 field は deserialize error とする。

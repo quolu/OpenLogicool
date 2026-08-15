@@ -37,6 +37,7 @@ public sealed class ProjectReferenceDirectionTests
                 "OpenLogicool.Perception",
                 "OpenLogicool.AI",
                 "OpenLogicool.Desktop"),
+            ["OpenLogicool.Fakes"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),
         };
 
     [Fact]
@@ -102,7 +103,7 @@ public sealed class ProjectReferenceDirectionTests
         }
 
         Assert.Equal(
-            new[] { "Microsoft.Data.Sqlite" },
+            new[] { "Microsoft.Data.Sqlite", "SQLitePCLRaw.lib.e_sqlite3" },
             packageReferencesByProject["OpenLogicool.Persistence"].OrderBy(packageName => packageName));
     }
 
@@ -180,6 +181,7 @@ public sealed class ProjectReferenceDirectionTests
         };
 
         return Directory.EnumerateFiles(sourceDirectory, "*.csproj", SearchOption.AllDirectories)
+            .Append(Path.Combine(repositoryRoot, "tests", "OpenLogicool.Fakes", "OpenLogicool.Fakes.csproj"))
             .Select(projectPath => (ProjectName: Path.GetFileNameWithoutExtension(projectPath)!, ProjectPath: projectPath))
             .Where(project => !phaseZeroProjects.Contains(project.ProjectName));
     }

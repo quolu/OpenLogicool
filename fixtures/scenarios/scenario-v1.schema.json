@@ -68,7 +68,10 @@
       "required": ["invokeAfterActions"],
       "properties": { "invokeAfterActions": { "type": "boolean" } }
     },
-    "crashPoint": { "type": "string" }
+    "crashPoint": {
+      "enum": [ "none" ],
+      "description": "Crash hook は Phase 4 fault injection で拡張する。scenario-v1 では none のみ。"
+    }
   },
   "$defs": {
     "seededChance": {

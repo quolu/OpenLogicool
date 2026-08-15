@@ -8,7 +8,7 @@
   },
   "initialState": "state.main-menu",
   "allowedActions": ["ClosePopup", "OpenRewards", "SelectReward", "Confirm"],
-  "expectedFrameReference": "frames/gamelab-basic-claim.png",
+  "expectedFrameReference": "frames/gamelab-main-menu-20260815.png",
   "expectedObservationReference": "contracts/observation-result.gamelab-live.json",
   "expectedEventSequence": [
     { "seq": 1, "monotonicMs": 0, "stateId": "state.main-menu", "cause": "scenario:start", "scenarioId": "scenario.basic-claim.v1" },
