@@ -1,0 +1,111 @@
+{
+  "Probe": "g13-adapter-smoke",
+  "CapturedAtUtc": "2026-08-15T14:42:42.7749751Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "DurationSeconds": 60,
+  "Devices": [
+    {
+      "SchemaVersion": "0.1.0",
+      "DeviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u00262837f99\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "VendorId": 1133,
+      "ProductId": 49692,
+      "DevicePath": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u00262837f99\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "ContainerId": "{56231428-e938-11f0-84de-806e6f6e6963}",
+      "Generation": 1,
+      "Capabilities": [
+        "g13.buttons",
+        "g13.stick"
+      ]
+    }
+  ],
+  "InputCount": 12,
+  "Inputs": [
+    {
+      "MonotonicMs": 21870.7895,
+      "ControlId": "G13",
+      "Edge": "Down",
+      "ReportSequence": 1
+    },
+    {
+      "MonotonicMs": 22070.4274,
+      "ControlId": "G13",
+      "Edge": "Up",
+      "ReportSequence": 2
+    },
+    {
+      "MonotonicMs": 23406.465,
+      "ControlId": "G12",
+      "Edge": "Down",
+      "ReportSequence": 3
+    },
+    {
+      "MonotonicMs": 23412.4331,
+      "ControlId": "G11",
+      "Edge": "Down",
+      "ReportSequence": 4
+    },
+    {
+      "MonotonicMs": 23626.5226,
+      "ControlId": "G12",
+      "Edge": "Up",
+      "ReportSequence": 5
+    },
+    {
+      "MonotonicMs": 23632.4191,
+      "ControlId": "G11",
+      "Edge": "Up",
+      "ReportSequence": 6
+    },
+    {
+      "MonotonicMs": 24300.4813,
+      "ControlId": "G4",
+      "Edge": "Down",
+      "ReportSequence": 7
+    },
+    {
+      "MonotonicMs": 24486.494,
+      "ControlId": "G4",
+      "Edge": "Up",
+      "ReportSequence": 8
+    },
+    {
+      "MonotonicMs": 25142.5954,
+      "ControlId": "G10",
+      "Edge": "Down",
+      "ReportSequence": 9
+    },
+    {
+      "MonotonicMs": 25306.5145,
+      "ControlId": "G10",
+      "Edge": "Up",
+      "ReportSequence": 10
+    },
+    {
+      "MonotonicMs": 27848.5796,
+      "ControlId": "STICK_PRESS",
+      "Edge": "Down",
+      "ReportSequence": 346
+    },
+    {
+      "MonotonicMs": 28046.5863,
+      "ControlId": "STICK_PRESS",
+      "Edge": "Up",
+      "ReportSequence": 354
+    }
+  ],
+  "StickSampleCount": 315,
+  "FirstStickSample": {
+    "MonotonicMs": 21870.7895,
+    "X": 145,
+    "Y": 110,
+    "ReportSequence": 1
+  },
+  "LastStickSample": {
+    "MonotonicMs": 28798.6485,
+    "X": 130,
+    "Y": 127,
+    "ReportSequence": 375
+  },
+  "DroppedInputCount": 0
+}

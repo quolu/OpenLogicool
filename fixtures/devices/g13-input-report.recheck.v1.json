@@ -1,0 +1,995 @@
+{
+  "_comment": "G13 vendor input report の実機記録 fixture。一次データ probe-output/rawinput-g13-recheck-20260815-135106.jsonl から VID_046D&PID_C21C の hid report だけを抽出。bit 対応の正は docs/probes/g13-input-map-2026-08-15.md。",
+  "schemaVersion": "0.1.0",
+  "sourceRecording": "probe-output/rawinput-g13-recheck-20260815-135106.jsonl",
+  "capturedAtUtc": "2026-08-15T04:51:06Z",
+  "capturedWith": "probe record (Raw Input, usage page 0xFF00, RIDEV_PAGEONLY|RIDEV_INPUTSINK)",
+  "environment": {
+    "os": "Windows 11 build 26200",
+    "lgsRunning": true,
+    "firmwareRelease": "0203"
+  },
+  "device": {
+    "vendorId": 1133,
+    "productId": 49692,
+    "usagePage": 65280,
+    "reportId": 1,
+    "reportLength": 8,
+    "devicePath": "\\\\?\\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+  },
+  "sessionControls": "G20 単独押下 → スティック移動＋押込み×2 → G1 単独押下 → G2+G1 chord",
+  "reports": [
+    {
+      "monotonicMs": 68609.639,
+      "dataHex": "018A760000080000"
+    },
+    {
+      "monotonicMs": 69341.6611,
+      "dataHex": "018A760000000000"
+    },
+    {
+      "monotonicMs": 70583.6344,
+      "dataHex": "018A770000000000"
+    },
+    {
+      "monotonicMs": 71489.6598,
+      "dataHex": "018A780000000000"
+    },
+    {
+      "monotonicMs": 71601.6478,
+      "dataHex": "018B780000000000"
+    },
+    {
+      "monotonicMs": 72407.6887,
+      "dataHex": "0186780000000080"
+    },
+    {
+      "monotonicMs": 72409.641,
+      "dataHex": "0185780000000000"
+    },
+    {
+      "monotonicMs": 72415.6529,
+      "dataHex": "0183780000000000"
+    },
+    {
+      "monotonicMs": 72450.2513,
+      "dataHex": "0182780000000080"
+    },
+    {
+      "monotonicMs": 72479.6665,
+      "dataHex": "0187780000000080"
+    },
+    {
+      "monotonicMs": 72515.7094,
+      "dataHex": "0182780000000080"
+    },
+    {
+      "monotonicMs": 72519.7574,
+      "dataHex": "0180780000000080"
+    },
+    {
+      "monotonicMs": 72561.6984,
+      "dataHex": "0180730000000080"
+    },
+    {
+      "monotonicMs": 72565.6582,
+      "dataHex": "0180720000000000"
+    },
+    {
+      "monotonicMs": 72575.6877,
+      "dataHex": "0180700000000000"
+    },
+    {
+      "monotonicMs": 72581.6953,
+      "dataHex": "017E700000000080"
+    },
+    {
+      "monotonicMs": 72585.6603,
+      "dataHex": "017E6F0000000000"
+    },
+    {
+      "monotonicMs": 72587.8413,
+      "dataHex": "017C6F0000000088"
+    },
+    {
+      "monotonicMs": 72589.6516,
+      "dataHex": "017C6E0000000088"
+    },
+    {
+      "monotonicMs": 72591.6513,
+      "dataHex": "017C6C0000000008"
+    },
+    {
+      "monotonicMs": 72593.6514,
+      "dataHex": "01796C0000000088"
+    },
+    {
+      "monotonicMs": 72595.6541,
+      "dataHex": "01796B0000000008"
+    },
+    {
+      "monotonicMs": 72597.6422,
+      "dataHex": "01796A0000000088"
+    },
+    {
+      "monotonicMs": 72599.6693,
+      "dataHex": "01776A0000000008"
+    },
+    {
+      "monotonicMs": 72601.6417,
+      "dataHex": "0177680000000008"
+    },
+    {
+      "monotonicMs": 72603.9772,
+      "dataHex": "0174640000000088"
+    },
+    {
+      "monotonicMs": 72605.6561,
+      "dataHex": "0174630000000008"
+    },
+    {
+      "monotonicMs": 72607.6586,
+      "dataHex": "0173630000000088"
+    },
+    {
+      "monotonicMs": 72609.6366,
+      "dataHex": "0173620000000008"
+    },
+    {
+      "monotonicMs": 72611.6495,
+      "dataHex": "0172620000000008"
+    },
+    {
+      "monotonicMs": 72613.6497,
+      "dataHex": "0170620000000008"
+    },
+    {
+      "monotonicMs": 72615.6422,
+      "dataHex": "0170600000000008"
+    },
+    {
+      "monotonicMs": 72617.6577,
+      "dataHex": "016F600000000088"
+    },
+    {
+      "monotonicMs": 72619.6477,
+      "dataHex": "016F5E0000000088"
+    },
+    {
+      "monotonicMs": 72621.6479,
+      "dataHex": "016C5E0000000008"
+    },
+    {
+      "monotonicMs": 72623.6606,
+      "dataHex": "01675E0000000088"
+    },
+    {
+      "monotonicMs": 72625.6526,
+      "dataHex": "01625C0000000008"
+    },
+    {
+      "monotonicMs": 72627.6363,
+      "dataHex": "01605C0000000088"
+    },
+    {
+      "monotonicMs": 72629.6456,
+      "dataHex": "01605B0000000088"
+    },
+    {
+      "monotonicMs": 72631.631,
+      "dataHex": "015C5A0000000008"
+    },
+    {
+      "monotonicMs": 72633.6603,
+      "dataHex": "01595A0000000088"
+    },
+    {
+      "monotonicMs": 72635.6484,
+      "dataHex": "0159570000000088"
+    },
+    {
+      "monotonicMs": 72637.6437,
+      "dataHex": "0155560000000008"
+    },
+    {
+      "monotonicMs": 72639.6385,
+      "dataHex": "0153530000000088"
+    },
+    {
+      "monotonicMs": 72641.6383,
+      "dataHex": "0150530000000088"
+    },
+    {
+      "monotonicMs": 72643.6275,
+      "dataHex": "014C510000000088"
+    },
+    {
+      "monotonicMs": 72645.6465,
+      "dataHex": "014C500000000008"
+    },
+    {
+      "monotonicMs": 72647.6388,
+      "dataHex": "014A4D0000000008"
+    },
+    {
+      "monotonicMs": 72649.6697,
+      "dataHex": "01474C0000000088"
+    },
+    {
+      "monotonicMs": 72651.6337,
+      "dataHex": "01464C0000000008"
+    },
+    {
+      "monotonicMs": 72653.6752,
+      "dataHex": "01464B0000000008"
+    },
+    {
+      "monotonicMs": 72655.6361,
+      "dataHex": "013D490000000088"
+    },
+    {
+      "monotonicMs": 72657.6984,
+      "dataHex": "013C480000000008"
+    },
+    {
+      "monotonicMs": 72659.6955,
+      "dataHex": "0138480000000008"
+    },
+    {
+      "monotonicMs": 72661.6796,
+      "dataHex": "0134470000000008"
+    },
+    {
+      "monotonicMs": 72663.6505,
+      "dataHex": "0134440000000008"
+    },
+    {
+      "monotonicMs": 72665.9043,
+      "dataHex": "0133430000000088"
+    },
+    {
+      "monotonicMs": 72667.6326,
+      "dataHex": "0130410000000008"
+    },
+    {
+      "monotonicMs": 72669.6352,
+      "dataHex": "0129410000000088"
+    },
+    {
+      "monotonicMs": 72671.6314,
+      "dataHex": "01293D0000000088"
+    },
+    {
+      "monotonicMs": 72673.7398,
+      "dataHex": "01273C0000000088"
+    },
+    {
+      "monotonicMs": 72675.6416,
+      "dataHex": "01233B0000000088"
+    },
+    {
+      "monotonicMs": 72677.7025,
+      "dataHex": "01223B0000000088"
+    },
+    {
+      "monotonicMs": 72679.6426,
+      "dataHex": "0122390000000088"
+    },
+    {
+      "monotonicMs": 72681.7309,
+      "dataHex": "0122370000000088"
+    },
+    {
+      "monotonicMs": 72683.6451,
+      "dataHex": "0111350000000008"
+    },
+    {
+      "monotonicMs": 72685.6446,
+      "dataHex": "010C340000000088"
+    },
+    {
+      "monotonicMs": 72689.648,
+      "dataHex": "010C330000000088"
+    },
+    {
+      "monotonicMs": 72691.6447,
+      "dataHex": "010B330000000008"
+    },
+    {
+      "monotonicMs": 72693.6346,
+      "dataHex": "010B310000000008"
+    },
+    {
+      "monotonicMs": 72695.645,
+      "dataHex": "010B310000000080"
+    },
+    {
+      "monotonicMs": 72701.6645,
+      "dataHex": "010A310000000000"
+    },
+    {
+      "monotonicMs": 72721.6719,
+      "dataHex": "010A370000000080"
+    },
+    {
+      "monotonicMs": 72725.6648,
+      "dataHex": "010A380000000080"
+    },
+    {
+      "monotonicMs": 72729.6819,
+      "dataHex": "010A390000000000"
+    },
+    {
+      "monotonicMs": 72731.6631,
+      "dataHex": "010A3B0000000080"
+    },
+    {
+      "monotonicMs": 72733.6629,
+      "dataHex": "010A3D0000000000"
+    },
+    {
+      "monotonicMs": 72735.6705,
+      "dataHex": "01103D0000000080"
+    },
+    {
+      "monotonicMs": 72737.6872,
+      "dataHex": "01103F0000000000"
+    },
+    {
+      "monotonicMs": 72739.67,
+      "dataHex": "0113400000000000"
+    },
+    {
+      "monotonicMs": 72741.6679,
+      "dataHex": "0118410000000080"
+    },
+    {
+      "monotonicMs": 72743.645,
+      "dataHex": "011C410000000000"
+    },
+    {
+      "monotonicMs": 72745.7222,
+      "dataHex": "011C440000000000"
+    },
+    {
+      "monotonicMs": 72747.6634,
+      "dataHex": "0122450000000080"
+    },
+    {
+      "monotonicMs": 72749.6997,
+      "dataHex": "0122480000000000"
+    },
+    {
+      "monotonicMs": 72751.7375,
+      "dataHex": "0129480000000080"
+    },
+    {
+      "monotonicMs": 72753.7172,
+      "dataHex": "012E490000000000"
+    },
+    {
+      "monotonicMs": 72755.6763,
+      "dataHex": "012E4C0000000080"
+    },
+    {
+      "monotonicMs": 72757.8898,
+      "dataHex": "01334F0000000080"
+    },
+    {
+      "monotonicMs": 72759.6895,
+      "dataHex": "0139510000000000"
+    },
+    {
+      "monotonicMs": 72761.6533,
+      "dataHex": "013C510000000080"
+    },
+    {
+      "monotonicMs": 72763.7007,
+      "dataHex": "0146510000000000"
+    },
+    {
+      "monotonicMs": 72765.663,
+      "dataHex": "0146560000000000"
+    },
+    {
+      "monotonicMs": 72767.6598,
+      "dataHex": "014B570000000080"
+    },
+    {
+      "monotonicMs": 72769.6618,
+      "dataHex": "014E570000000080"
+    },
+    {
+      "monotonicMs": 72771.6641,
+      "dataHex": "01535A0000000080"
+    },
+    {
+      "monotonicMs": 72773.8632,
+      "dataHex": "01535B0000000000"
+    },
+    {
+      "monotonicMs": 72775.653,
+      "dataHex": "01545C0000000000"
+    },
+    {
+      "monotonicMs": 72777.674,
+      "dataHex": "01585E0000000080"
+    },
+    {
+      "monotonicMs": 72779.6672,
+      "dataHex": "015C5E0000000000"
+    },
+    {
+      "monotonicMs": 72781.705,
+      "dataHex": "015C5F0000000000"
+    },
+    {
+      "monotonicMs": 72783.6641,
+      "dataHex": "0161620000000080"
+    },
+    {
+      "monotonicMs": 72785.6609,
+      "dataHex": "0165620000000000"
+    },
+    {
+      "monotonicMs": 72787.6766,
+      "dataHex": "0167620000000000"
+    },
+    {
+      "monotonicMs": 72789.6659,
+      "dataHex": "0169640000000000"
+    },
+    {
+      "monotonicMs": 72791.66,
+      "dataHex": "016B640000000080"
+    },
+    {
+      "monotonicMs": 72793.6476,
+      "dataHex": "016B660000000080"
+    },
+    {
+      "monotonicMs": 72795.6588,
+      "dataHex": "016B670000000000"
+    },
+    {
+      "monotonicMs": 72797.6612,
+      "dataHex": "016C670000000080"
+    },
+    {
+      "monotonicMs": 72799.6713,
+      "dataHex": "016F670000000000"
+    },
+    {
+      "monotonicMs": 72803.713,
+      "dataHex": "016F680000000080"
+    },
+    {
+      "monotonicMs": 72811.6612,
+      "dataHex": "016F6A0000000000"
+    },
+    {
+      "monotonicMs": 72825.7261,
+      "dataHex": "016F6B0000000000"
+    },
+    {
+      "monotonicMs": 72845.7096,
+      "dataHex": "01706B0000000000"
+    },
+    {
+      "monotonicMs": 72851.6719,
+      "dataHex": "01706C0000000000"
+    },
+    {
+      "monotonicMs": 72853.6923,
+      "dataHex": "016A6C0000000080"
+    },
+    {
+      "monotonicMs": 72855.667,
+      "dataHex": "01696C0000000000"
+    },
+    {
+      "monotonicMs": 72859.6668,
+      "dataHex": "01696E0000000080"
+    },
+    {
+      "monotonicMs": 72865.6833,
+      "dataHex": "01696F0000000080"
+    },
+    {
+      "monotonicMs": 72869.6748,
+      "dataHex": "0169700000000080"
+    },
+    {
+      "monotonicMs": 72873.6661,
+      "dataHex": "016E700000000080"
+    },
+    {
+      "monotonicMs": 72879.6901,
+      "dataHex": "016E720000000080"
+    },
+    {
+      "monotonicMs": 72881.9962,
+      "dataHex": "016F720000000000"
+    },
+    {
+      "monotonicMs": 72883.6738,
+      "dataHex": "0170720000000080"
+    },
+    {
+      "monotonicMs": 72885.6803,
+      "dataHex": "0172720000000000"
+    },
+    {
+      "monotonicMs": 72887.6623,
+      "dataHex": "0172730000000000"
+    },
+    {
+      "monotonicMs": 72889.6571,
+      "dataHex": "0173730000000080"
+    },
+    {
+      "monotonicMs": 72891.671,
+      "dataHex": "0175730000000000"
+    },
+    {
+      "monotonicMs": 72901.6715,
+      "dataHex": "0177730000000000"
+    },
+    {
+      "monotonicMs": 72903.6706,
+      "dataHex": "0178730000000080"
+    },
+    {
+      "monotonicMs": 72905.6717,
+      "dataHex": "0178740000000080"
+    },
+    {
+      "monotonicMs": 72907.6703,
+      "dataHex": "0179740000000000"
+    },
+    {
+      "monotonicMs": 72919.6985,
+      "dataHex": "017B740000000080"
+    },
+    {
+      "monotonicMs": 72941.6732,
+      "dataHex": "017B760000000080"
+    },
+    {
+      "monotonicMs": 72945.6763,
+      "dataHex": "017C760000000080"
+    },
+    {
+      "monotonicMs": 72957.7327,
+      "dataHex": "017D760000000000"
+    },
+    {
+      "monotonicMs": 72967.6666,
+      "dataHex": "017E760000000000"
+    },
+    {
+      "monotonicMs": 72969.6496,
+      "dataHex": "017E770000000000"
+    },
+    {
+      "monotonicMs": 72999.7172,
+      "dataHex": "017E780000000000"
+    },
+    {
+      "monotonicMs": 73007.6947,
+      "dataHex": "0180780000000080"
+    },
+    {
+      "monotonicMs": 73017.6899,
+      "dataHex": "0181780000000080"
+    },
+    {
+      "monotonicMs": 73021.6757,
+      "dataHex": "0182780000000080"
+    },
+    {
+      "monotonicMs": 73027.7208,
+      "dataHex": "0183780000000080"
+    },
+    {
+      "monotonicMs": 73037.6903,
+      "dataHex": "0185780000000080"
+    },
+    {
+      "monotonicMs": 73045.6759,
+      "dataHex": "0187780000000000"
+    },
+    {
+      "monotonicMs": 73053.92,
+      "dataHex": "0189780000000080"
+    },
+    {
+      "monotonicMs": 73059.6873,
+      "dataHex": "018A780000000000"
+    },
+    {
+      "monotonicMs": 73063.68,
+      "dataHex": "018B780000000080"
+    },
+    {
+      "monotonicMs": 73075.6954,
+      "dataHex": "018C780000000000"
+    },
+    {
+      "monotonicMs": 73127.7022,
+      "dataHex": "018E780000000000"
+    },
+    {
+      "monotonicMs": 73785.8472,
+      "dataHex": "018F780000000080"
+    },
+    {
+      "monotonicMs": 73825.785,
+      "dataHex": "0186780000000080"
+    },
+    {
+      "monotonicMs": 73827.6727,
+      "dataHex": "018B780000000000"
+    },
+    {
+      "monotonicMs": 73841.7277,
+      "dataHex": "018C780000000080"
+    },
+    {
+      "monotonicMs": 73879.7309,
+      "dataHex": "018E780000000000"
+    },
+    {
+      "monotonicMs": 73889.7299,
+      "dataHex": "018F780000000000"
+    },
+    {
+      "monotonicMs": 73897.7115,
+      "dataHex": "0190780000000080"
+    },
+    {
+      "monotonicMs": 73903.7559,
+      "dataHex": "0192780000000080"
+    },
+    {
+      "monotonicMs": 73909.6908,
+      "dataHex": "0193780000000000"
+    },
+    {
+      "monotonicMs": 73917.7153,
+      "dataHex": "0194780000000080"
+    },
+    {
+      "monotonicMs": 73927.7158,
+      "dataHex": "0195780000000080"
+    },
+    {
+      "monotonicMs": 73931.7216,
+      "dataHex": "0195730000000000"
+    },
+    {
+      "monotonicMs": 73939.7062,
+      "dataHex": "0195720000000080"
+    },
+    {
+      "monotonicMs": 73947.6996,
+      "dataHex": "0195700000000000"
+    },
+    {
+      "monotonicMs": 73955.72,
+      "dataHex": "01956F0000000080"
+    },
+    {
+      "monotonicMs": 73961.8527,
+      "dataHex": "01906F0000000000"
+    },
+    {
+      "monotonicMs": 73963.7342,
+      "dataHex": "018E6F0000000080"
+    },
+    {
+      "monotonicMs": 73965.6935,
+      "dataHex": "018E6E0000000080"
+    },
+    {
+      "monotonicMs": 73973.818,
+      "dataHex": "018E6C0000000000"
+    },
+    {
+      "monotonicMs": 73975.6928,
+      "dataHex": "018C6B0000000080"
+    },
+    {
+      "monotonicMs": 73997.7198,
+      "dataHex": "018B6B0000000000"
+    },
+    {
+      "monotonicMs": 74013.7225,
+      "dataHex": "018B6A0000000000"
+    },
+    {
+      "monotonicMs": 74211.8352,
+      "dataHex": "018B680000000080"
+    },
+    {
+      "monotonicMs": 74225.7329,
+      "dataHex": "018B670000000080"
+    },
+    {
+      "monotonicMs": 74269.7452,
+      "dataHex": "018A670000000000"
+    },
+    {
+      "monotonicMs": 74273.7292,
+      "dataHex": "0189670000000000"
+    },
+    {
+      "monotonicMs": 74281.7263,
+      "dataHex": "0186670000000080"
+    },
+    {
+      "monotonicMs": 74287.7306,
+      "dataHex": "0185670000000080"
+    },
+    {
+      "monotonicMs": 74293.7362,
+      "dataHex": "0183670000000000"
+    },
+    {
+      "monotonicMs": 74299.7529,
+      "dataHex": "0181670000000000"
+    },
+    {
+      "monotonicMs": 74303.8047,
+      "dataHex": "0180670000000000"
+    },
+    {
+      "monotonicMs": 74315.7111,
+      "dataHex": "017E670000000000"
+    },
+    {
+      "monotonicMs": 74325.7244,
+      "dataHex": "017D670000000000"
+    },
+    {
+      "monotonicMs": 74329.7174,
+      "dataHex": "017C670000000000"
+    },
+    {
+      "monotonicMs": 74335.7247,
+      "dataHex": "017B670000000000"
+    },
+    {
+      "monotonicMs": 74357.7883,
+      "dataHex": "0179670000000080"
+    },
+    {
+      "monotonicMs": 74361.7748,
+      "dataHex": "0177670000000000"
+    },
+    {
+      "monotonicMs": 74365.7285,
+      "dataHex": "017C670000000000"
+    },
+    {
+      "monotonicMs": 74367.7106,
+      "dataHex": "017C6C0000000000"
+    },
+    {
+      "monotonicMs": 74369.7011,
+      "dataHex": "017C6E0000000080"
+    },
+    {
+      "monotonicMs": 74371.6917,
+      "dataHex": "01816E0000000000"
+    },
+    {
+      "monotonicMs": 74373.685,
+      "dataHex": "01816F0000000000"
+    },
+    {
+      "monotonicMs": 74375.7201,
+      "dataHex": "0181700000000080"
+    },
+    {
+      "monotonicMs": 74377.7228,
+      "dataHex": "0182700000000000"
+    },
+    {
+      "monotonicMs": 74381.7438,
+      "dataHex": "0182720000000000"
+    },
+    {
+      "monotonicMs": 74383.7338,
+      "dataHex": "0183720000000080"
+    },
+    {
+      "monotonicMs": 74389.7885,
+      "dataHex": "0185720000000080"
+    },
+    {
+      "monotonicMs": 74391.7888,
+      "dataHex": "0185730000000080"
+    },
+    {
+      "monotonicMs": 74393.7403,
+      "dataHex": "0186730000000000"
+    },
+    {
+      "monotonicMs": 74395.8914,
+      "dataHex": "0187730000000080"
+    },
+    {
+      "monotonicMs": 74403.7543,
+      "dataHex": "0187740000000000"
+    },
+    {
+      "monotonicMs": 74415.7181,
+      "dataHex": "0187760000000080"
+    },
+    {
+      "monotonicMs": 74435.7452,
+      "dataHex": "0187770000000080"
+    },
+    {
+      "monotonicMs": 74451.7557,
+      "dataHex": "0187780000000080"
+    },
+    {
+      "monotonicMs": 74509.7314,
+      "dataHex": "0189780000000000"
+    },
+    {
+      "monotonicMs": 74545.7618,
+      "dataHex": "018A780000000000"
+    },
+    {
+      "monotonicMs": 74571.7463,
+      "dataHex": "018B780000000000"
+    },
+    {
+      "monotonicMs": 74911.8259,
+      "dataHex": "0185780000000080"
+    },
+    {
+      "monotonicMs": 74913.7448,
+      "dataHex": "0180780000000000"
+    },
+    {
+      "monotonicMs": 75051.7661,
+      "dataHex": "0180730000000080"
+    },
+    {
+      "monotonicMs": 75057.8148,
+      "dataHex": "0180720000000000"
+    },
+    {
+      "monotonicMs": 75089.7587,
+      "dataHex": "0180720000000088"
+    },
+    {
+      "monotonicMs": 75095.7644,
+      "dataHex": "0185720000000088"
+    },
+    {
+      "monotonicMs": 75133.7639,
+      "dataHex": "0185700000000088"
+    },
+    {
+      "monotonicMs": 75135.742,
+      "dataHex": "01856F0000000008"
+    },
+    {
+      "monotonicMs": 75155.7447,
+      "dataHex": "01856E0000000008"
+    },
+    {
+      "monotonicMs": 75161.8806,
+      "dataHex": "01856C0000000008"
+    },
+    {
+      "monotonicMs": 75205.7548,
+      "dataHex": "01806C0000000008"
+    },
+    {
+      "monotonicMs": 75207.7367,
+      "dataHex": "01806B0000000008"
+    },
+    {
+      "monotonicMs": 75211.7633,
+      "dataHex": "017E6B0000000008"
+    },
+    {
+      "monotonicMs": 75235.7439,
+      "dataHex": "017E6A0000000088"
+    },
+    {
+      "monotonicMs": 75237.7354,
+      "dataHex": "017D6A0000000008"
+    },
+    {
+      "monotonicMs": 75249.7473,
+      "dataHex": "017C6A0000000088"
+    },
+    {
+      "monotonicMs": 75261.8596,
+      "dataHex": "017C6A0000000000"
+    },
+    {
+      "monotonicMs": 75263.7319,
+      "dataHex": "017B6A0000000080"
+    },
+    {
+      "monotonicMs": 75281.7606,
+      "dataHex": "01796A0000000000"
+    },
+    {
+      "monotonicMs": 75323.7775,
+      "dataHex": "017E6A0000000000"
+    },
+    {
+      "monotonicMs": 75325.7768,
+      "dataHex": "01806A0000000080"
+    },
+    {
+      "monotonicMs": 75335.7617,
+      "dataHex": "01806F0000000000"
+    },
+    {
+      "monotonicMs": 75337.7456,
+      "dataHex": "0181700000000080"
+    },
+    {
+      "monotonicMs": 75339.7436,
+      "dataHex": "0186700000000000"
+    },
+    {
+      "monotonicMs": 75341.7497,
+      "dataHex": "0186720000000080"
+    },
+    {
+      "monotonicMs": 75345.7481,
+      "dataHex": "0186730000000000"
+    },
+    {
+      "monotonicMs": 75361.8058,
+      "dataHex": "0187730000000080"
+    },
+    {
+      "monotonicMs": 75363.7436,
+      "dataHex": "0187740000000080"
+    },
+    {
+      "monotonicMs": 75403.8401,
+      "dataHex": "0187760000000080"
+    },
+    {
+      "monotonicMs": 75407.8099,
+      "dataHex": "0189760000000080"
+    },
+    {
+      "monotonicMs": 78565.9919,
+      "dataHex": "0189760100000000"
+    },
+    {
+      "monotonicMs": 80691.9526,
+      "dataHex": "0189760000000000"
+    },
+    {
+      "monotonicMs": 83222.0094,
+      "dataHex": "0189760200000080"
+    },
+    {
+      "monotonicMs": 83236.03,
+      "dataHex": "0189760300000000"
+    },
+    {
+      "monotonicMs": 83968.0461,
+      "dataHex": "0189760200000000"
+    },
+    {
+      "monotonicMs": 83970.0293,
+      "dataHex": "0189760000000080"
+    }
+  ]
+}
