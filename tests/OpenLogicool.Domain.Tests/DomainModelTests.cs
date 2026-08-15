@@ -28,6 +28,9 @@ public sealed class DomainModelTests
         var up = changed.Up(Input(PhysicalInputEdge.Up, "G1"));
 
         Assert.Equal(new[] { "output-A", "output-B" }, up.Release.Outputs);
+        Assert.Equal(down.Ownership.Key, up.Release.Key);
+        Assert.Equal(0, up.Release.Key.PressGeneration);
+        Assert.Equal(1, changed.Generation);
         Assert.Equal("profile-1", down.Ownership.ProfileRevision);
         Assert.Equal("mapping-1", down.Ownership.MappingRevision);
     }
@@ -85,6 +88,18 @@ public sealed class DomainModelTests
         var sequence = new RunEventSequenceModel().Append(Event(runSequence: 1, executorEpoch: 2));
 
         Assert.Throws<InvalidOperationException>(() => sequence.Append(Event(runSequence: 2, executorEpoch: 1)));
+    }
+
+    [Fact]
+    public void Run_event_sequence_accepts_consecutive_appends_and_newer_epochs_then_rejects_stale()
+    {
+        var sequence = new RunEventSequenceModel()
+            .Append(Event(runSequence: 1, executorEpoch: 1))
+            .Append(Event(runSequence: 2, executorEpoch: 1))
+            .Append(Event(runSequence: 3, executorEpoch: 2));
+
+        Assert.Throws<InvalidOperationException>(() => sequence.Append(Event(runSequence: 4, executorEpoch: 1)));
+        _ = sequence.Append(Event(runSequence: 4, executorEpoch: 2));
     }
 
     private static SemanticAction Action(string actionId) =>
