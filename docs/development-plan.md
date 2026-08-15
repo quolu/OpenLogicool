@@ -1407,7 +1407,7 @@ LGS Parityは、Phase 0のcanonical inventoryでLGS 9.04.49上の存在を確認
 | Decision | 期限 | 決定材料 |
 |---|---|---|
 | Windows 10をSupportedに含めるか | Phase 0終了 | lifecycle文書とruntime要件の書面判定（「含める」判断の場合だけclean VM実測を追加してから確定する） |
-| G600 方式A／B／C route | G0-Device-W（Phase 2入口） | G0-Device-ROの観測記録、EXP-MIG-01、EXP-G600-03、方式B残存時はwrite拡張実測 |
+| G600 方式A／B／C route | **決定済み（2026-08-15 オーナー裁定）: B変種を主経路（side 12ボタンを中間usage F13〜F24へ書換えて legacy 無害化）、Aを補完（slot 一括切替・退避）、Cは不採用のまま最後の手段** | 全実験成立: EXP-MIG-01（apply往復）、EXP-G600-03（slot切替）、EXP-G600-02 write拡張（[g600-route-assessment-2026-08-15.md](g600-route-assessment-2026-08-15.md) §5） |
 | hard-crash watchdog | Phase 2内・held-output機能の実装前 | EXP-IN-03（Phase 2序盤に割当。SendInput経路の最小実装で実測）、process追加cost、UIPI/IL条件（§6.2） |
 | WGC以外のbackendを製品化するか | Phase 5開始 | capability matrix |
 | AI provider／local model | Phase 6内・Teach mode実装前 | EXP-AI-01 frozen benchmark（Phase 6序盤に割当。corpusはPhase 5成果を使う）、cost、data policy |
