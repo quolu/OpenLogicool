@@ -45,6 +45,20 @@ direct SET_FEATURE による onboard write は、**書くたびに格納結果�
 - 成立の残り道は F6 コマンド系（LGS 正規経路）の解明だけ。これは protocol 調査（rag の公開実装・USB キャプチャ）を要する
 - EXP-G600-04（154-byte 全量 write）は direct 経路では **不成立と判定**
 
+## 二次障害と復旧（同日 19:43〜）
+
+案B実行中、**LGS UI で onboard 側のライティング色を変更した瞬間にマウスが全操作不能**になった。観測事実:
+
+- F0 が 2B→0A へ変化（LGS が device を onboard モード側へ切替えたとみられる）
+- ずれた F3（profile 1）が active になり、DPI 表もずれているため実効 DPI が無効値＝カーソル停止、という機序で説明がつく
+- **復旧**: LCore を停止 → 今朝 backup した `settings.json`／profiles を書き戻し → LCore 再起動（host 制御＝自動ゲーム検出へ復帰）。**マウス完全復旧をオーナーが確認**（19:5x）
+- 復旧後の device: F4/F5 は依然無傷。F3 はずれたまま、F0 は 0B（意味未解読）。onboard 側の復元は未完
+
+教訓の追加:
+
+4. **onboard が壊れている状態で LGS を onboard モードへ切り替えてはならない**。壊れた profile が active になり、入力デバイスそのものを失う。onboard 復元の再試行時は、先にマウスキー等の代替入力を確保してから行う
+5. LGS の host 設定（settings.json・profiles）の事前 backup は、device 側だけでなく **host 側の復旧経路としても機能した**（Migration Safety Gate の inventory #4 の価値の実証）
+
 ## 参照
 
 - backup（無傷・SHA-256 封入済み）: `probe-output/mig01-backup-20260815/`
