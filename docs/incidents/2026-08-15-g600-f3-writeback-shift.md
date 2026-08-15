@@ -83,6 +83,16 @@ power cycle（USB 抜き挿し）で firmware runtime をリセット後、Claud
 
 **方式判定への更新**: 方式A/B（onboard write を要する経路）は「不成立」ではなく「**settle+retry+fresh handle 前提なら公開実績あり**」へ格上げ。EXP-G600-03（F0 slot 切替）も同じ運用前提で再設計すれば成立余地がある。ただし F0 上位 nibble の誤操作は入力全喪失を招く（本 incident の二次障害と libratbag #1291 実機ログで実証済み）ため、slot 切替は 0..2 の正規値だけを扱う。
 
+## 復旧成立（evidence-based restore・2026-08-15 夜・オーナー裁定）
+
+公開運用知を焼き込んだ `g600-restore-retry`（fresh open → settle 2s → SET_FEATURE → 別 fresh open → settle 2s → readback → 一致まで最大 N 回再送）を実装し、F3/F5 を backup から復元した。
+
+- **F3・F5 とも1回目の試行で backup と byte 完全一致**。3回目の独立 backup 読取でも F3/F4/F5 すべて backup 一致を確認（F0 は active-slot runtime 状態のため差分許容）。
+- 前回ずれた原因は「単発 write・handle 再利用・settle なし」で確定的に説明がつく。fresh open + settle + 非再利用にしただけで一発成立した。
+- **これにより Migration Safety Gate の restore 能力（DEV-010 の restore 実証部分）が初めて実機で成立**した。backup → 破損 → restore → byte 一致の一巡が通った。
+
+**G0-Device-W の再評価**: onboard write は「凍結・不成立」から「**settle+retry+fresh handle 前提で成立（restore 実証済み）**」へ。ただし apply（意図的な内容変更）の実証と EXP-G600-03（F0 slot 切替）は未了。write 作法は本 probe の `g600-restore-retry` が確立した手順を踏襲する。
+
 ## 参照
 
 - backup（無傷・SHA-256 封入済み）: `probe-output/mig01-backup-20260815/`

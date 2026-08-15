@@ -19,6 +19,7 @@ return command switch
     "g600-led-apply-restore" => G600LedApplyRestore(args[1..]),
     "g600-slot" => G600Slot(args[1..]),
     "g600-f3-compensated-restore" => G600F3CompensatedRestore(args[1..]),
+    "g600-restore-retry" => G600RestoreRetry(args[1..]),
     "record" => OpenLogicool.Probe.RawInputRecorder.Run(
         args.Length > 1 ? args[1] : "session",
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output")),
@@ -206,6 +207,107 @@ static int G600Writeback(string[] arguments)
                 "F3 SetFeature was sent; readback failed and no retry or restore was attempted."), 2);
         }
     }
+}
+
+// evidence-based restore（rag/openlogicool/g600-write-protocol-2026-08-15.md）。
+// 公開運用知: fresh open・open後 settle・handle 非再利用・fresh open で readback・一致まで再送。
+// backup が完全なので不一致でも後退なし。write 対象は F3/F4/F5 のみ（F6 は EnsureAllowed で拒否）。
+static int G600RestoreRetry(string[] arguments)
+{
+    const string probe = "g600-restore-retry";
+    string? backupPath = null;
+    var targets = new List<byte>();
+    var maxAttempts = 8;
+    var settleMs = 2000;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--backup" when i + 1 < arguments.Length: backupPath = arguments[++i]; break;
+            case "--report" when i + 1 < arguments.Length:
+                foreach (var token in arguments[++i].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    var id = Convert.ToByte(token.Replace("0x", "", StringComparison.OrdinalIgnoreCase), 16);
+                    targets.Add(id);
+                }
+                break;
+            case "--max-attempts" when i + 1 < arguments.Length: maxAttempts = int.Parse(arguments[++i]); break;
+            case "--settle-ms" when i + 1 < arguments.Length: settleMs = int.Parse(arguments[++i]); break;
+        }
+    }
+    if (backupPath is null)
+        return EmitWriteResult(NewWriteResult(probe, "argument-validation", "--backup <path> is required."), 1);
+    if (targets.Count == 0)
+    {
+        targets.Add(0xF3);
+        targets.Add(0xF5);
+    }
+    foreach (var id in targets)
+    {
+        if (id is not (0xF3 or 0xF4 or 0xF5))
+            return EmitWriteResult(NewWriteResult(probe, "argument-validation", $"report 0x{id:X2} is not a restorable profile report (F3/F4/F5 only)."), 1);
+    }
+
+    G600BackupSnapshot snapshot;
+    try
+    {
+        snapshot = G600BackupSnapshot.Load(backupPath);
+    }
+    catch (Exception ex)
+    {
+        return EmitWriteResult(NewWriteResult(probe, "backup-load", $"{ex.GetType().Name}: {ex.Message}"), 1);
+    }
+
+    var perReport = new List<G600WriteStep>();
+    var allMatched = true;
+
+    foreach (var reportId in targets)
+    {
+        var backupBytes = snapshot.Reports[reportId];
+        var matched = false;
+        byte[]? lastRead = null;
+
+        for (var attempt = 1; attempt <= maxAttempts && !matched; attempt++)
+        {
+            // write: fresh open → settle → SET_FEATURE → close
+            var writeDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+                .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+            if (writeDevice is null || !writeDevice.TryOpen(out var writeStream))
+                return EmitWriteResult(NewWriteResult(probe, "device-open", $"could not open G600 for write (report 0x{reportId:X2}, attempt {attempt}).", steps: perReport), 2);
+            using (writeStream)
+            {
+                System.Threading.Thread.Sleep(settleMs);
+                SetWritableFeature(writeStream, backupBytes);
+            }
+
+            // verify: fresh open → settle → GET_FEATURE → close（同一 stream の直後 read は使わない）
+            var verifyDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+                .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+            if (verifyDevice is null || !verifyDevice.TryOpen(out var verifyStream))
+                return EmitWriteResult(NewWriteResult(probe, "verify-open", $"write sent but could not reopen for verify (report 0x{reportId:X2}, attempt {attempt}).", steps: perReport), 2);
+            using (verifyStream)
+            {
+                System.Threading.Thread.Sleep(settleMs);
+                lastRead = ReadFeature(verifyStream, reportId);
+            }
+
+            matched = lastRead.AsSpan().SequenceEqual(backupBytes);
+            perReport.Add(Step($"0x{reportId:X2}-attempt{attempt}", backupBytes, lastRead, matched));
+        }
+
+        if (!matched)
+            allMatched = false;
+    }
+
+    return EmitWriteResult(NewWriteResult(
+        probe,
+        "restore-retry",
+        allMatched ? null : "one or more target reports did not match backup within max attempts. Backup is intact; retry or use LGS.",
+        steps: perReport,
+        deviceState: allMatched
+            ? "All target reports match backup after retry restore (fresh-open verified)."
+            : "Some target reports still differ; no regression risk (backup complete)."),
+        allMatched ? 0 : 2);
 }
 
 // incident 2026-08-15-g600-f3-writeback-shift の補償 restore（オーナー裁定 案A）。
