@@ -1,0 +1,199 @@
+﻿{
+  "Probe": "enumerate",
+  "CapturedAtUtc": "2026-08-15T04:13:19.4975874Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "DeviceCount": 4,
+  "Devices": [
+    {
+      "DevicePath": "\\\\?\\hid#vid_046d\u0026pid_c232#2\u002633191fed\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}\\kbd",
+      "VendorId": "0x046D",
+      "ProductId": "0xC232",
+      "ReleaseNumber": "0001",
+      "MaxInputReportLength": 9,
+      "MaxOutputReportLength": 2,
+      "MaxFeatureReportLength": 0,
+      "RawDescriptorLength": 50,
+      "TopLevelCollections": [
+        {
+          "Usages": [
+            "0x00010006 (GenericDesktop/0x06)"
+          ],
+          "InputReports": [
+            {
+              "ReportId": 0,
+              "LengthBytes": 9,
+              "DataItemCount": 2
+            }
+          ],
+          "OutputReports": [
+            {
+              "ReportId": 0,
+              "LengthBytes": 2,
+              "DataItemCount": 2
+            }
+          ],
+          "FeatureReports": []
+        }
+      ]
+    },
+    {
+      "DevicePath": "\\\\?\\hid#vid_046d\u0026pid_c21c#a\u00262837f99\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "VendorId": "0x046D",
+      "ProductId": "0xC21C",
+      "ReleaseNumber": "0203",
+      "MaxInputReportLength": 8,
+      "MaxOutputReportLength": 992,
+      "MaxFeatureReportLength": 258,
+      "ProductName": "G13",
+      "RawDescriptorLength": 124,
+      "TopLevelCollections": [
+        {
+          "Usages": [
+            "0xFF000000 (VendorDefined/0x00)"
+          ],
+          "InputReports": [
+            {
+              "ReportId": 1,
+              "LengthBytes": 8,
+              "DataItemCount": 1
+            }
+          ],
+          "OutputReports": [
+            {
+              "ReportId": 3,
+              "LengthBytes": 992,
+              "DataItemCount": 1
+            }
+          ],
+          "FeatureReports": [
+            {
+              "ReportId": 7,
+              "LengthBytes": 258,
+              "DataItemCount": 2
+            },
+            {
+              "ReportId": 4,
+              "LengthBytes": 258,
+              "DataItemCount": 2
+            },
+            {
+              "ReportId": 5,
+              "LengthBytes": 258,
+              "DataItemCount": 2
+            },
+            {
+              "ReportId": 6,
+              "LengthBytes": 258,
+              "DataItemCount": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "DevicePath": "\\\\?\\hid#vid_046d\u0026pid_c24a\u0026mi_01\u0026col01#a\u0026d27ebe9\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}\\kbd",
+      "VendorId": "0x046D",
+      "ProductId": "0xC24A",
+      "ReleaseNumber": "7702",
+      "MaxInputReportLength": 7,
+      "MaxOutputReportLength": 0,
+      "MaxFeatureReportLength": 0,
+      "Manufacturer": "Logitech",
+      "ProductName": "Gaming Mouse G600",
+      "SerialNumber": "(redacted)",
+      "RawDescriptorLength": 38,
+      "TopLevelCollections": [
+        {
+          "Usages": [
+            "0x00010006 (GenericDesktop/0x06)"
+          ],
+          "InputReports": [
+            {
+              "ReportId": 1,
+              "LengthBytes": 7,
+              "DataItemCount": 2
+            }
+          ],
+          "OutputReports": [],
+          "FeatureReports": []
+        }
+      ]
+    },
+    {
+      "DevicePath": "\\\\?\\hid#vid_046d\u0026pid_c24a\u0026mi_01\u0026col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "VendorId": "0x046D",
+      "ProductId": "0xC24A",
+      "ReleaseNumber": "7702",
+      "MaxInputReportLength": 32,
+      "MaxOutputReportLength": 0,
+      "MaxFeatureReportLength": 154,
+      "Manufacturer": "Logitech",
+      "ProductName": "Gaming Mouse G600",
+      "SerialNumber": "(redacted)",
+      "RawDescriptorLength": 193,
+      "TopLevelCollections": [
+        {
+          "Usages": [
+            "0xFF800080 (VendorDefined/0x80)"
+          ],
+          "InputReports": [
+            {
+              "ReportId": 128,
+              "LengthBytes": 32,
+              "DataItemCount": 2
+            },
+            {
+              "ReportId": 246,
+              "LengthBytes": 32,
+              "DataItemCount": 2
+            },
+            {
+              "ReportId": 247,
+              "LengthBytes": 32,
+              "DataItemCount": 1
+            }
+          ],
+          "OutputReports": [],
+          "FeatureReports": [
+            {
+              "ReportId": 240,
+              "LengthBytes": 154,
+              "DataItemCount": 2
+            },
+            {
+              "ReportId": 241,
+              "LengthBytes": 154,
+              "DataItemCount": 2
+            },
+            {
+              "ReportId": 242,
+              "LengthBytes": 154,
+              "DataItemCount": 2
+            },
+            {
+              "ReportId": 243,
+              "LengthBytes": 154,
+              "DataItemCount": 1
+            },
+            {
+              "ReportId": 244,
+              "LengthBytes": 154,
+              "DataItemCount": 1
+            },
+            {
+              "ReportId": 245,
+              "LengthBytes": 154,
+              "DataItemCount": 1
+            },
+            {
+              "ReportId": 246,
+              "LengthBytes": 154,
+              "DataItemCount": 2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
