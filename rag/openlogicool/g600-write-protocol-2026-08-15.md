@@ -59,6 +59,14 @@ OpenRGB #920 に貼られた G600 の生 HID report descriptor（Usage Page 0xFF
 - **F3/F5 復元の evidence-based path**: backup の F3/F5 bytes を、(1) 毎回 fresh open (2) open 後 settle≥2s (3) SET_FEATURE (4) fresh open で readback (5) 一致まで最大 N 回再送（不一致でも backup があるので後退なし）。これは公開実装の運用そのもの。
 - ただし device write は現在オーナー裁定で凍結中。本 path の実行可否は別途裁定を要する。
 
+## 実機検証の結果（2026-08-15 夜・我々の実装）
+
+公開運用知を焼き込んだ evidence-based 作法（fresh open・open 後 settle 2s・handle 非再利用・fresh open で verify・一致まで再送）を実装し、実機 G600（firmware 7702）で成立させた。
+
+- **restore**（`g600-restore-retry`）: 破損した F3/F5 を backup から復元、**両方 attempt1 で byte 一致**。
+- **apply 往復**（`g600-apply-verify`）: F3 の LED RGB を XOR 反転して apply → verify → backup へ restore → verify、**apply・restore とも attempt1 で byte 一致**。
+- 昨夜の incident（単発 write・settle なし・handle 再利用）で起きたずれは、上記作法で**確定的に解消**した。公開実装の「5〜10 回再送が要る」という運用知に対し、我々の環境（fresh handle 毎回・settle 2s）では 1 回で成立している。settle と handle 非再利用が支配的要因で、再送は保険とみられる。
+
 ## HID++ 対応
 
 G600 は HID++ 1.0/2.0 ではなく専用 vendor protocol（Solaar メンテナが descriptor 実見の上 close、descriptor に 0x10/0x11 short/long report が無い、OpenRGB 開発者も同判断）。libratbag の G600 driver は hidpp20 を呼ばない独立 driver。

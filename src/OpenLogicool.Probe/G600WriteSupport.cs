@@ -202,6 +202,23 @@ public static class G600BackupVerifier
     }
 }
 
+public static class G600ApplyProbe
+{
+    // apply 実証用の検証 payload: backup F3 の LED RGB（report ID を含む offset 1–3、g600-profile-decode）を
+    // XOR 0xFF で反転する。反転値は必ず backup と異なり、鍵割当など他 byte は保つ。restore で元へ戻せる。
+    public static byte[] BuildLedFlippedF3(byte[] backupF3)
+    {
+        if (backupF3.Length != 154 || backupF3[0] != 0xF3)
+            throw new ArgumentException("backup F3 must be a 154-byte report starting with 0xF3.", nameof(backupF3));
+
+        var modified = backupF3.ToArray();
+        modified[1] ^= 0xFF;
+        modified[2] ^= 0xFF;
+        modified[3] ^= 0xFF;
+        return modified;
+    }
+}
+
 public static class G600WritableFeatureReports
 {
     public static bool IsAllowed(byte reportId) => reportId is 0xF0 or 0xF3 or 0xF4 or 0xF5;

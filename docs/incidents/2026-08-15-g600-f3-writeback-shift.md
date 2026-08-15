@@ -93,9 +93,20 @@ power cycle（USB 抜き挿し）で firmware runtime をリセット後、Claud
 
 **G0-Device-W の再評価**: onboard write は「凍結・不成立」から「**settle+retry+fresh handle 前提で成立（restore 実証済み）**」へ。ただし apply（意図的な内容変更）の実証と EXP-G600-03（F0 slot 切替）は未了。write 作法は本 probe の `g600-restore-retry` が確立した手順を踏襲する。
 
+## apply 実証成立（onboard write 全周成立・2026-08-15 夜・オーナー裁定）
+
+restore 作法を踏襲した apply 実証コマンド `g600-apply-verify` を実装し、実機で成立させた。restore（同一 bytes の書き戻し）だけでなく、**意図的に内容を変えた profile を byte 正確に書き込めるか**を検証したもの。
+
+- 手順: clean 前提確認（F3/F4/F5 が backup 一致）→ F3 の LED RGB（offset 1–3）を XOR 反転した payload を evidence-based 作法で apply → fresh verify → apply の成否に関わらず backup を restore → fresh verify。鍵割当 byte は一切変更しない。
+- 結果（`probe-output/g600-apply-verify-20260815-121407-438.json`）: **apply・restore とも attempt1 で byte 完全一致、exit 0**。最終 device 状態は backup と一致、日常使用（マウス）も正常をオーナー確認。
+- 意味: **Migration Safety Gate DEV-010 の一巡（backup → 意図的改変 → byte 一致 → restore → byte 一致）が apply を含めて実証**された。onboard write は restore 片道でなく往復（書換→復元）で成立。Input Studio の onboard write 機能の中核前提が立った。
+
+**G0-Device-W の再評価（更新）**: onboard write は「settle+retry+fresh handle 前提で成立（restore 実証済み）」から「**apply 往復まで実証済み**」へ。残る未了は EXP-G600-03（F0 slot 切替）と 0A UI 照合のみ。write 作法は `g600-restore-retry` / `g600-apply-verify` が共有する evidence-based 手順（fresh open・settle≥2s・handle 非再利用・fresh open で verify・一致まで再送）を正とする。
+
 ## 参照
 
 - backup（無傷・SHA-256 封入済み）: `probe-output/mig01-backup-20260815/`
+- apply 実証の実行記録: `probe-output/g600-apply-verify-20260815-121407-438.json`
 - 段2成立表示の実行記録: `probe-output/g600-writeback-20260815-102124-305.json`
 - 段3停止の実行記録: `probe-output/g600-led-apply-restore-20260815-102135-385.json`
 - 手順定義: [migration-safety-gate.md](../migration-safety-gate.md)

@@ -45,6 +45,37 @@ public sealed class G600WriteSupportTests
         Assert.False(profileDifference.Comparisons.Single(comparison => comparison.ReportId == "0xF3").IsMatch);
     }
 
+    [Fact]
+    public void Apply_probe_flips_only_led_bytes_and_is_reversible()
+    {
+        var backupF3 = Report(0xF3, 0x03);
+        backupF3[1] = 0x10; // LED R
+        backupF3[2] = 0x20; // LED G
+        backupF3[3] = 0x30; // LED B
+        backupF3[4] = 0xAB; // key mapping byte (must be preserved)
+
+        var modified = G600ApplyProbe.BuildLedFlippedF3(backupF3);
+
+        Assert.Equal(154, modified.Length);
+        Assert.Equal(0xF3, modified[0]);
+        Assert.Equal(0x10 ^ 0xFF, modified[1]);
+        Assert.Equal(0x20 ^ 0xFF, modified[2]);
+        Assert.Equal(0x30 ^ 0xFF, modified[3]);
+        Assert.Equal(0xAB, modified[4]);
+        Assert.False(modified.AsSpan().SequenceEqual(backupF3));
+
+        // XOR は可逆: 再度反転すると backup に戻る（restore payload = backup そのもの）
+        var reverted = G600ApplyProbe.BuildLedFlippedF3(modified);
+        Assert.True(reverted.AsSpan().SequenceEqual(backupF3));
+    }
+
+    [Fact]
+    public void Apply_probe_rejects_a_report_that_is_not_a_154_byte_f3()
+    {
+        Assert.Throws<ArgumentException>(() => G600ApplyProbe.BuildLedFlippedF3(new byte[154])); // report id not 0xF3
+        Assert.Throws<ArgumentException>(() => G600ApplyProbe.BuildLedFlippedF3(Report(0xF3, 0x03)[..100])); // wrong length
+    }
+
     private static string BackupJson() => JsonSerializer.Serialize(new
     {
         Reports = new[]

@@ -20,10 +20,11 @@ return command switch
     "g600-slot" => G600Slot(args[1..]),
     "g600-f3-compensated-restore" => G600F3CompensatedRestore(args[1..]),
     "g600-restore-retry" => G600RestoreRetry(args[1..]),
+    "g600-apply-verify" => G600ApplyVerify(args[1..]),
     "record" => OpenLogicool.Probe.RawInputRecorder.Run(
         args.Length > 1 ? args[1] : "session",
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output")),
-    _ => Fail($"unknown command: {command}. available: enumerate, g600-backup, record [label], g600-writeback, g600-led-apply-restore, g600-slot"),
+    _ => Fail($"unknown command: {command}. available: enumerate, g600-backup, record [label], g600-writeback, g600-led-apply-restore, g600-slot, g600-restore-retry, g600-apply-verify"),
 };
 
 static int Fail(string message)
@@ -264,37 +265,9 @@ static int G600RestoreRetry(string[] arguments)
     foreach (var reportId in targets)
     {
         var backupBytes = snapshot.Reports[reportId];
-        var matched = false;
-        byte[]? lastRead = null;
-
-        for (var attempt = 1; attempt <= maxAttempts && !matched; attempt++)
-        {
-            // write: fresh open → settle → SET_FEATURE → close
-            var writeDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-                .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
-            if (writeDevice is null || !writeDevice.TryOpen(out var writeStream))
-                return EmitWriteResult(NewWriteResult(probe, "device-open", $"could not open G600 for write (report 0x{reportId:X2}, attempt {attempt}).", steps: perReport), 2);
-            using (writeStream)
-            {
-                System.Threading.Thread.Sleep(settleMs);
-                SetWritableFeature(writeStream, backupBytes);
-            }
-
-            // verify: fresh open → settle → GET_FEATURE → close（同一 stream の直後 read は使わない）
-            var verifyDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-                .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
-            if (verifyDevice is null || !verifyDevice.TryOpen(out var verifyStream))
-                return EmitWriteResult(NewWriteResult(probe, "verify-open", $"write sent but could not reopen for verify (report 0x{reportId:X2}, attempt {attempt}).", steps: perReport), 2);
-            using (verifyStream)
-            {
-                System.Threading.Thread.Sleep(settleMs);
-                lastRead = ReadFeature(verifyStream, reportId);
-            }
-
-            matched = lastRead.AsSpan().SequenceEqual(backupBytes);
-            perReport.Add(Step($"0x{reportId:X2}-attempt{attempt}", backupBytes, lastRead, matched));
-        }
-
+        var (matched, openError) = WriteFeatureWithRetry(reportId, backupBytes, maxAttempts, settleMs, $"0x{reportId:X2}", perReport);
+        if (openError is not null)
+            return EmitWriteResult(NewWriteResult(probe, "device-open", openError, steps: perReport), 2);
         if (!matched)
             allMatched = false;
     }
@@ -308,6 +281,106 @@ static int G600RestoreRetry(string[] arguments)
             ? "All target reports match backup after retry restore (fresh-open verified)."
             : "Some target reports still differ; no regression risk (backup complete)."),
         allMatched ? 0 : 2);
+}
+
+// onboard apply 実証（Migration Safety Gate DEV-010 / Input Studio onboard write の前提）。
+// clean 状態（F3/F4/F5 が backup 一致）を fresh open で確認 → 意図的に改変した F3 を evidence-based 作法で書き、
+// fresh verify で反映を確認 → apply の成否に関わらず backup へ restore し、fresh verify で一致確認。
+// backup が完全なので apply が失敗しても後退なし。write 対象は F3 のみ、改変は LED RGB だけ（鍵割当は保つ）。
+static int G600ApplyVerify(string[] arguments)
+{
+    const string probe = "g600-apply-verify";
+    string? backupPath = null;
+    var maxAttempts = 8;
+    var settleMs = 2000;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--backup" when i + 1 < arguments.Length: backupPath = arguments[++i]; break;
+            case "--max-attempts" when i + 1 < arguments.Length: maxAttempts = int.Parse(arguments[++i]); break;
+            case "--settle-ms" when i + 1 < arguments.Length: settleMs = int.Parse(arguments[++i]); break;
+        }
+    }
+    if (backupPath is null)
+        return EmitWriteResult(NewWriteResult(probe, "argument-validation", "--backup <path> is required."), 1);
+
+    G600BackupSnapshot snapshot;
+    try
+    {
+        snapshot = G600BackupSnapshot.Load(backupPath);
+    }
+    catch (Exception ex)
+    {
+        return EmitWriteResult(NewWriteResult(probe, "backup-load", $"{ex.GetType().Name}: {ex.Message}"), 1);
+    }
+
+    var backupF3 = snapshot.Reports[0xF3];
+    var modified = G600ApplyProbe.BuildLedFlippedF3(backupF3);
+
+    // precondition: F3/F4/F5 が backup 一致（clean 状態）かを確認。合致しなければ何も書かない。
+    var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+    if (device is null || !device.TryOpen(out var preStream))
+        return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection could not be opened."), 2);
+
+    var current = new Dictionary<byte, byte[]>();
+    using (preStream)
+    {
+        try
+        {
+            foreach (var id in new byte[] { 0xF3, 0xF4, 0xF5 })
+                current[id] = ReadFeature(preStream, id);
+        }
+        catch (Exception ex)
+        {
+            return EmitWriteResult(NewWriteResult(probe, "precondition-read", $"{ex.GetType().Name}: {ex.Message}"), 2);
+        }
+    }
+
+    foreach (var id in new byte[] { 0xF3, 0xF4, 0xF5 })
+    {
+        if (!current[id].AsSpan().SequenceEqual(snapshot.Reports[id]))
+            return EmitWriteResult(NewWriteResult(
+                probe,
+                "precondition",
+                $"report 0x{id:X2} does not match backup; device is not in a clean backup state. Nothing was written.",
+                steps: new[] { Step($"precondition-0x{id:X2}", snapshot.Reports[id], current[id], false) },
+                deviceState: "No write attempted; restore first with g600-restore-retry if the device is dirty."), 2);
+    }
+
+    var steps = new List<G600WriteStep>();
+
+    // apply: 改変 payload を evidence-based 作法で書き、fresh verify で反映を確認
+    var (applyMatched, applyOpenError) = WriteFeatureWithRetry(0xF3, modified, maxAttempts, settleMs, "apply", steps);
+    if (applyOpenError is not null)
+        return EmitWriteResult(NewWriteResult(probe, "apply-open", applyOpenError,
+            steps: steps,
+            deviceState: "apply phase could not open the device; restore not attempted. Backup is intact."), 2);
+
+    // restore: apply の成否に関わらず backup へ必ず戻す
+    var (restoreMatched, restoreOpenError) = WriteFeatureWithRetry(0xF3, backupF3, maxAttempts, settleMs, "restore", steps);
+    if (restoreOpenError is not null)
+        return EmitWriteResult(NewWriteResult(probe, "restore-open", restoreOpenError,
+            steps: steps,
+            deviceState: "restore phase could not reopen the device. Backup is intact; re-run g600-restore-retry."), 2);
+
+    var ok = applyMatched && restoreMatched;
+    var state = (applyMatched, restoreMatched) switch
+    {
+        (true, true) => "Apply landed byte-exact and restore returned F3 to backup (fresh-open verified). Onboard apply capability proven.",
+        (false, true) => "Apply did not land within max attempts, but restore returned F3 to backup. No regression.",
+        (true, false) => "Apply landed but restore did not match backup within max attempts. Run g600-restore-retry; backup is intact.",
+        (false, false) => "Neither apply nor restore matched within max attempts; backup is intact.",
+    };
+
+    return EmitWriteResult(NewWriteResult(
+        probe,
+        "apply-verify",
+        ok ? null : "apply or restore did not reach a byte-exact match within max attempts.",
+        steps: steps,
+        deviceState: state),
+        ok ? 0 : 2);
 }
 
 // incident 2026-08-15-g600-f3-writeback-shift の補償 restore（オーナー裁定 案A）。
@@ -654,6 +727,43 @@ static void SetWritableFeature(HidStream stream, byte[] report)
 
     G600WritableFeatureReports.EnsureAllowed(report[0]);
     stream.SetFeature(report);
+}
+
+// evidence-based write 作法（rag/openlogicool/g600-write-protocol-2026-08-15.md）を1箇所に集約する。
+// 各 attempt: fresh open → settle → SET_FEATURE → close、続いて fresh open → settle → GET_FEATURE → close で verify。
+// 同一 stream の直後 read は証拠にしない。一致するか maxAttempts に達するまで再送。open 失敗は OpenError で返す。
+static (bool Matched, string? OpenError) WriteFeatureWithRetry(
+    byte reportId, byte[] desiredBytes, int maxAttempts, int settleMs, string stepPrefix, List<G600WriteStep> steps)
+{
+    var matched = false;
+    for (var attempt = 1; attempt <= maxAttempts && !matched; attempt++)
+    {
+        var writeDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        if (writeDevice is null || !writeDevice.TryOpen(out var writeStream))
+            return (false, $"could not open G600 for write (report 0x{reportId:X2}, {stepPrefix} attempt {attempt}).");
+        using (writeStream)
+        {
+            System.Threading.Thread.Sleep(settleMs);
+            SetWritableFeature(writeStream, desiredBytes);
+        }
+
+        var verifyDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        if (verifyDevice is null || !verifyDevice.TryOpen(out var verifyStream))
+            return (false, $"write sent but could not reopen for verify (report 0x{reportId:X2}, {stepPrefix} attempt {attempt}).");
+        byte[] lastRead;
+        using (verifyStream)
+        {
+            System.Threading.Thread.Sleep(settleMs);
+            lastRead = ReadFeature(verifyStream, reportId);
+        }
+
+        matched = lastRead.AsSpan().SequenceEqual(desiredBytes);
+        steps.Add(Step($"{stepPrefix}-attempt{attempt}", desiredBytes, lastRead, matched));
+    }
+
+    return (matched, null);
 }
 
 static G600WriteStep Step(string name, byte[] expected, byte[]? actual, bool isMatch) =>
