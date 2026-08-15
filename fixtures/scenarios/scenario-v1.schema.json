@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenLogicool GameLab scenario-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "scenarioId", "schema", "seed", "virtualClock", "initialState", "allowedActions",
+    "expectedFrameReference", "expectedObservationReference", "expectedEventSequence",
+    "irreversibleEffectCount", "resetMethod", "viewport", "dpi", "frameTimeMs",
+    "popup", "delay", "unknown", "manualIntervention", "crashPoint"
+  ],
+  "properties": {
+    "scenarioId": { "type": "string" },
+    "schema": { "const": "scenario-v1" },
+    "seed": { "type": "integer" },
+    "virtualClock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["initialMonotonicMs", "dayLengthMs"],
+      "properties": {
+        "initialMonotonicMs": { "type": "number" },
+        "dayLengthMs": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "initialState": { "type": "string" },
+    "allowedActions": { "type": "array", "items": { "type": "string" } },
+    "expectedFrameReference": { "type": "string" },
+    "expectedObservationReference": { "type": "string" },
+    "expectedEventSequence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["seq", "monotonicMs", "stateId", "cause", "scenarioId"],
+        "properties": {
+          "seq": { "type": "integer" },
+          "monotonicMs": { "type": "number" },
+          "stateId": { "type": "string" },
+          "cause": { "type": "string" },
+          "scenarioId": { "type": "string" }
+        }
+      }
+    },
+    "irreversibleEffectCount": { "type": "integer", "minimum": 0 },
+    "resetMethod": { "type": "string" },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "dpi": { "type": "number", "exclusiveMinimum": 0 },
+    "frameTimeMs": { "type": "number", "exclusiveMinimum": 0 },
+    "popup": { "$ref": "#/$defs/seededChance" },
+    "delay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transitionDelayMs"],
+      "properties": { "transitionDelayMs": { "type": "number", "minimum": 0 } }
+    },
+    "unknown": { "$ref": "#/$defs/seededChance" },
+    "manualIntervention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invokeAfterActions"],
+      "properties": { "invokeAfterActions": { "type": "boolean" } }
+    },
+    "crashPoint": { "type": "string" }
+  },
+  "$defs": {
+    "seededChance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": { "type": "integer", "minimum": 0 },
+        "denominator": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

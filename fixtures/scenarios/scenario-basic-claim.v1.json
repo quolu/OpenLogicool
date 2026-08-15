@@ -1,0 +1,31 @@
+{
+  "scenarioId": "scenario.basic-claim.v1",
+  "schema": "scenario-v1",
+  "seed": 2,
+  "virtualClock": {
+    "initialMonotonicMs": 0,
+    "dayLengthMs": 86400000
+  },
+  "initialState": "state.main-menu",
+  "allowedActions": ["ClosePopup", "OpenRewards", "SelectReward", "Confirm"],
+  "expectedFrameReference": "frames/gamelab-basic-claim.png",
+  "expectedObservationReference": "contracts/observation-result.gamelab-live.json",
+  "expectedEventSequence": [
+    { "seq": 1, "monotonicMs": 0, "stateId": "state.main-menu", "cause": "scenario:start", "scenarioId": "scenario.basic-claim.v1" },
+    { "seq": 2, "monotonicMs": 0, "stateId": "state.main-menu.event-popup", "cause": "auto:popup", "scenarioId": "scenario.basic-claim.v1" },
+    { "seq": 3, "monotonicMs": 100, "stateId": "state.main-menu", "cause": "action:ClosePopup", "scenarioId": "scenario.basic-claim.v1" },
+    { "seq": 4, "monotonicMs": 200, "stateId": "state.reward-list", "cause": "action:OpenRewards", "scenarioId": "scenario.basic-claim.v1" },
+    { "seq": 5, "monotonicMs": 300, "stateId": "state.claim-confirm", "cause": "action:SelectReward", "scenarioId": "scenario.basic-claim.v1" },
+    { "seq": 6, "monotonicMs": 400, "stateId": "state.claim-done", "cause": "action:Confirm", "scenarioId": "scenario.basic-claim.v1" }
+  ],
+  "irreversibleEffectCount": 1,
+  "resetMethod": "virtual-day-boundary",
+  "viewport": { "width": 1920, "height": 1080 },
+  "dpi": 96,
+  "frameTimeMs": 16.6667,
+  "popup": { "numerator": 5, "denominator": 10 },
+  "delay": { "transitionDelayMs": 100 },
+  "unknown": { "numerator": 1, "denominator": 10 },
+  "manualIntervention": { "invokeAfterActions": false },
+  "crashPoint": "none"
+}
