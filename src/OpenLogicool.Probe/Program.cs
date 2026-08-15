@@ -13,7 +13,8 @@ var command = args.Length > 0 ? args[0] : "enumerate";
 return command switch
 {
     "enumerate" => Enumerate(),
-    _ => Fail($"unknown command: {command}. available: enumerate"),
+    "g600-backup" => G600Backup(),
+    _ => Fail($"unknown command: {command}. available: enumerate, g600-backup"),
 };
 
 static int Fail(string message)
@@ -80,6 +81,70 @@ static int Enumerate()
     return 0;
 }
 
+static int G600Backup()
+{
+    const int G600ProductId = 0xC24A;
+
+    // backup 対象は vendor-defined TLC（feature report を宣言している面）だけ
+    var device = DeviceList.Local.GetHidDevices(LogitechVendorId, G600ProductId)
+        .FirstOrDefault(d => TryGet(d.GetMaxFeatureReportLength) is > 0);
+
+    if (device is null)
+        return Fail("G600 vendor-defined collection (feature reports) not found");
+
+    var descriptor = device.GetReportDescriptor();
+    var featureReportIds = descriptor.Reports
+        .Where(r => r.ReportType == ReportType.Feature)
+        .Select(r => r.ReportID)
+        .OrderBy(id => id)
+        .ToList();
+
+    if (!device.TryOpen(out var stream))
+        return Fail($"cannot open device: {device.DevicePath}");
+
+    var reports = new List<FeatureReportDump>();
+    using (stream)
+    {
+        foreach (var reportId in featureReportIds)
+        {
+            var buffer = new byte[device.GetMaxFeatureReportLength()];
+            buffer[0] = reportId;
+            try
+            {
+                stream.GetFeature(buffer);
+                reports.Add(new FeatureReportDump
+                {
+                    ReportId = $"0x{reportId:X2}",
+                    LengthBytes = buffer.Length,
+                    DataHex = Convert.ToHexString(buffer),
+                });
+            }
+            catch (Exception ex)
+            {
+                reports.Add(new FeatureReportDump
+                {
+                    ReportId = $"0x{reportId:X2}",
+                    LengthBytes = buffer.Length,
+                    Error = $"{ex.GetType().Name}: {ex.Message}",
+                });
+            }
+        }
+    }
+
+    var result = new G600BackupResult
+    {
+        Probe = "g600-backup",
+        CapturedAtUtc = DateTime.UtcNow.ToString("O"),
+        Machine = Environment.MachineName,
+        DevicePath = device.DevicePath,
+        FirmwareRelease = device.ReleaseNumberBcd.ToString("X4"),
+        Reports = reports,
+    };
+
+    Console.WriteLine(JsonSerializer.Serialize(result, JsonOptions.Value));
+    return reports.Any(r => r.Error is not null) ? 2 : 0;
+}
+
 static List<ReportRecord> DescribeReports(ReportDescriptor descriptor, DeviceItem item, ReportType type)
 {
     return descriptor.Reports
@@ -140,6 +205,24 @@ internal sealed class EnumerationResult
     public required string OsVersion { get; init; }
     public required int DeviceCount { get; init; }
     public required List<HidDeviceRecord> Devices { get; init; }
+}
+
+internal sealed class G600BackupResult
+{
+    public required string Probe { get; init; }
+    public required string CapturedAtUtc { get; init; }
+    public required string Machine { get; init; }
+    public required string DevicePath { get; init; }
+    public required string FirmwareRelease { get; init; }
+    public required List<FeatureReportDump> Reports { get; init; }
+}
+
+internal sealed class FeatureReportDump
+{
+    public required string ReportId { get; init; }
+    public required int LengthBytes { get; init; }
+    public string? DataHex { get; init; }
+    public string? Error { get; init; }
 }
 
 internal sealed class HidDeviceRecord
