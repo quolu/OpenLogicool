@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "0.1.0",
+  "proposalId": "prop-01J5X3GAMELAB0002",
+  "plannerContext": {
+    "goal": "goal.open-event-screen",
+    "observationId": "obs-01J5X3GAMELAB0001",
+    "budgetRemaining": { "proposals": 18, "costUsd": 0.42 }
+  },
+  "mode": "VerifiedRun",
+  "action": {
+    "semanticActionId": "action.close-popup"
+  },
+  "precondition": {
+    "stateId": "state.main-menu.event-popup",
+    "maxObservationAgeMs": 500
+  },
+  "expectedOutcome": {
+    "stateId": "state.main-menu",
+    "stabilityWindow": { "frames": 3, "minDurationMs": 300 }
+  },
+  "stopCondition": {
+    "timeoutMs": 5000,
+    "onObservationUnavailable": "stop"
+  },
+  "validity": {
+    "frameSequence": 4211,
+    "transformRevision": 3
+  }
+}

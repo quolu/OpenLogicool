@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "0.1.0",
+  "packId": "pack.gamelab-prototype",
+  "packVersion": "0.1.0",
+  "game": {
+    "name": "GameLab Prototype",
+    "build": "gamelab-2026.08",
+    "locale": "ja-JP"
+  },
+  "supportedEnvironments": [
+    {
+      "build": "gamelab-2026.08",
+      "locale": "ja-JP",
+      "uiScale": 1.0,
+      "resolution": "1920x1080",
+      "displayMode": "windowed",
+      "dpi": 96,
+      "hdr": false,
+      "captureBackend": "WindowsGraphicsCapture",
+      "inputRoute": "SendInput",
+      "screenGraphVersion": "0.1.0",
+      "recognizerVersion": "gamelab-recognizers 0.1.0"
+    }
+  ],
+  "sections": {
+    "application-identities": { "path": "application-identities.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "semantic-actions": { "path": "semantic-actions.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "states": { "path": "states.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "recognizers": { "path": "recognizers.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "visual-targets": { "path": "visual-targets.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "screen-graph": { "path": "screen-graph.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "playbooks": { "path": "playbooks/", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "fixtures": { "path": "fixtures/", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "policy-record": { "path": "policy-record.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "migrations": { "path": "migrations/", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" }
+  },
+  "provenance": {
+    "author": "OpenLogicool GameLab",
+    "createdUtc": "2026-08-15T06:00:00Z",
+    "source": "first-party",
+    "license": "internal-prototype"
+  },
+  "trust": "Untrusted",
+  "migrations": []
+}

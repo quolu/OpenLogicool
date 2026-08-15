@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.1.0",
+  "observationId": "obs-01J5X3GAMELAB0001",
+  "frame": {
+    "source": "window:GameLab Prototype",
+    "backend": "WindowsGraphicsCapture",
+    "sequence": 4211,
+    "monotonicTimeMs": 8123456.7,
+    "wallClockUtc": "2026-08-15T06:20:11.482Z",
+    "transformRevision": 3
+  },
+  "status": "Ambiguous",
+  "stateCandidates": [
+    {
+      "stateId": "state.main-menu",
+      "confidence": 0.62,
+      "evidenceRegions": [
+        { "shape": "rect", "normalized": [0.05, 0.02, 0.30, 0.10], "recognizer": "template.title-logo" }
+      ]
+    },
+    {
+      "stateId": "state.main-menu.event-popup",
+      "confidence": 0.55,
+      "evidenceRegions": [
+        { "shape": "rect", "normalized": [0.25, 0.20, 0.75, 0.80], "recognizer": "template.popup-frame" }
+      ]
+    }
+  ],
+  "recognizerVersion": "gamelab-recognizers 0.1.0",
+  "freshnessMs": 48,
+  "unavailableReason": null
+}
