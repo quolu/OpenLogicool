@@ -1,0 +1,45 @@
+# G600 F3 write-back で格納内容が 1 byte 右シフト（EXP-MIG-01 段2→段3 で検出）
+
+- 日時: 2026-08-15（G0-Device-W 初回実機セッション）
+- 状態: **調査中・追加 write 停止中**。restore 方針はオーナー裁定待ち
+- 影響: G600 onboard profile 1（F3）の格納内容が意図しない値になっている。F0/F4/F5 は backup と一致（無傷）
+
+## 事象
+
+EXP-MIG-01 段2（F3 無変更 write-back）を実行した。
+
+1. 開始条件: F0/F3〜F5 の実読が backup と全一致（write 前の device は健全）
+2. 実読 F3（backup と一致）をそのまま SET_FEATURE → **同一 stream での直後 readback は backup と byte 一致**（段2は成立と表示された）
+3. しかし段3の開始条件検査（新 process・新 open での実読）で F3 だけ不一致を検出。probe は設計どおり**何も書かずに停止**した
+
+## 実測で確定した事実
+
+- 現 F3 = backup F3 の **data 先頭（offset 1）に 0x00 が 1 byte 挿入され、末尾 1 byte が押し出された値**。この仮説は byte 単位で完全一致（`hyp == current` を機械検証済み）
+- 3回の独立 re-read で現 F3 は安定（read 経路は健全）。F0/F4/F5 は backup と一致
+- LGS（LCore）稼働中だが、シフトした F3 を LGS が書き戻す挙動は観測されていない（3 read で不変）
+- HidSharp 2.1.0 の `WinHidStream.SetFeature` は buffer を無加工で `HidD_SetFeature` へ渡す（IL 逆コンパイルで確認）。host ライブラリ起因は棄却
+- caps（FeatureReportByteLength）不一致なら `HidD_SetFeature` は失敗するはずだが成功している。Windows HID 層の長さ不整合も棄却
+- probe の buffer 構築は [ReportID F3][data 153 bytes] の 154 bytes で正（コード実読で確認）
+
+## 現時点の解釈（未確定）
+
+消去法により、**G600 firmware が direct SET_FEATURE(F3) の payload を 1 byte ずれて格納する**挙動が最有力。LGS 純正の書込みは write 専用の F6 コマンド系（GET_FEATURE 不能・性質未解明）を経由している可能性があり、direct SET_FEATURE は Logitech の正規経路ではないのかもしれない。段2の「直後 readback 一致」は device/stack の echo か cache とみられ、**write 検証は独立 open の fresh read で行わなければならない**（重要な手順知見）。
+
+## 教訓（確定分・手順へ反映すべきもの）
+
+1. **readback は同一 stream の直後 read を証拠にしない**。新 process（最低でも新 open）の fresh read だけを検証に使う
+2. Migration Safety Gate の設計（backup 必須・開始条件照合・stop-on-mismatch）は機能した。破壊は F3 一枚に封じ込められ、backup が完全である
+3. R-02（G600 write で profile を壊す）は現実の risk だった。EXP-MIG-01 を全 write の前に置いた計画順序は正しかった
+
+## restore の選択肢（裁定待ち）
+
+- **案A: 補償 write 1回**。挿入が決定的なら、左に 1 byte ずらした payload を書けば格納結果が backup と一致する。fresh read で検証、不一致なら即停止。ただし「決定的」の根拠は現状 1 観測のみ
+- **案B: LGS 純正経路で restore**。LGS UI で profile 1 の onboard 設定を再 push させる（Logitech 自身の動作実績ある write 経路）。実機手番が要る
+- **案C: 現状凍結で F6 コマンド系を先に解明**。時間を要するが、正規 write 経路の理解は方式A/B の成立判定にどのみち必要
+
+## 参照
+
+- backup（無傷・SHA-256 封入済み）: `probe-output/mig01-backup-20260815/`
+- 段2成立表示の実行記録: `probe-output/g600-writeback-20260815-102124-305.json`
+- 段3停止の実行記録: `probe-output/g600-led-apply-restore-20260815-102135-385.json`
+- 手順定義: [migration-safety-gate.md](../migration-safety-gate.md)
