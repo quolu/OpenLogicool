@@ -1,0 +1,33 @@
+{
+  "Probe": "wgc-window",
+  "CapturedAtUtc": "2026-08-15T07:17:22.8332725Z",
+  "Machine": "FOX",
+  "Backend": "Windows.Graphics.Capture (IGraphicsCaptureItemInterop.CreateForWindow)",
+  "Target": {
+    "Hwnd": 3936796,
+    "WindowTitle": "\u30BF\u30A4\u30C8\u30EB\u306A\u3057 - \u30E1\u30E2\u5E33",
+    "IsIconic": false,
+    "ItemDisplayName": "\u30BF\u30A4\u30C8\u30EB\u306A\u3057 - \u30E1\u30E2\u5E33",
+    "ItemWidth": 918,
+    "ItemHeight": 1021
+  },
+  "Frames": [
+    {
+      "Sequence": 0,
+      "MonotonicMs": 84.5071,
+      "Width": 918,
+      "Height": 1021,
+      "PixelFormat": "B8G8R8A8_UNorm",
+      "AverageLuminance": 243.5281446139477,
+      "PngFile": "capture-wgc-window-20260815-161722-frame0.png"
+    },
+    {
+      "Sequence": 1,
+      "MonotonicMs": 6302.4396,
+      "Error": {
+        "Type": "System.TimeoutException",
+        "Message": "no frame arrived within 5000ms"
+      }
+    }
+  ]
+}

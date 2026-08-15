@@ -1,0 +1,33 @@
+{
+  "Probe": "wgc-window",
+  "CapturedAtUtc": "2026-08-15T07:16:46.0185770Z",
+  "Machine": "FOX",
+  "Backend": "Windows.Graphics.Capture (IGraphicsCaptureItemInterop.CreateForWindow)",
+  "Target": {
+    "Hwnd": 987478,
+    "WindowTitle": "GameLab Prototype",
+    "IsIconic": false,
+    "ItemDisplayName": "GameLab Prototype",
+    "ItemWidth": 692,
+    "ItemHeight": 466
+  },
+  "Frames": [
+    {
+      "Sequence": 0,
+      "MonotonicMs": 78.2126,
+      "Width": 692,
+      "Height": 466,
+      "PixelFormat": "B8G8R8A8_UNorm",
+      "AverageLuminance": 123.00034177597622,
+      "PngFile": "capture-wgc-window-20260815-161646-frame0.png"
+    },
+    {
+      "Sequence": 1,
+      "MonotonicMs": 6310.3098,
+      "Error": {
+        "Type": "System.TimeoutException",
+        "Message": "no frame arrived within 5000ms"
+      }
+    }
+  ]
+}
