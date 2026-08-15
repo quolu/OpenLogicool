@@ -219,6 +219,25 @@ public static class G600ApplyProbe
     }
 }
 
+public static class G600SlotProbe
+{
+    // F0 slot 表現（rag/openlogicool/g600-write-protocol-2026-08-15.md・libratbag 一次コード）:
+    // write は {F0, 0x80|(index<<4), 0, 0}、read の第2 byte は (index<<4) | 状態flags。
+    // index 3 は無効（入力全喪失の実機ログあり）のため 0..2 だけを扱う。
+    public static int ReadSlotIndex(byte f0Byte1) => (f0Byte1 >> 4) & 0x03;
+
+    public static byte[] BuildSlotSwitch(int targetSlot)
+    {
+        if (targetSlot is < 0 or > 2)
+            throw new ArgumentOutOfRangeException(nameof(targetSlot), targetSlot, "slot index must be 0, 1, or 2.");
+
+        var report = new byte[154];
+        report[0] = 0xF0;
+        report[1] = (byte)(0x80 | (targetSlot << 4));
+        return report;
+    }
+}
+
 public static class G600WritableFeatureReports
 {
     public static bool IsAllowed(byte reportId) => reportId is 0xF0 or 0xF3 or 0xF4 or 0xF5;

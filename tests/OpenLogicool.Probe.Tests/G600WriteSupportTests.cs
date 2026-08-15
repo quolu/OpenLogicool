@@ -76,6 +76,27 @@ public sealed class G600WriteSupportTests
         Assert.Throws<ArgumentException>(() => G600ApplyProbe.BuildLedFlippedF3(Report(0xF3, 0x03)[..100])); // wrong length
     }
 
+    [Fact]
+    public void Slot_probe_reads_index_from_upper_nibble_and_builds_libratbag_payload()
+    {
+        // read 値 (index<<4) | flags: 観測値 0x2B=slot2, 0x09=slot0, 0x0B=slot0(incident)
+        Assert.Equal(2, G600SlotProbe.ReadSlotIndex(0x2B));
+        Assert.Equal(0, G600SlotProbe.ReadSlotIndex(0x09));
+        Assert.Equal(0, G600SlotProbe.ReadSlotIndex(0x0B));
+        Assert.Equal(1, G600SlotProbe.ReadSlotIndex(0x9A));
+
+        // write 値 {F0, 0x80|(index<<4), 0...}
+        var payload = G600SlotProbe.BuildSlotSwitch(2);
+        Assert.Equal(154, payload.Length);
+        Assert.Equal(0xF0, payload[0]);
+        Assert.Equal(0x80 | (2 << 4), payload[1]);
+        Assert.All(payload[2..], b => Assert.Equal(0, b));
+
+        // index 3 は入力全喪失の実機ログがある無効値
+        Assert.Throws<ArgumentOutOfRangeException>(() => G600SlotProbe.BuildSlotSwitch(3));
+        Assert.Throws<ArgumentOutOfRangeException>(() => G600SlotProbe.BuildSlotSwitch(-1));
+    }
+
     private static string BackupJson() => JsonSerializer.Serialize(new
     {
         Reports = new[]

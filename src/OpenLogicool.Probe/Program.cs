@@ -21,6 +21,7 @@ return command switch
     "g600-f3-compensated-restore" => G600F3CompensatedRestore(args[1..]),
     "g600-restore-retry" => G600RestoreRetry(args[1..]),
     "g600-apply-verify" => G600ApplyVerify(args[1..]),
+    "g600-slot-cycle" => G600SlotCycle(args[1..]),
     "record" => OpenLogicool.Probe.RawInputRecorder.Run(
         args.Length > 1 ? args[1] : "session",
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output")),
@@ -381,6 +382,134 @@ static int G600ApplyVerify(string[] arguments)
         steps: steps,
         deviceState: state),
         ok ? 0 : 2);
+}
+
+// EXP-G600-03: F0 active slot 切替の実証。
+// libratbag 形式 {F0, 0x80|(index<<4), 0, 0} で別 slot へ切替 → fresh read で index bit を照合 →
+// F3/F4/F5 無傷を確認 → baseline slot へ復帰 → 同照合。index 3 は BuildSlotSwitch が拒否。
+// F0 は runtime 状態（read 値の下位 nibble は状態 flags で揺れる）ため、照合は上位 nibble の index bit だけで行う。
+static int G600SlotCycle(string[] arguments)
+{
+    const string probe = "g600-slot-cycle";
+    string? backupPath = null;
+    int? requestedTarget = null;
+    var settleMs = 2000;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--backup" when i + 1 < arguments.Length: backupPath = arguments[++i]; break;
+            case "--target" when i + 1 < arguments.Length: requestedTarget = int.Parse(arguments[++i]); break;
+            case "--settle-ms" when i + 1 < arguments.Length: settleMs = int.Parse(arguments[++i]); break;
+        }
+    }
+    if (backupPath is null)
+        return EmitWriteResult(NewWriteResult(probe, "argument-validation", "--backup <path> is required."), 1);
+    if (requestedTarget is < 0 or > 2)
+        return EmitWriteResult(NewWriteResult(probe, "argument-validation", "--target must be 0, 1, or 2."), 1);
+
+    G600BackupSnapshot snapshot;
+    try
+    {
+        snapshot = G600BackupSnapshot.Load(backupPath);
+    }
+    catch (Exception ex)
+    {
+        return EmitWriteResult(NewWriteResult(probe, "backup-load", $"{ex.GetType().Name}: {ex.Message}"), 1);
+    }
+
+    var steps = new List<G600WriteStep>();
+
+    // baseline: fresh open で F0 と F3/F4/F5 を読み、profile 3面が backup 一致（clean）であることを確認
+    byte[] baselineF0;
+    {
+        var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        if (device is null || !device.TryOpen(out var stream))
+            return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection could not be opened."), 2);
+        using (stream)
+        {
+            System.Threading.Thread.Sleep(settleMs);
+            baselineF0 = ReadFeature(stream, 0xF0);
+            foreach (var id in new byte[] { 0xF3, 0xF4, 0xF5 })
+            {
+                var current = ReadFeature(stream, id);
+                if (!current.AsSpan().SequenceEqual(snapshot.Reports[id]))
+                    return EmitWriteResult(NewWriteResult(probe, "precondition",
+                        $"report 0x{id:X2} does not match backup; not starting from a clean state. Nothing was written.",
+                        steps: new[] { Step($"precondition-0x{id:X2}", snapshot.Reports[id], current, false) }), 2);
+            }
+        }
+    }
+
+    var baselineSlot = G600SlotProbe.ReadSlotIndex(baselineF0[1]);
+    if (baselineSlot > 2)
+        return EmitWriteResult(NewWriteResult(probe, "precondition",
+            $"baseline F0 slot index is {baselineSlot} (invalid); refusing to derive targets from an abnormal state.",
+            steps: new[] { Step("baseline-f0", baselineF0, baselineF0, false) }), 2);
+    var targetSlot = requestedTarget ?? (baselineSlot + 1) % 3;
+    if (targetSlot == baselineSlot)
+        return EmitWriteResult(NewWriteResult(probe, "argument-validation",
+            $"target slot {targetSlot} equals the baseline slot; the switch would be unobservable.",
+            steps: new[] { Step("baseline-f0", baselineF0, baselineF0, true) }), 1);
+
+    steps.Add(Step("baseline-f0", baselineF0, baselineF0, true));
+
+    // switch → verify → 復帰 → verify。各段 fresh open・settle・index bit 照合。
+    foreach (var (phase, slot) in new[] { ("switch", targetSlot), ("return", baselineSlot) })
+    {
+        var payload = G600SlotProbe.BuildSlotSwitch(slot);
+
+        var writeDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        if (writeDevice is null || !writeDevice.TryOpen(out var writeStream))
+            return EmitWriteResult(NewWriteResult(probe, $"{phase}-open", $"could not open G600 for {phase} write.", steps: steps,
+                deviceState: phase == "return" ? "slot switched but return write could not start; re-run with --target to restore." : null), 2);
+        using (writeStream)
+        {
+            System.Threading.Thread.Sleep(settleMs);
+            SetWritableFeature(writeStream, payload);
+        }
+
+        var verifyDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        if (verifyDevice is null || !verifyDevice.TryOpen(out var verifyStream))
+            return EmitWriteResult(NewWriteResult(probe, $"{phase}-verify-open", $"{phase} write sent but could not reopen for verify.", steps: steps), 2);
+        byte[] afterF0;
+        var profilesIntact = true;
+        using (verifyStream)
+        {
+            System.Threading.Thread.Sleep(settleMs);
+            afterF0 = ReadFeature(verifyStream, 0xF0);
+            foreach (var id in new byte[] { 0xF3, 0xF4, 0xF5 })
+            {
+                if (!ReadFeature(verifyStream, id).AsSpan().SequenceEqual(snapshot.Reports[id]))
+                    profilesIntact = false;
+            }
+        }
+
+        var indexMatches = G600SlotProbe.ReadSlotIndex(afterF0[1]) == slot;
+        steps.Add(Step($"{phase}-to-slot{slot}", payload, afterF0, indexMatches));
+        if (!profilesIntact)
+            return EmitWriteResult(NewWriteResult(probe, $"{phase}-profile-check",
+                "F3/F4/F5 changed during slot switching. Stopped; restore profiles with g600-restore-retry.",
+                steps: steps), 2);
+        if (!indexMatches)
+            return EmitWriteResult(NewWriteResult(probe, $"{phase}-verify",
+                $"F0 slot index after {phase} is {G600SlotProbe.ReadSlotIndex(afterF0[1])}, expected {slot}. No further write attempted.",
+                steps: steps,
+                deviceState: phase == "switch"
+                    ? "Slot did not switch as hypothesized; baseline slot is likely still active. Profiles intact."
+                    : "Switch succeeded but return did not; re-run with --target to restore the baseline slot. Profiles intact."), 2);
+    }
+
+    return EmitWriteResult(NewWriteResult(
+        probe,
+        "slot-cycle",
+        null,
+        steps: steps,
+        deviceState: $"F0 slot switched {baselineSlot}->{targetSlot}->{baselineSlot} with index-bit verification on fresh opens; F3/F4/F5 intact throughout."),
+        0);
 }
 
 // incident 2026-08-15-g600-f3-writeback-shift の補償 restore（オーナー裁定 案A）。

@@ -101,7 +101,15 @@ restore 作法を踏襲した apply 実証コマンド `g600-apply-verify` を�
 - 結果（`probe-output/g600-apply-verify-20260815-121407-438.json`）: **apply・restore とも attempt1 で byte 完全一致、exit 0**。最終 device 状態は backup と一致、日常使用（マウス）も正常をオーナー確認。
 - 意味: **Migration Safety Gate DEV-010 の一巡（backup → 意図的改変 → byte 一致 → restore → byte 一致）が apply を含めて実証**された。onboard write は restore 片道でなく往復（書換→復元）で成立。Input Studio の onboard write 機能の中核前提が立った。
 
-**G0-Device-W の再評価（更新）**: onboard write は「settle+retry+fresh handle 前提で成立（restore 実証済み）」から「**apply 往復まで実証済み**」へ。残る未了は EXP-G600-03（F0 slot 切替）と 0A UI 照合のみ。write 作法は `g600-restore-retry` / `g600-apply-verify` が共有する evidence-based 手順（fresh open・settle≥2s・handle 非再利用・fresh open で verify・一致まで再送）を正とする。
+**G0-Device-W の再評価（更新）**: onboard write は「settle+retry+fresh handle 前提で成立（restore 実証済み）」から「**apply 往復まで実証済み**」へ。write 作法は `g600-restore-retry` / `g600-apply-verify` が共有する evidence-based 手順（fresh open・settle≥2s・handle 非再利用・fresh open で verify・一致まで再送）を正とする。
+
+## EXP-G600-03 成立（F0 slot 切替・2026-08-15）
+
+libratbag 一次コードの F0 仕様（write `{F0, 0x80|(index<<4), 0, 0}`・index 3 禁止）を焼き込んだ `g600-slot-cycle` を実装し、実機で成立させた（`probe-output/g600-slot-cycle-20260815-130235-294.json`・exit 0）。
+
+- slot 0→1→0 の往復がいずれも1回で成立。F3/F4/F5 は全段 backup 一致のまま。
+- **F0 の表現モデルを実測で確定**: write は `0x80|(index<<4)`、read の第2 byte は `(index<<4) | 状態flags`（下位 nibble は runtime flags で揺れる）。切替実測 write `0x90`→read `0x18`、write `0x80`→read `0x08`。過去観測（backup 時 `2B`=slot2、incident の `0A/0B/08`=slot0、現在 `09`=slot0）もすべてこのモデルで整合し、incident 中の入力喪失が「無効 index でなく破損 profile が active になったこと」で説明できる。
+- これで **G0-Device-W の全項目（restore・apply 往復・slot 切替）が実機実証済み**。
 
 ## 参照
 

@@ -66,6 +66,7 @@ OpenRGB #920 に貼られた G600 の生 HID report descriptor（Usage Page 0xFF
 - **restore**（`g600-restore-retry`）: 破損した F3/F5 を backup から復元、**両方 attempt1 で byte 一致**。
 - **apply 往復**（`g600-apply-verify`）: F3 の LED RGB を XOR 反転して apply → verify → backup へ restore → verify、**apply・restore とも attempt1 で byte 一致**。
 - 昨夜の incident（単発 write・settle なし・handle 再利用）で起きたずれは、上記作法で**確定的に解消**した。公開実装の「5〜10 回再送が要る」という運用知に対し、我々の環境（fresh handle 毎回・settle 2s）では 1 回で成立している。settle と handle 非再利用が支配的要因で、再送は保険とみられる。
+- **slot 切替**（`g600-slot-cycle`）: libratbag 形式 `{F0, 0x80|(index<<4), 0, 0}` で slot 0→1→0 往復成立（各1回）。**read 側の表現を実測で確定**: F0 第2 byte = `(index<<4) | 状態flags`（下位 nibble は runtime で揺れる。切替実測 write `0x90`→read `0x18`、write `0x80`→read `0x08`）。libratbag の「F0 は書いた値がそのまま読める」前提はこの個体では成り立たず、照合は index bit だけで行うのが正。
 
 ## HID++ 対応
 
