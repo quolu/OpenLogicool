@@ -71,6 +71,18 @@ power cycle（USB 抜き挿し）で firmware runtime をリセット後、Claud
 
 **G0-Device-W 判定: 不通過（オーナー報告待ちの暫定）。onboard への write は経路を問わず全面凍結**。解除条件は「LGS 正規 write protocol（F6 コマンド系）の解明と、破損した F3/F5 の復元実証」。復元素材（F0〜F5 完全 backup・SHA-256 封入）は保持済み。
 
+## 原因の訂正（公開実装調査後・2026-08-15 夜）
+
+[rag/openlogicool/g600-write-protocol-2026-08-15.md](../../rag/openlogicool/g600-write-protocol-2026-08-15.md) の調査で、本 incident の初期結論「direct SET_FEATURE は経路として不成立」は**部分的に誤りと判明**した。
+
+- 公開実装（libratbag / ecerulm / rom4ster の 3 件・すべて一次コード）は**全員 direct SET_FEATURE で F3/F4/F5 に 154-byte を直書き**しており、**我々の経路は正規だった**。F6 コマンド系を使う実装は存在しない。
+- ずれの真因は「経路違い」ではなく **firmware の write が timing/handle 状態に敏感で単発 write では不安定**であること。ecerulm は「新 profile を載せるには 5〜10 回再送が要る（理由不明）」「open 後 2 秒 settle」「handle を再利用しない」を運用知として明記している。
+- 我々は 1 回だけ write し、settle も retry もせず、handle も新規開閉していなかった（verify だけ fresh open）。**公開運用知を適用していなかった**のが不安定化の理由とみられる。
+
+**F3/F5 復元の evidence-based path（未実行・裁定待ち）**: backup bytes を、毎回 fresh open → settle≥2s → SET_FEATURE → fresh open で readback → 一致まで最大 N 回再送。backup が完全なので後退リスクなし。ただし onboard write は現在凍結中で、本 path 実行はオーナー裁定を要する。
+
+**方式判定への更新**: 方式A/B（onboard write を要する経路）は「不成立」ではなく「**settle+retry+fresh handle 前提なら公開実績あり**」へ格上げ。EXP-G600-03（F0 slot 切替）も同じ運用前提で再設計すれば成立余地がある。ただし F0 上位 nibble の誤操作は入力全喪失を招く（本 incident の二次障害と libratbag #1291 実機ログで実証済み）ため、slot 切替は 0..2 の正規値だけを扱う。
+
 ## 参照
 
 - backup（無傷・SHA-256 封入済み）: `probe-output/mig01-backup-20260815/`
