@@ -85,7 +85,7 @@ public sealed class ProjectReferenceDirectionTests
     }
 
     [Fact]
-    public void Restricted_projects_do_not_reference_packages()
+    public void Package_references_match_module_policy()
     {
         var packageReferencesByProject = LoadPackageReferences();
 
@@ -100,6 +100,10 @@ public sealed class ProjectReferenceDirectionTests
         {
             Assert.Empty(packageReferencesByProject[projectName]);
         }
+
+        Assert.Equal(
+            new[] { "Microsoft.Data.Sqlite" },
+            packageReferencesByProject["OpenLogicool.Persistence"].OrderBy(packageName => packageName));
     }
 
     [Fact]

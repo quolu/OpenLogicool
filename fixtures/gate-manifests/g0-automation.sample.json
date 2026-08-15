@@ -1,0 +1,29 @@
+{
+  "gateId": "G0-Automation",
+  "schema": "gate-manifest-v1",
+  "experimentEnvironment": {
+    "windowsBuild": "Windows 11 build 26200",
+    "firmware": "not applicable: GameLab prototype and WGC capture only",
+    "driver": "not applicable: no device driver route was exercised",
+    "lgsState": "not applicable: LGS was not operated"
+  },
+  "contractRevision": "0.1",
+  "fixtureIds": [
+    "fixtures/contracts/observation-result.gamelab-live.json",
+    "fixtures/contracts/next-action-proposal.sample.json"
+  ],
+  "result": {
+    "outcome": "Passed",
+    "summary": "GameLab oracle, WGC capture, observation fixture, and proposal fixture were chained with a real captured frame.",
+    "evidenceRefs": [
+      "docs/g0-automation-assessment.md",
+      "docs/contracts/data-flow-contract.md"
+    ]
+  },
+  "verificationStatus": "Experimental",
+  "unverifiedScope": [
+    "A production game was not used for the acceptance path.",
+    "The result does not validate a device write route.",
+    "The result does not validate production OCR, cloud AI, or persistent frame logging."
+  ]
+}

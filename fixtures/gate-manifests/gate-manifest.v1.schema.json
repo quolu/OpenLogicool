@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openlogicool.dev/schemas/gate-manifest.v1.schema.json",
+  "title": "OpenLogicool gate manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "gateId",
+    "schema",
+    "experimentEnvironment",
+    "contractRevision",
+    "fixtureIds",
+    "result",
+    "verificationStatus",
+    "unverifiedScope"
+  ],
+  "properties": {
+    "gateId": { "type": "string", "minLength": 1 },
+    "schema": { "const": "gate-manifest-v1" },
+    "experimentEnvironment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "windowsBuild", "firmware", "driver", "lgsState" ],
+      "properties": {
+        "windowsBuild": { "type": "string", "minLength": 1 },
+        "firmware": { "type": "string", "minLength": 1 },
+        "driver": { "type": "string", "minLength": 1 },
+        "lgsState": { "type": "string", "minLength": 1 }
+      }
+    },
+    "contractRevision": { "type": "string", "minLength": 1 },
+    "fixtureIds": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "outcome", "summary", "evidenceRefs" ],
+      "properties": {
+        "outcome": { "enum": [ "Passed", "Failed" ] },
+        "summary": { "type": "string", "minLength": 1 },
+        "evidenceRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "verificationStatus": {
+      "enum": [ "Supported", "Experimental", "Unsupported", "Unverified" ]
+    },
+    "unverifiedScope": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}
