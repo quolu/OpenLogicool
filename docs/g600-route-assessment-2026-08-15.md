@@ -27,5 +27,27 @@ read-only で完全棄却できた方式は無い。棄却できたのは方式B
 
 ## 4. read-only で残った観測ギャップ（write 不要・機会があれば埋める）
 
-- **LGS 非稼働時の legacy 配送**: 今日の実測はすべて LGS 稼働下。LGS 停止時に side ボタンが G600 自身の keyboard TLC (MI_01/COL01) から onboard 割当キーとして届くか（強い推定）は未実測。方式選定の前提には影響しないが、Input Studio の「LGS 無し環境」受入で必要になる。
-- F0 report の byte 意味（active slot の読み出し表現）。0xF0=2B の解釈は未確定で、EXP-G600-03 の設計時に二度読みと切替前後比較で確定する。
+- ~~**LGS 非稼働時の legacy 配送**~~ → **解決（§5）**: LGS 停止下で side ボタンは G600 自身の keyboard TLC (MI_01/COL01) から onboard 割当キーとして届くことを実測（確認済みへ昇格）。
+- ~~F0 report の byte 意味~~ → **解決**: EXP-G600-03 で実測確定（write `0x80|(index<<4)`・read 第2 byte `(index<<4)|状態flags`。[incidents/2026-08-15-g600-f3-writeback-shift.md](incidents/2026-08-15-g600-f3-writeback-shift.md)）。
+
+## 5. write 実験の結果（2026-08-15・G0-Device-W で実施・すべて確認済み）
+
+§3 の残 write 実験3件がすべて成立した。
+
+1. **EXP-MIG-01**: apply 往復（意図的改変→byte 一致→restore→byte 一致）成立。`probe-output/g600-apply-verify-20260815-121407-438.json`
+2. **EXP-G600-03**: F0 slot 0→1→0 往復成立。**方式A（slot 切替）は成立**。`probe-output/g600-slot-cycle-20260815-130235-294.json`
+3. **EXP-G600-02 write 拡張**: F3 の G9 割当を中間 usage F13（0x68）へ書換えて実測（`probe-output/g600-g9-remap-20260815-*.json`・`probe-output/rawinput-exp02-g9-f13-take3-20260815-230925.jsonl`）。
+   - (a) **legacy 配送は中間 usage へ変わる**: LGS 停止下で G9 押下×5 が VKey 124（F13）として G600 自身の keyboard TLC (MI_01/COL01) から届いた。未変更の G10 は元の「2」のまま（対照成立）
+   - (b) **raw route は無影響**: 同時に raw 0x80 report の G9/G10 bit が全押下で届いた
+   - (c) **LGS は巻き戻さない**: LGS 再起動後 60 秒の稼働（自動ゲーム検出・アイドル）で F3 の書換えは残存。F4/F5・active slot も不変
+   - 実験後、F3 は backup へ復元済み（byte 一致・fresh verify）
+
+**方式B変種（legacy 無害化のための中間 usage）は成立**。方式A・B とも実機実証済みとなり、方式C（driver）が要るのは「mouse TLC のクリック等物理配送まで完全抑止したい場合」だけという §2 の判定が維持された。
+
+### route 最終決定への材料（オーナー裁定待ち）
+
+| 方式 | 実証状態 | 担える範囲 | 残す理由/落とす理由 |
+|---|---|---|---|
+| B変種（中間 usage 書換え） | **成立**（本 §5） | side 12 ボタン＋G7/G8 の legacy キー配送の無害化。F13〜F24 で12ボタンをちょうど賄える | **主経路の推奨**。user-mode のみ・LGS 非依存・巻き戻しなし |
+| A（slot 切替） | **成立**（EXP-G600-03） | slot 単位の一括切替・退避 slot の確保 | Bの補完（例: 「Input Studio 管理 slot」と「素の slot」の切替）。単独では per-button 無害化ができない |
+| C（署名 driver） | 未実証・最後の手段 | mouse TLC（クリック/ホイール）の物理配送抑止 | G1〜G5 を標準マウスとして残す設計なら不要。user-mode release と scope 分離を維持 |

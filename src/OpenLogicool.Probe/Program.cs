@@ -22,6 +22,7 @@ return command switch
     "g600-restore-retry" => G600RestoreRetry(args[1..]),
     "g600-apply-verify" => G600ApplyVerify(args[1..]),
     "g600-slot-cycle" => G600SlotCycle(args[1..]),
+    "g600-g9-remap" => G600G9Remap(args[1..]),
     "record" => OpenLogicool.Probe.RawInputRecorder.Run(
         args.Length > 1 ? args[1] : "session",
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output")),
@@ -510,6 +511,75 @@ static int G600SlotCycle(string[] arguments)
         steps: steps,
         deviceState: $"F0 slot switched {baselineSlot}->{targetSlot}->{baselineSlot} with index-bit verification on fresh opens; F3/F4/F5 intact throughout."),
         0);
+}
+
+// EXP-G600-02 write 拡張: F3 の G9 割当を中間 usage（既定 F13=0x68）へ書き換えて残置する。
+// 方式B変種（legacy 無害化のための中間 usage）の成立判定用。復元は g600-restore-retry --report 0xF3。
+// clean 前提（F3/F4/F5 が backup 一致）でなければ何も書かない。
+static int G600G9Remap(string[] arguments)
+{
+    const string probe = "g600-g9-remap";
+    string? backupPath = null;
+    byte usage = 0x68; // F13
+    var maxAttempts = 8;
+    var settleMs = 2000;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--backup" when i + 1 < arguments.Length: backupPath = arguments[++i]; break;
+            case "--usage" when i + 1 < arguments.Length:
+                usage = Convert.ToByte(arguments[++i].Replace("0x", "", StringComparison.OrdinalIgnoreCase), 16);
+                break;
+            case "--max-attempts" when i + 1 < arguments.Length: maxAttempts = int.Parse(arguments[++i]); break;
+            case "--settle-ms" when i + 1 < arguments.Length: settleMs = int.Parse(arguments[++i]); break;
+        }
+    }
+    if (backupPath is null)
+        return EmitWriteResult(NewWriteResult(probe, "argument-validation", "--backup <path> is required."), 1);
+
+    G600BackupSnapshot snapshot;
+    try
+    {
+        snapshot = G600BackupSnapshot.Load(backupPath);
+    }
+    catch (Exception ex)
+    {
+        return EmitWriteResult(NewWriteResult(probe, "backup-load", $"{ex.GetType().Name}: {ex.Message}"), 1);
+    }
+
+    var modified = G600RemapProbe.BuildG9Remap(snapshot.Reports[0xF3], usage);
+
+    var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+    if (device is null || !device.TryOpen(out var preStream))
+        return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection could not be opened."), 2);
+    using (preStream)
+    {
+        foreach (var id in new byte[] { 0xF3, 0xF4, 0xF5 })
+        {
+            var current = ReadFeature(preStream, id);
+            if (!current.AsSpan().SequenceEqual(snapshot.Reports[id]))
+                return EmitWriteResult(NewWriteResult(probe, "precondition",
+                    $"report 0x{id:X2} does not match backup; not starting from a clean state. Nothing was written.",
+                    steps: new[] { Step($"precondition-0x{id:X2}", snapshot.Reports[id], current, false) }), 2);
+        }
+    }
+
+    var steps = new List<G600WriteStep>();
+    var (matched, openError) = WriteFeatureWithRetry(0xF3, modified, maxAttempts, settleMs, "remap-g9", steps);
+    if (openError is not null)
+        return EmitWriteResult(NewWriteResult(probe, "remap-open", openError, steps: steps), 2);
+
+    return EmitWriteResult(NewWriteResult(
+        probe,
+        "remap-g9",
+        matched ? null : "remapped F3 did not land byte-exact within max attempts. Restore with g600-restore-retry.",
+        steps: steps,
+        deviceState: matched
+            ? $"F3 G9 normal-layer assignment is now keyboard usage 0x{usage:X2} (fresh-open verified). Restore with g600-restore-retry --report 0xF3."
+            : "F3 may be in an intermediate state; backup is intact — run g600-restore-retry --report 0xF3."),
+        matched ? 0 : 2);
 }
 
 // incident 2026-08-15-g600-f3-writeback-shift の補償 restore（オーナー裁定 案A）。

@@ -97,6 +97,28 @@ public sealed class G600WriteSupportTests
         Assert.Throws<ArgumentOutOfRangeException>(() => G600SlotProbe.BuildSlotSwitch(-1));
     }
 
+    [Fact]
+    public void Remap_probe_changes_only_g9_normal_slot_bytes()
+    {
+        var backupF3 = Report(0xF3, 0x03);
+        backupF3[55] = 0x00; backupF3[56] = 0x00; backupF3[57] = 0x1E; // G9 = Kbd '1'
+        backupF3[58] = 0x00; backupF3[59] = 0x00; backupF3[60] = 0x1F; // G10 = Kbd '2'
+
+        var modified = G600RemapProbe.BuildG9Remap(backupF3, 0x68);
+
+        Assert.Equal(0x00, modified[55]);
+        Assert.Equal(0x00, modified[56]);
+        Assert.Equal(0x68, modified[57]);
+        // G9 の 3 bytes 以外は全 byte 不変
+        for (var i = 0; i < 154; i++)
+        {
+            if (i is >= 55 and <= 57) continue;
+            Assert.Equal(backupF3[i], modified[i]);
+        }
+
+        Assert.Throws<ArgumentException>(() => G600RemapProbe.BuildG9Remap(new byte[154], 0x68));
+    }
+
     private static string BackupJson() => JsonSerializer.Serialize(new
     {
         Reports = new[]

@@ -238,6 +238,25 @@ public static class G600SlotProbe
     }
 }
 
+public static class G600RemapProbe
+{
+    // EXP-G600-02 write 拡張用: F3 の G9 通常層割当（offset 31 + (9-1)*3 = 55..57、g600-profile-decode）を
+    // keyboard usage へ差し替える。他 byte は bytes ごと保持（read-modify-write、未確認 offset を解釈しない）。
+    public const int G9NormalOffset = 55;
+
+    public static byte[] BuildG9Remap(byte[] backupF3, byte hidUsage)
+    {
+        if (backupF3.Length != 154 || backupF3[0] != 0xF3)
+            throw new ArgumentException("backup F3 must be a 154-byte report starting with 0xF3.", nameof(backupF3));
+
+        var modified = backupF3.ToArray();
+        modified[G9NormalOffset] = 0x00;     // mouseCode: keyboard
+        modified[G9NormalOffset + 1] = 0x00; // modifiers: none
+        modified[G9NormalOffset + 2] = hidUsage;
+        return modified;
+    }
+}
+
 public static class G600WritableFeatureReports
 {
     public static bool IsAllowed(byte reportId) => reportId is 0xF0 or 0xF3 or 0xF4 or 0xF5;
