@@ -1,16 +1,22 @@
+using System.Text.Json.Serialization;
+
 namespace OpenLogicool.Contracts.Playbooks;
 
 public sealed record PlannerBudget(
     string SchemaVersion,
+    [property: JsonPropertyName("proposals")]
     int RemainingProposals,
+    [property: JsonPropertyName("costUsd")]
     decimal? RemainingCostUsd);
 
 public sealed record PlannerContext(
     string SchemaVersion,
     string Goal,
+    [property: JsonPropertyName("observationId")]
     string? CurrentObservationId,
     IReadOnlyList<string> AllowedActionIds,
     string HistorySummary,
+    [property: JsonPropertyName("budgetRemaining")]
     PlannerBudget Budget);
 
 public sealed record PlaybookNode(

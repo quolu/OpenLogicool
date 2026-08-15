@@ -23,3 +23,10 @@ public sealed record PhysicalInput(
     PhysicalInputEdge Edge,
     double MonotonicMs,
     long ReportSequence);
+
+public interface IDeviceInputSource
+{
+    IReadOnlyList<DeviceInstance> EnumerateDevices();
+
+    bool TryPull(out PhysicalInput input);
+}

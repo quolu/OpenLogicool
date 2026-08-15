@@ -1,4 +1,5 @@
 using OpenLogicool.Contracts.Playbooks;
+using System.Text.Json.Serialization;
 
 namespace OpenLogicool.Contracts.AI;
 
@@ -49,6 +50,7 @@ public sealed record ProposalValidity(
 public sealed record NextActionProposal(
     string SchemaVersion,
     string ProposalId,
+    [property: JsonPropertyName("plannerContext")]
     PlannerContext PlannerContextRef,
     ProposalMode Mode,
     ProposalAction Action,

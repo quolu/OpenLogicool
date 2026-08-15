@@ -22,3 +22,14 @@ public sealed record CapturedFrame(
     long TransformRevision,
     long FreshnessMs,
     long LastChangeMs);
+
+public abstract record FrameReadResult;
+
+public sealed record FrameAvailable(CapturedFrame Frame) : FrameReadResult;
+
+public sealed record FrameUnavailable(string Reason) : FrameReadResult;
+
+public interface IFrameSource
+{
+    FrameReadResult Pull();
+}

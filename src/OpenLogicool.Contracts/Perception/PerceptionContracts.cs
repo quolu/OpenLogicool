@@ -1,4 +1,5 @@
 using OpenLogicool.Contracts.Capture;
+using System.Text.Json.Serialization;
 
 namespace OpenLogicool.Contracts.Perception;
 
@@ -12,9 +13,11 @@ public enum ObservationStatus
 
 public sealed record CapturedFrameReference(
     string SchemaVersion,
+    [property: JsonPropertyName("source")]
     string SourceId,
     CaptureBackend Backend,
     long Sequence,
+    [property: JsonPropertyName("monotonicTimeMs")]
     double MonotonicMs,
     DateTimeOffset WallClockUtc,
     long TransformRevision,
@@ -24,7 +27,9 @@ public sealed record CapturedFrameReference(
 public sealed record EvidenceRegion(
     string SchemaVersion,
     string Shape,
+    [property: JsonPropertyName("normalized")]
     IReadOnlyList<double> NormalizedBounds,
+    [property: JsonPropertyName("recognizer")]
     string RecognizerId);
 
 public sealed record StateCandidate(
@@ -42,6 +47,11 @@ public sealed record ObservationResult(
     string RecognizerVersion,
     long FreshnessMs,
     string? UnavailableReason);
+
+public interface IObservationSource
+{
+    ObservationResult Observe(CapturedFrame frame);
+}
 
 public enum KnowledgePackTrust
 {
