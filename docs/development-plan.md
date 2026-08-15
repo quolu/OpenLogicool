@@ -1,6 +1,6 @@
 # OpenLogicool 製品・開発計画
 
-- 版: 0.2
+- 版: 0.3（2026-08-15監査 [reviews/plan-audit-2026-08-15.md](reviews/plan-audit-2026-08-15.md) の指摘反映）
 - 改訂日: 2026-08-15
 - 状態: 改訂版・実装着手前
 - 対象: Logicool G13 / G600を統合するWindowsネイティブアプリと、画面認識付き逐次学習プレイブック
@@ -19,9 +19,11 @@ OpenLogicoolは、次の二つの製品価値を同じアプリで提供する�
 
 公開先行実装から主要経路の成立可能性は確認できたが、本製品のWindows実機環境で致命的ブロッカーがないことは未実証である。G13入力、G600 Feature Report、G600 live input routeが成立するまで、ユーザーモード製品の成立性はUnverifiedとする。特に「ユーザーモードだけでG600の全ボタンを無制限のアプリプロファイルへ割り当て、元入力を重複させない」ことは未成立である。次の三方式から実測後に明示的に選ぶ必要がある。
 
-- 3個のオンボードプロファイルを直接利用する。
-- 中間usageをユーザーモードで変換する。
-- 物理入力抑止と仮想HIDを署名済みdriverで実装する。
+- 方式A: 3個のオンボードプロファイルを直接利用する。
+- 方式B: 中間usageをユーザーモードで変換する。
+- 方式C: 物理入力抑止を署名済みdriverで実装する（出力はSendInputまたは仮想HID。2変種は§6.6で別capabilityとして評価する）。
+
+本書で「方式A／B／C」はこの3方式だけを指す。route決定は2段で行う: read-onlyで判定できる範囲（G0-Device-RO、Phase 0内）と、Migration Safety Gate通過後の最小write実験を要する範囲（G0-Device-W、Phase 2入口）を分け、最終決定はG0-Device-Wで行う。
 
 したがって、今すぐ許可するのはPhase 0のread-only調査、契約draft、UX prototype、GameLab prototypeまでとする。製品実装のGoは分野別admission gateで決める。
 
@@ -66,7 +68,7 @@ UnverifiedをSupportedとして表示しない。実験失敗を別方式へ黙�
 | Knowledge Pack | ゲーム固有のapp identity、state、recognizer、action参照、playbook、fixtureを収めるversioned data |
 | Screen Graph | 画面（state）をnode、画面内のvisual targetと画面遷移をedgeとする、ゲームの構造地図。Playbookから独立した第一級成果物 |
 | Learning | modelのfine-tuningではなく、観測、訂正、成功経路をKnowledge Pack／Playbookへversioned保存すること |
-| Verified Step | GameLabでは凍結acceptance dataset、実gameでは同一環境条件の独立live sessionで再現済みのPlaybook step |
+| Verified Step | GameLabではscenario oracle付き別session、実gameでは同一環境scopeの独立live sessionで再現済みのPlaybook step（凍結acceptance datasetは評価専用で昇格根拠にしない。§10.3） |
 
 一般化するのは観察、計画、操作、確認、学習の仕組みである。任意ゲームを初見で完全自動化できるとは約束しない。ゲーム固有知識はKnowledge Packとして追加する。
 
@@ -138,11 +140,12 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | DEV-003 | R1 | G600のcurrent profileと3 profileをread-onlyで完全backupできる |
 | DEV-004 | R1 Gate | G600通常／G-Shift側全controlのlive input routeと元入力重複を実測して方式を決定する |
 | DEV-005 | R1 | device capabilityをSupported／Experimental／Unsupported／Unverifiedで表示する |
-| DEV-006 | R1 | 単一key、mouse、chord、有限sequenceをWindows通常入力経路で出力する |
+| DEV-006 | R1 | 単一key、mouse、chord（同時押し基本形）、有限sequenceをWindows通常入力経路で出力する（timed multi-key・repeat・toggleはMAP-007のR5） |
 | DEV-007 | R1 | profile／layer変更前にdownした入力は、down時に固定したgenerationでreleaseする |
 | DEV-008 | R1 | pause、device切断、通常終了時は新規downを止め、所有中outputをreleaseする |
 | DEV-009 | R1 Gate | hard crash時のoutput残留を実測し、残留しない証拠または期限内にreleaseするwatchdogをSupported pathの条件にする |
-| DEV-010 | R5 | G600 device writeは完全backup、byte diff、readback、power cycle、restoreが通ったcapabilityだけ有効化する |
+| DEV-010 | R5 | G600 device write（154-byte profile書換等の永続write一般）は完全backup、byte diff、readback、power cycle、restoreが通ったcapabilityだけ有効化する |
+| DEV-013 | R2 | 方式A採用時のF0 active slot切替writeは、DEV-010の一般write gateと分離し、EXP-G600-03（backup・readback・restore付き）の受入だけでR2から有効化できる。app-first切替（APP-006）のG600側実装はこの切替だけを使い、154-byte profile writeを使わない |
 | DEV-011 | R5 | G13 RGB／M LED／LCDは標準入力を壊さない独立実験後だけ有効化する |
 | DEV-012 | R1 Decision／R5 Delivery | device単位の元入力抑止が必要と実証された時点でfilter driver／virtual HID計画へ分岐し、driverなしのclaimを制限する |
 
@@ -157,7 +160,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | MAP-005 | R1 | key down時にdevice instance、control、press generation、profile、layer、mapping revision、output集合を固定する |
 | MAP-006 | R1 | key upは現在profileを再解決せず、down時のoutput集合だけを解放する |
 | MAP-007 | R5 | delay、repeat while held、toggle、有限回repeatを明示状態として扱う |
-| MAP-008 | R5 | 無期限holdまたは取消不能macroを作らない。全macroに停止境界を持たせる |
+| MAP-008 | R1 | 無期限holdまたは取消不能macroを作らない。全macroに停止境界を持たせる（自動化が入力を送る最初のreleaseから適用。§6.5） |
 | MAP-009 | R2 | 設定revisionの保存、undo、export、importを提供する |
 | MAP-010 | R2 | foreground appに応じた切替でG600の154-byte永続profileを毎回writeしない |
 
@@ -203,7 +206,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | AI-001 | R4 | 利用者の自然言語goalを小目標と次の構造化proposalへ変換する |
 | AI-002 | R4 | AIはSendInput、HID write、DB writeを直接呼ばず、NextActionProposalだけを返す |
 | AI-003 | R4 | verified runでは既存Semantic Action IDだけを提案できる |
-| AI-004 | R4 | teach modeの未知操作は、Perceptionが現在frameから列挙したvisual targetと事前許可primitiveだけを選べる |
+| AI-004 | R4 | teach modeおよびSupervised Runの未知操作は、Perceptionが現在frameから列挙したvisual targetと事前許可primitiveだけを選べる（frameに紐付かない絶対座標の提案はmodeを問わず拒否する） |
 | AI-005 | R4 | schema version、catalog version、state前提、risk class、承認要否が不一致のproposalをPlaybookが拒否する |
 | AI-006 | R4 | prompt、model、parameter、dataset、Knowledge Pack versionをrunへ記録する |
 | AI-007 | R4 | provider/modelを精度、未知棄却、p50/p95遅延、取消、費用、data policyで比較する |
@@ -262,11 +265,17 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 
 | Requirement群 | 主Phase | Owner Lane | 主な受入証拠 |
 |---|---|---|---|
-| APP、MAP、UX-001〜007 | Phase 2／3 | A、D | UI scenario、profile generation、input acceptance |
+| APP-001〜008、MAP-001〜006／009／010、UX-001／002／006／007 | Phase 2／3 | A、D | UI scenario、profile generation、input acceptance |
+| APP-009、MAP-007、OPS-006／007 | Phase 8A | A、K | LGS import dry-run、clean VM、signed artifact |
+| APP-010 | Phase 4 | E、A | Playbook UI scenario |
+| MAP-008 | Phase 2 | D | 停止境界・250ms release test |
+| APP-011 | Phase 6 | A、H | 実行mode設定scenario |
+| OPS-001／002 | Phase 2 | D、K | AI/network遮断動作test、再起動復元test |
 | DEV | Phase 0／2／8A | B、C、D | device report、golden vector、実機readback、hotplug |
 | PB、OPS-008／009、UX-003〜005 | Phase 4 | E、I、K | state model、journal replay、crash matrix |
 | CAP | Phase 0／5 | F | backend matrix、Frame conformance、live capture |
-| PER、KP | Phase 5 | G、I | frozen frame corpus、Observation conformance |
+| PER、KP-001〜004 | Phase 5 | G、I | frozen frame corpus、Observation conformance |
+| KP-005 | Phase 5／6 | G、H | Screen Graph candidate蓄積のObserve Only scenario |
 | AI、UX-008、OPS-003／004 | Phase 6 | H、E | proposal conformance、provider eval、Data Flow |
 | OPS distribution群 | Phase 3／8A／8B | A、J、K | diagnostic bundle、clean VM、signed artifact |
 | NFR | 各該当Phase | 各owner＋I | gate manifest、benchmark、support matrix |
@@ -282,7 +291,8 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | persistent/default profile | 対象 | 対象 | R2 | 未確認 |
 | app detection profile | 対象 | 対象 | R2 | G600方式未決定 |
 | simple key／mouse assignment | 対象 | 対象 | R1 | 強い推定／未確認 |
-| chord／timed multi-key | 対象 | 対象 | R5 | 未確認 |
+| chord（同時押し基本形） | 対象 | 対象 | R1 | 未確認 |
+| timed multi-key sequence | 対象 | 対象 | R5 | 未確認 |
 | repeat while held／toggle | 対象 | 対象 | R5 | 未確認 |
 | profile export／import | 対象 | 対象 | R5 | 未確認 |
 | G13 G1〜G22 | 対象 | — | R1 | 強い推定 |
@@ -295,7 +305,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | G600 G-Shift | — | 対象 | R1/R5 | profile構造確認、live route未確認 |
 | G600 3 onboard profile | — | 対象 | R5 | read/write未確認 |
 | G600 DPI／report rate | — | 対象 | R5 | protocol確認、write未確認 |
-| G600 RGB | — | 対象 | R5 | LampArray列挙確認、制御未確認 |
+| G600 RGB | — | 対象 | R5 | LampArray列挙確認（Logitechソフトウェア導入環境下。提供元device stack未特定＝LGS/G HUB除去後の存続は未確認）、制御未確認 |
 | command／program launch | 対象なら実装 | 対象なら実装 | R5 | LGS目録待ち |
 | script機能 | 対象なら裁定 | 対象なら裁定 | R5裁定 | LGS目録待ち |
 
@@ -392,7 +402,7 @@ Hardware Maintenanceは保守面であり、通常のゲーム設定flowへ出�
 |---|---|---|---|
 | Observe Only | 状態とproposalを表示 | なし | observationとScreen Graph candidate |
 | Teach | 一手を提案 | stepごとに承認 | 成功後candidate |
-| Supervised Run | known low-riskを実行、未知は確認 | 条件付き | candidate／replayed |
+| Supervised Run | known low-riskを実行、未知は確認 | 条件付き | candidate／replayed／verified昇格（§6.8） |
 | Verified Run | verified pathだけ実行 | ambiguityで停止 | 実行証拠を追加 |
 
 承認はapp、window、Observation、proposal、Playbook version、risk classへ結び付ける。いずれかが変わった承認を再利用しない。
@@ -431,6 +441,7 @@ Capture → Perception → Playbook → Semantic Actionはdurable pathである�
 - fast pathは専用queueとworkerを持ち、AIやcaptureのbackpressureを受けない。
 - queue overflowはdropして継続せず、runtimeをfault停止して所有outputをreleaseする。
 - hard crash後のkey releaseは単一processだけでは保証不能である。Supported pathでは、対象OS上でoutputが残留しないことを実測するか、host process死亡後に所有outputを期限内にreleaseする最小watchdog processを採用する。
+- release注入もUIPIに従う: foregroundが自ILより高いwindowの間、SendInputによるkey-upは届かない。期限内release保証（NFR-008・§14.3）はforeground IL≦自ILの条件付きとし、elevated foreground中の残留riskはSupported matrixの行条件として明示する。watchdogの昇格実行またはuiAccess署名の採否はPhase 2のwatchdog decisionに含める。
 - 二重起動を防ぎ、既存instanceへUI activationを渡す。
 - 一つのRunを進められるexecutorは一つだけとする。
 
@@ -486,7 +497,7 @@ test-assets/
 - DevicesはUI、AI、Perception、SQLiteを参照しない。
 - Perceptionは入力を実行しない。
 - Hostだけが具体implementationを配線する。
-- Persistence portの意味ownerは利用domain、SQLite implementation ownerはPlatformとする。
+- Persistence portの意味ownerは利用domain、SQLite implementationとmigration runnerのownerはK（Persistence／Release）とする（§7.2と同一。Lane J「Platform／Integration」はshared primitivesと統合を持ち、SQLite実装を持たない）。
 
 ### 6.4 共有contract baseline
 
@@ -504,6 +515,7 @@ test-assets/
 | PlaybookVersion | immutable ID、parent、nodes、edges、change reason | Playbook |
 | RunEvent | schema、run sequence、attempt、causation、actor、payload | Playbook |
 | KnowledgePackManifest | game/build、locale、schema、provenance、verification | Perception/Knowledge |
+| ScreenGraph | node（state ID）、edge（visual target参照・遷移・帰属操作）、node/edgeごとのcandidate／verified状態、immutable version、環境scope | Perception/Knowledge |
 
 全contractにschema version、stable ID、wall-clockと必要なmonotonic time、取消時の意味を定義する。enum追加、nullability変更、順序変更、confidence意味変更は、source互換でもsemantic breakingになり得る。
 
@@ -518,6 +530,13 @@ physical down時にPressOwnershipを作る。
 - device disconnect、pause、handled shutdownは新規downを止めてから所有outputをrelease
 - SendInputの部分成功はfaultであり、同じsequenceを自動再送しない
 - indefinite holdは許可せず、有限leaseまたはphysical releaseを必要とする
+
+Playbookによる合成入力（automation dispatch）も同じ所有modelに従う。
+
+- Semantic Actionから送信outputへの解決は決定的とする: dispatch時にAttemptが単一の出力経路（Workspaceが定義するSemantic ActionごとのprimaryのInput Macroまたはbinding出力）を固定し、複数device bindingを同時発火しない。解決結果（実際のoutput集合）はAttemptへ記録する。
+- 合成down時もPressOwnershipを作る（key: actor=automation + Attempt ID + output、value: 送信済みoutput down集合）。停止・crash時のrelease対象は物理・合成の全所有outputであり、watchdog（§6.2）の責務にも合成outputを含める。
+- 取消不能な合成入力を作らない。全合成macroは停止境界（NFR-008の250 ms release）に従う。この停止境界は自動化が入力を送る最初のrelease（R3）から要件であり、R5のMAP-007（repeat／toggle等の完全な状態管理）を待たない。
+- 物理入力とRunの仲裁: Supervised／Verified Run中に物理入力が同じSemantic Actionへ到達した場合、runtimeはそれをmanual interventionとして扱いexecutorを停止する（PB-013）。Run中に物理binding発火を自動でRun進行へ合流させない。詳細の仲裁方式（マスクか停止か）はPhase 4で、この所有modelの上に決定する。
 
 ### 6.6 G600 architecture gate
 
@@ -542,20 +561,34 @@ Proposed
   → Observing
   → Confirmed | Rejected | OutcomeUnknown
 
+Proposed | Authorized | Prepared
+  → Cancelled
+
+DispatchArmed
+  → Disarmed | OutcomeUnknown
+
 OutcomeUnknown
   → Reconciling
   → Confirmed | Rejected | NeedsUserDecision | Abandoned
+
+NeedsUserDecision
+  → UserResolvedSuccess | UserResolvedFailure | Abandoned
 ~~~
+
+- Cancelled: dispatch前の中止（利用者abandon、前提不成立、handled shutdown）。外部効果ゼロで閉じた終端。PB-007のabandonは、dispatch前AttemptについてはCancelledへ写像する。
+- Disarmed: DispatchArmed後、外部入力APIを一度も呼んでいないことをruntime自身が保証できる場合だけの中止終端（PER-005停止、対象window喪失等）。保証できない場合はOutcomeUnknownへ倒す。
+- UserResolvedSuccess／UserResolvedFailure: 利用者判断による解決終端。Confirmed／Rejectedとは別状態であり、Observationを持たないため学習昇格（candidate化・verified昇格）の根拠にしない。判断はUserDecisionイベントとして記録する。
 
 契約:
 
 1. DispatchArmedを外部入力呼出前にcommitする。
-2. DispatchArmed以降にprocessが止まった場合、実際に未送信でもOutcomeUnknownとして再開する。
+2. DispatchArmed以降にprocessが止まった場合、実際に未送信でもOutcomeUnknownとして再開する。crash境界がPrepared以前（外部入力呼出前が確定）の場合、再開時はCancelledへ倒す。
 3. Input API戻り値は、game受理または期待結果の証拠ではない。
 4. Confirmedには同じAttemptを参照するcommit済みObservationが必要。
-5. 未解決Attemptがある間、次のdispatchを自動生成しない。
+5. 未解決Attemptがある間、次のdispatchを自動生成しない。終端（Confirmed／Rejected／Cancelled／Disarmed／UserResolved*／Abandoned）だけが解決である。
 6. SQLite transactionが保証するのはevent、projection、Playbook version等のDB内整合性だけである。
 7. Windows入力とgame stateはDB transactionへ参加せず、exactly-onceを保証しない。
+8. 承認済みAttemptのObservation・前提が変わった場合は再利用せずCancelledへ倒し、新Attemptを作る。
 
 RunEventの必須field:
 
@@ -566,10 +599,12 @@ RunEventの必須field:
 - causation ID、correlation ID
 - executor epoch、actor type
 - occurred time、persisted time
-- Observation ID
+- Observation ID（Observing以降のeventだけ必須。それ以前はnull。schema初版からのnull許容であり、§6.4のnullability変更禁止の対象外）
 - typed payload
 
 Attempt IDは相関用であり、Windowsやgameのidempotency keyではない。
+
+契約4のObservation→Attempt参照は、PlaybookがcommitするRunEvent（Attempt IDとObservation IDを併記）だけで成立させる。ObservationResult自体はAttemptを知らず、PerceptionはAttempt相関を所有しない（§6.3の依存規則と整合）。どのObservationをどのAttemptへ束縛するかの意味ownerはE（Playbook）である。
 
 ### 6.8 Version／resume
 
@@ -583,7 +618,15 @@ Attempt IDは相関用であり、Windowsやgameのidempotency keyではない�
 - checkpointはlast event sequence付きのcacheであり、journalから再生成する。
 - active executorはmonotonic executor epochを取得し、stale epochからのappendを拒否する。
 
-verification statusはenvironment scopeを持つ。GameLabでのVerifiedはGameLab内だけで有効であり、frozen acceptance datasetはrecognizer、planner、runtimeの評価に使っても、実game stepのVerified昇格には使わない。実game用Verified Stepは、candidate作成後、同一game/build、locale、UI scale、capture backend、input routeを持つ独立live sessionで再現した場合だけ成立する。
+verification statusはenvironment scopeを持つ。GameLabでのVerifiedはGameLab内だけで有効であり、frozen acceptance datasetはrecognizer、planner、runtimeの評価に使っても、実game stepのVerified昇格には使わない（昇格の証拠はlive sessionだけ。§10.3）。
+
+昇格の3段（PB-012）は次で定義する。
+
+- candidate → replayed: 独立live sessionで再現したが、環境scopeの完全一致が未確認、または一致しない環境での再現。
+- replayed → verified: 同一環境scopeの独立live sessionで再現した場合。candidateから直接verifiedになるのは、最初の独立再現が同一環境scopeだった場合である。
+- 環境scopeは game/build、locale、UI scale、resolution、display mode（windowed／borderless／fullscreen）、DPI、HDR、capture backend、input route、Screen Graph version、recognizer version の同一性で判定する。
+
+Screen Graphのnode／edgeも同じ2段で昇格する: Observe Only等で蓄積したcandidateは、別sessionの実観測で同一node（state ID）がUniqueMatch再現し、edgeは同一遷移が再観測された場合だけverifiedへ昇格する。PB-009の再開照合とVerified Runのstate根拠に使えるのはverified node／edgeだけであり、candidateは提案・表示・Teachの参考にだけ使う（KP-005）。Verified StepはScreen Graph versionへpinし、参照先node／edgeがcandidateへ降格または削除された場合はverified statusを失いreplayedへ戻る。
 
 State matchは次を返す。
 
@@ -627,6 +670,7 @@ AIは次を変更できない。
 - daily cost cap
 - game policy
 - Playbook verified status
+- Screen Graphのnode／edgeのcandidate／verified状態
 
 provider error、timeout、rate limit、schema error、budget到達は明示停止する。別providerへfallbackしない。
 
@@ -644,6 +688,8 @@ recognizers
 visual-targets
 screen-graph
 playbooks
+
+`states`はScreen Graphのnode台帳であり、Screen Graphのnode IDは`states`のstable state IDと同一とする。Playbookの前提・ObservationのKnown候補・visual targetの帰属・Screen Graphのnodeは、すべてこの単一のstate IDを参照し、同じ画面状態を別IDで二重定義しない。`screen-graph`はnode間のedge（遷移・帰属visual target・candidate/verified状態）を持つ。
 fixtures
 policy-record
 provenance-and-license
@@ -694,12 +740,14 @@ Contractsはsemantic ownerごとの非交差subtreeへ分割する。
 ~~~text
 OpenLogicool.Contracts/
   Shared/          J
+  Domain/          D    （SemanticAction等のpure model契約）
+  Devices/Shared/  J    （DeviceInstance・PhysicalInput等のG13/G600横断契約）
   Devices/G13/     B
   Devices/G600/    C
   Profiles/        D
   Playbooks/       E
   Capture/         F
-  Perception/      G
+  Perception/      G    （ObservationResult・KnowledgePack・ScreenGraphを含む）
   AI/              H
 ~~~
 
@@ -794,7 +842,7 @@ big-bangでHostへ集めない。各Waveは一つのvertical sliceとして受�
 - Wave 4で初めてAIなしの画面closed loopを通す。
 - Wave 5のAIはGameLab以外へ入力しない。
 - Wave 6はObserve Only、Teach、Supervised、Verifiedの順に解禁する。
-- Wave 7AはPlaybook、Capture、Perception、AI、実game pilotを待たず、Input Studio Public Gateだけで公開できる。
+- Wave 7AはPlaybook、Capture、Perception、AI、実game pilotを待たず、Input Studio Public GateとShared Distribution Gateの2つだけで公開できる（Game Operator系のgateを待たない）。
 - Wave 7BはShared Distribution GateとGame Operator Public Gateを通す。
 
 ## 8. Phase計画
@@ -811,23 +859,33 @@ big-bangでHostへ集めない。各Waveは一つのvertical sliceとして受�
 - G13 Raw Input全control、stick、hotplug、firmware差の記録。
 - G600 Feature Report read-onlyと完全backup。
 - G600 live input route、通常／G-Shift側全control、legacy重複の記録。
-- LGS/G HUB/driver/Dynamic Lighting inventoryとMigration Safety Gate。
+- LGS/G HUB/driver/Dynamic Lighting inventoryとMigration Safety Gateの手順定義（apply・restore testの実証はG0-Device-Wで行い、Phase 0ではwriteしない）。
 - WGC／Desktop Duplication／可視desktopのcapture probe。
 - ObservationResult、Proposal、Knowledge Packのdraft。
 - AI provider候補のdata policy、画像対応、構造化出力、費用／遅延評価設計。
 - Windows support matrixとreference machineの確定。
 - WPF/.NET 10のWindows-native build、run、test最小確認。
 
-Exit Gate G0-Device:
+Exit Gate G0-Device-RO（Phase 0内・read-onlyで判定できる範囲だけ）:
 
 - G13主要入力経路が成立。
 - G600 profile完全readが成立。
-- G600 live input方式がa／b／cのいずれかへ決まり、未知のままUI契約を固定していない。
-- 最初のwrite前に復元可能なbackupとownership手順が定義済み。
+- G600 live input routeの観測記録が完成（現状firmware割当で届くusage、通常／G-Shift側の識別可否、legacy重複の分類。writeを伴う成立判定は含まない）。
+- Migration Safety Gateの手順（backup・readback・restore）が定義済み（実証はG0-Device-Wで行う）。
+- 方式A／B／Cのうちread-onlyで棄却できるものを棄却し、残候補と必要なwrite実験を列挙済み。
+
+Exit Gate G0-Device-W（Phase 2入口・Migration Safety Gate実証後の最小write実験）:
+
+- Migration Safety Gateをapply・readback・restore testまで実機で実証済み（EXP-MIG-01）。
+- EXP-G600-03（F0 active slot切替）で方式Aの成立を判定済み。
+- 方式Bが残候補の場合、中間usageのonboard書込みとWindows到達を実測済み（EXP-G600-02の write 拡張）。
+- 方式A／B／Cのいずれかへ最終決定し、未知のままUI契約を固定していない。
+
+Phase 0受入の「device writeを行っていない」は維持する。G0-Device-WはPhase 0の外にあり、Phase 2の他実装より先に単独で実施する。
 
 Exit Gate G0-Automation:
 
-- Frame、Observation、Proposalのdraftが実frameとGameLab fixtureで表現可能。
+- Frame、Observation、Proposalのdraftが実frameとGameLab prototypeのfixture案で表現可能（GameLab v1の実装受入はPhase 1 Exit。Phase 0はprototypeと仕様で判定する）。
 - cloud送信前のData Flow Contract項目が決定。
 - NIKKE実測は探索証拠として再記録し、製品受入と混同していない。
 
@@ -866,6 +924,7 @@ Exit:
 
 実施:
 
+- G0-Device-W（他実装より先に単独実施）: EXP-MIG-01のapply・restore実証、EXP-G600-03、方式B残存時のwrite拡張実測、route最終決定。
 - G13 adapter、G600で選択したroute、Mapping Runtime、Input Emitter。
 - press generation、layer、profile切替、finite macro。
 - foreground app identity。
@@ -1049,7 +1108,7 @@ Exit:
 
 | ID | 実験 | 成功条件 | 失敗時の分岐 |
 |---|---|---|---|
-| EXP-LGS-01 | LGS 9.04.49 parity inventory | G13/G600全画面と設定挙動を行単位で記録 | parity claimを保留 |
+| EXP-LGS-01 | LGS 9.04.49 parity inventory | G13/G600全画面と設定挙動を行単位で記録。LampArray等の列挙deviceは提供元device stack（firmware由来かLogitechソフトウェア由来か）を特定する | parity claimを保留 |
 | EXP-G13-01 | Raw Input全TLC | G1〜G22、stick、取得可能な補助key、edge、instanceを記録 | firmware差とprofile状態を追加調査 |
 | EXP-G13-02 | stress／generation | 5-key同時、layer保持、抜線、sleepでedge整合 | mapping contractを固定しない |
 | EXP-G13-03 | RGB／M LED／LCD output | HidUsbを維持し、各機能を独立変更して入力継続 | WinUSB差替えは別decision |
@@ -1058,7 +1117,7 @@ Exit:
 | EXP-G600-03 | active slot change | F0だけを変更、readback、restore | write capabilityを無効 |
 | EXP-G600-04 | 154-byte profile write | byte diff、readback、reconnect、power cycle、restoreを3回 | 追加writeを停止 |
 | EXP-MIG-01 | LGS safety | host profileとdevice backupをreadbackし、復帰手順を実証 | ownership移行とwriteを禁止 |
-| EXP-IN-01 | SendInput acceptance | Notepad、standard、elevated、target gameを個別分類 | unsupported conditionを表示 |
+| EXP-IN-01 | SendInput acceptance | Notepad、standard、elevated、target gameを個別分類。判定はAPI戻り値でなく受信側の観測で行う（SendInputはUIPI遮断を戻り値・GetLastErrorで示さないため、standard／elevated各権限で動くtest targetの受信ログと突合する） | unsupported conditionを表示 |
 | EXP-IN-02 | foreground generation | Alt+Tab、launcher、UWP、key保持でwrong release 0 | resolver contractを修正 |
 | EXP-IN-03 | hard crash key state | Supported OSでoutput残留なしを実証、またはwatchdogが期限内に全release | 未解決ならheld-outputとGame Operator入力を無効 |
 | EXP-CAP-01 | NIKKE WGC window | live sequence、hash、resize、遮蔽、最小化、errorを記録 | visible-only等の条件を明示 |
@@ -1066,7 +1125,7 @@ Exit:
 | EXP-PB-01 | crash matrix | 全boundaryでunknown再送0、journal再生一致 | state machineを修正 |
 | EXP-AI-01 | provider benchmark | frozen corpusで精度、unknown、latency、cost、cancelを比較 | provider未選定を維持 |
 | EXP-DATA-01 | privacy path | captureから保存／送信／削除までdata inventory完成 | cloud／recordingを無効 |
-| EXP-DIST-01 | packaging identity | tray、autostart、WGC、HID、LampArray、updateをclean VMで確認 | MSIX／Sparse／MSIを再裁定 |
+| EXP-DIST-01 | packaging identity | tray、autostart、WGC、updateをclean VMで確認。HID・LampArray行はUSB passthrough対応hypervisor（VMware等。Hyper-Vは汎用passthrough非対応）または実機clean環境で確認し、手段を記録する。Phase 8A実施へ割り当てる | MSIX／Sparse／MSIを再裁定 |
 
 G600の「LED 1項目変更」も転送上は154-byte profile全体のwriteになり得る。論理field一つと物理write範囲を混同しない。foreground切替を契機に永続profileを書き換えない。
 
@@ -1159,7 +1218,7 @@ flowはinventory → dry-run → 利用者確認 → apply → readback → rest
 
 ### 11.2 Distribution Contract
 
-Phase 4完了までに次を確定する。
+次をDistribution Contractとして確定する。期限は§16の各行（packaging方式は「最初の外部配布またはLampArray background制御の早い方の前」）に従う。
 
 - public name、package identity、publisher
 - MSIX／Sparse／MSI、per-user／per-machine
@@ -1230,7 +1289,7 @@ Logicool、Logitech、G13、G600は他社brand／製品識別子である。
 
 | ID | Risk | 現在 | 影響 | Trigger／Mitigation | Gate |
 |---|---|---|---|---|---|
-| R-01 | G600 live inputを一意に取れない | 未確認 | Critical | EXP-G600-02、onboard限定またはdriver分岐 | G0-Device |
+| R-01 | G600 live inputを一意に取れない | 未確認 | Critical | EXP-G600-02、onboard限定またはdriver分岐 | G0-Device-W |
 | R-02 | G600 writeでunknown byte／profileを壊す | 未確認 | High | full backup、byte diff、power cycle、restore | 各write前 |
 | R-03 | G13 LCD endpointへHidUsbのまま書けない | 未確認 | Medium | outputを独立probe、WinUSBは別decision | R5 |
 | R-04 | 元入力抑止にdriverが必要 | 未確認 | High | suppressionとvirtual HIDを分離評価 | R1/R5 |
@@ -1240,7 +1299,7 @@ Logicool、Logitech、G13、G600は他社brand／製品識別子である。
 | R-08 | 誤認識でfalse success／不可逆操作 | 未確認 | Critical | Unknown分離、stable window、frozen corpus | R4 |
 | R-09 | Dispatch後crashで二重実行 | 設計済み未実装 | Critical | DispatchArmed、OutcomeUnknown、fault matrix | R3 |
 | R-10 | AIがschema外操作を提案 | 未確認 | Critical | allowlist proposal、runtime rejection | R4 |
-| R-11 | 画面／OCR／promptから個人data送信 | data contract未作成 | Critical | default OFF、crop consent、deletion | Phase 5前 |
+| R-11 | 画面／OCR／promptから個人data送信 | data contract未作成 | Critical | default OFF、crop consent、deletion | Phase 4前（§6.12と同時点） |
 | R-12 | AI費用／timeoutでrunが停止 | 未確認 | Medium | benchmark、cap、明示停止、no fallback | R4 |
 | R-13 | LGS/G HUB移行で設定喪失 | 未確認 | High | Migration Safety Gate、dry-run、rollback | 最初のwrite前 |
 | R-14 | game規約／anti-cheat違反 | game別未確認 | Critical | Policy Record、mode gate | 実game前 |
@@ -1271,7 +1330,7 @@ Input StudioとGame Operatorの両方に必要:
 
 ### 14.2 Input Studio Public Gate
 
-1. Device／Input／Profile／Application Workspaceの対象requirementが合格。
+1. Device／Input／Profile／Application Workspaceの対象requirement（R1／R2行だけ。APP-010／APP-011等のR3／R4行を含まない）が合格。
 2. parser replay、generation race、hotplug、sleep、foreground、input acceptanceがSupported matrixで合格。
 3. hard crashでoutputが残留しないことを実証するか、watchdogが期限内に全releaseする。
 4. LGS migration dry-run、cancel、device restoreが実機で通り、元profileを破壊しない。
@@ -1314,7 +1373,7 @@ LGS Parityは、Phase 0のcanonical inventoryでLGS 9.04.49上の存在を確認
 - G600 Feature Report backup
 - G600 live input route report
 - redacted device fixture
-- G0-Device decision
+- G0-Device-RO decision（write実験を要するG0-Device-WはPhase 2入口）
 
 ### Deliverable 0C: Capture／AI feasibility
 
@@ -1347,15 +1406,15 @@ LGS Parityは、Phase 0のcanonical inventoryでLGS 9.04.49上の存在を確認
 
 | Decision | 期限 | 決定材料 |
 |---|---|---|
-| Windows 10をSupportedに含めるか | Phase 0終了 | lifecycle、clean VM、runtime、driver |
-| G600 user-mode／onboard／driver route | G0-Device | live input、重複、app profile規模 |
-| hard-crash watchdog | Phase 2開始 | key state実測、process追加cost |
+| Windows 10をSupportedに含めるか | Phase 0終了 | lifecycle文書とruntime要件の書面判定（「含める」判断の場合だけclean VM実測を追加してから確定する） |
+| G600 方式A／B／C route | G0-Device-W（Phase 2入口） | G0-Device-ROの観測記録、EXP-MIG-01、EXP-G600-03、方式B残存時はwrite拡張実測 |
+| hard-crash watchdog | Phase 2内・held-output機能の実装前 | EXP-IN-03（Phase 2序盤に割当。SendInput経路の最小実装で実測）、process追加cost、UIPI/IL条件（§6.2） |
 | WGC以外のbackendを製品化するか | Phase 5開始 | capability matrix |
-| AI provider／local model | Phase 6開始 | frozen benchmark、cost、data policy |
+| AI provider／local model | Phase 6内・Teach mode実装前 | EXP-AI-01 frozen benchmark（Phase 6序盤に割当。corpusはPhase 5成果を使う）、cost、data policy |
 | initial real-game pilot | Phase 7開始 | policy、capture、input、reset cycle |
 | public product name | 最初の外部配布前 | trademark、publisher identity |
-| MSIX／Sparse／MSI | Phase 8前、LampArray background前 | identity、tray、update、driver |
-| optional kernel driver | G0-Device後 | suppression necessity、signing burden |
+| MSIX／Sparse／MSI | 最初の外部配布またはLampArray background制御の早い方の前（本行が唯一の期限。§0.2・§11.2はここを参照する） | EXP-DIST-01（Phase 8A実施）、identity、tray、update、driver |
+| optional kernel driver | G0-Device-W後 | suppression necessity、signing burden |
 | full LGS script／LCD applet compatibility | parity inventory後 | 実装しない場合はLGS Parity claimを使わずCore／Partial claimへ固定 |
 
 未決定を仮の実装で埋めない。各deadlineまではinterfaceとfixtureだけを作り、decision後に一つの方式を実装する。
