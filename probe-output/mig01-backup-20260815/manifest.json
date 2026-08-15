@@ -1,0 +1,22 @@
+{
+  "purpose": "EXP-MIG-01 backup (Migration Safety Gate \u00a72)",
+  "capturedAtUtc": "2026-08-15T10:13:51.320475+00:00",
+  "machine": "FOX",
+  "twoReadMatch": {
+    "F0": "match",
+    "F1": "match",
+    "F2": "match",
+    "F3": "match",
+    "F4": "match",
+    "F5": "match",
+    "F6": "read-impossible (documented)"
+  },
+  "files": {
+    "g600-backup-run1.json": {
+      "sha256": "f1a5a762520a7f21f041b10695a0d90fc77f26c521927f38b79f83d50cd6cf2b"
+    },
+    "g600-backup-run2.json": {
+      "sha256": "534e96f704cd197395366657291813e3000c884d0edc7c626884e721c939f89e"
+    }
+  }
+}

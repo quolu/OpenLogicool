@@ -1,0 +1,351 @@
+{
+  "backlight" : 
+  {
+    "Logitech.Gaming.LeftHandedController.G13" : 
+    {
+      "M1" : "#ffffff",
+      "M2" : "#ffffff",
+      "M3" : "#ffffff"
+    },
+    "Logitech.Gaming.Mouse.G600" : 
+    {
+      "M1" : "#ff0000",
+      "M2" : "#ffffff",
+      "M3" : "#00ff00"
+    }
+  },
+  "current_profile_id" : "{7815EC59-D7AB-4F70-AC15-DA228A225FBD}",
+  "gameApplets" : 
+  {
+    "C:|Program Files|Logicool Gaming Software|ArxApplets|Assetto Corsa|AssettoCorsaArxApplet.exe" : 
+    {
+      "id" : "scan_from_known_folder",
+      "launch" : 
+      {
+        "profile_associated_but_game_not_found" : true,
+        "profile_guid" : "{9E6D8C2F-0983-4008-8EE3-EC5554C88CAF}",
+        "type" : "never"
+      },
+      "name" : "Assetto Corsa",
+      "support" : 
+      {
+        "arx" : 
+        {
+          "enabled" : true,
+          "support" : true
+        },
+        "led" : 
+        {
+          "enabled" : true,
+          "support" : true
+        }
+      }
+    },
+    "C:|Program Files|Logicool Gaming Software|ArxApplets|Audio Visualizer|Audio_Visualizer_Arx_Applet.exe" : 
+    {
+      "id" : "scan_from_known_folder",
+      "launch" : 
+      {
+        "type" : "never"
+      },
+      "name" : "Audio Visualizer",
+      "support" : 
+      {
+        "arx" : 
+        {
+          "enabled" : false,
+          "support" : false
+        },
+        "led" : 
+        {
+          "enabled" : true,
+          "support" : true
+        }
+      }
+    },
+    "C:|Program Files|Logicool Gaming Software|ArxApplets|Counter Strike - GO|CS_GO_Arx_Applet.exe" : 
+    {
+      "id" : "scan_from_known_folder",
+      "launch" : 
+      {
+        "profile_associated_but_game_not_found" : true,
+        "profile_guid" : "{A2606DAA-7B0C-4CA6-B203-2E86E5BE3325}",
+        "type" : "never"
+      },
+      "name" : "Counter Strike - GO",
+      "support" : 
+      {
+        "arx" : 
+        {
+          "enabled" : true,
+          "support" : true
+        },
+        "led" : 
+        {
+          "enabled" : true,
+          "support" : true
+        }
+      }
+    },
+    "C:|Program Files|Logicool Gaming Software|ArxApplets|Discord|logitechg_discord.exe" : 
+    {
+      "id" : "scan_from_known_folder",
+      "launch" : 
+      {
+        "type" : "startup"
+      },
+      "name" : "Discord",
+      "support" : 
+      {
+        "arx" : 
+        {
+          "enabled" : false,
+          "support" : false
+        },
+        "led" : 
+        {
+          "enabled" : true,
+          "support" : true
+        }
+      }
+    },
+    "C:|Program Files|Logicool Gaming Software|ArxApplets|Dota 2|Dota2ArxApplet.exe" : 
+    {
+      "id" : "scan_from_known_folder",
+      "launch" : 
+      {
+        "profile_associated_but_game_not_found" : true,
+        "profile_guid" : "{306FB93B-96A8-43EB-9B5A-352D93EEE712}",
+        "type" : "never"
+      },
+      "name" : "Dota 2",
+      "support" : 
+      {
+        "arx" : 
+        {
+          "enabled" : true,
+          "support" : true
+        },
+        "led" : 
+        {
+          "enabled" : true,
+          "support" : true
+        }
+      }
+    },
+    "C:|Program Files|Logicool Gaming Software|ArxApplets|Screen Sampler|ScreenSampler.exe" : 
+    {
+      "id" : "scan_from_known_folder",
+      "launch" : 
+      {
+        "type" : "never"
+      },
+      "name" : "Screen Sampler",
+      "support" : 
+      {
+        "arx" : 
+        {
+          "enabled" : false,
+          "support" : false
+        },
+        "led" : 
+        {
+          "enabled" : true,
+          "support" : true
+        }
+      }
+    }
+  },
+  "lcd" : 
+  {
+    "applets" : 
+    {
+      "091b" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/LCore.exe",
+        "autostartable" : false,
+        "format" : 1,
+        "iconPath" : "",
+        "name" : "G \u30b7\u30ea\u30fc\u30ba\u306e\u30d7\u30ed\u30d5\u30a1\u30a4\u30eb \u30bb\u30ec\u30af\u30bf"
+      },
+      "0e5c" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/Applets/LCDMedia.exe",
+        "autostartable" : true,
+        "format" : 0,
+        "iconPath" : "",
+        "name" : "Logicool \u30e1\u30c7\u30a3\u30a2 \u30c7\u30a3\u30b9\u30d7\u30ec\u30a4"
+      },
+      "1892" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/LCore.exe",
+        "autostartable" : false,
+        "format" : 0,
+        "iconPath" : "",
+        "name" : "G \u30b7\u30ea\u30fc\u30ba\u306e\u30d7\u30ed\u30d5\u30a1\u30a4\u30eb \u30bb\u30ec\u30af\u30bf"
+      },
+      "33df" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/Applets/LCDRSS.exe",
+        "autostartable" : true,
+        "format" : 0,
+        "iconPath" : "",
+        "name" : "Logicool LCD RSS \u30d3\u30e5\u30fc\u30a2"
+      },
+      "6cd4" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/LCore.exe",
+        "autostartable" : false,
+        "format" : 0,
+        "iconPath" : "",
+        "name" : "Logicool \u30b2\u30fc\u30e0 \u30d7\u30ed\u30d5\u30a1\u30a4\u30e9"
+      },
+      "7b2d" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/Applets/LCDClock.exe",
+        "autostartable" : true,
+        "format" : 0,
+        "iconPath" : "",
+        "name" : "Logicool \u30d1\u30d5\u30a9\u30fc\u30de\u30f3\u30b9 \u30e2\u30cb\u30bf"
+      },
+      "7d5d" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/LCore.exe",
+        "autostartable" : false,
+        "format" : 1,
+        "iconPath" : "",
+        "name" : "Logicool \u30b2\u30fc\u30e0 \u30d7\u30ed\u30d5\u30a1\u30a4\u30e9"
+      },
+      "9e1a" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/Applets/LCDClock.exe",
+        "autostartable" : true,
+        "format" : 0,
+        "iconPath" : "",
+        "name" : "Logicool LCD \u30af\u30ed\u30c3\u30af"
+      },
+      "c7d5" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/Applets/LCDPop3.exe",
+        "autostartable" : true,
+        "format" : 0,
+        "iconPath" : "",
+        "name" : "Logicool LCD POP3 \u30e2\u30cb\u30bf"
+      },
+      "fdcf" : 
+      {
+        "appPath" : "C:/Program Files/Logicool Gaming Software/Applets/LCDCountdown.exe",
+        "autostartable" : true,
+        "format" : 0,
+        "iconPath" : "",
+        "name" : "Logicool LCD \u30ab\u30a6\u30f3\u30c8\u30c0\u30a6\u30f3 \u30bf\u30a4\u30de"
+      }
+    },
+    "devices" : 
+    {
+      "Logitech.Gaming.LeftHandedController.G13" : 
+      {
+        "applets" : 
+        {
+          "0e5c" : 
+          {
+            "enabled" : true
+          },
+          "1892" : 
+          {
+            "enabled" : true
+          },
+          "33df" : 
+          {
+            "enabled" : true
+          },
+          "7b2d" : 
+          {
+            "enabled" : true
+          },
+          "9e1a" : 
+          {
+            "enabled" : true
+          },
+          "c7d5" : 
+          {
+            "enabled" : true
+          },
+          "fdcf" : 
+          {
+            "enabled" : true
+          }
+        },
+        "foregroundapplet" : "1892"
+      }
+    },
+    "mono_applets_launched" : 
+    {
+      "9.04.49" : 
+      {
+        "Logitech.Gaming.LeftHandedController.G13" : true
+      }
+    }
+  },
+  "mainapp" : 
+  {
+    "autostart" : true
+  },
+  "mainwindow" : 
+  {
+    "lastUsedDevice" : "Logitech.Gaming.Mouse.G600",
+    "useEnhancedGraphics" : false
+  },
+  "mobile" : 
+  {
+    "service_guid" : "{9178e348-d9cc-4a36-90c1-11ac25f9829b}"
+  },
+  "pointer" : 
+  {
+    "Logitech.Gaming.Mouse.G600" : 
+    {
+      "dpi" : 
+      {
+        "defaultIndex" : 0,
+        "shiftIndex" : 0,
+        "syncXY" : true,
+        "values" : 
+        [
+          {
+            "enabled" : true,
+            "x" : 1200,
+            "y" : 1200
+          }
+        ]
+      },
+      "hardwareMode" : true,
+      "powerMode" : 2,
+      "reportRate" : 500
+    },
+    "hasAcceleration" : true
+  },
+  "profiler" : 
+  {
+    "autoScannedForGames" : true,
+    "enableQuickMacroDelays" : false,
+    "joystickMouseSpeed" : 127,
+    "lastProfile" : "{7815EC59-D7AB-4F70-AC15-DA228A225FBD}",
+    "persistentProfile" : "{7815EC59-D7AB-4F70-AC15-DA228A225FBD}",
+    "recordMultiKeyMacroDelays" : false,
+    "showMacroActivationOnLCD" : false,
+    "showProfileActivationOnLCD" : true,
+    "showQuickMacrosOnLCD" : true,
+    "sp" : 
+    {
+      "hasMigrated" : true
+    }
+  },
+  "splashscreen" : 
+  {
+    "G560_first" : true
+  },
+  "sync_effect_settings" : 
+  {
+    "settings" : null
+  }
+}
