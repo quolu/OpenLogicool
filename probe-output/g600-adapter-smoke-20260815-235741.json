@@ -1,0 +1,27 @@
+{
+  "Probe": "g600-adapter-smoke",
+  "CapturedAtUtc": "2026-08-15T14:57:41.9030024Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "DurationSeconds": 90,
+  "Devices": [
+    {
+      "SchemaVersion": "0.1.0",
+      "DeviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "VendorId": 1133,
+      "ProductId": 49738,
+      "DevicePath": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "ContainerId": "{d622efaa-fb5a-5b9c-abb0-2f8040f562d9}",
+      "Generation": 1,
+      "Capabilities": [
+        "g600.buttons",
+        "g600.wheel"
+      ]
+    }
+  ],
+  "InputCount": 0,
+  "Inputs": [],
+  "WheelTickCount": 0,
+  "WheelTicks": [],
+  "DroppedInputCount": 0
+}
