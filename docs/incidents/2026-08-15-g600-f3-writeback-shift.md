@@ -59,6 +59,18 @@ direct SET_FEATURE による onboard write は、**書くたびに格納結果�
 4. **onboard が壊れている状態で LGS を onboard モードへ切り替えてはならない**。壊れた profile が active になり、入力デバイスそのものを失う。onboard 復元の再試行時は、先にマウスキー等の代替入力を確保してから行う
 5. LGS の host 設定（settings.json・profiles）の事前 backup は、device 側だけでなく **host 側の復旧経路としても機能した**（Migration Safety Gate の inventory #4 の価値の実証）
 
+## 再試行（案B・オーナー裁定）と最終判定（同日 20:0x）
+
+power cycle（USB 抜き挿し）で firmware runtime をリセット後、Claude が画面代行で LGS onboard 編集画面を操作した。結果:
+
+- **LGS 純正経路の write もずれて格納される**ことを確認した。onboard 編集画面での操作後、無傷だった F5 が「1 byte 欠けた形」へ変化（F4 の read は backup と完全一致のままで read 経路の健全性は担保）。F3 は直らず
+- ずれは direct SET_FEATURE 固有ではなく、**この device の feature write 全般が現在ずれて格納される状態**であり、power cycle でも解消しない
+- これ以上の onboard 操作は全損リスクのため**即時撤退**。LGS を「自動ゲーム検出」（host 制御）へ戻して日常使用を確保した
+
+最終 device 状態（`probe-output/mig01-backup-20260815/device-state-after-incident-20260815.json`）: F4 のみ backup 一致。F3・F5 は破損（backup は3面とも完全保持）。F0 は 08（意味未解読）。
+
+**G0-Device-W 判定: 不通過（オーナー報告待ちの暫定）。onboard への write は経路を問わず全面凍結**。解除条件は「LGS 正規 write protocol（F6 コマンド系）の解明と、破損した F3/F5 の復元実証」。復元素材（F0〜F5 完全 backup・SHA-256 封入）は保持済み。
+
 ## 参照
 
 - backup（無傷・SHA-256 封入済み）: `probe-output/mig01-backup-20260815/`
