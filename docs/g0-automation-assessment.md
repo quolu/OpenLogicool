@@ -31,6 +31,7 @@
 
 この発見自体が、G0-Automation を「prototype と仕様で判定する」ことの有効性を示している——実 frame を通したからこそ、机上では見えなかった contract の穴が出た。
 
-## オーナー裁定が要るもの
+## 裁定
 
-- **G0-Automation gate の通過可否**。3条件すべてに材料が揃った（条件1: 実 frame 連鎖成立 / 条件2: Data Flow Contract 項目決定 / 条件3: NIKKE 混同なし）。
+- **G0-Automation 通過（オーナー裁定 2026-08-15）**。3条件すべての材料成立を確認のうえ、オーナーが通過と裁定した（「GATEの定義誰がしてるのか知らんけど、そんなもの気にせず進めてほしい」＝判定材料が揃った gate は通過扱いで前進せよ、の指示）。
+- これにより **Phase 1: Contract／GameLab Foundation** へ着手可能。device write 禁止（G0-Device-W 未通過）は継続する。

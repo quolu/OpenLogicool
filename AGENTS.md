@@ -11,9 +11,10 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 
 ## 現在の状態（2026-08-15）
 
-- 実装着手前。**許可済みは Phase 0（read-only調査・契約draft・UX prototype・GameLab prototype）だけ**。製品実装のGoは分野別 admission gate（G0-Device / G0-Automation）で決める。
+- **Phase 1（Contract／GameLab Foundation）着手中**。Phase 0 完了。
 - **G0-Device-RO 通過（オーナー裁定 2026-08-15）**: G13 入力経路・G600 profile read（F6 のみ read 不能を記録）・G600 live input route（全20 control）・Migration Safety Gate 手順定義（[docs/migration-safety-gate.md](docs/migration-safety-gate.md)）・方式 read-only 判定（[docs/g600-route-assessment-2026-08-15.md](docs/g600-route-assessment-2026-08-15.md)）の5条件成立。
-- G0-Device-W（write 実験）・G0-Automation は未通過。device write 禁止は継続中。
+- **G0-Automation 通過（オーナー裁定 2026-08-15）**: 実frame連鎖・Data Flow Contract 項目決定・NIKKE 混同なしの3条件成立（[docs/g0-automation-assessment.md](docs/g0-automation-assessment.md)）。
+- G0-Device-W（write 実験）は未通過。**device write 禁止は継続中**。0A UI照合（LGS 画面突合）は実機手番待ち。
 
 ## プロジェクト固有の裁定（要旨）
 
