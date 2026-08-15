@@ -21,7 +21,7 @@ fixture: [fixtures/contracts/next-action-proposal.sample.json](../../fixtures/co
 ### action payload（mode 別）
 
 - `VerifiedRun`: `semanticActionId` のみ。**既存 action catalog の ID だけ**を許可し、座標・key code・新規 action を含められない（§6.10）。
-- `Teach`: `visualTargetRef`（Perception が現在 frame から列挙した visual target の ID）＋ `primitive`（許可 primitive の enum）。AI が任意座標を生成することはない。Runtime は target が同じ Frame／transform revision へ属し、対象 window 内で、許可 primitive であることを検証する。
+- `Teach`: `visualTargetRef`（Perception が現在 frame から列挙した visual target の ID）＋ `primitive`（事前許可 primitive の識別子）。AI が任意座標を生成することはない。Runtime は target が同じ Frame／transform revision へ属し、対象 window 内で、許可 primitive であることを検証する。
 
 ## 意味規則（計画からの継承）
 
@@ -32,5 +32,5 @@ fixture: [fixtures/contracts/next-action-proposal.sample.json](../../fixtures/co
 ## 未決定
 
 - precondition / expectedOutcome の predicate 表現（stateId 単独か、述語言語を持つか）
-- Teach mode の許可 primitive 一覧（click / drag / key の粒度）
+- Teach mode の許可 primitive 一覧（click / drag / key の粒度）。primitive は現時点で string 識別子であり、enum 化は未決定
 - proposalId と Attempt ID の対応多重度（1:1 固定か、再試行で 1:N か）

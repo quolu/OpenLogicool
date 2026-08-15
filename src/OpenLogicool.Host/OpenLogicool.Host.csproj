@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OpenLogicool.Contracts\OpenLogicool.Contracts.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Domain\OpenLogicool.Domain.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Devices.G13\OpenLogicool.Devices.G13.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Devices.G600\OpenLogicool.Devices.G600.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Input\OpenLogicool.Input.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Profiles\OpenLogicool.Profiles.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Playbooks\OpenLogicool.Playbooks.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Persistence\OpenLogicool.Persistence.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Capture\OpenLogicool.Capture.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Perception\OpenLogicool.Perception.csproj" />
+    <ProjectReference Include="..\OpenLogicool.AI\OpenLogicool.AI.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Desktop\OpenLogicool.Desktop.csproj" />
+  </ItemGroup>
+</Project>
