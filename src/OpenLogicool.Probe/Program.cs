@@ -14,7 +14,10 @@ return command switch
 {
     "enumerate" => Enumerate(),
     "g600-backup" => G600Backup(),
-    _ => Fail($"unknown command: {command}. available: enumerate, g600-backup"),
+    "record" => OpenLogicool.Probe.RawInputRecorder.Run(
+        args.Length > 1 ? args[1] : "session",
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output")),
+    _ => Fail($"unknown command: {command}. available: enumerate, g600-backup, record [label]"),
 };
 
 static int Fail(string message)
