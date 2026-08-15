@@ -67,8 +67,26 @@ profiles
 
 ## 4. 未確認（UI 確認または write 実験が要る）
 
-- shiftstate 1〜6 の正確な意味（M1/M2/M3 × G-Shift の対応表）
-- `reportrate` と profile byte 24 の対応（write 実験 EXP-MIG-01 後）
+- shiftstate 1〜6 の正確な意味（M1/M2/M3 × G-Shift の対応表）。UI 照合（§5）でモード別割当ビュー（G600 モード選択ダイヤル・G13 M1/M2/M3 キー）は確認済みだが、G-Shift 層の明示的なビュー切替は今回巡回した画面には現れなかった——**強い推定のまま**
+- `reportrate` と profile byte 24 の対応（write 実験で確定。UI 照合で LGS の選択肢は 125〜1000 の8段、現在値 500 が XML と一致）
 - `powermode`、`natural`、`multikey`、`function` 要素の意味
-- G13 LCD 関連設定の格納場所（XML に無い）
-- LGS UI にあって XML に現れない機能の有無（**この確認だけは実機 UI 操作が要る**。本台帳の12項目を持って UI を照合すれば、総なめより短時間で済む）
+- ~~G13 LCD 関連設定の格納場所（XML に無い）~~ → **解決**: `settings.json` の `/lcd/devices/...`（§5）
+
+## 5. UI 照合の結果（2026-08-15・画面代行で実施・確認済み）
+
+LGS 9.04.49 の実画面を G600/G13 の全主要画面を巡回し、台帳12項目と突合した。**profile XML が一次資料として成立する判定は維持**（割当・マクロ・DPI・レポートレート・モード色は XML と UI が一致）。UI にあって profile XML に現れない機能は以下の6面で、いずれも格納先は `settings.json` または device 直接操作。
+
+| # | UI にあって XML に無い機能 | 格納先／性質 | Input Studio への含意 |
+|---|---|---|---|
+| 1 | LED 効果（サイクル／パルス・速度・スリープ） | `settings.json` `sync_effect_settings`（本機は未設定＝None、強い推定） | onboard LED は静的色のみ（F3–F5 実証済み）。効果は host 制御機能 |
+| 2 | firmware 表示・アップデート（G600 のみ。G13 は非サポート明記） | device 直接操作 | 対象外（製品境界） |
+| 3 | プロファイル運用策（デフォルト＝fallback・固定＝persistent・サイクルホットキー） | `settings.json` `/profiler/persistentProfile` 等（実測確認） | APP-006 の app レベル設定に対応が要る |
+| 4 | G13 LCD アプレット（POP3/RSS/タイマ/時計の選択・表示オプション・ライブプレビュー） | `settings.json` `/lcd/devices/...`（実測確認） | LCD 対応時は applet モデルが前提 |
+| 5 | G13 onboard プロファイル転送（プロファイルバーから device スロットへドラッグ、スロット5枠） | device write 面 | **G13 にも onboard 保存が存在**。Input Studio の onboard 対応は G600 だけでなく G13 も設計対象になり得る（未調査・write 凍結対象） |
+| 6 | 入力解析（キープレス／ヒートマップ記録） | 分析機能（保存先未確認） | 対象外（分析系。必要なら別 deliverable） |
+
+付随の実測確認:
+- ポインタ設定画面: DPI レベル数選択・スライダ・X/Y 軸分離・加速 checkbox・プロファイル別有効化 checkbox——XML の `dpitable`/`dpi@x@y`/`movement@acceleration` と対応
+- クイックマクロ録画（設定「一般」タブ）と遅延記録オプション: `settings.json` `/profiler/enableQuickMacroDelays`（実測確認）。録画結果は profile XML の macro になる
+- G13 ジョイスティック: 4方向＋押込が割当面に存在。速度は `settings.json` `/profiler/joystickMouseSpeed`（実測確認）
+- 照合中に host profile XML への意図しない書込が無いことを、照合後の XML byte 突合で確認した（mode 色ほか全値一致。差分は LGS 再保存による属性順と `lastplayeddate` のみ）
