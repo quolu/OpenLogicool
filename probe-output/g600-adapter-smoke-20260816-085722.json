@@ -1,0 +1,206 @@
+{
+  "Probe": "g600-adapter-smoke",
+  "CapturedAtUtc": "2026-08-15T23:57:22.9522055Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "DurationSeconds": 60,
+  "Devices": [
+    {
+      "SchemaVersion": "0.1.0",
+      "DeviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "VendorId": 1133,
+      "ProductId": 49738,
+      "DevicePath": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "ContainerId": "{d622efaa-fb5a-5b9c-abb0-2f8040f562d9}",
+      "Generation": 1,
+      "Capabilities": [
+        "g600.buttons",
+        "g600.wheel"
+      ]
+    }
+  ],
+  "InputCount": 12,
+  "Inputs": [
+    {
+      "MonotonicMs": 7833.4097,
+      "ControlId": "G12",
+      "Edge": "Down",
+      "ReportSequence": 1
+    },
+    {
+      "MonotonicMs": 7928.546,
+      "ControlId": "G12",
+      "Edge": "Up",
+      "ReportSequence": 2
+    },
+    {
+      "MonotonicMs": 8270.5573,
+      "ControlId": "G16",
+      "Edge": "Down",
+      "ReportSequence": 3
+    },
+    {
+      "MonotonicMs": 8408.5655,
+      "ControlId": "G16",
+      "Edge": "Up",
+      "ReportSequence": 4
+    },
+    {
+      "MonotonicMs": 8805.693,
+      "ControlId": "G17",
+      "Edge": "Down",
+      "ReportSequence": 5
+    },
+    {
+      "MonotonicMs": 8964.562,
+      "ControlId": "G17",
+      "Edge": "Up",
+      "ReportSequence": 6
+    },
+    {
+      "MonotonicMs": 19321.1019,
+      "ControlId": "G8",
+      "Edge": "Down",
+      "ReportSequence": 28
+    },
+    {
+      "MonotonicMs": 19512.9473,
+      "ControlId": "G8",
+      "Edge": "Up",
+      "ReportSequence": 29
+    },
+    {
+      "MonotonicMs": 21789.0983,
+      "ControlId": "G7",
+      "Edge": "Down",
+      "ReportSequence": 30
+    },
+    {
+      "MonotonicMs": 21951.1611,
+      "ControlId": "G7",
+      "Edge": "Up",
+      "ReportSequence": 31
+    },
+    {
+      "MonotonicMs": 22663.1846,
+      "ControlId": "G6",
+      "Edge": "Down",
+      "ReportSequence": 32
+    },
+    {
+      "MonotonicMs": 22863.0881,
+      "ControlId": "G6",
+      "Edge": "Up",
+      "ReportSequence": 33
+    }
+  ],
+  "WheelTickCount": 21,
+  "WheelTicks": [
+    {
+      "MonotonicMs": 13299.9926,
+      "Delta": 1,
+      "ReportSequence": 7
+    },
+    {
+      "MonotonicMs": 13326.9046,
+      "Delta": 1,
+      "ReportSequence": 8
+    },
+    {
+      "MonotonicMs": 13354.8425,
+      "Delta": 1,
+      "ReportSequence": 9
+    },
+    {
+      "MonotonicMs": 13392.9029,
+      "Delta": 1,
+      "ReportSequence": 10
+    },
+    {
+      "MonotonicMs": 13756.8406,
+      "Delta": 1,
+      "ReportSequence": 11
+    },
+    {
+      "MonotonicMs": 13786.6791,
+      "Delta": 1,
+      "ReportSequence": 12
+    },
+    {
+      "MonotonicMs": 13807.8685,
+      "Delta": 1,
+      "ReportSequence": 13
+    },
+    {
+      "MonotonicMs": 13838.942,
+      "Delta": 1,
+      "ReportSequence": 14
+    },
+    {
+      "MonotonicMs": 13899.863,
+      "Delta": 1,
+      "ReportSequence": 15
+    },
+    {
+      "MonotonicMs": 14233.8682,
+      "Delta": -1,
+      "ReportSequence": 16
+    },
+    {
+      "MonotonicMs": 14266.9645,
+      "Delta": -1,
+      "ReportSequence": 17
+    },
+    {
+      "MonotonicMs": 14294.7007,
+      "Delta": -1,
+      "ReportSequence": 18
+    },
+    {
+      "MonotonicMs": 14317.9578,
+      "Delta": -1,
+      "ReportSequence": 19
+    },
+    {
+      "MonotonicMs": 14338.9265,
+      "Delta": -1,
+      "ReportSequence": 20
+    },
+    {
+      "MonotonicMs": 14366.9863,
+      "Delta": -1,
+      "ReportSequence": 21
+    },
+    {
+      "MonotonicMs": 14730.9149,
+      "Delta": -1,
+      "ReportSequence": 22
+    },
+    {
+      "MonotonicMs": 14755.904,
+      "Delta": -1,
+      "ReportSequence": 23
+    },
+    {
+      "MonotonicMs": 14775.8707,
+      "Delta": -1,
+      "ReportSequence": 24
+    },
+    {
+      "MonotonicMs": 14800.9301,
+      "Delta": -1,
+      "ReportSequence": 25
+    },
+    {
+      "MonotonicMs": 14830.7268,
+      "Delta": -1,
+      "ReportSequence": 26
+    },
+    {
+      "MonotonicMs": 14866.7327,
+      "Delta": -1,
+      "ReportSequence": 27
+    }
+  ],
+  "DroppedInputCount": 0
+}
