@@ -19,8 +19,10 @@ using OpenLogicool.Profiles;
 //       1行1 event で表示する（test field・Journey A-6。既定 off・fast path 本体の挙動は変えない）。
 //   import <documents.json> [--db <path>]
 //       MappingProfileDocument の JSON 配列を store へ upsert する（UI 実装までの投入経路）。
-//   ui [--db <path>] [--duration-ms N]
-//       表示骨格（Phase 2 Exit 条件1・4の表示系）を read-only で開く。fast path は起動しない。
+//   ui [--db <path>] [--duration-ms N] [--resident]
+//       表示骨格（Phase 2 Exit 条件1・4の表示系）を開く。既定では fast path は起動しない。
+//       --resident を付けると fast path＋watchdog を同居起動し、保存時に新規 down から即時反映する
+//       （device write はしない＝MAP-010）。二重起動防止は run と同じ named mutex を使う。
 //   associate <profileId> <app.exe の full path | default | package:<familyName>> [--db <path>]
 //       foreground app→profile の関連付けを保存する（"default" はその device 種別の既定 profile 指定・
 //       "package:<familyName>" は MSIX/Store app を package family name で識別する＝APP-004）。
@@ -61,7 +63,7 @@ return command switch
     "revisions" when args.Length >= 2 => Revisions(args[1], args[2..]),
     "diagnostics" => Diagnostics(args[1..]),
     "onboarding" => Onboarding(args[1..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>]]"),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>]]"),
 };
 
 static int Fail(string message)
@@ -168,7 +170,9 @@ static int Run(string[] arguments)
 static int Ui(string[] arguments)
 {
     var databasePath = DefaultDatabasePath();
+    var watchdogPath = Path.Combine(AppContext.BaseDirectory, "OpenLogicool.Watchdog.exe");
     int? durationMs = null;
+    var resident = false;
     for (var i = 0; i < arguments.Length; i++)
     {
         switch (arguments[i])
@@ -179,10 +183,34 @@ static int Ui(string[] arguments)
             case "--duration-ms" when i + 1 < arguments.Length:
                 durationMs = int.Parse(arguments[++i]);
                 break;
+            case "--resident":
+                resident = true;
+                break;
             default:
                 return Fail($"unknown ui option: {arguments[i]}");
         }
     }
+
+    // --resident は fast path＋watchdog を UI と同居させる（設計 t09 第4段残作業④）。
+    // 既に別 process が常駐している場合は黙って二重化せず、明示エラーで止まる。
+    SingleInstanceGuard? residentGuard = null;
+    ResidentInputHost? residentHost = null;
+    ResidentHostStatus? residentStatus = null;
+    if (resident)
+    {
+        residentGuard = new SingleInstanceGuard(SingleInstanceGuard.DefaultName);
+        if (!residentGuard.IsOwner)
+        {
+            residentGuard.Dispose();
+            return Fail("OpenLogicool.Host は既に起動しています（ui --resident は二重起動できません・計画 §6.2）。");
+        }
+
+        residentHost = new ResidentInputHost(databasePath, watchdogPath, enableTrace: true);
+        residentStatus = residentHost.Start();
+    }
+
+    using var residentGuardDisposable = residentGuard;
+    using var residentHostDisposable = residentHost;
 
     Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
     using var connection = new SqliteConnection($"Data Source={databasePath}");
@@ -249,11 +277,22 @@ static int Ui(string[] arguments)
 
     var editorIntents = new HostWorkspaceEditorIntents(connection);
 
+    IResidentApplyIntent? residentApply = null;
+    if (residentHost is not null && residentStatus is not null)
+    {
+        var instanceIdsByKind = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+        {
+            ["G13"] = residentStatus.G13DeviceInstanceIds,
+            ["G600"] = residentStatus.G600DeviceInstanceIds,
+        };
+        residentApply = new HostResidentApplyIntent(residentHost.Pump, instanceIdsByKind);
+    }
+
     var exitCode = 0;
     var thread = new Thread(() =>
     {
         var application = new System.Windows.Application();
-        var window = new InputStudioWindow(snapshot, report, AppProfileResolver.DefaultMarker, editorIntents);
+        var window = new InputStudioWindow(snapshot, report, AppProfileResolver.DefaultMarker, editorIntents, residentApply);
         if (durationMs is not null)
         {
             var timer = new System.Windows.Threading.DispatcherTimer

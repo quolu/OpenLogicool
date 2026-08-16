@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using OpenLogicool.Contracts.Profiles;
 
 namespace OpenLogicool.Desktop;
@@ -19,6 +20,10 @@ namespace OpenLogicool.Desktop;
 public sealed class InputStudioWindow : Window
 {
     private readonly IWorkspaceEditorIntents _intents;
+    private readonly InputStudioReport _report;
+    private readonly IResidentApplyIntent? _residentApply;
+    private DiagnosticsWindow? _diagnosticsWindow;
+    private DispatcherTimer? _traceTimer;
 
     private WorkspaceScreenSnapshot _snapshot;
     private string _selectedApplicationFullPath;
@@ -35,10 +40,23 @@ public sealed class InputStudioWindow : Window
 
     // 上部バー
     private readonly Button _appPillButton = new();
-    private readonly TextBlock _appPillLabel = new() { FontWeight = FontWeights.SemiBold, Foreground = Theme.Text, FontSize = 13 };
+    private readonly TextBlock _appPillLabel = new()
+    {
+        FontWeight = FontWeights.SemiBold,
+        Foreground = Theme.Text,
+        FontSize = 13,
+        MaxWidth = 220,
+        TextTrimming = TextTrimming.CharacterEllipsis,
+    };
     private readonly ListBox _appPickerList = new();
     private readonly Popup _appPickerPopup = new() { StaysOpen = false, Placement = PlacementMode.Bottom };
-    private readonly TextBlock _liveAssignmentText = new() { Foreground = Theme.Muted, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
+    private readonly TextBlock _liveAssignmentValueText = new()
+    {
+        Foreground = Theme.Text,
+        VerticalAlignment = VerticalAlignment.Center,
+        MaxWidth = 260,
+        TextTrimming = TextTrimming.CharacterEllipsis,
+    };
     private readonly Border _saveChip = new() { CornerRadius = new CornerRadius(3), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 8, 0) };
     private readonly TextBlock _saveChipText = new() { FontWeight = FontWeights.SemiBold, FontSize = 12 };
     private readonly Button _saveButton = new() { Content = "保存", Padding = new Thickness(14, 6, 14, 6) };
@@ -66,6 +84,7 @@ public sealed class InputStudioWindow : Window
     private readonly Button _inspectorTitleButton = new() { HorizontalContentAlignment = HorizontalAlignment.Left, Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
     private readonly TextBox _inspectorNameBox = new();
     private readonly TextBox _outputsBox = new();
+    private readonly Button _recordKeyButton = new() { Content = "録る…", Margin = new Thickness(6, 0, 0, 12), Padding = new Thickness(8, 6, 8, 6) };
     private readonly StackPanel _conflictNotePanel = new();
     private readonly StackPanel _g13BindingsPanel = new();
     private readonly StackPanel _g600BindingsPanel = new();
@@ -79,10 +98,12 @@ public sealed class InputStudioWindow : Window
         WorkspaceScreenSnapshot snapshot,
         InputStudioReport ledgerReport,
         string initialSelectedApplicationFullPath,
-        IWorkspaceEditorIntents intents)
+        IWorkspaceEditorIntents intents,
+        IResidentApplyIntent? residentApply = null)
     {
-        _ = ledgerReport; // 旧 device 台帳は撤去済み（DeviceLedgerView は次段の診断画面向けに残す）。
+        _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
+        _residentApply = residentApply;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
 
@@ -132,6 +153,66 @@ public sealed class InputStudioWindow : Window
         WireEvents();
         LoadSelectedWorkspace();
         Render();
+
+        if (_residentApply is not null)
+        {
+            _traceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            _traceTimer.Tick += (_, _) => PollResidentTrace();
+            _traceTimer.Start();
+        }
+
+        Closed += (_, _) =>
+        {
+            _traceTimer?.Stop();
+            _diagnosticsWindow?.Close();
+        };
+    }
+
+    private void PollResidentTrace()
+    {
+        var lines = _residentApply!.DrainTraceLines();
+        if (lines.Count > 0)
+        {
+            _testFieldHint.Text = lines[^1];
+        }
+    }
+
+    private void OnRecordKeyClicked()
+    {
+        if (_selectedActionId is null)
+        {
+            return;
+        }
+
+        var actionId = _selectedActionId;
+        var action = _document.Actions.FirstOrDefault(candidate => candidate.ActionId == actionId);
+        if (action is null)
+        {
+            return;
+        }
+
+        var currentLabel = WorkspaceEditorProjection.FormatOutputs(action.Outputs) is { Length: > 0 } label ? label : "（未設定）";
+        var dialog = new KeyCaptureDialog(action.Name, currentLabel) { Owner = this };
+        if (dialog.ShowDialog() == true && dialog.Result is { } token)
+        {
+            if (TryMutateDocument(document => WorkspaceDocumentEditor.SetActionOutputs(document, actionId, WorkspaceEditorProjection.ParseOutputs(token))))
+            {
+                Render();
+            }
+        }
+    }
+
+    private void OpenDiagnostics()
+    {
+        if (_diagnosticsWindow is null || !_diagnosticsWindow.IsVisible)
+        {
+            _diagnosticsWindow = new DiagnosticsWindow(_report) { Owner = this };
+            _diagnosticsWindow.Show();
+        }
+        else
+        {
+            _diagnosticsWindow.Activate();
+        }
     }
 
     private void WireEvents()
@@ -142,6 +223,14 @@ public sealed class InputStudioWindow : Window
             _appPickerPopup.IsOpen = true;
         };
         _appPickerList.SelectionChanged += OnAppPickerSelectionChanged;
+        _appPickerPopup.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape)
+            {
+                _appPickerPopup.IsOpen = false;
+                e.Handled = true;
+            }
+        };
 
         _addActionButton.Click += (_, _) => OnAddAction();
         _actionList.SelectionChanged += OnActionListSelectionChanged;
@@ -223,7 +312,10 @@ public sealed class InputStudioWindow : Window
         _appPillButton.Content = pillContent;
         left.Children.Add(_appPillButton);
 
-        left.Children.Add(_liveAssignmentText);
+        var liveRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        liveRow.Children.Add(new TextBlock { Text = "いまゲームに届いている割当: ", Foreground = Theme.Muted, VerticalAlignment = VerticalAlignment.Center });
+        liveRow.Children.Add(_liveAssignmentValueText);
+        left.Children.Add(liveRow);
         grid.Children.Add(left);
 
         _appPickerPopup.Child = new Border
@@ -363,14 +455,22 @@ public sealed class InputStudioWindow : Window
 
         var outputsLabel = new TextBlock { Text = "ゲームに送るキー", Foreground = Theme.Muted, FontSize = 11, Margin = new Thickness(0, 8, 0, 4) };
         stack.Children.Add(outputsLabel);
+        var outputsRow = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+        outputsRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        outputsRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _outputsBox.Background = Theme.Sunken;
         _outputsBox.BorderBrush = Theme.Line;
         _outputsBox.Foreground = Theme.Text;
         _outputsBox.Padding = new Thickness(8, 6, 8, 6);
-        _outputsBox.Margin = new Thickness(0, 0, 0, 12);
         AutomationProperties.SetName(_outputsBox, "ゲームに送るキー");
         _outputsBox.ToolTip = "空白区切りで複数キーを送れます（例: Key:LCtrl Key:C）";
-        stack.Children.Add(_outputsBox);
+        outputsRow.Children.Add(_outputsBox);
+        _recordKeyButton.Margin = new Thickness(6, 0, 0, 0);
+        AutomationProperties.SetName(_recordKeyButton, "ゲームに送るキーを録画で決める");
+        _recordKeyButton.Click += (_, _) => OnRecordKeyClicked();
+        Grid.SetColumn(_recordKeyButton, 1);
+        outputsRow.Children.Add(_recordKeyButton);
+        stack.Children.Add(outputsRow);
 
         stack.Children.Add(BuildDeviceBlockHeader("G13 キーパッド", Theme.G13));
         stack.Children.Add(_g13BindingsPanel);
@@ -399,11 +499,32 @@ public sealed class InputStudioWindow : Window
     private UIElement BuildFooter()
     {
         var bar = new Border { Background = Theme.Chrome, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(16, 8, 16, 8) };
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
         var row = new StackPanel { Orientation = Orientation.Horizontal };
         row.Children.Add(new TextBlock { Text = "動作チェック", FontWeight = FontWeights.Bold, FontSize = 12, Margin = new Thickness(0, 0, 12, 0) });
         _testFieldHint.Text = "デバイスのボタンを押すと、ここに結果が流れます";
+        _testFieldHint.TextTrimming = TextTrimming.CharacterEllipsis;
         row.Children.Add(_testFieldHint);
-        bar.Child = row;
+        grid.Children.Add(row);
+
+        var diagnosticsButton = new Button
+        {
+            Content = "診断",
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Foreground = Theme.Muted,
+            Padding = new Thickness(8, 2, 8, 2),
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        AutomationProperties.SetName(diagnosticsButton, "診断画面を開く");
+        diagnosticsButton.Click += (_, _) => OpenDiagnostics();
+        Grid.SetColumn(diagnosticsButton, 1);
+        grid.Children.Add(diagnosticsButton);
+
+        bar.Child = grid;
         return bar;
     }
 
@@ -550,6 +671,7 @@ public sealed class InputStudioWindow : Window
         try
         {
             var outcome = _intents.Save(_document);
+            _residentApply?.ApplyIfResident(_document);
             _snapshot = _snapshot with { SelectedWorkspaceRevisionNumber = outcome.RevisionNumber, Stages = outcome.Stages };
             _hasUnsavedChanges = false;
             _justSaved = true;
@@ -658,7 +780,9 @@ public sealed class InputStudioWindow : Window
     private void RenderHeader(WorkspaceScreenView view)
     {
         _appPillLabel.Text = view.Chrome.EditingLabel;
-        _liveAssignmentText.Text = $"いまゲームに届いている割当: {view.Chrome.LiveAssignmentLabel}";
+        _appPillLabel.ToolTip = view.Chrome.EditingLabel;
+        _liveAssignmentValueText.Text = view.Chrome.LiveAssignmentLabel;
+        _liveAssignmentValueText.ToolTip = view.Chrome.LiveAssignmentLabel;
 
         _appPickerList.Items.Clear();
         foreach (var row in view.RailRows)
@@ -694,6 +818,10 @@ public sealed class InputStudioWindow : Window
 
         _saveButton.IsEnabled = _compileOutcome.IsValid && _hasUnsavedChanges;
         _revertButton.IsEnabled = _hasUnsavedChanges;
+        // 既定の disabled 描画は白抜きで沈んだ配色にならない（実機目視で確認済み）ため、
+        // ここで明示的に低コントラスト化する（mock states.html の `.btn[disabled] { opacity: .38; }` 相当）。
+        _saveButton.Opacity = _saveButton.IsEnabled ? 1.0 : 0.38;
+        _revertButton.Opacity = _revertButton.IsEnabled ? 1.0 : 0.38;
     }
 
     private void RenderActionList(ActionBoardView boardView)
@@ -702,6 +830,10 @@ public sealed class InputStudioWindow : Window
             .Select((action, index) => (action.ActionId, index))
             .ToDictionary(pair => pair.ActionId, pair => pair.index, StringComparer.Ordinal);
 
+        // Items の Clear/Add は ListBox の SelectionChanged を都度発火させる。ここで Render() へ
+        // 再入すると（Clear 直後の SelectedItem=null による偽の選択変更など）無限再帰になるため、
+        // 再構築中はハンドラを外す（選択状態そのものは IsSelected で個別に張り直すので機能は変わらない）。
+        _actionList.SelectionChanged -= OnActionListSelectionChanged;
         _actionList.Items.Clear();
         foreach (var row in boardView.Rows)
         {
@@ -762,6 +894,8 @@ public sealed class InputStudioWindow : Window
             AutomationProperties.SetName(item, $"操作 {row.Name}");
             _actionList.Items.Add(item);
         }
+
+        _actionList.SelectionChanged += OnActionListSelectionChanged;
     }
 
     private void RenderFigurePane()
