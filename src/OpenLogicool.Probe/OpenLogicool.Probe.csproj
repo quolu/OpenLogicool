@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\OpenLogicool.Devices.G13\OpenLogicool.Devices.G13.csproj" />
     <ProjectReference Include="..\OpenLogicool.Devices.G600\OpenLogicool.Devices.G600.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Input\OpenLogicool.Input.csproj" />
   </ItemGroup>
 
 </Project>

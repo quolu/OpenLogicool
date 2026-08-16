@@ -17,6 +17,8 @@ public sealed class ProjectReferenceDirectionTests
             ["OpenLogicool.Devices.G13"] = Set("OpenLogicool.Contracts"),
             ["OpenLogicool.Devices.G600"] = Set("OpenLogicool.Contracts"),
             ["OpenLogicool.Input"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),
+            // watchdog は host 死亡後も動く最後の砦なので依存ゼロ（§6.2・DEV-009）
+            ["OpenLogicool.Watchdog"] = new HashSet<string>(StringComparer.Ordinal),
             ["OpenLogicool.Profiles"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),
             ["OpenLogicool.Playbooks"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),
             ["OpenLogicool.Persistence"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),

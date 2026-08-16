@@ -1,0 +1,50 @@
+{
+  "Probe": "emitter-smoke",
+  "CapturedAtUtc": "2026-08-16T00:30:43.0489740Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "Roundtrip": {
+    "Checks": [
+      {
+        "Name": "single-down-F13",
+        "Passed": true
+      },
+      {
+        "Name": "single-up-F13",
+        "Passed": true
+      },
+      {
+        "Name": "chord-down-F13",
+        "Passed": true
+      },
+      {
+        "Name": "chord-down-F14",
+        "Passed": true
+      },
+      {
+        "Name": "chord-up-F13",
+        "Passed": true
+      },
+      {
+        "Name": "chord-up-F14",
+        "Passed": true
+      },
+      {
+        "Name": "stop-releases-F13",
+        "Passed": true
+      },
+      {
+        "Name": "watchdog-graceful-exit",
+        "Passed": true
+      }
+    ],
+    "StopReleaseEmitMs": 4,
+    "AllPassed": true
+  },
+  "WatchdogCrash": {
+    "DownConfirmedWhileChildAlive": true,
+    "ReleasedByWatchdog": true,
+    "ReleaseLatencyMsAfterKill": 35,
+    "MeetsNfr008Budget": true
+  }
+}

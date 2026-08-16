@@ -31,6 +31,10 @@ return command switch
     "g13-adapter-smoke" => OpenLogicool.Probe.G13AdapterSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "emitter-smoke" => OpenLogicool.Probe.EmitterSmoke.Run(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "emitter-hold" => OpenLogicool.Probe.EmitterSmoke.RunHold(args[1..]),
     "g600-adapter-smoke" => OpenLogicool.Probe.G600AdapterSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
