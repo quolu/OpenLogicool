@@ -37,6 +37,8 @@ public sealed class KeyCaptureDialog : Window
         SizeToContent = SizeToContent.Height;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ResizeMode = ResizeMode.NoResize;
+        // IME がオンだと実キーが Key.ImeProcessed に化けて録れないため、この modal では IME を無効化する。
+        InputMethod.SetIsInputMethodEnabled(this, false);
 
         var stack = new StackPanel { Margin = new Thickness(24, 22, 24, 18) };
 
@@ -117,7 +119,7 @@ public sealed class KeyCaptureDialog : Window
 
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
-        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        var key = ResolveKey(e);
         if (key == Key.Escape)
         {
             Result = null;
@@ -144,10 +146,17 @@ public sealed class KeyCaptureDialog : Window
 
     private void OnPreviewKeyUp(object? sender, KeyEventArgs e)
     {
-        var key = e.Key == Key.System ? e.SystemKey : e.Key;
-        _currentlyHeld.Remove(key);
+        _currentlyHeld.Remove(ResolveKey(e));
         e.Handled = true;
     }
+
+    /// <summary>Alt 系（Key.System）と IME 経由（Key.ImeProcessed）を実キーへ解決する。</summary>
+    private static Key ResolveKey(KeyEventArgs e) => e.Key switch
+    {
+        Key.System => e.SystemKey,
+        Key.ImeProcessed => e.ImeProcessedKey,
+        _ => e.Key,
+    };
 
     private void Commit(string token)
     {
