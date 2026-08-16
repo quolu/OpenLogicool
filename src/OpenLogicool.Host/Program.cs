@@ -247,11 +247,13 @@ static int Ui(string[] arguments)
         g600Count,
         railEntries);
 
+    var editorIntents = new HostWorkspaceEditorIntents(connection);
+
     var exitCode = 0;
     var thread = new Thread(() =>
     {
         var application = new System.Windows.Application();
-        var window = new InputStudioWindow(snapshot, report, AppProfileResolver.DefaultMarker);
+        var window = new InputStudioWindow(snapshot, report, AppProfileResolver.DefaultMarker, editorIntents);
         if (durationMs is not null)
         {
             var timer = new System.Windows.Threading.DispatcherTimer
@@ -528,57 +530,11 @@ static int Workspace(string workspaceJsonPath, string[] arguments)
 }
 
 // revision 追記と profile upsert を単一 transaction で行う（APP-007: G13 保存成功／G600 失敗の部分保存を作らない）。
-// 保存後の全体が解決可能かも transaction 前に検証する。
-static long SaveCompilation(SqliteConnection connection, WorkspaceDocument document, WorkspaceCompilation compilation)
-{
-    var store = new SqliteMappingProfileStore(connection);
-    var associationStore = new SqliteAppAssociationStore(connection);
+// 実体は WorkspaceRevisionSaver（UI の Binding editor 保存/undo intent と共有——保存規則を二重化しない）。
+static long SaveCompilation(SqliteConnection connection, WorkspaceDocument document, WorkspaceCompilation compilation) =>
+    WorkspaceRevisionSaver.SaveCompilation(connection, document, compilation);
 
-    var compiledIds = compilation.Profiles.Select(profile => profile.ProfileId).ToHashSet(StringComparer.Ordinal);
-    var prospective = store.ListAll()
-        .Where(existing => !compiledIds.Contains(existing.ProfileId))
-        .Concat(compilation.Profiles)
-        .ToList();
-    AppProfileResolver.Build(prospective, associationStore.ListAll());
-
-    ExecuteSql(connection, "BEGIN IMMEDIATE;");
-    try
-    {
-        var revisionNumber = new SqliteWorkspaceRevisionStore(connection)
-            .Append(document, DateTime.UtcNow.ToString("o"));
-        foreach (var profile in compilation.Profiles)
-        {
-            store.Upsert(profile);
-        }
-
-        ExecuteSql(connection, "COMMIT;");
-        return revisionNumber;
-    }
-    catch
-    {
-        // SQLite 境界の失敗時に部分保存を残さない（原因はそのまま呼び出し元へ）
-        ExecuteSql(connection, "ROLLBACK;");
-        throw;
-    }
-}
-
-static void ExecuteSql(SqliteConnection connection, string sql)
-{
-    using var command = connection.CreateCommand();
-    command.CommandText = sql;
-    command.ExecuteNonQuery();
-}
-
-static bool IsHostResident()
-{
-    if (Mutex.TryOpenExisting(SingleInstanceGuard.DefaultName, out var mutex))
-    {
-        mutex.Dispose();
-        return true;
-    }
-
-    return false;
-}
+static bool IsHostResident() => WorkspaceRevisionSaver.IsHostResident();
 
 static void PrintStageReport(IReadOnlyList<WorkspaceStageStatus> stages)
 {
