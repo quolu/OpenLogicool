@@ -18,8 +18,9 @@ using OpenLogicool.Profiles;
 //       MappingProfileDocument の JSON 配列を store へ upsert する（UI 実装までの投入経路）。
 //   ui [--db <path>] [--duration-ms N]
 //       表示骨格（Phase 2 Exit 条件1・4の表示系）を read-only で開く。fast path は起動しない。
-//   associate <profileId> <app.exe の full path | default> [--db <path>]
-//       foreground app→profile の関連付けを保存する（"default" はその device 種別の既定 profile 指定）。
+//   associate <profileId> <app.exe の full path | default | package:<familyName>> [--db <path>]
+//       foreground app→profile の関連付けを保存する（"default" はその device 種別の既定 profile 指定・
+//       "package:<familyName>" は MSIX/Store app を package family name で識別する＝APP-004）。
 //   apps [--db <path>]
 //       Application Workspace 一覧（app→両 device の割当）と実行中 app 一覧を表示する。
 //       関連付けの path は必ずこの実行中一覧から選ぶ（手打ち path は Store app redirect の罠）。
@@ -47,7 +48,7 @@ return command switch
     "undo" when args.Length >= 2 => Undo(args[1], args[2..]),
     "export" when args.Length >= 3 => Export(args[1], args[2], args[3..]),
     "revisions" when args.Length >= 2 => Revisions(args[1], args[2..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>]]"),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>]]"),
 };
 
 static int Fail(string message)
@@ -229,12 +230,27 @@ static int Associate(string profileId, string appPathOrDefault, string[] argumen
         return Fail($"profile '{profileId}' は保存されていません。先に import してください。");
     }
 
-    var applicationFullPath = appPathOrDefault is "default" or AppProfileResolver.DefaultMarker
-        ? AppProfileResolver.DefaultMarker
-        : AppProfileResolver.NormalizePath(Path.GetFullPath(appPathOrDefault));
+    string applicationFullPath;
+    string matcherKind;
+    const string packagePrefix = "package:";
+    if (appPathOrDefault is "default" or AppProfileResolver.DefaultMarker)
+    {
+        applicationFullPath = AppProfileResolver.DefaultMarker;
+        matcherKind = AppMatcherKind.Path;
+    }
+    else if (appPathOrDefault.StartsWith(packagePrefix, StringComparison.Ordinal))
+    {
+        applicationFullPath = AppProfileResolver.NormalizePackage(appPathOrDefault[packagePrefix.Length..]);
+        matcherKind = AppMatcherKind.Package;
+    }
+    else
+    {
+        applicationFullPath = AppProfileResolver.NormalizePath(Path.GetFullPath(appPathOrDefault));
+        matcherKind = AppMatcherKind.Path;
+    }
 
     var association = new AppProfileAssociation(
-        ContractSchemaVersions.Revision01, applicationFullPath, document.DeviceKind, profileId);
+        ContractSchemaVersions.Revision01, applicationFullPath, document.DeviceKind, profileId, matcherKind);
     new SqliteAppAssociationStore(connection).Upsert(association);
 
     // 保存後の全体が解決可能かをその場で検証する（既定の欠落等は保存時点で顕在化させる）
@@ -244,7 +260,9 @@ static int Associate(string profileId, string appPathOrDefault, string[] argumen
 
     Console.WriteLine(applicationFullPath == AppProfileResolver.DefaultMarker
         ? $"associated: 既定（{document.DeviceKind}）-> '{profileId}'"
-        : $"associated: {applicationFullPath}（{document.DeviceKind}）-> '{profileId}'");
+        : matcherKind == AppMatcherKind.Package
+            ? $"associated: package:{applicationFullPath}（{document.DeviceKind}）-> '{profileId}'"
+            : $"associated: {applicationFullPath}（{document.DeviceKind}）-> '{profileId}'");
     return 0;
 }
 
@@ -272,10 +290,6 @@ static int Apps(string[] arguments)
     var associations = new SqliteAppAssociationStore(connection).ListAll();
     var resolver = AppProfileResolver.Build(documents, associations);
     var workspaces = ApplicationWorkspaceCatalog.Build(resolver, associations);
-    var associatedPaths = workspaces
-        .Where(row => row.ApplicationFullPath != AppProfileResolver.DefaultMarker)
-        .Select(row => row.ApplicationFullPath)
-        .ToHashSet(StringComparer.Ordinal);
 
     Console.WriteLine($"workspaces: {workspaces.Count}");
     foreach (var row in workspaces)
@@ -287,12 +301,25 @@ static int Apps(string[] arguments)
         Console.WriteLine($"  {name}: {assignments}");
     }
 
+    // [assoc] 判定は path・package 両 matcher を考慮する（package matcher の値は path 列とは別名前空間）
+    var associatedPaths = associations
+        .Where(association => association.MatcherKind != AppMatcherKind.Package && association.ApplicationFullPath != AppProfileResolver.DefaultMarker)
+        .Select(association => AppProfileResolver.NormalizePath(association.ApplicationFullPath))
+        .ToHashSet(StringComparer.Ordinal);
+    var associatedPackages = associations
+        .Where(association => association.MatcherKind == AppMatcherKind.Package)
+        .Select(association => AppProfileResolver.NormalizePackage(association.ApplicationFullPath))
+        .ToHashSet(StringComparer.Ordinal);
+
     var running = RunningApplicationCatalog.ListVisibleApplications();
     Console.WriteLine($"running applications: {running.Count}");
     foreach (var app in running)
     {
-        var marker = associatedPaths.Contains(AppProfileResolver.NormalizePath(app.FullPath)) ? "[assoc]" : "[     ]";
-        Console.WriteLine($"  {marker} {app.FullPath} — \"{app.WindowTitle}\"");
+        var isAssociated = associatedPaths.Contains(AppProfileResolver.NormalizePath(app.FullPath)) ||
+            (app.PackageFamilyName is { } packageFamilyName && associatedPackages.Contains(AppProfileResolver.NormalizePackage(packageFamilyName)));
+        var marker = isAssociated ? "[assoc]" : "[     ]";
+        var packageSuffix = app.PackageFamilyName is null ? string.Empty : $" [pkg:{app.PackageFamilyName}]";
+        Console.WriteLine($"  {marker} {app.FullPath}{packageSuffix} — \"{app.WindowTitle}\"");
     }
 
     return 0;

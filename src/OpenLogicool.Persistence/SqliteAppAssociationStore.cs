@@ -22,16 +22,18 @@ public sealed class SqliteAppAssociationStore(SqliteConnection connection) : IAp
         using var command = connection.CreateCommand();
         command.CommandText =
             """
-            INSERT INTO app_profile_associations (application_full_path, device_kind, schema_version, profile_id)
-            VALUES ($applicationFullPath, $deviceKind, $schemaVersion, $profileId)
+            INSERT INTO app_profile_associations (application_full_path, device_kind, schema_version, profile_id, matcher_kind)
+            VALUES ($applicationFullPath, $deviceKind, $schemaVersion, $profileId, $matcherKind)
             ON CONFLICT (application_full_path, device_kind) DO UPDATE SET
                 schema_version = excluded.schema_version,
-                profile_id = excluded.profile_id;
+                profile_id = excluded.profile_id,
+                matcher_kind = excluded.matcher_kind;
             """;
         command.Parameters.AddWithValue("$applicationFullPath", association.ApplicationFullPath);
         command.Parameters.AddWithValue("$deviceKind", association.DeviceKind);
         command.Parameters.AddWithValue("$schemaVersion", association.SchemaVersion);
         command.Parameters.AddWithValue("$profileId", association.ProfileId);
+        command.Parameters.AddWithValue("$matcherKind", association.MatcherKind);
         command.ExecuteNonQuery();
     }
 
@@ -40,7 +42,7 @@ public sealed class SqliteAppAssociationStore(SqliteConnection connection) : IAp
         using var command = connection.CreateCommand();
         command.CommandText =
             """
-            SELECT application_full_path, device_kind, schema_version, profile_id
+            SELECT application_full_path, device_kind, schema_version, profile_id, matcher_kind
             FROM app_profile_associations
             ORDER BY application_full_path, device_kind;
             """;
@@ -60,7 +62,8 @@ public sealed class SqliteAppAssociationStore(SqliteConnection connection) : IAp
                 schemaVersion,
                 reader.GetString(0),
                 reader.GetString(1),
-                reader.GetString(3)));
+                reader.GetString(3),
+                reader.GetString(4)));
         }
 
         return associations;

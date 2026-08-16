@@ -3,13 +3,14 @@ using OpenLogicool.Contracts.Profiles;
 namespace OpenLogicool.Host;
 
 /// <summary>
-/// foreground app（EXE full path）→ device 種別ごとの適用 profile の解決規則（pure）。
+/// foreground app → device 種別ごとの適用 profile の解決規則（pure・APP-004）。
 ///
-/// - 関連付けは正規化済み小文字 full path の完全一致だけで解決する。
+/// - 照合順序は固定: ①PackageFamilyName が非 null かつ "package" matcher に完全一致（小文字正規化）
+///   →②NormalizedFullPath が非 null かつ "path" matcher に完全一致（小文字正規化）→③既定。
 /// - 既定 profile: ApplicationFullPath "*" の関連付けがあればその profile、
 ///   なければその種別の profile がちょうど1件の場合だけその1件（従来動作の互換）。
 ///   複数 profile があるのに "*" 既定が無い種別は選択規則が定まらないため明示エラー。
-/// - foreground が識別不能（null）または関連付けなしの app は既定 profile を適用する。
+/// - foreground が識別不能（識別要素がすべて null）または関連付けなしの app は既定 profile を適用する。
 /// </summary>
 public sealed class AppProfileResolver
 {
@@ -18,20 +19,23 @@ public sealed class AppProfileResolver
 
     private readonly Dictionary<string, MappingProfileDocument> _defaultByKind;
     private readonly Dictionary<(string Path, string Kind), MappingProfileDocument> _byApp;
+    private readonly Dictionary<(string PackageFamilyName, string Kind), MappingProfileDocument> _byPackage;
 
     private AppProfileResolver(
         Dictionary<string, MappingProfileDocument> defaultByKind,
-        Dictionary<(string, string), MappingProfileDocument> byApp)
+        Dictionary<(string, string), MappingProfileDocument> byApp,
+        Dictionary<(string, string), MappingProfileDocument> byPackage)
     {
         _defaultByKind = defaultByKind;
         _byApp = byApp;
+        _byPackage = byPackage;
     }
 
     /// <summary>種別ごとの既定 profile（fast path 配線対象の決定に使う）。</summary>
     public IReadOnlyDictionary<string, MappingProfileDocument> DefaultByKind => _defaultByKind;
 
     /// <summary>app 関連付けを1件以上持つか（foreground 監視の要否）。</summary>
-    public bool HasAppAssociations => _byApp.Count > 0;
+    public bool HasAppAssociations => _byApp.Count > 0 || _byPackage.Count > 0;
 
     public static AppProfileResolver Build(
         IReadOnlyList<MappingProfileDocument> documents,
@@ -48,6 +52,7 @@ public sealed class AppProfileResolver
 
         var defaultByKind = new Dictionary<string, MappingProfileDocument>(StringComparer.Ordinal);
         var byApp = new Dictionary<(string, string), MappingProfileDocument>();
+        var byPackage = new Dictionary<(string, string), MappingProfileDocument>();
         foreach (var association in associations)
         {
             if (!documentsById.TryGetValue(association.ProfileId, out var document))
@@ -65,6 +70,10 @@ public sealed class AppProfileResolver
             if (association.ApplicationFullPath == DefaultMarker)
             {
                 defaultByKind[association.DeviceKind] = document;
+            }
+            else if (association.MatcherKind == AppMatcherKind.Package)
+            {
+                byPackage[(NormalizePackage(association.ApplicationFullPath), association.DeviceKind)] = document;
             }
             else
             {
@@ -92,16 +101,25 @@ public sealed class AppProfileResolver
             }
         }
 
-        return new AppProfileResolver(defaultByKind, byApp);
+        return new AppProfileResolver(defaultByKind, byApp, byPackage);
     }
 
-    /// <summary>foreground app に適用すべき profile（種別に profile が無ければ null）。</summary>
-    public MappingProfileDocument? Resolve(string deviceKind, string? foregroundFullPath)
+    /// <summary>
+    /// foreground app に適用すべき profile（種別に profile が無ければ null）。
+    /// 照合順序: ①package family name 一致 →②full path 一致 →③既定。
+    /// </summary>
+    public MappingProfileDocument? Resolve(string deviceKind, ForegroundApplicationIdentity? identity)
     {
-        if (foregroundFullPath is not null &&
-            _byApp.TryGetValue((NormalizePath(foregroundFullPath), deviceKind), out var associated))
+        if (identity?.PackageFamilyName is { } packageFamilyName &&
+            _byPackage.TryGetValue((NormalizePackage(packageFamilyName), deviceKind), out var packageMatch))
         {
-            return associated;
+            return packageMatch;
+        }
+
+        if (identity?.NormalizedFullPath is { } normalizedFullPath &&
+            _byApp.TryGetValue((NormalizePath(normalizedFullPath), deviceKind), out var pathMatch))
+        {
+            return pathMatch;
         }
 
         return _defaultByKind.TryGetValue(deviceKind, out var fallback) ? fallback : null;
@@ -109,4 +127,7 @@ public sealed class AppProfileResolver
 
     /// <summary>関連付け保存・照合に使う path 正規化（Windows path は大文字小文字を区別しない）。</summary>
     public static string NormalizePath(string path) => path.ToLowerInvariant();
+
+    /// <summary>関連付け保存・照合に使う package family name 正規化。</summary>
+    public static string NormalizePackage(string packageFamilyName) => packageFamilyName.ToLowerInvariant();
 }

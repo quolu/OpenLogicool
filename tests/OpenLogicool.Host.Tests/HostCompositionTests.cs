@@ -21,8 +21,15 @@ public sealed class HostCompositionTests
             HoldSelectors: [],
             Bindings: [new MappingBindingEntry("G9", "base", ["Key:F13"])]);
 
-    private static AppProfileAssociation Association(string path, string deviceKind, string profileId) =>
-        new(ContractSchemaVersions.Revision01, path, deviceKind, profileId);
+    private static AppProfileAssociation Association(
+        string path, string deviceKind, string profileId, string matcherKind = AppMatcherKind.Path) =>
+        new(ContractSchemaVersions.Revision01, path, deviceKind, profileId, matcherKind);
+
+    private static ForegroundApplicationIdentity PathIdentity(string path) =>
+        new(AppProfileResolver.NormalizePath(path), null, ProcessId: 0, ProcessStartTimeUtc: null);
+
+    private static ForegroundApplicationIdentity PackageIdentity(string packageFamilyName, string? path = null) =>
+        new(path is null ? null : AppProfileResolver.NormalizePath(path), packageFamilyName, ProcessId: 0, ProcessStartTimeUtc: null);
 
     [Fact]
     public void Single_profile_per_kind_is_the_default_without_associations()
@@ -42,7 +49,7 @@ public sealed class HostCompositionTests
         var resolver = AppProfileResolver.Build([], []);
 
         Assert.Empty(resolver.DefaultByKind);
-        Assert.Null(resolver.Resolve("G600", @"c:\game\game.exe"));
+        Assert.Null(resolver.Resolve("G600", PathIdentity(@"c:\game\game.exe")));
     }
 
     [Fact]
@@ -55,9 +62,30 @@ public sealed class HostCompositionTests
                 Association(@"c:\game\game.exe", "G600", "p-game"),
             ]);
 
-        Assert.Equal("p-game", resolver.Resolve("G600", @"C:\Game\GAME.EXE")!.ProfileId);
-        Assert.Equal("p-main", resolver.Resolve("G600", @"c:\other\other.exe")!.ProfileId);
+        Assert.Equal("p-game", resolver.Resolve("G600", PathIdentity(@"C:\Game\GAME.EXE"))!.ProfileId);
+        Assert.Equal("p-main", resolver.Resolve("G600", PathIdentity(@"c:\other\other.exe"))!.ProfileId);
         Assert.Equal("p-main", resolver.Resolve("G600", null)!.ProfileId);
+    }
+
+    [Fact]
+    public void Package_match_takes_priority_over_path_match_and_is_case_insensitive()
+    {
+        var resolver = AppProfileResolver.Build(
+            [Document("p-main", "G600"), Document("p-path", "G600"), Document("p-pkg", "G600")],
+            [
+                Association("*", "G600", "p-main"),
+                Association(@"c:\game\game.exe", "G600", "p-path"),
+                Association("chrome_8wekyb3d8bbwe", "G600", "p-pkg", AppMatcherKind.Package),
+            ]);
+
+        // path・package 両方一致する identity では package matcher を優先する
+        Assert.Equal(
+            "p-pkg",
+            resolver.Resolve("G600", PackageIdentity("Chrome_8WeKyb3d8bbwe", @"c:\game\game.exe"))!.ProfileId);
+        // package 不一致・path 一致は従来どおり path matcher で解決する
+        Assert.Equal("p-path", resolver.Resolve("G600", PathIdentity(@"c:\game\game.exe"))!.ProfileId);
+        // 未知 package・未知 path は既定へ落ちる
+        Assert.Equal("p-main", resolver.Resolve("G600", PackageIdentity("other_pkg"))!.ProfileId);
     }
 
     [Fact]

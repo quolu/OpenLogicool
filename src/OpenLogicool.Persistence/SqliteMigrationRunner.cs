@@ -44,6 +44,9 @@ public static class InitialSqliteMigrations
                     PRIMARY KEY (workspace_id, revision_number)
                 );
                 """),
+            new SqlMigration(
+                5,
+                "ALTER TABLE app_profile_associations ADD COLUMN matcher_kind TEXT NOT NULL DEFAULT 'path';"),
         };
 }
 

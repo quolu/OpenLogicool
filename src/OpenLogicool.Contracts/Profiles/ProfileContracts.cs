@@ -54,16 +54,34 @@ public interface IMappingProfileStore
     IReadOnlyList<MappingProfileDocument> ListAll();
 }
 
+/// <summary>foreground app の観測 identity（APP-004）。取得できなかった要素は null で保持し、偽装しない。</summary>
+public sealed record ForegroundApplicationIdentity(
+    string? NormalizedFullPath,    // 小文字正規化 full path。取得不能なら null
+    string? PackageFamilyName,     // MSIX/Store app の package family name。非 package app・取得不能は null
+    int ProcessId,
+    DateTime? ProcessStartTimeUtc); // process 世代（同名 EXE 再起動の区別・診断用。照合には使わない）
+
+/// <summary>AppProfileAssociation.MatcherKind の許容値。</summary>
+public static class AppMatcherKind
+{
+    /// <summary>ApplicationFullPath 列を正規化済み小文字 full path として照合する（既定・従来動作）。</summary>
+    public const string Path = "path";
+
+    /// <summary>ApplicationFullPath 列を正規化済み小文字 package family name として照合する（APP-004）。</summary>
+    public const string Package = "package";
+}
+
 /// <summary>
-/// foreground app（EXE full path）と profile の関連付け（app-first 切替の永続化 wire type）。
-/// ApplicationFullPath は正規化済み小文字 full path、または既定を表す "*"。
-/// 現段階の app 識別は full path 完全一致のみ（PackageIdentity・WindowMatcher は Phase 3 完全形で拡張）。
+/// foreground app と profile の関連付け（app-first 切替の永続化 wire type）。
+/// ApplicationFullPath は MatcherKind に応じて正規化済み小文字 full path または package family name、
+/// もしくは既定を表す "*"（既定は常に MatcherKind="path" として扱う）。
 /// </summary>
 public sealed record AppProfileAssociation(
     string SchemaVersion,
     string ApplicationFullPath,
     string DeviceKind,
-    string ProfileId);
+    string ProfileId,
+    string MatcherKind = AppMatcherKind.Path);
 
 /// <summary>app→profile 関連付けの保存 port（実装は Persistence、意味 owner は Profiles）。</summary>
 public interface IAppAssociationStore

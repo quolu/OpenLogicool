@@ -3,8 +3,11 @@ using System.Text;
 
 namespace OpenLogicool.Host;
 
-/// <summary>実行中 app の1件（可視 window を持つ process）。FullPath は実 path のまま（表示用）。</summary>
-public sealed record RunningApplication(string FullPath, string WindowTitle);
+/// <summary>
+/// 実行中 app の1件（可視 window を持つ process）。FullPath は実 path のまま（表示用）。
+/// PackageFamilyName は MSIX/Store app のみ非 null（APP-004・package matcher の選択材料）。
+/// </summary>
+public sealed record RunningApplication(string FullPath, string WindowTitle, string? PackageFamilyName);
 
 /// <summary>
 /// 実行中 application の一覧（Journey B「実行中一覧から app を選ぶ」の選択ソース）。
@@ -50,7 +53,8 @@ public static class RunningApplicationCatalog
             {
                 var title = new StringBuilder(titleLength + 1);
                 _ = GetWindowText(windowHandle, title, title.Capacity);
-                byNormalizedPath[normalized] = new RunningApplication(fullPath, title.ToString());
+                var packageFamilyName = ForegroundAppTracker.GetPackageFamilyName(processId);
+                byNormalizedPath[normalized] = new RunningApplication(fullPath, title.ToString(), packageFamilyName);
             }
 
             return true;

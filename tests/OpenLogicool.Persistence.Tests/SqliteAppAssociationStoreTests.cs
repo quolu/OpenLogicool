@@ -55,6 +55,24 @@ public sealed class SqliteAppAssociationStoreTests : IDisposable
     }
 
     [Fact]
+    public void Package_matcher_kind_round_trips()
+    {
+        using (var connection = OpenMigrated())
+        {
+            var store = new SqliteAppAssociationStore(connection);
+            store.Upsert(new AppProfileAssociation(
+                ContractSchemaVersions.Revision01, "chrome_8wekyb3d8bbwe", "G600", "p-store", AppMatcherKind.Package));
+        }
+
+        using (var connection = OpenMigrated())
+        {
+            var restored = Assert.Single(new SqliteAppAssociationStore(connection).ListAll());
+            Assert.Equal(AppMatcherKind.Package, restored.MatcherKind);
+            Assert.Equal("chrome_8wekyb3d8bbwe", restored.ApplicationFullPath);
+        }
+    }
+
+    [Fact]
     public void Unknown_schema_version_is_rejected_on_upsert()
     {
         using var connection = OpenMigrated();
