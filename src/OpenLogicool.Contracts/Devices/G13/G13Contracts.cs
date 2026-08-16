@@ -28,6 +28,13 @@ public static class G13Controls
         "M1", "M2", "M3", "MR",
         "STICK_PRESS",
     ];
+
+    /// <summary>
+    /// 実測台帳で「確認済み」の button（G20・STICK_PRESS は recheck 単独押下、G1/G2 は chord 実験）。
+    /// 残りの button は「強い推定」（押下順序と間隔の一致）。DEV-005 の表示はこの区別を根拠にする。
+    /// </summary>
+    public static readonly IReadOnlySet<string> ConfirmedButtons =
+        new HashSet<string>(["G1", "G2", "G20", "STICK_PRESS"], StringComparer.Ordinal);
 }
 
 /// <summary>スティック X/Y の生値サンプル（0〜255、中立 X≈143 / Y≈120）。</summary>

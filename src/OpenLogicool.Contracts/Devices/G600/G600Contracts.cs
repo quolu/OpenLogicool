@@ -29,6 +29,13 @@ public static class G600Controls
         "G9", "G10", "G11", "G12", "G13", "G14", "G15", "G16",
         "G17", "G18", "G19", "G20",
     ];
+
+    /// <summary>
+    /// 全20 control が「確認済み」: G0-Device-RO の live input route 実測（全20 control）と
+    /// g600-adapter-smoke（2026-08-16）で成立。
+    /// </summary>
+    public static readonly IReadOnlySet<string> ConfirmedButtons =
+        new HashSet<string>(Buttons, StringComparer.Ordinal);
 }
 
 /// <summary>ホイール1ノッチの回転（Delta: 上=+1／下=-1、report byte4 の符号付き値）。</summary>

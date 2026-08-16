@@ -20,7 +20,7 @@
 
 ### 条件1: G13/G600 の Supported control を欠落なく表示・変換
 
-**変換は成立・表示は未達。** 変換: 実測台帳の確認済み／強い推定 control 全数（G13 31 control＋stick、G600 20 control＋wheel tick）を parser が扱い、recorded fixture replay と live smoke で実証済み。未確認 bit は contract に載せない（根拠4値の運用どおり）。**表示**（capability の Supported/Unverified 表示面）は Desktop UI 未着手のため未達。
+**成立（2026-08-16・UI 骨格で表示成立）。** 変換: 実測台帳の確認済み／強い推定 control 全数（G13 31 control＋stick、G600 20 control＋wheel tick）を parser が扱い、recorded fixture replay と live smoke で実証済み。未確認 bit は contract に載せない（根拠4値の運用どおり）。**表示**: `OpenLogicool.Host ui`（Desktop UI 骨格・read-only）が catalog 全 control を欠落なく列挙し、実測根拠（確認済み→Supported／強い推定→Experimental）と現在 profile の変換（control×layer→outputs・layer selector 役割・未割当）を表示する。欠落なし・変換表示は focused test（`InputStudioReportBuilderTests` 6件 green）で固定、実 DB＋実列挙での起動・描画・終了は実走 exit 0 で確認。
 
 ### 条件2: 1,000,000 report replay、1,000 generation race、hotplug suite が通る
 
@@ -37,7 +37,7 @@
 
 ### 条件4: G600 制約を隠さず、3 slot または driver 等の実際の方式を UI に反映する
 
-**方式の正典明示は成立・UI 反映は未達。** 制約（onboard 3 slot、B変種の中間 usage 書換え、F6 read 不能、elevated foreground 制約）はすべて文書化済み。UI への反映は Desktop UI 未着手のため未達。
+**成立（2026-08-16・UI 骨格で反映成立）。** 制約（onboard 3 slot、B変種の中間 usage 書換え、F6 read 不能、elevated foreground 制約、wheel tick の binding 対象外）はすべて文書化済みで、UI 骨格の G600 section「制約（隠さず表示）」に全文表示される（表示内容は focused test で固定）。
 
 ### 条件5: hard crash の output 残留（watchdog 実装・受入）
 
@@ -45,16 +45,13 @@
 
 ## 判定
 
-**Exit 5条件のうち成立3（条件2・3・5）、部分成立2（条件1・4——表示系が Desktop UI 待ち）。**
+**Exit 5条件すべて成立（2026-08-16）。条件1・4は Desktop UI 骨格（`OpenLogicool.Host ui`）の表示で閉じた。Phase 2 Exit の宣言はオーナー裁定を要する。**
 
-残作業の性質で分けると:
+補記:
 
-1. **自律で閉じられる**: なし（finite macro は 2026-08-16 に完了——hotplug・sleep 実測も同日完了）
-2. **Desktop UI（Phase 3 並行レーン）で閉じる**: 条件1・4の表示系、read-only onboarding、foreground app identity。計画上 Phase 2 と Phase 3 は並行であり、表示系条件は Phase 3 の UI 骨格で満たすのが自然
-3. **Phase 7 へ送付済み**: 対象 game の acceptance 分類（計画 §16 記録済み）
-
-推奨: Phase 3 レーン（Desktop UI 骨格）へ進んで表示系条件（条件1・4）を満たす。
+1. Phase 2「実施」項目のうち foreground app identity・read-only onboarding の完全形は Phase 3 の app-first UX と一体で実装する（UI 骨格は UX-001 の初回起動表示のみ）。Exit 5条件はこれらに依存しない。
+2. **Phase 7 へ送付済み**: 対象 game の acceptance 分類（計画 §16 記録済み）。
 
 ## 追記（2026-08-16 同日）
 
-条件2の 1M replay（G13/G600）と 1,000 generation race を実装し green を確認（`G600MillionReportReplayTests`／`G13MillionReportReplayTests`／`GenerationRaceTests`）。同日さらに hotplug の切断検出＋fake suite（`HotplugTests`）を実装し green、**抜線実測（G600 実機・probe `hotplug-smoke`）も全 pass で hotplug は完全成立**。同日 sleep 実測（G600 実機・probe `sleep-smoke`）も全 pass し、**条件2は完全成立**。
+条件2の 1M replay（G13/G600）と 1,000 generation race を実装し green を確認（`G600MillionReportReplayTests`／`G13MillionReportReplayTests`／`GenerationRaceTests`）。同日さらに hotplug の切断検出＋fake suite（`HotplugTests`）を実装し green、**抜線実測（G600 実機・probe `hotplug-smoke`）も全 pass で hotplug は完全成立**。同日 sleep 実測（G600 実機・probe `sleep-smoke`）も全 pass し、**条件2は完全成立**。同日さらに finite macro（DEV-006 有限 sequence・`Tap:` 段）を実装・実測成立させ、Desktop UI 骨格（`OpenLogicool.Desktop` の pure builder＋WPF window・`OpenLogicool.Host ui`）で条件1・4の表示系も成立——**Exit 5条件すべて成立（オーナー裁定待ち）**。

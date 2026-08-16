@@ -2,8 +2,12 @@ using System.IO;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using OpenLogicool.Contracts.Profiles;
+using OpenLogicool.Desktop;
+using OpenLogicool.Devices.G13;
+using OpenLogicool.Devices.G600;
 using OpenLogicool.Host;
 using OpenLogicool.Persistence;
+using OpenLogicool.Profiles;
 
 // OpenLogicool Input Studio resident host（計画 §6.2 初期 process model の最小形）。
 // command:
@@ -11,6 +15,8 @@ using OpenLogicool.Persistence;
 //       profile を復元して fast path を常駐実行する。--duration-ms 省略時は Ctrl+C まで動く。
 //   import <documents.json> [--db <path>]
 //       MappingProfileDocument の JSON 配列を store へ upsert する（UI 実装までの投入経路）。
+//   ui [--db <path>] [--duration-ms N]
+//       表示骨格（Phase 2 Exit 条件1・4の表示系）を read-only で開く。fast path は起動しない。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -18,7 +24,8 @@ return command switch
 {
     "run" => Run(args[1..]),
     "import" when args.Length >= 2 => Import(args[1], args[2..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>]]"),
+    "ui" => Ui(args[1..]),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N]]"),
 };
 
 static int Fail(string message)
@@ -102,6 +109,72 @@ static int Run(string[] arguments)
     host.Stop();
     Console.WriteLine($"resident: 停止（処理 input {host.Pump.ProcessedCount} 件・handled shutdown 完了）");
     return 0;
+}
+
+static int Ui(string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    int? durationMs = null;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            case "--duration-ms" when i + 1 < arguments.Length:
+                durationMs = int.Parse(arguments[++i]);
+                break;
+            default:
+                return Fail($"unknown ui option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+    var profilesByKind = HostProfileSelection.SelectByDeviceKind(new SqliteMappingProfileStore(connection).ListAll());
+
+    int g13Count;
+    int g600Count;
+    using (var g13Source = new G13RawInputSource())
+    using (var g600Source = new G600RawInputSource())
+    {
+        g13Count = g13Source.EnumerateDevices().Count;
+        g600Count = g600Source.EnumerateDevices().Count;
+    }
+
+    DeviceDisplayInput DisplayInput(string kind, int count) =>
+        profilesByKind.TryGetValue(kind, out var document)
+            ? new DeviceDisplayInput(kind, count, document.ProfileId, MappingProfileMaterializer.ToProfile(document))
+            : new DeviceDisplayInput(kind, count, null, null);
+
+    var report = InputStudioReportBuilder.Build(
+        DisplayInput("G13", g13Count),
+        DisplayInput("G600", g600Count));
+
+    var exitCode = 0;
+    var thread = new Thread(() =>
+    {
+        var application = new System.Windows.Application();
+        var window = new InputStudioWindow(report);
+        if (durationMs is not null)
+        {
+            var timer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(durationMs.Value),
+            };
+            timer.Tick += (_, _) => window.Close();
+            timer.Start();
+        }
+
+        exitCode = application.Run(window);
+    });
+    thread.SetApartmentState(ApartmentState.STA);
+    thread.Start();
+    thread.Join();
+    return exitCode;
 }
 
 static int Import(string documentsJsonPath, string[] arguments)
