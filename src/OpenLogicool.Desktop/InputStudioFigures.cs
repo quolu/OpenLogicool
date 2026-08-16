@@ -244,17 +244,22 @@ public static class InputStudioFigures
         }
         else if (dimple)
         {
-            content.Children.Add(new TextBlock
+            // 文字表記だとキー内で潰れるため、指のホーム位置は小さな窪み（凹み風の影）だけで示し、
+            // 説明は ToolTip へ回す（オーナー目視レビュー指摘・t09 磨き残し①）。
+            content.Children.Add(new Border
             {
-                Text = "（指のホーム位置）",
-                Foreground = Theme.Muted,
-                FontSize = 7,
+                Width = 10,
+                Height = 4,
+                CornerRadius = new CornerRadius(2),
+                Background = Theme.Sunken,
+                BorderBrush = Theme.Line2,
+                BorderThickness = new Thickness(1),
+                Margin = new Thickness(0, 3, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Center,
-                TextWrapping = TextWrapping.Wrap,
-                MaxWidth = width - 4,
             });
         }
 
+        var dimpleToolTipSuffix = dimple && !hasBinding ? "（指のホーム位置）" : string.Empty;
         var button = new Button
         {
             Content = content,
@@ -265,7 +270,7 @@ public static class InputStudioFigures
             BorderBrush = hasBinding ? binding!.Color : Theme.Line2,
             BorderThickness = new Thickness(hasBinding ? 2 : 1),
             Foreground = Theme.Text,
-            ToolTip = (hasBinding ? $"{controlId}：{binding!.ActionName}" : $"{controlId}：未割当（クリックで、左で選んでいる操作を載せます）") + toolTipSuffix,
+            ToolTip = (hasBinding ? $"{controlId}：{binding!.ActionName}" : $"{controlId}：未割当（クリックで、左で選んでいる操作を載せます）") + dimpleToolTipSuffix + toolTipSuffix,
         };
         AutomationProperties.SetName(button, hasBinding ? $"{controlId}（{binding!.ActionName}）" : $"{controlId}（未割当）");
         button.Click += (_, _) => onClick();
