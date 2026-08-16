@@ -47,6 +47,12 @@ using OpenLogicool.Profiles;
 //       （LGS/G HUB/Logi Options+ の実行中 process 検出のみ・断定しない）・device 接続件数
 //       （片側/両側未接続を明示）・G600 完全 backup 導線の有無・設定の現在地（件数のみ）。
 //       device への write は一切しない。
+//   ui-test-scenario [--out <path>]
+//       t10（Phase 3 Exit 条件5）: UI test scenario（アプリ選択→操作作成→両 device binding→保存→
+//       適用状態表示）を fake（in-memory）と real（新規 temp SQLite・実 device 列挙）の両方の
+//       IWorkspaceEditorIntents で実行し、結果を機械的に突き合わせる（実機接続台数だけを環境差として
+//       除外）。JSON 証跡を probe-output へ書く。常駐 host が動いている間は実行しない（stage 表示の
+//       hostResident 判定が fake 側と食い違うため）。不一致があれば exit code 1。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -63,7 +69,8 @@ return command switch
     "revisions" when args.Length >= 2 => Revisions(args[1], args[2..]),
     "diagnostics" => Diagnostics(args[1..]),
     "onboarding" => Onboarding(args[1..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>]]"),
+    "ui-test-scenario" => UiTestScenarioCommand(args[1..]),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | ui-test-scenario [--out <path>]]"),
 };
 
 static int Fail(string message)
@@ -906,4 +913,94 @@ static int Import(string documentsJsonPath, string[] arguments)
     }
 
     return 0;
+}
+
+// t10（Phase 3 Exit 条件5）: UI test scenario の fake/real contract 一致検証。
+// fake（FakeWorkspaceEditorIntents・in-memory）と real（新規 temp SQLite・実 device 列挙）の
+// 両方で同一 UiTestScenario を実行し、UiTestScenarioComparer で機械突き合わせる。
+// 常駐 host が動いていると real 側だけ WorkspaceRevisionSaver.IsHostResident()=true になり、
+// 段階セル表示（hostResident 分岐）が fake 側と食い違う——これは環境差ではなく前提違反のため、
+// 丸めずに検出して止める。
+static int UiTestScenarioCommand(string[] arguments)
+{
+    string? outputPath = null;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--out" when i + 1 < arguments.Length:
+                outputPath = Path.GetFullPath(arguments[++i]);
+                break;
+            default:
+                return Fail($"unknown ui-test-scenario option: {arguments[i]}");
+        }
+    }
+
+    if (IsHostResident())
+    {
+        return Fail("ui-test-scenario は常駐 host が動いていない状態で実行してください（run/ui --resident を先に停止）。");
+    }
+
+    var fakeResult = OpenLogicool.Desktop.UiTestScenario.Run(new FakeWorkspaceEditorIntents(), g13ConnectedCount: 1, g600ConnectedCount: 1);
+
+    int realG13Count;
+    int realG600Count;
+    using (var g13Source = new G13RawInputSource())
+    using (var g600Source = new G600RawInputSource())
+    {
+        realG13Count = g13Source.EnumerateDevices().Count;
+        realG600Count = g600Source.EnumerateDevices().Count;
+    }
+
+    // real 側は毎回まっさらな temp SQLite を使う（fake の in-memory 側も毎回まっさらなので、
+    // revision 番号のような「保存済み状態に依存する」field まで実測で一致させる——丸めない）。
+    var tempDatabasePath = Path.Combine(Path.GetTempPath(), $"openlogicool-t10-{Guid.NewGuid():N}.db");
+    UiTestScenarioResult realResult;
+    try
+    {
+        using var connection = new SqliteConnection($"Data Source={tempDatabasePath}");
+        connection.Open();
+        new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+        var realIntents = new HostWorkspaceEditorIntents(connection);
+        realResult = OpenLogicool.Desktop.UiTestScenario.Run(realIntents, realG13Count, realG600Count);
+    }
+    finally
+    {
+        SqliteConnection.ClearAllPools();
+        if (File.Exists(tempDatabasePath))
+        {
+            File.Delete(tempDatabasePath);
+        }
+    }
+
+    var comparison = UiTestScenarioComparer.Compare(fakeResult, realResult);
+
+    Console.WriteLine($"fake vs real 一致: {(comparison.IsMatch ? "一致" : "不一致")}");
+    Console.WriteLine($"除外項目: {string.Join(", ", comparison.ExcludedFields)}");
+    foreach (var mismatch in comparison.Mismatches)
+    {
+        Console.WriteLine($"  不一致: {mismatch}");
+    }
+
+    var evidence = new
+    {
+        SchemaVersion = "t10-ui-test-scenario-v1",
+        TimestampUtc = DateTime.UtcNow.ToString("o"),
+        IsMatch = comparison.IsMatch,
+        ExcludedFields = comparison.ExcludedFields,
+        Mismatches = comparison.Mismatches,
+        RealDeviceCounts = new { G13 = realG13Count, G600 = realG600Count },
+        Fake = fakeResult,
+        Real = realResult,
+    };
+
+    var probeOutputDirectory = Path.GetFullPath(
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"));
+    Directory.CreateDirectory(probeOutputDirectory);
+    var path = outputPath ?? Path.Combine(
+        probeOutputDirectory, $"ui-test-scenario-{DateTime.UtcNow:yyyyMMdd-HHmmss-fff}.json");
+    File.WriteAllText(path, JsonSerializer.Serialize(evidence, new JsonSerializerOptions { WriteIndented = true }));
+    Console.WriteLine($"evidence: {path}");
+
+    return comparison.IsMatch ? 0 : 1;
 }

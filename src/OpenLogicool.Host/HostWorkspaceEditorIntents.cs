@@ -2,7 +2,6 @@ using System.IO;
 using Microsoft.Data.Sqlite;
 using OpenLogicool.Contracts.Profiles;
 using OpenLogicool.Desktop;
-using OpenLogicool.Input;
 using OpenLogicool.Persistence;
 using OpenLogicool.Profiles;
 
@@ -26,7 +25,7 @@ public sealed class HostWorkspaceEditorIntents(SqliteConnection connection) : IW
         var row = workspaces.FirstOrDefault(workspace => workspace.ApplicationFullPath == applicationFullPath);
         var profileIdByKind = row?.ProfileIdByKind ?? new Dictionary<string, string>();
 
-        var workspaceId = TryReverseWorkspaceId(profileIdByKind);
+        var workspaceId = WorkspaceEditorIntentsSupport.TryReverseWorkspaceId(profileIdByKind);
         if (workspaceId is not null)
         {
             var revisions = new SqliteWorkspaceRevisionStore(connection).ListRevisions(workspaceId);
@@ -40,20 +39,18 @@ public sealed class HostWorkspaceEditorIntents(SqliteConnection connection) : IW
         // 関連付け済み profile が workspace command 経由でない（直接 import 等）、または
         // 関連付けが無い app: 新規 workspace の空下書きを提案する（設計 §3.4「規則の判断に迷ったら…」の
         // 最小規則——ProfileId 接頭辞から逆引きできなければ rail の選択名から新規 WorkspaceId を提案）。
-        var proposedWorkspaceId = workspaceId ?? ProposeWorkspaceId(applicationFullPath);
+        var proposedWorkspaceId = workspaceId ?? WorkspaceEditorIntentsSupport.ProposeWorkspaceId(applicationFullPath);
         return new WorkspaceLoadResult(WorkspaceDocumentEditor.CreateDraft(proposedWorkspaceId), null, BuildStages(savedRevisionNumber: null));
     }
 
     private static IReadOnlyList<WorkspaceStageCell> BuildStages(long? savedRevisionNumber) =>
-        WorkspaceApplyReport.Build(savedRevisionNumber, WorkspaceRevisionSaver.IsHostResident())
-            .Select(stage => new WorkspaceStageCell(stage.Stage, stage.State, stage.Detail))
-            .ToArray();
+        WorkspaceEditorIntentsSupport.BuildStages(savedRevisionNumber, WorkspaceRevisionSaver.IsHostResident());
 
     public WorkspaceCompileOutcome Compile(WorkspaceDocument document)
     {
         try
         {
-            ValidateOutputTokens(document);
+            WorkspaceEditorIntentsSupport.ValidateOutputTokens(document);
         }
         catch (ArgumentException error)
         {
@@ -75,7 +72,7 @@ public sealed class HostWorkspaceEditorIntents(SqliteConnection connection) : IW
 
     public WorkspaceSaveOutcome Save(WorkspaceDocument document)
     {
-        ValidateOutputTokens(document);
+        WorkspaceEditorIntentsSupport.ValidateOutputTokens(document);
         var compilation = WorkspaceCompiler.Compile(document);
 
         long revisionNumber;
@@ -101,88 +98,5 @@ public sealed class HostWorkspaceEditorIntents(SqliteConnection connection) : IW
         var newRevisionNumber = WorkspaceRevisionSaver.SaveCompilation(connection, target.Document, compilation);
 
         return new WorkspaceUndoOutcome(target.Document, newRevisionNumber, BuildStages(newRevisionNumber));
-    }
-
-    /// <summary>
-    /// 出力 token の文法検証（設計 §2.1「未知 token は OutputTokens.Parse が例外にするので、UI は
-    /// 握りつぶさず出す」）。WorkspaceCompiler は構造（衝突・未知 action 等）しか見ないため、
-    /// token 自体の文法はここで OutputTokens（唯一の正）を直接呼んで検証する——語彙の複製はしない。
-    /// </summary>
-    private static void ValidateOutputTokens(WorkspaceDocument document)
-    {
-        foreach (var action in document.Actions)
-        {
-            if (action.Outputs.Count == 0)
-            {
-                continue;
-            }
-
-            var isSequence = OutputTokens.IsSequenceStep(action.Outputs[0]);
-            foreach (var token in action.Outputs)
-            {
-                if (OutputTokens.IsSequenceStep(token) != isSequence)
-                {
-                    throw new ArgumentException(
-                        $"action '{action.ActionId}' の出力で sequence 段（{OutputTokens.SequenceStepPrefix}…）と押下保持 token が混在しています。");
-                }
-
-                if (isSequence)
-                {
-                    OutputTokens.SplitSequenceStep(token);
-                }
-                else
-                {
-                    OutputTokens.Parse(token);
-                }
-            }
-        }
-    }
-
-    /// <summary>ProfileId = "{WorkspaceId}-{DeviceKind}" の接頭辞から WorkspaceId を逆引きする。
-    /// device 種別間で不一致、またはこの規約に従わない ProfileId があれば逆引き不能として null。</summary>
-    private static string? TryReverseWorkspaceId(IReadOnlyDictionary<string, string> profileIdByKind)
-    {
-        string? workspaceId = null;
-        foreach (var (deviceKind, profileId) in profileIdByKind)
-        {
-            var suffix = $"-{deviceKind}";
-            if (!profileId.EndsWith(suffix, StringComparison.Ordinal))
-            {
-                return null;
-            }
-
-            var candidate = profileId[..^suffix.Length];
-            if (workspaceId is null)
-            {
-                workspaceId = candidate;
-            }
-            else if (workspaceId != candidate)
-            {
-                return null;
-            }
-        }
-
-        return workspaceId;
-    }
-
-    /// <summary>逆引き不能な app のための新規 WorkspaceId 提案（rail の選択名から作る最小規則）。</summary>
-    private static string ProposeWorkspaceId(string applicationFullPath)
-    {
-        if (applicationFullPath == AppProfileResolver.DefaultMarker)
-        {
-            return "default";
-        }
-
-        var baseName = Path.GetFileNameWithoutExtension(applicationFullPath);
-        var slugChars = baseName.ToLowerInvariant()
-            .Select(character => char.IsLetterOrDigit(character) ? character : '-')
-            .ToArray();
-        var slug = new string(slugChars).Trim('-');
-        while (slug.Contains("--", StringComparison.Ordinal))
-        {
-            slug = slug.Replace("--", "-", StringComparison.Ordinal);
-        }
-
-        return slug.Length == 0 ? "workspace" : $"ws-{slug}";
     }
 }

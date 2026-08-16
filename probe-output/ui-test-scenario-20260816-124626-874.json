@@ -1,0 +1,117 @@
+{
+  "SchemaVersion": "t10-ui-test-scenario-v1",
+  "TimestampUtc": "2026-08-16T12:46:26.8741207Z",
+  "IsMatch": true,
+  "ExcludedFields": [
+    "DeviceConnectionLabels\uFF08\u5B9F\u6A5F\u63A5\u7D9A\u53F0\u6570\u306F\u74B0\u5883\u4F9D\u5B58\u306E\u305F\u3081\u9664\u5916\uFF09"
+  ],
+  "Mismatches": [],
+  "RealDeviceCounts": {
+    "G13": 1,
+    "G600": 1
+  },
+  "Fake": {
+    "DefaultEditingLabel": "\u5171\u901A\u8A2D\u5B9A\uFF08\u3069\u306E\u30A2\u30D7\u30EA\u3067\u3082\u306A\u3044\u6642\uFF09",
+    "SelectedEditingLabelAfterAppSelect": "t10 \u30B7\u30CA\u30EA\u30AA\u30A2\u30D7\u30EA",
+    "SelectedApplicationFullPath": "c:\\game\\t10-scenario-app.exe",
+    "ActionCount": 1,
+    "ActionId": "action-t10",
+    "ActionName": "t10 \u30C6\u30B9\u30C8\u64CD\u4F5C",
+    "ActionOutputs": [
+      "Key:A"
+    ],
+    "G13BindingControlId": "G1",
+    "G13BindingLayerId": "base",
+    "G600BindingControlId": "G9",
+    "G600BindingLayerId": "base",
+    "CompileIsValid": true,
+    "CompileProfileCount": 2,
+    "CompileWarnings": [
+      "\u672A\u78BA\u8A8D control: G13 \u306E \u0027M1\u0027 \u3078\u306E binding \u306F\u5B9F\u6E2C\u6839\u62E0\u304C\u3042\u308A\u307E\u305B\u3093\uFF08\u78BA\u8A8D\u6E08\u307F control \u4EE5\u5916\u306F Experimental\uFF09\u3002",
+      "\u672A\u78BA\u8A8D control: G13 \u306E \u0027M2\u0027 \u3078\u306E binding \u306F\u5B9F\u6E2C\u6839\u62E0\u304C\u3042\u308A\u307E\u305B\u3093\uFF08\u78BA\u8A8D\u6E08\u307F control \u4EE5\u5916\u306F Experimental\uFF09\u3002",
+      "\u672A\u78BA\u8A8D control: G13 \u306E \u0027M3\u0027 \u3078\u306E binding \u306F\u5B9F\u6E2C\u6839\u62E0\u304C\u3042\u308A\u307E\u305B\u3093\uFF08\u78BA\u8A8D\u6E08\u307F control \u4EE5\u5916\u306F Experimental\uFF09\u3002"
+    ],
+    "CompileErrorMessage": null,
+    "SaveRevisionNumber": 1,
+    "SaveStageCells": [
+      {
+        "Stage": "\u7DE8\u96C6\uFF08compile\uFF09",
+        "State": "\u6210\u7ACB",
+        "Detail": "workspace \u6587\u66F8\u306F\u691C\u8A3C\u6E08\u307F\uFF08\u69CB\u9020\u30A8\u30E9\u30FC\u306A\u3057\uFF09"
+      },
+      {
+        "Stage": "\u4FDD\u5B58\uFF08revision\uFF09",
+        "State": "\u6210\u7ACB",
+        "Detail": "revision 1 \u3068\u3057\u3066\u4FDD\u5B58\u6E08\u307F"
+      },
+      {
+        "Stage": "runtime \u9069\u7528",
+        "State": "\u672A\u9069\u7528",
+        "Detail": "host \u975E\u5E38\u99D0\u2014\u2014\u6B21\u56DE\u8D77\u52D5\u6642\u306B\u4FDD\u5B58\u6E08\u307F\u69CB\u6210\u3092\u8AAD\u307F\u8FBC\u3080"
+      },
+      {
+        "Stage": "device \u53CD\u6620",
+        "State": "\u5BFE\u8C61\u5916",
+        "Detail": "onboard write \u306F\u88FD\u54C1\u7D4C\u8DEF\u5916\uFF08MAP-010: foreground \u5207\u66FF\u3067\u3082 device \u3078 write \u3057\u306A\u3044\uFF09"
+      }
+    ],
+    "AppliedRevisionLabelAfterSave": "revision 1",
+    "EditingLabelAfterSave": "t10 \u30B7\u30CA\u30EA\u30AA\u30A2\u30D7\u30EA",
+    "DeviceConnectionLabels": [
+      "G13: \u63A5\u7D9A\u4E2D\uFF081 \u53F0\uFF09",
+      "G600: \u63A5\u7D9A\u4E2D\uFF081 \u53F0\uFF09"
+    ]
+  },
+  "Real": {
+    "DefaultEditingLabel": "\u5171\u901A\u8A2D\u5B9A\uFF08\u3069\u306E\u30A2\u30D7\u30EA\u3067\u3082\u306A\u3044\u6642\uFF09",
+    "SelectedEditingLabelAfterAppSelect": "t10 \u30B7\u30CA\u30EA\u30AA\u30A2\u30D7\u30EA",
+    "SelectedApplicationFullPath": "c:\\game\\t10-scenario-app.exe",
+    "ActionCount": 1,
+    "ActionId": "action-t10",
+    "ActionName": "t10 \u30C6\u30B9\u30C8\u64CD\u4F5C",
+    "ActionOutputs": [
+      "Key:A"
+    ],
+    "G13BindingControlId": "G1",
+    "G13BindingLayerId": "base",
+    "G600BindingControlId": "G9",
+    "G600BindingLayerId": "base",
+    "CompileIsValid": true,
+    "CompileProfileCount": 2,
+    "CompileWarnings": [
+      "\u672A\u78BA\u8A8D control: G13 \u306E \u0027M1\u0027 \u3078\u306E binding \u306F\u5B9F\u6E2C\u6839\u62E0\u304C\u3042\u308A\u307E\u305B\u3093\uFF08\u78BA\u8A8D\u6E08\u307F control \u4EE5\u5916\u306F Experimental\uFF09\u3002",
+      "\u672A\u78BA\u8A8D control: G13 \u306E \u0027M2\u0027 \u3078\u306E binding \u306F\u5B9F\u6E2C\u6839\u62E0\u304C\u3042\u308A\u307E\u305B\u3093\uFF08\u78BA\u8A8D\u6E08\u307F control \u4EE5\u5916\u306F Experimental\uFF09\u3002",
+      "\u672A\u78BA\u8A8D control: G13 \u306E \u0027M3\u0027 \u3078\u306E binding \u306F\u5B9F\u6E2C\u6839\u62E0\u304C\u3042\u308A\u307E\u305B\u3093\uFF08\u78BA\u8A8D\u6E08\u307F control \u4EE5\u5916\u306F Experimental\uFF09\u3002"
+    ],
+    "CompileErrorMessage": null,
+    "SaveRevisionNumber": 1,
+    "SaveStageCells": [
+      {
+        "Stage": "\u7DE8\u96C6\uFF08compile\uFF09",
+        "State": "\u6210\u7ACB",
+        "Detail": "workspace \u6587\u66F8\u306F\u691C\u8A3C\u6E08\u307F\uFF08\u69CB\u9020\u30A8\u30E9\u30FC\u306A\u3057\uFF09"
+      },
+      {
+        "Stage": "\u4FDD\u5B58\uFF08revision\uFF09",
+        "State": "\u6210\u7ACB",
+        "Detail": "revision 1 \u3068\u3057\u3066\u4FDD\u5B58\u6E08\u307F"
+      },
+      {
+        "Stage": "runtime \u9069\u7528",
+        "State": "\u672A\u9069\u7528",
+        "Detail": "host \u975E\u5E38\u99D0\u2014\u2014\u6B21\u56DE\u8D77\u52D5\u6642\u306B\u4FDD\u5B58\u6E08\u307F\u69CB\u6210\u3092\u8AAD\u307F\u8FBC\u3080"
+      },
+      {
+        "Stage": "device \u53CD\u6620",
+        "State": "\u5BFE\u8C61\u5916",
+        "Detail": "onboard write \u306F\u88FD\u54C1\u7D4C\u8DEF\u5916\uFF08MAP-010: foreground \u5207\u66FF\u3067\u3082 device \u3078 write \u3057\u306A\u3044\uFF09"
+      }
+    ],
+    "AppliedRevisionLabelAfterSave": "revision 1",
+    "EditingLabelAfterSave": "t10 \u30B7\u30CA\u30EA\u30AA\u30A2\u30D7\u30EA",
+    "DeviceConnectionLabels": [
+      "G13: \u63A5\u7D9A\u4E2D\uFF081 \u53F0\uFF09",
+      "G600: \u63A5\u7D9A\u4E2D\uFF081 \u53F0\uFF09"
+    ]
+  }
+}
