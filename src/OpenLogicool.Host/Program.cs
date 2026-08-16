@@ -188,9 +188,11 @@ static int Ui(string[] arguments)
     using var connection = new SqliteConnection($"Data Source={databasePath}");
     connection.Open();
     new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
-    var profilesByKind = AppProfileResolver.Build(
-        new SqliteMappingProfileStore(connection).ListAll(),
-        new SqliteAppAssociationStore(connection).ListAll()).DefaultByKind;
+
+    var documents = new SqliteMappingProfileStore(connection).ListAll();
+    var associations = new SqliteAppAssociationStore(connection).ListAll();
+    var resolver = AppProfileResolver.Build(documents, associations);
+    var profilesByKind = resolver.DefaultByKind;
 
     int g13Count;
     int g600Count;
@@ -210,11 +212,46 @@ static int Ui(string[] arguments)
         DisplayInput("G13", g13Count),
         DisplayInput("G600", g600Count));
 
+    // Workspace 新シェル向け snapshot（設計 §3.6）: Host が単発観測して組み立て、Desktop へは
+    // pure な値だけを渡す（Desktop は I/O を持たない）。
+    var workspaceRows = ApplicationWorkspaceCatalog.Build(resolver, associations);
+    var running = RunningApplicationCatalog.ListVisibleApplications();
+    var railEntries = BuildRailEntries(workspaceRows, associations, running);
+
+    var identity = ForegroundAppTracker.GetForegroundIdentity();
+    var matchKinds = profilesByKind.Keys
+        .Select(kind => resolver.ResolveWithReason(kind, identity).MatchKind)
+        .ToArray();
+    var foregroundState = ForegroundStateClassifier.Classify(matchKinds);
+    var foregroundStateLabel = ForegroundStateClassifier.Describe(foregroundState);
+    var foregroundWindowTitle = identity is null
+        ? null
+        : running.FirstOrDefault(app =>
+                AppProfileResolver.NormalizePath(app.FullPath) == identity.NormalizedFullPath ||
+                (identity.PackageFamilyName is { } idPkg && app.PackageFamilyName is { } appPkg &&
+                    AppProfileResolver.NormalizePackage(appPkg) == AppProfileResolver.NormalizePackage(idPkg)))
+            ?.WindowTitle;
+
+    // 段階4セルは WorkspaceApplyReport（Profiles）と同一語彙を Desktop の WorkspaceStageCell へ写す
+    // だけで、この画面ではまだ何も保存していないため savedRevisionNumber は null（=下書き扱い）。
+    var stages = WorkspaceApplyReport.Build(savedRevisionNumber: null, IsHostResident())
+        .Select(stage => new WorkspaceStageCell(stage.Stage, stage.State, stage.Detail))
+        .ToArray();
+
+    var snapshot = new WorkspaceScreenSnapshot(
+        foregroundStateLabel,
+        foregroundWindowTitle,
+        SelectedWorkspaceRevisionNumber: null,
+        stages,
+        g13Count,
+        g600Count,
+        railEntries);
+
     var exitCode = 0;
     var thread = new Thread(() =>
     {
         var application = new System.Windows.Application();
-        var window = new InputStudioWindow(report);
+        var window = new InputStudioWindow(snapshot, report, AppProfileResolver.DefaultMarker);
         if (durationMs is not null)
         {
             var timer = new System.Windows.Threading.DispatcherTimer
@@ -231,6 +268,68 @@ static int Ui(string[] arguments)
     thread.Start();
     thread.Join();
     return exitCode;
+}
+
+// ApplicationRail の行を組み立てる（設計 §2.1: ApplicationWorkspaceCatalog の行＋実行中一覧）。
+// 関連付け済み path は既に workspaceRows に含まれるため、実行中一覧からは未関連付けの app だけを
+// 追加で拾う（重複は正規化 path で判定する——Store app redirect の罠は既存 catalog と同じ扱い）。
+static IReadOnlyList<ApplicationRailEntryInput> BuildRailEntries(
+    IReadOnlyList<ApplicationWorkspaceRow> workspaceRows,
+    IReadOnlyList<AppProfileAssociation> associations,
+    IReadOnlyList<RunningApplication> running)
+{
+    var associatedPaths = associations
+        .Where(association => association.MatcherKind != AppMatcherKind.Package && association.ApplicationFullPath != AppProfileResolver.DefaultMarker)
+        .Select(association => AppProfileResolver.NormalizePath(association.ApplicationFullPath))
+        .ToHashSet(StringComparer.Ordinal);
+    var associatedPackages = associations
+        .Where(association => association.MatcherKind == AppMatcherKind.Package)
+        .Select(association => AppProfileResolver.NormalizePackage(association.ApplicationFullPath))
+        .ToHashSet(StringComparer.Ordinal);
+    var hasDefaultAssociation = associations.Any(association => association.ApplicationFullPath == AppProfileResolver.DefaultMarker);
+
+    var runningByPath = new Dictionary<string, RunningApplication>(StringComparer.Ordinal);
+    foreach (var app in running)
+    {
+        runningByPath.TryAdd(AppProfileResolver.NormalizePath(app.FullPath), app);
+    }
+
+    bool IsAssociated(string normalizedPath, string? packageFamilyName) =>
+        associatedPaths.Contains(normalizedPath) ||
+        (packageFamilyName is { } packageValue && associatedPackages.Contains(AppProfileResolver.NormalizePackage(packageValue)));
+
+    var entries = new List<ApplicationRailEntryInput>();
+    var seenPaths = new HashSet<string>(StringComparer.Ordinal);
+
+    foreach (var row in workspaceRows)
+    {
+        var isDefault = row.ApplicationFullPath == AppProfileResolver.DefaultMarker;
+        if (isDefault)
+        {
+            entries.Add(new ApplicationRailEntryInput(row.ApplicationFullPath, "既定", IsRunning: false, hasDefaultAssociation));
+            continue;
+        }
+
+        var isRunning = runningByPath.TryGetValue(row.ApplicationFullPath, out var runningApp);
+        var displayName = isRunning ? runningApp!.FullPath : row.ApplicationFullPath;
+        var isAssociated = IsAssociated(row.ApplicationFullPath, runningApp?.PackageFamilyName);
+        entries.Add(new ApplicationRailEntryInput(row.ApplicationFullPath, displayName, isRunning, isAssociated));
+        seenPaths.Add(row.ApplicationFullPath);
+    }
+
+    foreach (var app in running)
+    {
+        var normalizedPath = AppProfileResolver.NormalizePath(app.FullPath);
+        if (!seenPaths.Add(normalizedPath))
+        {
+            continue;
+        }
+
+        entries.Add(new ApplicationRailEntryInput(
+            normalizedPath, app.FullPath, IsRunning: true, IsAssociated(normalizedPath, app.PackageFamilyName)));
+    }
+
+    return entries;
 }
 
 static int Associate(string profileId, string appPathOrDefault, string[] arguments)

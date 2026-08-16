@@ -14,5 +14,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\OpenLogicool.Desktop\OpenLogicool.Desktop.csproj" />
+    <!-- Host が段階4セルへ変換する元の語彙（WorkspaceApplyReport）と同一であることをテストで
+         直接突き合わせるための参照。src/OpenLogicool.Desktop は architecture 契約で
+         Contracts+Domain のみだが、これは test project の参照でその契約対象外。 -->
+    <ProjectReference Include="..\..\src\OpenLogicool.Profiles\OpenLogicool.Profiles.csproj" />
   </ItemGroup>
 </Project>
