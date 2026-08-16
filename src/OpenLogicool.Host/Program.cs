@@ -20,6 +20,9 @@ using OpenLogicool.Profiles;
 //       表示骨格（Phase 2 Exit 条件1・4の表示系）を read-only で開く。fast path は起動しない。
 //   associate <profileId> <app.exe の full path | default> [--db <path>]
 //       foreground app→profile の関連付けを保存する（"default" はその device 種別の既定 profile 指定）。
+//   apps [--db <path>]
+//       Application Workspace 一覧（app→両 device の割当）と実行中 app 一覧を表示する。
+//       関連付けの path は必ずこの実行中一覧から選ぶ（手打ち path は Store app redirect の罠）。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -29,7 +32,8 @@ return command switch
     "import" when args.Length >= 2 => Import(args[1], args[2..]),
     "ui" => Ui(args[1..]),
     "associate" when args.Length >= 3 => Associate(args[1], args[2], args[3..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default> [--db <path>]]"),
+    "apps" => Apps(args[1..]),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default> [--db <path>] | apps [--db <path>]]"),
 };
 
 static int Fail(string message)
@@ -227,6 +231,56 @@ static int Associate(string profileId, string appPathOrDefault, string[] argumen
     Console.WriteLine(applicationFullPath == AppProfileResolver.DefaultMarker
         ? $"associated: 既定（{document.DeviceKind}）-> '{profileId}'"
         : $"associated: {applicationFullPath}（{document.DeviceKind}）-> '{profileId}'");
+    return 0;
+}
+
+static int Apps(string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            default:
+                return Fail($"unknown apps option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+
+    var documents = new SqliteMappingProfileStore(connection).ListAll();
+    var associations = new SqliteAppAssociationStore(connection).ListAll();
+    var resolver = AppProfileResolver.Build(documents, associations);
+    var workspaces = ApplicationWorkspaceCatalog.Build(resolver, associations);
+    var associatedPaths = workspaces
+        .Where(row => row.ApplicationFullPath != AppProfileResolver.DefaultMarker)
+        .Select(row => row.ApplicationFullPath)
+        .ToHashSet(StringComparer.Ordinal);
+
+    Console.WriteLine($"workspaces: {workspaces.Count}");
+    foreach (var row in workspaces)
+    {
+        var name = row.ApplicationFullPath == AppProfileResolver.DefaultMarker ? "既定" : row.ApplicationFullPath;
+        var assignments = row.ProfileIdByKind.Count == 0
+            ? "（割当なし）"
+            : string.Join(" ", row.ProfileIdByKind.Select(pair => $"{pair.Key}='{pair.Value}'"));
+        Console.WriteLine($"  {name}: {assignments}");
+    }
+
+    var running = RunningApplicationCatalog.ListVisibleApplications();
+    Console.WriteLine($"running applications: {running.Count}");
+    foreach (var app in running)
+    {
+        var marker = associatedPaths.Contains(AppProfileResolver.NormalizePath(app.FullPath)) ? "[assoc]" : "[     ]";
+        Console.WriteLine($"  {marker} {app.FullPath} — \"{app.WindowTitle}\"");
+    }
+
     return 0;
 }
 

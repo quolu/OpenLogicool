@@ -1,3 +1,4 @@
+using System.IO;
 using OpenLogicool.Contracts.Profiles;
 using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Host;
@@ -80,6 +81,53 @@ public sealed class HostCompositionTests
             AppProfileResolver.Build(
                 [Document("p-1", "G600")],
                 [Association(@"c:\game\game.exe", "G13", "p-1")]));
+    }
+
+    [Fact]
+    public void Workspace_catalog_leads_with_default_and_groups_per_app()
+    {
+        var associations = new[]
+        {
+            Association("*", "G600", "p-main"),
+            Association(@"C:\Game\Game.exe", "G600", "p-game"),
+            Association(@"c:\game\game.exe", "G13", "p-g13-game"),
+        };
+        var resolver = AppProfileResolver.Build(
+            [Document("p-main", "G600"), Document("p-game", "G600"), Document("p-g13-game", "G13")],
+            associations);
+
+        var workspaces = ApplicationWorkspaceCatalog.Build(resolver, associations);
+
+        Assert.Equal(2, workspaces.Count);
+        Assert.Equal(AppProfileResolver.DefaultMarker, workspaces[0].ApplicationFullPath);
+        // 既定行は resolver の既定（G13 は単一 profile 互換）を反映する
+        Assert.Equal("p-main", workspaces[0].ProfileIdByKind["G600"]);
+        Assert.Equal("p-g13-game", workspaces[0].ProfileIdByKind["G13"]);
+        // 大文字小文字違いの path は同じ workspace 行へまとまる
+        Assert.Equal(@"c:\game\game.exe", workspaces[1].ApplicationFullPath);
+        Assert.Equal("p-game", workspaces[1].ProfileIdByKind["G600"]);
+        Assert.Equal("p-g13-game", workspaces[1].ProfileIdByKind["G13"]);
+    }
+
+    [Fact]
+    public void Workspace_catalog_without_profiles_has_only_an_empty_default()
+    {
+        var workspaces = ApplicationWorkspaceCatalog.Build(AppProfileResolver.Build([], []), []);
+
+        var row = Assert.Single(workspaces);
+        Assert.Equal(AppProfileResolver.DefaultMarker, row.ApplicationFullPath);
+        Assert.Empty(row.ProfileIdByKind);
+    }
+
+    [Fact]
+    public void Running_application_catalog_returns_deduped_full_paths()
+    {
+        var running = RunningApplicationCatalog.ListVisibleApplications();
+
+        Assert.Equal(
+            running.Select(app => AppProfileResolver.NormalizePath(app.FullPath)).Distinct().Count(),
+            running.Count);
+        Assert.All(running, app => Assert.True(Path.IsPathRooted(app.FullPath)));
     }
 
     [Fact]

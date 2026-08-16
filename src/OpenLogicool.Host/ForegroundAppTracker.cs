@@ -24,6 +24,12 @@ public static class ForegroundAppTracker
             return null;
         }
 
+        return GetProcessFullPath(processId);
+    }
+
+    /// <summary>process ID から EXE full path を取得する（取得不能は null）。</summary>
+    public static string? GetProcessFullPath(uint processId)
+    {
         var processHandle = OpenProcess(0x1000 /* PROCESS_QUERY_LIMITED_INFORMATION */, false, processId);
         if (processHandle == IntPtr.Zero)
         {
