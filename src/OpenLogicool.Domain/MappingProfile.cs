@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 
-namespace OpenLogicool.Input;
+namespace OpenLogicool.Domain;
 
 /// <summary>
-/// 一つの device 種別に対する mapping の pure data。
+/// 一つの device 種別に対する mapping の pure data（計画 §6.3: Domain が Profile の pure model を持つ）。
 /// layer（G13 M1/M2/M3 相当の latch と G600 G-Shift 相当の hold）と
 /// (control, layer) → outputs の binding を持つ。output token の解釈は Input Emitter の責務。
 /// </summary>

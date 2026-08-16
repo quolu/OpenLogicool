@@ -1,5 +1,6 @@
 using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Contracts.Shared;
+using OpenLogicool.Domain;
 using OpenLogicool.Fakes;
 using Xunit;
 

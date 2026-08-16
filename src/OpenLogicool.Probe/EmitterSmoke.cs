@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Contracts.Shared;
+using OpenLogicool.Domain;
 using OpenLogicool.Input;
 
 namespace OpenLogicool.Probe;

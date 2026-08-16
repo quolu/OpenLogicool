@@ -1,3 +1,4 @@
+using OpenLogicool.Domain;
 using Xunit;
 
 namespace OpenLogicool.Input.Tests;

@@ -12,6 +12,15 @@ public static class InitialSqliteMigrations
             new SqlMigration(
                 1,
                 "CREATE TABLE IF NOT EXISTS schema_migrations (migration_number INTEGER PRIMARY KEY);"),
+            new SqlMigration(
+                2,
+                """
+                CREATE TABLE mapping_profiles (
+                    profile_id TEXT PRIMARY KEY,
+                    schema_version TEXT NOT NULL,
+                    document_json TEXT NOT NULL
+                );
+                """),
         };
 }
 

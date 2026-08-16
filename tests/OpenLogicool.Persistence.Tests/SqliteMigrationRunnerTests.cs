@@ -7,13 +7,13 @@ namespace OpenLogicool.Persistence.Tests;
 public sealed class SqliteMigrationRunnerTests
 {
     [Fact]
-    public void Apply_to_an_empty_database_records_migration_001()
+    public void Apply_to_an_empty_database_records_all_initial_migrations()
     {
         using var connection = OpenInMemoryConnection();
 
         new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
 
-        Assert.Equal(new long[] { 1 }, ReadMigrationNumbers(connection));
+        Assert.Equal(new long[] { 1, 2 }, ReadMigrationNumbers(connection));
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public sealed class SqliteMigrationRunnerTests
         runner.Apply(connection);
         runner.Apply(connection);
 
-        Assert.Equal(new long[] { 1 }, ReadMigrationNumbers(connection));
+        Assert.Equal(new long[] { 1, 2 }, ReadMigrationNumbers(connection));
     }
 
     [Fact]

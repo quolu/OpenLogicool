@@ -3,6 +3,7 @@ using System.Text.Json;
 using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Devices.G13;
 using OpenLogicool.Devices.G600;
+using OpenLogicool.Domain;
 using OpenLogicool.Input;
 
 namespace OpenLogicool.Probe;
