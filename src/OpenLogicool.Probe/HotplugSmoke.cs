@@ -86,7 +86,8 @@ internal static class HotplugSmoke
 
         using var watchdog = WatchdogChannel.Start(watchdogPath);
         var recorder = new BalanceTrackingEmitter(new GuardedOutputEmitter(new SendInputEmitter(), watchdog));
-        var pump = new FastPathPump([new FastPathSource(source, droppedProbe)], runtimes, recorder);
+        var observingSource = new ControlObservingSource(source);
+        var pump = new FastPathPump([new FastPathSource(observingSource, droppedProbe)], runtimes, recorder);
         pump.Start();
 
         bool AnyStopped() => runtimes.Values.Any(runtime => !runtime.AcceptsNewDowns);
@@ -162,6 +163,7 @@ internal static class HotplugSmoke
             Resumed = resumed,
             PostResumeWorks = postResumeWorks,
             ProcessedInputCount = pump.ProcessedCount,
+            ObservedControlCounts = observingSource.CountsSnapshot(),
             DroppedInputCount = droppedProbe(),
             WrongReleaseCount = recorder.WrongReleaseCount,
             Failure = pump.Failure?.ToString(),
@@ -216,6 +218,50 @@ internal static class HotplugSmoke
             latchSelectors: new Dictionary<string, string>(),
             holdSelectors: new Dictionary<string, string>(),
             bindings);
+    }
+
+    // pump が pull した edge の control 別件数を記録する（「side ボタンを押したのに emit されない」と
+    // 「side ボタンが押されていない」を証跡上で判別するための観測点。change は素通し）
+    private sealed class ControlObservingSource(IDeviceInputSource inner) : IDeviceInputSource, IDeviceChangeSource
+    {
+        private readonly Dictionary<string, long> _counts = new(StringComparer.Ordinal);
+
+        public IReadOnlyList<DeviceInstance> EnumerateDevices() => inner.EnumerateDevices();
+
+        public bool TryPull(out PhysicalInput input)
+        {
+            if (!inner.TryPull(out input))
+            {
+                return false;
+            }
+
+            var key = $"{input.ControlId}:{input.Edge}";
+            lock (_counts)
+            {
+                _counts[key] = _counts.GetValueOrDefault(key) + 1;
+            }
+
+            return true;
+        }
+
+        public bool TryPullDeviceChange(out DeviceChange change)
+        {
+            if (inner is IDeviceChangeSource changeSource)
+            {
+                return changeSource.TryPullDeviceChange(out change);
+            }
+
+            change = null!;
+            return false;
+        }
+
+        public SortedDictionary<string, long> CountsSnapshot()
+        {
+            lock (_counts)
+            {
+                return new SortedDictionary<string, long>(_counts, StringComparer.Ordinal);
+            }
+        }
     }
 
     // 送出を実 emit しつつ down/up の均衡を追跡する（wrong release＝対応 down のない up の検出込み）
@@ -302,6 +348,7 @@ internal sealed class HotplugSmokeResult
     public required bool Resumed { get; init; }
     public required bool PostResumeWorks { get; init; }
     public required long ProcessedInputCount { get; init; }
+    public required SortedDictionary<string, long> ObservedControlCounts { get; init; }
     public required long DroppedInputCount { get; init; }
     public required long WrongReleaseCount { get; init; }
     public string? Failure { get; init; }

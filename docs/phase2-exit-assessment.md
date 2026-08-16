@@ -28,7 +28,7 @@
 
 - **1,000,000 report replay: G13/G600 とも green**（各 <1秒）。固定 LCG の生成器が各 report へ加えた変化（既知 bit 反転・wheel event・stick 変化・未確認 bit noise）を oracle として保持し、stream の出力 edge／wheel tick／stick sample が「加えた変化そのもの」と全 report で完全一致することを検証（生成器由来の独立 oracle であり、parser 出力の自己参照ではない）。終端 idle report で stuck control ゼロ、edge 総数下限も検証（G600: edge 70万規模＋tick 15万規模、G13: edge 60万規模＋sample 25万規模）。
 - **1,000 generation race: green**。profile 差し替え・latch 層切替・hold 層出入りの generation 変化 1,000 回を押下・解放と交錯させ、revision 刻印付き output token で「up が down 時 outputs と完全一致（再解決なし）」「二重 down・幽霊 up ゼロ」「終端 StopAndReleaseAll が保持中 output と完全一致」を検証。**wrong release 0 成立**。
-- **hotplug suite: fake suite 成立（2026-08-16 追記）・抜線実測のみ実機手番**。切断検出（WM_INPUT_DEVICE_CHANGE・RIDEV_DEVNOTIFY）を G13/G600 両 live source に実装し、`FastPathPump` が Removal で所有 output 全 release＋新規 down 停止（DEV-008）、Arrival で受理再開（default layer へ復帰・切断前状態は持ち越さない）を行う。fake suite（`HotplugTests` 6件）で「保持中切断の自動 release」「幽霊 up 無送出」「hold layer 復帰」「1,000 回抜挿 cycle で stuck 0・wrong release 0」を検証し green。実機の抜線実測は probe `hotplug-smoke`（3段階対話・JSON 証跡）を用意済みで、実機手番のみ残る。
+- **hotplug suite: fake suite 成立（2026-08-16 追記）・抜線実測のみ実機手番**。切断検出（WM_INPUT_DEVICE_CHANGE・RIDEV_DEVNOTIFY）を G13/G600 両 live source に実装し、`FastPathPump` が Removal で所有 output 全 release＋新規 down 停止（DEV-008）、Arrival で受理再開（default layer へ復帰・切断前状態は持ち越さない）を行う。fake suite（`HotplugTests` 6件）で「保持中切断の自動 release」「幽霊 up 無送出」「hold layer 復帰」「1,000 回抜挿 cycle で stuck 0・wrong release 0」を検証し green。**抜線実測も成立（2026-08-16・G600 実機）**: probe `hotplug-smoke` の3段階（押下中抜線→自動 release／挿し直し→受理再開／再押下→down/up 対）が全 pass——side ボタン押下中の抜線で物理 up なしの合成 release（`Key:F17` Up）を実測、wrong release 0・drop 0（`probe-output/hotplug-smoke-20260816-032656-711.json`）。**hotplug suite は fake・実機とも完全成立**。
 
 ### 条件3: LGS virtual keyboard／bus に依存しない Supported path が明示される
 
@@ -44,7 +44,7 @@
 
 ## 判定
 
-**Exit 5条件のうち成立2（条件3・5）、部分成立3（条件1・4——表示系が未達、条件2——fake suite まで成立・抜線実測のみ実機手番）。**
+**Exit 5条件のうち成立2（条件3・5）、部分成立3（条件1・4——表示系が未達、条件2——hotplug は fake・実機とも成立、sleep 実測のみ未実施）。**
 
 残作業の性質で分けると:
 
@@ -56,4 +56,4 @@
 
 ## 追記（2026-08-16 同日）
 
-条件2の 1M replay（G13/G600）と 1,000 generation race を実装し green を確認（`G600MillionReportReplayTests`／`G13MillionReportReplayTests`／`GenerationRaceTests`）。同日さらに hotplug の切断検出＋fake suite（`HotplugTests`）も実装し green。条件2の残りは抜線実測（probe `hotplug-smoke`・実機手番）と sleep 実測だけ。
+条件2の 1M replay（G13/G600）と 1,000 generation race を実装し green を確認（`G600MillionReportReplayTests`／`G13MillionReportReplayTests`／`GenerationRaceTests`）。同日さらに hotplug の切断検出＋fake suite（`HotplugTests`）を実装し green、**抜線実測（G600 実機・probe `hotplug-smoke`）も全 pass で hotplug は完全成立**。条件2の残りは sleep 実測だけ。
