@@ -1,0 +1,235 @@
+db: C:\Users\kite_\AppData\Local\Temp\claude\C--Users-kite--Documents-Program-OpenLogicool\ce8bf3b6-73d5-4d7a-91fd-2dc3baf996b7\scratchpad\live-check.db
+profiles: [live-app-G600, live-default-G13, live-default-G600]
+app associations: 4
+g13 devices: 1
+g600 devices: 1
+wired devices: 2
+  wired: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030}
+  wired: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030}
+resident: 実行中（900000 ms で自動終了）
+foreground state: 既定 app（identity 識別済み・関連付けなし）
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F15] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+foreground state: 一致 app（既定）
+profile switch: G600 -> 'live-app-G600'（path 一致: c:\windows\explorer.exe）
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G2 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G2 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 down layer=base -> [Key:F16] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G9 up layer=base -> [Key:F16] emitted
+foreground state: 既定 app（identity 識別済み・関連付けなし）
+profile switch: G600 -> 'live-default-G600'（既定）
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+foreground state: 一致 app（既定）
+profile switch: G600 -> 'live-app-G600'（package 一致: Microsoft.WindowsNotepad_8wekyb3d8bbwe）
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> [Key:F14] emitted
+foreground state: 既定 app（identity 識別済み・関連付けなし）
+profile switch: G600 -> 'live-default-G600'（既定）
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C21C#a&2837f99&0&0000#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> [Key:F14] emitted
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+foreground state: 一致 app（既定）
+profile switch: G600 -> 'live-app-G600'（path 一致: c:\windows\explorer.exe）
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+foreground state: 既定 app（identity 識別済み・関連付けなし）
+profile switch: G600 -> 'live-default-G600'（既定）
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 down layer=base -> (割当なし) no-op
+trace: \\?\HID#VID_046D&PID_C24A&MI_01&Col02#a&d27ebe9&0&0001#{4d1e55b2-f16f-11cf-88cb-001111000030} G1 up layer=base -> (割当なし) no-op
+resident: 停止（処理 input 210 件・handled shutdown 完了）
+
+[exited with code 0]
