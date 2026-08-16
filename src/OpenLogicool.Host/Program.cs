@@ -229,11 +229,20 @@ static int Ui(string[] arguments)
     var resolver = AppProfileResolver.Build(documents, associations);
     var profilesByKind = resolver.DefaultByKind;
 
+    // raw input 登録はプロセス内で usage page ごとに最後の登録が勝つため、resident 同居時に
+    // 表示用の source を新設・Dispose すると resident 側の受信登録が解除される。
+    // resident が居る時は起動時の列挙結果を使い、この process で source を二重に作らない。
     int g13Count;
     int g600Count;
-    using (var g13Source = new G13RawInputSource())
-    using (var g600Source = new G600RawInputSource())
+    if (residentStatus is not null)
     {
+        g13Count = residentStatus.G13DeviceInstanceIds.Count;
+        g600Count = residentStatus.G600DeviceInstanceIds.Count;
+    }
+    else
+    {
+        using var g13Source = new G13RawInputSource();
+        using var g600Source = new G600RawInputSource();
         g13Count = g13Source.EnumerateDevices().Count;
         g600Count = g600Source.EnumerateDevices().Count;
     }
