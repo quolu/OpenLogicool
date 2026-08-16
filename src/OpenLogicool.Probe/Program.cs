@@ -31,6 +31,10 @@ return command switch
     "g13-adapter-smoke" => OpenLogicool.Probe.G13AdapterSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "sendinput-accept" => OpenLogicool.Probe.SendInputAcceptProbe.Run(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "input-target" => OpenLogicool.Probe.SendInputAcceptProbe.RunTarget(),
     "fastpath-smoke" => OpenLogicool.Probe.FastPathSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),

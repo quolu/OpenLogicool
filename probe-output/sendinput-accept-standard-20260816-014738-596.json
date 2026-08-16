@@ -1,0 +1,62 @@
+{
+  "Probe": "sendinput-accept",
+  "CapturedAtUtc": "2026-08-16T01:47:38.5958661Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "TargetLabel": "standard",
+  "ForegroundConfirmed": true,
+  "Sent": [
+    {
+      "Edge": "DOWN",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "UP",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "DOWN",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "DOWN",
+      "VirtualKey": "7D"
+    },
+    {
+      "Edge": "UP",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "UP",
+      "VirtualKey": "7D"
+    }
+  ],
+  "Received": [
+    {
+      "Edge": "DOWN",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "UP",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "DOWN",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "DOWN",
+      "VirtualKey": "7D"
+    },
+    {
+      "Edge": "UP",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "UP",
+      "VirtualKey": "7D"
+    }
+  ],
+  "AllReceivedInOrder": true,
+  "Verdict": "Confirmed: keyboard SendInput is delivered to a standard foreground window (single key and chord, exact order)."
+}
