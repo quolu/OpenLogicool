@@ -23,6 +23,7 @@ return command switch
     "g600-apply-verify" => G600ApplyVerify(args[1..]),
     "g600-slot-cycle" => G600SlotCycle(args[1..]),
     "g600-g9-remap" => G600G9Remap(args[1..]),
+    "g600-side-remap" => G600SideRemapRoundtrip(args[1..]),
     "crash-keystate" => OpenLogicool.Probe.CrashKeyStateProbe.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
@@ -590,6 +591,87 @@ static int G600G9Remap(string[] arguments)
             ? $"F3 G9 normal-layer assignment is now keyboard usage 0x{usage:X2} (fresh-open verified). Restore with g600-restore-retry --report 0xF3."
             : "F3 may be in an intermediate state; backup is intact — run g600-restore-retry --report 0xF3."),
         matched ? 0 : 2);
+}
+
+// B変種主経路モジュール（Devices.G600 の G600SideRemap）の実機 roundtrip smoke。
+// clean 前提（F3/F4/F5 が backup 一致）→ side 12ボタン（G9〜G20）両層を F13〜F24 へ書換えて fresh verify →
+// backup F3 へ restore して fresh verify。apply の成否に関わらず必ず restore する（backup 完全・後退なし）。
+static int G600SideRemapRoundtrip(string[] arguments)
+{
+    const string probe = "g600-side-remap";
+    string? backupPath = null;
+    var maxAttempts = 8;
+    var settleMs = 2000;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--backup" when i + 1 < arguments.Length: backupPath = arguments[++i]; break;
+            case "--max-attempts" when i + 1 < arguments.Length: maxAttempts = int.Parse(arguments[++i]); break;
+            case "--settle-ms" when i + 1 < arguments.Length: settleMs = int.Parse(arguments[++i]); break;
+        }
+    }
+    if (backupPath is null)
+        return EmitWriteResult(NewWriteResult(probe, "argument-validation", "--backup <path> is required."), 1);
+
+    G600BackupSnapshot snapshot;
+    try
+    {
+        snapshot = G600BackupSnapshot.Load(backupPath);
+    }
+    catch (Exception ex)
+    {
+        return EmitWriteResult(NewWriteResult(probe, "backup-load", $"{ex.GetType().Name}: {ex.Message}"), 1);
+    }
+
+    var backupF3 = snapshot.Reports[0xF3];
+    var modified = OpenLogicool.Devices.G600.G600SideRemap.Build(backupF3);
+
+    var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
+        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+    if (device is null || !device.TryOpen(out var preStream))
+        return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection could not be opened."), 2);
+    using (preStream)
+    {
+        foreach (var id in new byte[] { 0xF3, 0xF4, 0xF5 })
+        {
+            var current = ReadFeature(preStream, id);
+            if (!current.AsSpan().SequenceEqual(snapshot.Reports[id]))
+                return EmitWriteResult(NewWriteResult(probe, "precondition",
+                    $"report 0x{id:X2} does not match backup; not starting from a clean state. Nothing was written.",
+                    steps: new[] { Step($"precondition-0x{id:X2}", snapshot.Reports[id], current, false) }), 2);
+        }
+    }
+
+    var steps = new List<G600WriteStep>();
+    var (applyMatched, applyOpenError) = WriteFeatureWithRetry(0xF3, modified, maxAttempts, settleMs, "side-remap", steps);
+    if (applyOpenError is not null)
+        return EmitWriteResult(NewWriteResult(probe, "side-remap-open", applyOpenError,
+            steps: steps,
+            deviceState: "apply phase could not open the device; restore not attempted. Backup is intact."), 2);
+
+    var (restoreMatched, restoreOpenError) = WriteFeatureWithRetry(0xF3, backupF3, maxAttempts, settleMs, "restore", steps);
+    if (restoreOpenError is not null)
+        return EmitWriteResult(NewWriteResult(probe, "restore-open", restoreOpenError,
+            steps: steps,
+            deviceState: "restore phase could not reopen the device. Backup is intact; re-run g600-restore-retry --report 0xF3."), 2);
+
+    var ok = applyMatched && restoreMatched;
+    var state = (applyMatched, restoreMatched) switch
+    {
+        (true, true) => "Side remap (G9-G20 both layers -> F13-F24) landed byte-exact and restore returned F3 to backup (fresh-open verified).",
+        (false, true) => "Side remap did not land within max attempts, but restore returned F3 to backup. No regression.",
+        (true, false) => "Side remap landed but restore did not match backup within max attempts. Run g600-restore-retry --report 0xF3; backup is intact.",
+        (false, false) => "Neither side remap nor restore matched within max attempts; backup is intact — run g600-restore-retry --report 0xF3.",
+    };
+
+    return EmitWriteResult(NewWriteResult(
+        probe,
+        "side-remap-roundtrip",
+        ok ? null : "side remap or restore did not reach a byte-exact match within max attempts.",
+        steps: steps,
+        deviceState: state),
+        ok ? 0 : 2);
 }
 
 // incident 2026-08-15-g600-f3-writeback-shift の補償 restore（オーナー裁定 案A）。
