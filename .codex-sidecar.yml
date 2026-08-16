@@ -1,0 +1,32 @@
+project: openlogicool
+
+defaults:
+  readonly: true
+  result_format: json
+
+safety_profile: generic
+
+allowed_paths:
+  - README.md
+  - CLAUDE.md
+  - AGENTS.md
+  - docs/
+  - evidence/
+  - probe-output/
+  - rag/
+  - src/
+  - tests/
+  - fixtures/
+  - OpenLogicool.sln
+
+deny_paths:
+  - .env
+  - .env.*
+  - "**/*.key"
+  - "**/*.pem"
+  - "**/*.sqlite"
+  - "**/*.db"
+  - "**/bin/**"
+  - "**/obj/**"
+  - ".claude/**"
+  - ".lattice/**"
