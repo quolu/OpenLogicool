@@ -24,7 +24,11 @@
 
 ### 条件2: 1,000,000 report replay、1,000 generation race、hotplug suite が通る
 
-**未実施。** 現状の replay は実録 fixture（数百 report 規模）のみ。1M report 規模の replay、1,000 generation race、hotplug suite はいずれも未作成。**fake ベースで自律実装可能**であり、本書時点の最優先残作業。
+**replay・generation race は成立（2026-08-16 追記）・hotplug suite は未実施。**
+
+- **1,000,000 report replay: G13/G600 とも green**（各 <1秒）。固定 LCG の生成器が各 report へ加えた変化（既知 bit 反転・wheel event・stick 変化・未確認 bit noise）を oracle として保持し、stream の出力 edge／wheel tick／stick sample が「加えた変化そのもの」と全 report で完全一致することを検証（生成器由来の独立 oracle であり、parser 出力の自己参照ではない）。終端 idle report で stuck control ゼロ、edge 総数下限も検証（G600: edge 70万規模＋tick 15万規模、G13: edge 60万規模＋sample 25万規模）。
+- **1,000 generation race: green**。profile 差し替え・latch 層切替・hold 層出入りの generation 変化 1,000 回を押下・解放と交錯させ、revision 刻印付き output token で「up が down 時 outputs と完全一致（再解決なし）」「二重 down・幽霊 up ゼロ」「終端 StopAndReleaseAll が保持中 output と完全一致」を検証。**wrong release 0 成立**。
+- **hotplug suite: 未実施**。前提となる device 切断検出（WM_INPUT_DEVICE_CHANGE）が live source に未実装のため、suite の前に切断検出→新規 down 停止→全 release（DEV-008）の実装が必要。実機の抜線実測は実機手番。
 
 ### 条件3: LGS virtual keyboard／bus に依存しない Supported path が明示される
 
@@ -40,12 +44,16 @@
 
 ## 判定
 
-**Exit 5条件のうち成立2（条件3・5）、部分成立2（条件1・4——非UI部分は成立、表示系が未達）、未実施1（条件2）。**
+**Exit 5条件のうち成立2（条件3・5）、部分成立3（条件1・4——表示系が未達、条件2——hotplug suite のみ未達）。**
 
 残作業の性質で分けると:
 
-1. **自律で閉じられる**: 条件2の stress suite（1M report replay・1,000 generation race・hotplug suite。fake／recorded ベース）、finite macro
+1. **自律で閉じられる**: hotplug（切断検出の実装＋fake suite。抜線実測のみ実機手番）、finite macro
 2. **Desktop UI（Phase 3 並行レーン）で閉じる**: 条件1・4の表示系、read-only onboarding、foreground app identity。計画上 Phase 2 と Phase 3 は並行であり、表示系条件は Phase 3 の UI 骨格で満たすのが自然
 3. **Phase 7 へ送付済み**: 対象 game の acceptance 分類（計画 §16 記録済み）
 
-推奨: 1 を先に閉じて条件2を成立させ、その後 Phase 3 レーン（Desktop UI 骨格）へ進んで表示系条件を満たす。sleep 実測は実機手番（スリープ操作）を要するため、suite 整備後にオーナー手番で1回実測する。
+推奨: 1 を先に閉じて条件2を完全成立させ、その後 Phase 3 レーン（Desktop UI 骨格）へ進んで表示系条件を満たす。sleep 実測は実機手番（スリープ操作）を要するため、suite 整備後にオーナー手番で1回実測する。
+
+## 追記（2026-08-16 同日）
+
+条件2の 1M replay（G13/G600）と 1,000 generation race を実装し green を確認（`G600MillionReportReplayTests`／`G13MillionReportReplayTests`／`GenerationRaceTests`）。条件2の残りは hotplug suite だけ。
