@@ -30,3 +30,23 @@ public interface IDeviceInputSource
 
     bool TryPull(out PhysicalInput input);
 }
+
+public enum DeviceChangeKind
+{
+    Arrival,
+    Removal,
+}
+
+public sealed record DeviceChange(
+    string SchemaVersion,
+    string DeviceInstanceId,
+    DeviceChangeKind Kind,
+    double MonotonicMs);
+
+/// <summary>
+/// device の到着・切断を通知できる input source（live adapter が実装する。DEV-008 の切断検出面）。
+/// </summary>
+public interface IDeviceChangeSource
+{
+    bool TryPullDeviceChange(out DeviceChange change);
+}

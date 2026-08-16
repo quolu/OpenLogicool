@@ -10,10 +10,11 @@ using OpenLogicool.Domain;
 
 namespace OpenLogicool.Fakes;
 
-public sealed class FakeDeviceInputSource : IDeviceInputSource
+public sealed class FakeDeviceInputSource : IDeviceInputSource, IDeviceChangeSource
 {
     private readonly IReadOnlyList<DeviceInstance> devices;
     private readonly Queue<PhysicalInput> inputs;
+    private readonly Queue<DeviceChange> deviceChanges = new();
 
     public FakeDeviceInputSource(IEnumerable<DeviceInstance> devices, IEnumerable<PhysicalInput> inputs)
     {
@@ -22,6 +23,10 @@ public sealed class FakeDeviceInputSource : IDeviceInputSource
     }
 
     public IReadOnlyList<DeviceInstance> EnumerateDevices() => devices;
+
+    public void EnqueueInput(PhysicalInput input) => inputs.Enqueue(input);
+
+    public void EnqueueChange(DeviceChange change) => deviceChanges.Enqueue(change);
 
     public bool TryPull(out PhysicalInput input)
     {
@@ -32,6 +37,18 @@ public sealed class FakeDeviceInputSource : IDeviceInputSource
         }
 
         input = null!;
+        return false;
+    }
+
+    public bool TryPullDeviceChange(out DeviceChange change)
+    {
+        if (deviceChanges.TryDequeue(out var next))
+        {
+            change = next;
+            return true;
+        }
+
+        change = null!;
         return false;
     }
 }

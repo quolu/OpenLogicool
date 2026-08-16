@@ -13,7 +13,7 @@
 | foreground app identity | **未実装**（Phase 3 の app-first UX と一体で設計するのが自然な依存関係） | — |
 | read-only onboarding と device capability 表示 | **未実装**（Desktop UI 未着手のため） | — |
 | input acceptance（Notepad、通常 app、管理者 app、対象 game を分類） | **standard＝Delivered／elevated＝Blocked を受信側観測で確定**。Notepad・通常 app は standard 分類に包含。対象 game は Phase 7 pilot で個別実測（計画 §16 に記録済み） | `sendinput-accept` 証跡2件 |
-| hotplug、sleep、profile 切替、key 保持、queue overflow | **部分**: queue overflow は fault 停止＋全 release を実装・test 済み。profile 切替・key 保持は focused test 済み。**hotplug・sleep の実測 suite は未実施** | `FastPathPump` focused test |
+| hotplug、sleep、profile 切替、key 保持、queue overflow | **部分**: queue overflow は fault 停止＋全 release を実装・test 済み。profile 切替・key 保持は focused test 済み。**hotplug は切断検出＋fake suite まで実装・green**（抜線実測のみ実機手番）。**sleep の実測 suite は未実施** | `FastPathPump`／`HotplugTests` focused test |
 | driver decision record | **不要が確定**（user-mode B変種 route が成立したため driver 分岐に入らない） | route assessment |
 
 ## Exit 条件の判定
@@ -28,7 +28,7 @@
 
 - **1,000,000 report replay: G13/G600 とも green**（各 <1秒）。固定 LCG の生成器が各 report へ加えた変化（既知 bit 反転・wheel event・stick 変化・未確認 bit noise）を oracle として保持し、stream の出力 edge／wheel tick／stick sample が「加えた変化そのもの」と全 report で完全一致することを検証（生成器由来の独立 oracle であり、parser 出力の自己参照ではない）。終端 idle report で stuck control ゼロ、edge 総数下限も検証（G600: edge 70万規模＋tick 15万規模、G13: edge 60万規模＋sample 25万規模）。
 - **1,000 generation race: green**。profile 差し替え・latch 層切替・hold 層出入りの generation 変化 1,000 回を押下・解放と交錯させ、revision 刻印付き output token で「up が down 時 outputs と完全一致（再解決なし）」「二重 down・幽霊 up ゼロ」「終端 StopAndReleaseAll が保持中 output と完全一致」を検証。**wrong release 0 成立**。
-- **hotplug suite: 未実施**。前提となる device 切断検出（WM_INPUT_DEVICE_CHANGE）が live source に未実装のため、suite の前に切断検出→新規 down 停止→全 release（DEV-008）の実装が必要。実機の抜線実測は実機手番。
+- **hotplug suite: fake suite 成立（2026-08-16 追記）・抜線実測のみ実機手番**。切断検出（WM_INPUT_DEVICE_CHANGE・RIDEV_DEVNOTIFY）を G13/G600 両 live source に実装し、`FastPathPump` が Removal で所有 output 全 release＋新規 down 停止（DEV-008）、Arrival で受理再開（default layer へ復帰・切断前状態は持ち越さない）を行う。fake suite（`HotplugTests` 6件）で「保持中切断の自動 release」「幽霊 up 無送出」「hold layer 復帰」「1,000 回抜挿 cycle で stuck 0・wrong release 0」を検証し green。実機の抜線実測は probe `hotplug-smoke`（3段階対話・JSON 証跡）を用意済みで、実機手番のみ残る。
 
 ### 条件3: LGS virtual keyboard／bus に依存しない Supported path が明示される
 
@@ -44,11 +44,11 @@
 
 ## 判定
 
-**Exit 5条件のうち成立2（条件3・5）、部分成立3（条件1・4——表示系が未達、条件2——hotplug suite のみ未達）。**
+**Exit 5条件のうち成立2（条件3・5）、部分成立3（条件1・4——表示系が未達、条件2——fake suite まで成立・抜線実測のみ実機手番）。**
 
 残作業の性質で分けると:
 
-1. **自律で閉じられる**: hotplug（切断検出の実装＋fake suite。抜線実測のみ実機手番）、finite macro
+1. **自律で閉じられる**: finite macro（hotplug の切断検出＋fake suite は 2026-08-16 に完了）
 2. **Desktop UI（Phase 3 並行レーン）で閉じる**: 条件1・4の表示系、read-only onboarding、foreground app identity。計画上 Phase 2 と Phase 3 は並行であり、表示系条件は Phase 3 の UI 骨格で満たすのが自然
 3. **Phase 7 へ送付済み**: 対象 game の acceptance 分類（計画 §16 記録済み）
 
@@ -56,4 +56,4 @@
 
 ## 追記（2026-08-16 同日）
 
-条件2の 1M replay（G13/G600）と 1,000 generation race を実装し green を確認（`G600MillionReportReplayTests`／`G13MillionReportReplayTests`／`GenerationRaceTests`）。条件2の残りは hotplug suite だけ。
+条件2の 1M replay（G13/G600）と 1,000 generation race を実装し green を確認（`G600MillionReportReplayTests`／`G13MillionReportReplayTests`／`GenerationRaceTests`）。同日さらに hotplug の切断検出＋fake suite（`HotplugTests`）も実装し green。条件2の残りは抜線実測（probe `hotplug-smoke`・実機手番）と sleep 実測だけ。

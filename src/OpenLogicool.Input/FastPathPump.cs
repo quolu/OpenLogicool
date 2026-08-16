@@ -90,9 +90,39 @@ public sealed class FastPathPump : IDisposable
                 processed++;
                 Interlocked.Increment(ref _processedCount);
             }
+
+            if (entry.Source is IDeviceChangeSource changeSource)
+            {
+                while (changeSource.TryPullDeviceChange(out var change))
+                {
+                    ProcessDeviceChange(change);
+                }
+            }
         }
 
         return processed;
+    }
+
+    /// <summary>
+    /// device の切断・再接続を処理する（DEV-008: 切断は新規 down を止めて所有 output を release、
+    /// 再接続は新規 down の受理を再開する）。runtime 未構成の device の change は所有 output が
+    /// 存在しないため対象外（その device の input は既存の未知 device fault で検出される）。
+    /// </summary>
+    private void ProcessDeviceChange(DeviceChange change)
+    {
+        if (!_runtimes.TryGetValue(change.DeviceInstanceId, out var runtime))
+        {
+            return;
+        }
+
+        if (change.Kind == DeviceChangeKind.Removal && runtime.AcceptsNewDowns)
+        {
+            _emitter.Emit(runtime.StopAndReleaseAll());
+        }
+        else if (change.Kind == DeviceChangeKind.Arrival && !runtime.AcceptsNewDowns)
+        {
+            runtime.Resume();
+        }
     }
 
     /// <summary>

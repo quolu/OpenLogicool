@@ -38,6 +38,9 @@ return command switch
     "fastpath-smoke" => OpenLogicool.Probe.FastPathSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "hotplug-smoke" => OpenLogicool.Probe.HotplugSmoke.Run(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
     "emitter-smoke" => OpenLogicool.Probe.EmitterSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),

@@ -12,12 +12,14 @@ namespace OpenLogicool.Devices.G13;
 /// VID/PID で G13 だけへ絞って G13ReportStream（recorded adapter と同一経路）で変換する。
 /// 取得経路は Phase 0 実測（docs/probes/g13-input-map-2026-08-15.md）で成立確認済み。
 /// </summary>
-public sealed class G13RawInputSource : IDeviceInputSource, IG13StickSource, IDisposable
+public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource, IG13StickSource, IDisposable
 {
     private const int MaxQueuedInputs = 4096;
     private const int MaxQueuedStickSamples = 1024;
 
     private readonly ConcurrentQueue<PhysicalInput> inputs = new();
+    // 切断・到着は物理的な抜挿でしか増えないため cap を置かない（Removal の drop は release 漏れになる）
+    private readonly ConcurrentQueue<DeviceChange> deviceChanges = new();
     private readonly ConcurrentQueue<G13StickSample> stickSamples = new();
     private readonly ConcurrentDictionary<IntPtr, G13ReportStream> streamsByHandle = new();
     private readonly ConcurrentDictionary<IntPtr, string> devicePathsByHandle = new();
@@ -83,6 +85,19 @@ public sealed class G13RawInputSource : IDeviceInputSource, IG13StickSource, IDi
         }
 
         input = null!;
+        return false;
+    }
+
+    public bool TryPullDeviceChange(out DeviceChange change)
+    {
+        ThrowIfPumpFailed();
+        if (deviceChanges.TryDequeue(out var next))
+        {
+            change = next;
+            return true;
+        }
+
+        change = null!;
         return false;
     }
 
@@ -153,13 +168,24 @@ public sealed class G13RawInputSource : IDeviceInputSource, IG13StickSource, IDi
                 {
                     UsagePage = G13DeviceIdentity.VendorUsagePage,
                     Usage = 0,
-                    Flags = RIDEV_INPUTSINK | RIDEV_PAGEONLY,
+                    Flags = RIDEV_INPUTSINK | RIDEV_PAGEONLY | RIDEV_DEVNOTIFY,
                     Target = windowHandle,
                 },
             };
             if (!RegisterRawInputDevices(registration, 1, (uint)Marshal.SizeOf<RAWINPUTDEVICE>()))
             {
                 throw new InvalidOperationException($"RegisterRawInputDevices failed: {Marshal.GetLastWin32Error()}");
+            }
+
+            // 切断時は handle から情報を照会できないため、既接続 device の handle→path を先に確定させる
+            foreach (var (handle, info) in EnumerateRawInputHidDevices())
+            {
+                if (info.VendorId == G13DeviceIdentity.VendorId &&
+                    info.ProductId == G13DeviceIdentity.ProductId &&
+                    info.UsagePage == G13DeviceIdentity.VendorUsagePage)
+                {
+                    devicePathsByHandle.TryAdd(handle, GetDeviceName(handle));
+                }
             }
         }
         catch (Exception ex)
@@ -188,6 +214,12 @@ public sealed class G13RawInputSource : IDeviceInputSource, IG13StickSource, IDi
             return IntPtr.Zero;
         }
 
+        if (msg == WM_INPUT_DEVICE_CHANGE)
+        {
+            HandleDeviceChange(wParam, lParam);
+            return IntPtr.Zero;
+        }
+
         if (msg == WM_CLOSE)
         {
             PostQuitMessage(0);
@@ -195,6 +227,38 @@ public sealed class G13RawInputSource : IDeviceInputSource, IG13StickSource, IDi
         }
 
         return DefWindowProc(hWnd, msg, wParam, lParam);
+    }
+
+    private void HandleDeviceChange(IntPtr wParam, IntPtr deviceHandle)
+    {
+        var elapsedMs = clock.Elapsed.TotalMilliseconds;
+        if (wParam == GIDC_ARRIVAL)
+        {
+            var info = GetDeviceInfo(deviceHandle);
+            if (info.VendorId != G13DeviceIdentity.VendorId ||
+                info.ProductId != G13DeviceIdentity.ProductId ||
+                info.UsagePage != G13DeviceIdentity.VendorUsagePage)
+            {
+                return;
+            }
+
+            var devicePath = GetDeviceName(deviceHandle);
+            devicePathsByHandle[deviceHandle] = devicePath;
+            // handle 値が再利用された場合に切断前の report 状態を持ち越さないよう stream を破棄する
+            streamsByHandle.TryRemove(deviceHandle, out _);
+            deviceChanges.Enqueue(new DeviceChange(
+                ContractSchemaVersions.Revision01, devicePath, DeviceChangeKind.Arrival, elapsedMs));
+            return;
+        }
+
+        // path cache は残す: queue 上で removal より後ろに残った WM_INPUT が
+        // 無効 handle への情報照会（失敗して throw）に落ちないようにするため
+        if (wParam == GIDC_REMOVAL && devicePathsByHandle.TryGetValue(deviceHandle, out var removedPath))
+        {
+            streamsByHandle.TryRemove(deviceHandle, out _);
+            deviceChanges.Enqueue(new DeviceChange(
+                ContractSchemaVersions.Revision01, removedPath, DeviceChangeKind.Removal, elapsedMs));
+        }
     }
 
     private void HandleRawInput(IntPtr rawInputHandle)
@@ -393,9 +457,13 @@ public sealed class G13RawInputSource : IDeviceInputSource, IG13StickSource, IDi
     private readonly record struct HidDeviceInfo(int VendorId, int ProductId, int UsagePage, int Usage);
 
     private const int WM_INPUT = 0x00FF;
+    private const int WM_INPUT_DEVICE_CHANGE = 0x00FE;
     private const int WM_CLOSE = 0x0010;
+    private static readonly IntPtr GIDC_ARRIVAL = new(1);
+    private static readonly IntPtr GIDC_REMOVAL = new(2);
     private const uint RIDEV_INPUTSINK = 0x00000100;
     private const uint RIDEV_PAGEONLY = 0x00000020;
+    private const uint RIDEV_DEVNOTIFY = 0x00002000;
     private const uint RID_INPUT = 0x10000003;
     private const uint RIDI_DEVICENAME = 0x20000007;
     private const uint RIDI_DEVICEINFO = 0x2000000B;

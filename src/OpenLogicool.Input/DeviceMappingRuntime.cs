@@ -80,6 +80,17 @@ public sealed class DeviceMappingRuntime
             .ToArray();
     }
 
+    /// <summary>
+    /// StopAndReleaseAll 後に新規 down の受理を再開する（device 再接続時）。
+    /// layer は default へ戻る（切断前の latch／hold 状態は再接続後へ持ち越さない）。
+    /// </summary>
+    public void Resume()
+    {
+        _state = _state.Resume();
+        _latchedLayerId = _profile.DefaultLayerId;
+        SyncStateLayer();
+    }
+
     private IReadOnlyList<MappedOutputEdge> ProcessDown(PhysicalInput input)
     {
         if (!_state.AcceptsNewDowns)

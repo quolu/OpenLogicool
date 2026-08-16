@@ -146,6 +146,26 @@ public sealed class PressOwnershipState
         return new PressOwnershipStopResult(stoppedState, Array.AsReadOnly(releases));
     }
 
+    /// <summary>
+    /// StopAndReleaseAll 後に新規 Down の受理を再開する（device 再接続時）。
+    /// generation が進むため、再開後の down は停止前と識別される。
+    /// </summary>
+    public PressOwnershipState Resume()
+    {
+        if (AcceptsNewDowns)
+        {
+            throw new InvalidOperationException("停止していない状態を Resume できません。");
+        }
+
+        return new PressOwnershipState(
+            checked(Generation + 1),
+            ProfileRevision,
+            LayerId,
+            MappingRevision,
+            acceptsNewDowns: true,
+            _ownerships);
+    }
+
     private PressOwnershipState CreateNext(
         IReadOnlyDictionary<PressOwnershipKey, PressOwnership> ownerships,
         bool acceptsNewDowns) =>
