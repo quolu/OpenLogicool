@@ -36,6 +36,8 @@ public sealed class DeviceMappingRuntimeTests
                 new MappingBinding("G1", "m2", ["Key:B"]),
                 new MappingBinding("G1", "shift", ["Key:C"]),
                 new MappingBinding("G2", "base", ["Key:X", "Key:Y"]),
+                new MappingBinding("G3", "base", ["Tap:Key:LCtrl+Key:C", "Tap:Key:V"]),
+                new MappingBinding("G3", "m2", ["Tap:Key:B"]),
             ]);
 
     private static DeviceMappingRuntime CreateRuntime() => new(DeviceId, Profile());
@@ -183,6 +185,82 @@ public sealed class DeviceMappingRuntimeTests
         Assert.Empty(runtime.Process(Edge("G1", PhysicalInputEdge.Down)));
         Assert.Empty(runtime.Process(Edge("G1", PhysicalInputEdge.Up)));
         Assert.Empty(runtime.Process(Edge("G2", PhysicalInputEdge.Up)));
+    }
+
+    [Fact]
+    public void Sequence_binding_emits_ordered_taps_on_down_and_owns_nothing()
+    {
+        var runtime = CreateRuntime();
+
+        var edges = runtime.Process(Edge("G3", PhysicalInputEdge.Down));
+        Assert.Equal(
+            [
+                new MappedOutputEdge("Key:LCtrl", PhysicalInputEdge.Down),
+                new MappedOutputEdge("Key:C", PhysicalInputEdge.Down),
+                new MappedOutputEdge("Key:C", PhysicalInputEdge.Up),
+                new MappedOutputEdge("Key:LCtrl", PhysicalInputEdge.Up),
+                new MappedOutputEdge("Key:V", PhysicalInputEdge.Down),
+                new MappedOutputEdge("Key:V", PhysicalInputEdge.Up),
+            ],
+            edges);
+
+        Assert.Empty(runtime.Process(Edge("G3", PhysicalInputEdge.Up)));
+        Assert.Empty(runtime.StopAndReleaseAll());
+    }
+
+    [Fact]
+    public void Sequence_binding_resolves_layer_at_down_time()
+    {
+        var runtime = CreateRuntime();
+        runtime.Process(Edge("M2", PhysicalInputEdge.Down));
+        runtime.Process(Edge("M2", PhysicalInputEdge.Up));
+
+        Assert.Equal(
+            [
+                new MappedOutputEdge("Key:B", PhysicalInputEdge.Down),
+                new MappedOutputEdge("Key:B", PhysicalInputEdge.Up),
+            ],
+            runtime.Process(Edge("G3", PhysicalInputEdge.Down)));
+    }
+
+    [Fact]
+    public void Sequence_binding_is_suppressed_after_stop()
+    {
+        var runtime = CreateRuntime();
+        runtime.StopAndReleaseAll();
+
+        Assert.Empty(runtime.Process(Edge("G3", PhysicalInputEdge.Down)));
+    }
+
+    [Fact]
+    public void Mixed_sequence_and_hold_tokens_in_one_binding_are_rejected()
+    {
+        var profile = new MappingProfile(
+            "profile-r1",
+            "map-r1",
+            defaultLayerId: "base",
+            layerIds: ["base"],
+            latchSelectors: new Dictionary<string, string>(),
+            holdSelectors: new Dictionary<string, string>(),
+            bindings: [new MappingBinding("G1", "base", ["Tap:Key:A", "Key:B"])]);
+
+        Assert.Throws<ArgumentException>(() => new DeviceMappingRuntime(DeviceId, profile));
+    }
+
+    [Fact]
+    public void Invalid_sequence_step_is_rejected_at_profile_application()
+    {
+        var runtime = CreateRuntime();
+        var profile = new MappingProfile(
+            "profile-r2",
+            "map-r2",
+            defaultLayerId: "base",
+            layerIds: ["base"],
+            latchSelectors: new Dictionary<string, string>(),
+            holdSelectors: new Dictionary<string, string>(),
+            bindings: [new MappingBinding("G1", "base", ["Tap:Key:NoSuchKey"])]);
+
+        Assert.ThrowsAny<ArgumentException>(() => runtime.ApplyProfile(profile));
     }
 
     [Fact]

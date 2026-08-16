@@ -60,6 +60,35 @@ public sealed class OutputTokensTests
         Assert.ThrowsAny<ArgumentException>(() => OutputTokens.Parse("Mouse:Side"));
     }
 
+    [Fact]
+    public void Sequence_step_splits_into_component_tokens()
+    {
+        Assert.True(OutputTokens.IsSequenceStep("Tap:Key:A"));
+        Assert.False(OutputTokens.IsSequenceStep("Key:A"));
+
+        Assert.Equal(["Key:A"], OutputTokens.SplitSequenceStep("Tap:Key:A"));
+        Assert.Equal(["Key:LCtrl", "Key:C"], OutputTokens.SplitSequenceStep("Tap:Key:LCtrl+Key:C"));
+        Assert.Equal(["Mouse:Left"], OutputTokens.SplitSequenceStep("Tap:Mouse:Left"));
+    }
+
+    [Theory]
+    [InlineData("Tap:")]
+    [InlineData("Tap:Key:A+")]
+    [InlineData("Tap:+Key:A")]
+    [InlineData("Tap:Key:NoSuchKey")]
+    [InlineData("Tap:Pedal:1")]
+    public void Invalid_sequence_steps_are_rejected(string token)
+    {
+        Assert.ThrowsAny<ArgumentException>(() => OutputTokens.SplitSequenceStep(token));
+    }
+
+    [Fact]
+    public void Sequence_step_token_is_not_a_plain_output_token()
+    {
+        Assert.ThrowsAny<ArgumentException>(() => OutputTokens.Parse("Tap:Key:A"));
+        Assert.ThrowsAny<ArgumentException>(() => OutputTokens.SplitSequenceStep("Key:A"));
+    }
+
     [Theory]
     [InlineData("Key:F13", PhysicalInputEdge.Down, "DOWN KEY 7C")]
     [InlineData("Key:F13", PhysicalInputEdge.Up, "UP KEY 7C")]

@@ -9,7 +9,7 @@
 | G0-Device-W（apply・restore 実証、EXP-G600-03、write 拡張実測、route 最終決定） | **完了（オーナー裁定 2026-08-15 通過）** | [g600-route-assessment-2026-08-15.md](g600-route-assessment-2026-08-15.md) §5、B変種主経路・A補完・C不採用 |
 | G13 adapter、G600 route、Mapping Runtime、Input Emitter | **完了・実機実証済み** | 両 adapter live smoke（drop 0）、fastpath live smoke（9押下対・drop 0・fault なし）、emitter smoke（watchdog 35ms release） |
 | press generation、layer、profile 切替 | **完了**（down 時固定・up 再解決なし・変更は新規 down から。MAP-003/005/006・DEV-007/008） | `PressOwnershipState`＋`DeviceMappingRuntime` focused test 54件 green |
-| finite macro（有限 sequence 出力） | **未実装**。単一 key・chord までは実装済み。DEV-006 の有限 sequence は Mapping Runtime の binding 表現拡張が必要 | — |
+| finite macro（有限 sequence 出力） | **完了・実測成立（2026-08-16）**。output token 文法へ `Tap:` 段（chord 段は `Tap:Key:LCtrl+Key:C`）を追加。sequence binding は down 時に全段の down/up を単一 SendInput call で送出・所有なし（MAP-008 の停止境界を構造で満たす）。timed/repeat/toggle は MAP-007（R5）のまま対象外 | focused test（Input 73件 green）＋ `emitter-smoke`（WH_KEYBOARD_LL で順序完全一致・残留なし・`probe-output/emitter-smoke-20260816-035259-736.json`） |
 | foreground app identity | **未実装**（Phase 3 の app-first UX と一体で設計するのが自然な依存関係） | — |
 | read-only onboarding と device capability 表示 | **未実装**（Desktop UI 未着手のため） | — |
 | input acceptance（Notepad、通常 app、管理者 app、対象 game を分類） | **standard＝Delivered／elevated＝Blocked を受信側観測で確定**。Notepad・通常 app は standard 分類に包含。対象 game は Phase 7 pilot で個別実測（計画 §16 に記録済み） | `sendinput-accept` 証跡2件 |
@@ -49,11 +49,11 @@
 
 残作業の性質で分けると:
 
-1. **自律で閉じられる**: finite macro（hotplug の切断検出＋fake suite は 2026-08-16 に完了）
+1. **自律で閉じられる**: なし（finite macro は 2026-08-16 に完了——hotplug・sleep 実測も同日完了）
 2. **Desktop UI（Phase 3 並行レーン）で閉じる**: 条件1・4の表示系、read-only onboarding、foreground app identity。計画上 Phase 2 と Phase 3 は並行であり、表示系条件は Phase 3 の UI 骨格で満たすのが自然
 3. **Phase 7 へ送付済み**: 対象 game の acceptance 分類（計画 §16 記録済み）
 
-推奨: finite macro を閉じ、その後 Phase 3 レーン（Desktop UI 骨格）へ進んで表示系条件（条件1・4）を満たす。
+推奨: Phase 3 レーン（Desktop UI 骨格）へ進んで表示系条件（条件1・4）を満たす。
 
 ## 追記（2026-08-16 同日）
 

@@ -30,6 +30,7 @@ public sealed class DeviceMappingRuntime
 
     public DeviceMappingRuntime(string deviceInstanceId, MappingProfile profile)
     {
+        ValidateOutputGrammar(profile);
         _deviceInstanceId = deviceInstanceId;
         _profile = profile;
         _latchedLayerId = profile.DefaultLayerId;
@@ -60,6 +61,7 @@ public sealed class DeviceMappingRuntime
     /// </summary>
     public void ApplyProfile(MappingProfile profile)
     {
+        ValidateOutputGrammar(profile);
         _profile = profile;
         _latchedLayerId = profile.DefaultLayerId;
         _holdStack.Clear();
@@ -117,6 +119,11 @@ public sealed class DeviceMappingRuntime
             return [];
         }
 
+        if (OutputTokens.IsSequenceStep(outputs[0]))
+        {
+            return BuildSequenceEdges(outputs);
+        }
+
         var result = _state.Down(input, outputs);
         _state = result.State;
         _ownedControls.Add(input.ControlId);
@@ -150,4 +157,55 @@ public sealed class DeviceMappingRuntime
     /// <summary>layer 変更を PressOwnershipState へ反映する（generation が進み、新規 down から有効になる）。</summary>
     private void SyncStateLayer() =>
         _state = _state.ChangeProfile(_profile.ProfileRevision, CurrentLayerId, _profile.MappingRevision);
+
+    /// <summary>
+    /// 有限 sequence（DEV-006）: 各段の chord down → 逆順 up を段順に並べた edge 列。
+    /// 全 down が列内の up と対になるため所有を作らず、単一 Emit 呼び出しで完結する
+    /// （MAP-008 の停止境界を構造で満たす）。
+    /// </summary>
+    private static IReadOnlyList<MappedOutputEdge> BuildSequenceEdges(IReadOnlyList<string> steps)
+    {
+        var edges = new List<MappedOutputEdge>();
+        foreach (var step in steps)
+        {
+            var components = OutputTokens.SplitSequenceStep(step);
+            foreach (var component in components)
+            {
+                edges.Add(new MappedOutputEdge(component, PhysicalInputEdge.Down));
+            }
+
+            for (var i = components.Count - 1; i >= 0; i--)
+            {
+                edges.Add(new MappedOutputEdge(components[i], PhysicalInputEdge.Up));
+            }
+        }
+
+        return edges;
+    }
+
+    /// <summary>
+    /// 全 binding の sequence 文法を検証する（fail early: sequence 段と押下保持 token の混在・
+    /// 不正な sequence 段は、最初の keypress でなく profile 適用時にエラーにする）。
+    /// 押下保持 token の解釈・検証は従来どおり Input Emitter の責務のまま。
+    /// </summary>
+    private static void ValidateOutputGrammar(MappingProfile profile)
+    {
+        foreach (var ((controlId, layerId), outputs) in profile.Bindings)
+        {
+            var isSequence = OutputTokens.IsSequenceStep(outputs[0]);
+            foreach (var output in outputs)
+            {
+                if (OutputTokens.IsSequenceStep(output) != isSequence)
+                {
+                    throw new ArgumentException(
+                        $"binding ({controlId}, {layerId}) で sequence 段（{OutputTokens.SequenceStepPrefix}…）と押下保持 token が混在しています。");
+                }
+
+                if (isSequence)
+                {
+                    OutputTokens.SplitSequenceStep(output);
+                }
+            }
+        }
+    }
 }

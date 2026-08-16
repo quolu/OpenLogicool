@@ -29,7 +29,38 @@ public readonly record struct ResolvedOutput(
 /// </summary>
 public static class OutputTokens
 {
+    /// <summary>有限 sequence の1段（DEV-006）。"Tap:Key:A"・chord 段は "Tap:Key:LCtrl+Key:C"。</summary>
+    public const string SequenceStepPrefix = "Tap:";
+
     private static readonly IReadOnlyDictionary<string, (ushort Vk, bool Extended)> KeyNames = BuildKeyNames();
+
+    public static bool IsSequenceStep(string token) =>
+        token.StartsWith(SequenceStepPrefix, StringComparison.Ordinal);
+
+    /// <summary>
+    /// sequence step を構成 token 列へ分解する（'+' 区切り）。各構成 token は Parse で検証し、
+    /// 不正なら例外（fallback しない）。
+    /// </summary>
+    public static IReadOnlyList<string> SplitSequenceStep(string token)
+    {
+        if (!IsSequenceStep(token))
+        {
+            throw new ArgumentException($"'{token}' は sequence step（{SequenceStepPrefix}…）ではありません。", nameof(token));
+        }
+
+        var components = token[SequenceStepPrefix.Length..].Split('+');
+        if (components.Length == 0 || components.Any(string.IsNullOrEmpty))
+        {
+            throw new ArgumentException($"sequence step '{token}' に空の構成 token が含まれています。", nameof(token));
+        }
+
+        foreach (var component in components)
+        {
+            Parse(component);
+        }
+
+        return components;
+    }
 
     public static ResolvedOutput Parse(string token)
     {

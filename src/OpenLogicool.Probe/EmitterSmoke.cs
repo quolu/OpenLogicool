@@ -17,6 +17,7 @@ internal static class EmitterSmoke
 {
     private const int VkF13 = 0x7C;
     private const int VkF14 = 0x7D;
+    private const int VkF15 = 0x7E;
 
     public static int Run(string[] arguments, string outputDirectory)
     {
@@ -70,6 +71,7 @@ internal static class EmitterSmoke
             [
                 new MappingBinding("G9", "base", ["Key:F13"]),
                 new MappingBinding("G10", "base", ["Key:F13", "Key:F14"]),
+                new MappingBinding("G11", "base", ["Tap:Key:F13+Key:F14", "Tap:Key:F15"]),
             ]);
         var runtime = new DeviceMappingRuntime("smoke-device", profile);
 
@@ -96,6 +98,24 @@ internal static class EmitterSmoke
         Thread.Sleep(50);
         Check("chord-up-F13", !IsDown(VkF13));
         Check("chord-up-F14", !IsDown(VkF14));
+
+        // finite sequence（DEV-006）: G11 down → F13+F14 chord tap → F15 tap が単一 SendInput call で完結。
+        // 低レベル keyboard hook で注入 event を順序ごと観測し、期待列との完全一致と残留なしを確認。
+        using (var recorder = KeyEventRecorder.Start([VkF13, VkF14, VkF15]))
+        {
+            emitter.Emit(runtime.Process(Input("G11", PhysicalInputEdge.Down)));
+            Thread.Sleep(200);
+            Check("sequence-exact-order", recorder.Snapshot().SequenceEqual(
+            [
+                (VkF13, true), (VkF14, true), (VkF14, false), (VkF13, false),
+                (VkF15, true), (VkF15, false),
+            ]));
+        }
+
+        Check("sequence-no-residue-F13", !IsDown(VkF13));
+        Check("sequence-no-residue-F14", !IsDown(VkF14));
+        Check("sequence-no-residue-F15", !IsDown(VkF15));
+        Check("sequence-up-emits-nothing", runtime.Process(Input("G11", PhysicalInputEdge.Up)).Count == 0);
 
         // handled stop: down 保持中に StopAndReleaseAll → release が実送出される（NFR-008 の release 経路）
         emitter.Emit(runtime.Process(Input("G9", PhysicalInputEdge.Down)));
@@ -220,6 +240,129 @@ internal static class EmitterSmoke
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int vKey);
+
+    /// <summary>
+    /// WH_KEYBOARD_LL による key event の順序付き観測。focus に依存せず注入 event を受けるため、
+    /// 一瞬で完結する sequence tap の実発生と順序を検証できる。
+    /// </summary>
+    private sealed class KeyEventRecorder : IDisposable
+    {
+        private readonly List<(int Vk, bool IsDown)> _events = [];
+        private readonly HashSet<int> _watchedVks;
+        private readonly Thread _thread;
+        private readonly ManualResetEventSlim _ready = new();
+        private LowLevelKeyboardProc? _proc;
+        private uint _threadId;
+
+        private KeyEventRecorder(IEnumerable<int> watchedVks)
+        {
+            _watchedVks = [.. watchedVks];
+            _thread = new Thread(HookLoop) { IsBackground = true, Name = "EmitterSmokeKeyRecorder" };
+        }
+
+        public static KeyEventRecorder Start(IEnumerable<int> watchedVks)
+        {
+            var recorder = new KeyEventRecorder(watchedVks);
+            recorder._thread.Start();
+            if (!recorder._ready.Wait(2000))
+            {
+                throw new InvalidOperationException("keyboard hook の設置が 2 秒以内に完了しませんでした。");
+            }
+
+            return recorder;
+        }
+
+        public IReadOnlyList<(int Vk, bool IsDown)> Snapshot()
+        {
+            lock (_events)
+            {
+                return [.. _events];
+            }
+        }
+
+        private void HookLoop()
+        {
+            _threadId = GetCurrentThreadId();
+            _proc = HookCallback;
+            var hook = SetWindowsHookEx(13 /* WH_KEYBOARD_LL */, _proc, IntPtr.Zero, 0);
+            if (hook == IntPtr.Zero)
+            {
+                throw new InvalidOperationException($"SetWindowsHookEx failed (error={Marshal.GetLastWin32Error()}).");
+            }
+
+            _ready.Set();
+            while (GetMessage(out var message, IntPtr.Zero, 0, 0) > 0)
+            {
+                TranslateMessage(ref message);
+                DispatchMessage(ref message);
+            }
+
+            UnhookWindowsHookEx(hook);
+        }
+
+        private IntPtr HookCallback(int code, IntPtr wParam, IntPtr lParam)
+        {
+            if (code >= 0)
+            {
+                var vk = Marshal.ReadInt32(lParam); // KBDLLHOOKSTRUCT.vkCode
+                if (_watchedVks.Contains(vk))
+                {
+                    var isDown = wParam is 0x0100 or 0x0104; // WM_KEYDOWN / WM_SYSKEYDOWN
+                    lock (_events)
+                    {
+                        _events.Add((vk, isDown));
+                    }
+                }
+            }
+
+            return CallNextHookEx(IntPtr.Zero, code, wParam, lParam);
+        }
+
+        public void Dispose()
+        {
+            PostThreadMessage(_threadId, 0x0012 /* WM_QUIT */, IntPtr.Zero, IntPtr.Zero);
+            _thread.Join(2000);
+            _ready.Dispose();
+        }
+
+        private delegate IntPtr LowLevelKeyboardProc(int code, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+        [DllImport("user32.dll")]
+        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        private static extern int GetMessage(out NativeMessage lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+
+        [DllImport("user32.dll")]
+        private static extern bool TranslateMessage(ref NativeMessage lpMsg);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr DispatchMessage(ref NativeMessage lpMsg);
+
+        [DllImport("user32.dll")]
+        private static extern bool PostThreadMessage(uint idThread, uint msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("kernel32.dll")]
+        private static extern uint GetCurrentThreadId();
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NativeMessage
+        {
+            public IntPtr hwnd;
+            public uint message;
+            public IntPtr wParam;
+            public IntPtr lParam;
+            public uint time;
+            public IntPtr pt_x;
+            public IntPtr pt_y;
+        }
+    }
 }
 
 internal sealed class EmitterSmokeResult

@@ -95,6 +95,9 @@ public sealed class MappingProfile
     /// <summary>hold selector（押下中だけ layer を上書き。G600 G-Shift 相当）: control → layer。</summary>
     public IReadOnlyDictionary<string, string> HoldSelectors { get; }
 
+    /// <summary>全 binding: (control, layer) → outputs。token 文法の検証者（Input 層）が列挙に使う。</summary>
+    public IReadOnlyDictionary<(string ControlId, string LayerId), IReadOnlyList<string>> Bindings => _bindings;
+
     public bool TryResolve(string controlId, string layerId, out IReadOnlyList<string> outputs) =>
         _bindings.TryGetValue((controlId, layerId), out outputs!);
 }
