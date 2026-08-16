@@ -699,6 +699,16 @@ static int Diagnostics(string[] arguments)
         : $"foreground: {identity.NormalizedFullPath ?? "取得不能"}" +
             $"{(identity.PackageFamilyName is { } pkg ? $" [pkg:{pkg}]" : string.Empty)}");
 
+    // foreground state（APP-008）: この process 自身が持つ resolver から、常駐 host の poll thread と
+    // 同じ pure 導出（ForegroundStateClassifier）で表示する。関連付け 0 件の DB では全 device 種別が
+    // "default" 一致になり KnownDefault のまま——それも正直に表示する（黙って隠さない）。
+    var diagnosticsResolver = AppProfileResolver.Build(documents, associations);
+    var matchKinds = diagnosticsResolver.DefaultByKind.Keys
+        .Select(kind => diagnosticsResolver.ResolveWithReason(kind, identity).MatchKind)
+        .ToArray();
+    var foregroundState = ForegroundStateClassifier.Classify(matchKinds);
+    Console.WriteLine($"foreground state: {ForegroundStateClassifier.Describe(foregroundState)}");
+
     var watchdogPath = Path.Combine(AppContext.BaseDirectory, "OpenLogicool.Watchdog.exe");
     Console.WriteLine($"watchdog: {watchdogPath}（{(File.Exists(watchdogPath) ? "存在" : "不在")}）");
 
