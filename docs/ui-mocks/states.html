@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Input Studio — 状態の見本</title>
+<style>
+  :root {
+    --bg: #0c0e12;
+    --chrome: #16181d;
+    --panel: #14171c;
+    --raised: #1b1f26;
+    --sunken: #0f1217;
+    --line: #2a2f38;
+    --text: #eceff4;
+    --muted: #8b93a1;
+    --g13: #3ec9f0;
+    --g600: #e8a04a;
+    --ok: #4ec87a;
+    --warn: #e6b34d;
+    --danger: #e25b5b;
+    --accent: #2f6fed;
+    --act1: #3dcc9a;
+    --act2: #a78bfa;
+    --act3: #f472b6;
+    --act4: #60a5fa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #08090c; color: var(--text);
+    font-family: "Yu Gothic UI", "Segoe UI", Meiryo, sans-serif;
+    font-size: 13px; line-height: 1.45;
+  }
+  .mock-banner {
+    background: #2a2414;
+    border-bottom: 1px solid #6a5420;
+    color: #e8c96a;
+    padding: 8px 16px;
+    font-size: 12px; line-height: 1.5;
+  }
+  .wrap { padding: 28px 28px 64px; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .lead { color: var(--muted); margin-bottom: 28px; max-width: 720px; }
+  .shot { margin-bottom: 36px; }
+  .shot h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .shot .why { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+  .shot .pic {
+    background: #2a2414; color: #e8c96a;
+    border: 1px solid #6a5420; border-radius: 3px;
+    padding: 5px 10px; font-size: 11px; margin-bottom: 10px;
+    display: inline-block;
+  }
+  a { color: #8bb4ff; }
+
+  .win {
+    width: 1100px; min-height: 560px;
+    display: flex; flex-direction: column;
+    background: var(--bg); border: 1px solid #2c313c;
+  }
+  .titlebar {
+    height: 28px; background: var(--chrome);
+    display: flex; align-items: center; padding-left: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .titlebar .appico {
+    width: 12px; height: 12px; margin-right: 8px;
+    background: linear-gradient(135deg, var(--g13), var(--g600)); border-radius: 2px;
+  }
+  .titlebar span { font-size: 11px; color: #c5cad3; }
+  header {
+    height: 48px; display: flex; align-items: center; gap: 14px;
+    padding: 0 14px; background: var(--chrome); border-bottom: 1px solid var(--line);
+  }
+  .brand { font-size: 13px; font-weight: 600; }
+  .pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--raised); border: 1px solid var(--line);
+    border-radius: 4px; padding: 4px 10px; height: 32px;
+  }
+  .pill b { font-size: 12px; }
+  .pill em { font-style: normal; color: var(--muted); font-size: 10px; display: block; }
+  .live { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .dot.off { background: transparent; border: 1px solid var(--muted); }
+  .save { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .chip { font-size: 12px; font-weight: 600; border-radius: 3px; padding: 3px 8px; }
+  .chip.warn { background: rgba(230,179,77,.12); color: var(--warn); border: 1px solid rgba(230,179,77,.35); }
+  .chip.err { background: rgba(226,91,91,.12); color: var(--danger); border: 1px solid rgba(226,91,91,.4); }
+  .chip.ok { background: rgba(78,200,122,.12); color: var(--ok); border: 1px solid rgba(78,200,122,.35); }
+  .btn {
+    background: var(--raised); color: var(--text);
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 5px 12px; font-size: 12px; font-weight: 600;
+  }
+  .btn.primary { background: var(--accent); border-color: #2458d6; color: #fff; }
+  .btn[disabled] { opacity: .38; }
+
+  .cols { flex: 1; display: grid; grid-template-columns: 240px 1fr 268px; gap: 1px; background: var(--line); min-height: 420px; }
+  .pane { background: var(--panel); padding: 10px 12px; }
+  .ph { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .ph b { color: var(--text); margin-right: 6px; }
+  .ar {
+    display: grid; grid-template-columns: 4px 1fr auto; gap: 8px; align-items: center;
+    padding: 7px 4px;
+  }
+  .ar.sel { background: #1a222c; margin: 0 -8px; padding-left: 8px; padding-right: 8px; }
+  .ar .bar { width: 4px; height: 24px; border-radius: 2px; }
+  .ar .nm { font-weight: 650; font-size: 12px; }
+  .ar .out { color: var(--muted); font-size: 11px; }
+  .bdg { font-size: 10px; font-weight: 700; border-radius: 3px; padding: 1px 5px; }
+  .bdg.g13 { color: var(--g13); border: 1px solid rgba(62,201,240,.5); }
+  .bdg.g600 { color: var(--g600); border: 1px solid rgba(232,160,74,.5); }
+  .bdg.miss { color: #6b7380; border: 1px dashed #3a4150; }
+  .bdg.err { color: var(--danger); border: 1px solid rgba(226,91,91,.5); }
+
+  .dtabs { display: flex; gap: 4px; margin-bottom: 0; }
+  .dtab {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border: 1px solid var(--line); border-bottom: none;
+    background: var(--sunken); color: var(--muted); font-weight: 650; font-size: 12px;
+    border-radius: 4px 4px 0 0;
+  }
+  .dtab.on { background: var(--raised); color: var(--text); }
+  .dtab.on.g13 { box-shadow: inset 0 2px 0 var(--g13); }
+  .dtab.on.g600 { box-shadow: inset 0 2px 0 var(--g600); }
+  .dd { width: 7px; height: 7px; border-radius: 50%; }
+  .dd.g13 { background: var(--g13); }
+  .dd.g600 { background: var(--g600); }
+  .dd.off { background: transparent; border: 1px solid #6b7380; }
+  .st { font-weight: 400; font-size: 11px; color: var(--ok); }
+  .st.off { color: var(--muted); }
+  .stage {
+    background: var(--raised); border: 1px solid var(--line); border-radius: 0 4px 4px 4px;
+    padding: 10px; min-height: 300px;
+    display: flex; flex-direction: column;
+  }
+  .chips { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; color: var(--muted); font-size: 11px; }
+  .lc { padding: 2px 8px; border: 1px solid var(--line); border-radius: 3px; font-weight: 600; color: var(--muted); }
+  .lc.on { background: rgba(62,201,240,.12); color: var(--g13); border-color: rgba(62,201,240,.45); }
+  .lc.on.am { background: rgba(232,160,74,.12); color: var(--g600); border-color: rgba(232,160,74,.45); }
+
+  .fig { flex: 1; display: flex; align-items: center; justify-content: center; }
+  .shell {
+    background: #171b22; border: 1px solid #2d3340; border-radius: 10px 10px 40px 10px;
+    padding: 8px 12px 10px;
+  }
+  .lcd {
+    width: 110px; height: 20px; margin: 0 auto 4px;
+    background: #071416; border: 1px solid #1e3a3e; border-radius: 2px;
+    color: #3ec9f0; font-size: 9px; letter-spacing: .1em;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mrow { display: flex; justify-content: center; gap: 4px; margin-bottom: 6px; }
+  .mk {
+    width: 28px; height: 16px; border: 1px dashed #353c4a; border-radius: 3px;
+    color: #8b93a1; font-size: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .krow { display: flex; gap: 4px; justify-content: center; margin: 3px 0; }
+  .k {
+    width: 36px; height: 28px; border-radius: 4px;
+    background: #232833; border: 1px solid #353c4a;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 8px; color: #8b93a1; position: relative;
+  }
+  .k b { font-size: 9px; font-weight: 700; }
+  .k.a1 { border-color: var(--act1); color: var(--act1); background: rgba(61,204,154,.12); }
+  .k.a2 { border-color: var(--act2); color: var(--act2); background: rgba(167,139,250,.12); }
+  .k.a4 { border-color: var(--act4); color: var(--act4); background: rgba(96,165,250,.12); }
+  .k.hit {
+    border-color: var(--danger); background: rgba(226,91,91,.14); color: var(--danger);
+    box-shadow: 0 0 0 1px var(--danger);
+  }
+  .k.dim::after {
+    content: ""; position: absolute; bottom: 2px;
+    width: 7px; height: 3px; border-radius: 50%;
+    background: #15181e; box-shadow: inset 0 1px 1px #050608;
+  }
+
+  .g600s { display: flex; gap: 12px; align-items: center; }
+  .side {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+  }
+  .sk {
+    width: 34px; height: 22px; border-radius: 3px;
+    background: #232833; border: 1px solid #353c4a;
+    font-size: 9px; color: #8b93a1;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .sk.a1 { border-color: var(--act1); color: var(--act1); background: rgba(61,204,154,.12); }
+  .sk.nub::after {
+    content: ""; position: absolute; bottom: 2px;
+    width: 5px; height: 3px; border-radius: 1px;
+    background: #9aa3b2;
+  }
+  .msil {
+    width: 96px; height: 148px; border-radius: 36px 36px 42px 42px;
+    background: #171b22; border: 1px solid #2d3340;
+    display: flex; flex-direction: column; align-items: center; padding: 8px 6px;
+    color: var(--muted); font-size: 10px; position: relative;
+  }
+  .msil .top { display: flex; gap: 3px; margin-bottom: 4px; }
+  .msil i { display: block; width: 18px; height: 26px; background: #232833; border: 1px solid #353c4a; border-radius: 4px; }
+  .msil i.wh { width: 14px; border-radius: 8px; }
+  .msil .g78 { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; }
+  .msil .g78 b { display: block; width: 28px; height: 12px; background: #232833; border: 1px solid #353c4a; border-radius: 2px; font-size: 8px; font-weight: 600; text-align: center; line-height: 12px; color: #8b93a1; }
+  .msil .gs {
+    position: absolute; right: -2px; bottom: 28px;
+    width: 28px; padding: 3px 2px;
+    border: 1px dashed rgba(232,160,74,.6); border-radius: 3px;
+    font-size: 7px; color: var(--g600); text-align: center; line-height: 1.2;
+  }
+  .dim { opacity: .28; filter: grayscale(.6); }
+  .ban { position: relative; }
+  .ban .msg {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text); font-size: 13px; font-weight: 650;
+    text-align: center; padding: 16px; line-height: 1.55;
+  }
+
+  .insp .ttl { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+  .sw { width: 10px; height: 10px; border-radius: 2px; background: var(--act1); }
+  .box {
+    background: var(--sunken); border: 1px solid var(--line); border-radius: 4px;
+    padding: 7px 8px; margin-bottom: 10px; display: flex; justify-content: space-between;
+  }
+  .blk { border: 1px solid var(--line); border-radius: 4px; padding: 8px; margin-bottom: 8px; font-size: 12px; }
+  .blk .h { color: var(--muted); font-size: 11px; margin-bottom: 3px; }
+  .note {
+    border-radius: 4px; padding: 8px; font-size: 12px; line-height: 1.55;
+  }
+  .note.warn { border: 1px solid rgba(230,179,77,.35); background: rgba(230,179,77,.08); color: var(--warn); }
+  .note.err { border: 1px solid rgba(226,91,91,.4); background: rgba(226,91,91,.08); color: #ffb4b4; }
+  .note.ok { border: 1px solid rgba(78,200,122,.35); background: rgba(78,200,122,.08); color: #b6efc8; }
+  .note.ok b { color: var(--ok); display: block; margin-bottom: 2px; }
+
+  footer {
+    height: 36px; display: flex; align-items: center; gap: 10px;
+    padding: 0 14px; background: var(--chrome);
+    border-top: 1px solid var(--line); color: var(--muted); font-size: 12px;
+  }
+  footer .t { font-weight: 700; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="mock-banner">これは設計モックです——この絵は『同じメイン画面が取りうる 4 つの状態』を表します。各場面の見出しがその状態です。</div>
+<div class="wrap">
+<h1>状態の見本</h1>
+<p class="lead">同じ画面の、起きうる見た目だけを並べています。診断の数字や内部の名前は出していません。<a href="index.html">一覧に戻る</a></p>
+
+<section class="shot" id="unplugged">
+  <h2>1. 未接続 — G600 がつながっていない</h2>
+  <p class="why">タブは残す。図は暗くして「つながっていない」と書く。割当は先に決められる。</p>
+  <div class="pic">これは設計モックです——この絵は『G600 がつながっていないときのメイン画面』を表します</div>
+  <div class="win">
+    <div class="titlebar"><div class="appico"></div><span>Input Studio</span></div>
+    <header>
+      <div class="brand">INPUT STUDIO</div>
+      <div class="pill"><span><em>設定中のアプリ</em><b>NIKKE</b></span></div>
+      <div class="live"><span class="dot"></span>いまゲームに届いている割当: <b>NIKKE 用</b></div>
+      <div class="save">
+        <button class="btn primary" type="button">保存</button>
+        <button class="btn" type="button">元に戻す</button>
+      </div>
+    </header>
+    <div class="cols">
+      <div class="pane">
+        <div class="ph"><b>操作</b></div>
+        <div class="ar sel"><span class="bar" style="background:var(--act1)"></span><span><div class="nm">回避</div><div class="out">Space を送る</div></span><span class="bdg g13">G13</span></div>
+        <div class="ar"><span class="bar" style="background:var(--act2)"></span><span><div class="nm">スキル 1</div><div class="out">E を送る</div></span><span class="bdg g13">G13</span></div>
+      </div>
+      <div class="pane">
+        <div class="dtabs">
+          <div class="dtab"><span class="dd g13"></span>G13 キーパッド<span class="st">接続中</span></div>
+          <div class="dtab on g600"><span class="dd off"></span>G600 マウス<span class="st off">未接続</span></div>
+        </div>
+        <div class="stage ban">
+          <div class="chips"><span>いま見ている配置</span><span class="lc on am">いつも</span><span class="lc">G-Shift を押している間</span></div>
+          <div class="fig dim">
+            <div class="g600s">
+              <div class="side">
+                <div class="sk">G11</div><div class="sk">G14</div><div class="sk">G17</div><div class="sk">G20</div>
+                <div class="sk">G10</div><div class="sk nub">G13</div><div class="sk nub">G16</div><div class="sk">G19</div>
+                <div class="sk">G9</div><div class="sk a1">G12</div><div class="sk">G15</div><div class="sk">G18</div>
+              </div>
+              <div class="msil">
+                <div class="top"><i></i><i class="wh"></i><i></i></div>
+                <div class="g78"><b>G7</b><b>G8</b></div>
+                <div class="gs">G-Shift</div>
+                G600
+              </div>
+            </div>
+          </div>
+          <div class="msg">G600 はつながっていません。<br>つながっていなくても、先に割当を決めておけます。</div>
+        </div>
+      </div>
+      <div class="pane insp">
+        <div class="ttl"><span class="sw"></span>回避</div>
+        <div class="box"><b>Space</b><span style="color:#8bb4ff">変更…</span></div>
+        <div class="blk"><div class="h">G13 キーパッド · 接続中</div><b>G1</b> · いつもの配置</div>
+        <div class="blk"><div class="h">G600 マウス · 未接続</div><b>G12</b> · いつもの配置</div>
+        <div class="note warn">マウスがつながったあと、この割当が使われます。</div>
+      </div>
+    </div>
+    <footer><span class="t">動作チェック</span><span>G600 の入力は、つながってからここに出ます</span></footer>
+  </div>
+</section>
+
+<section class="shot" id="overlap">
+  <h2>2. 割当の重なり — 同じボタンに操作が重なって、保存できない</h2>
+  <p class="why">保存ボタンを消さず、押せなくする。成功には見えない。重なりは図と右側の両方に出す。</p>
+  <div class="pic">これは設計モックです——この絵は『同じボタンに操作が重なって保存できないときのメイン画面』を表します</div>
+  <div class="win">
+    <div class="titlebar"><div class="appico"></div><span>Input Studio</span></div>
+    <header>
+      <div class="brand">INPUT STUDIO</div>
+      <div class="pill"><span><em>設定中のアプリ</em><b>NIKKE</b></span></div>
+      <div class="live"><span class="dot"></span>いまゲームに届いている割当: <b>NIKKE 用</b></div>
+      <div class="save">
+        <span class="chip err">保存できません</span>
+        <button class="btn primary" type="button" disabled>保存</button>
+        <button class="btn" type="button">元に戻す</button>
+      </div>
+    </header>
+    <div class="cols">
+      <div class="pane">
+        <div class="ph"><b>操作</b></div>
+        <div class="ar sel"><span class="bar" style="background:var(--act1)"></span><span><div class="nm">回避</div><div class="out">Space を送る</div></span><span class="bdg err">重なり</span></div>
+        <div class="ar"><span class="bar" style="background:var(--act2)"></span><span><div class="nm">スキル 1</div><div class="out">E を送る</div></span><span class="bdg err">重なり</span></div>
+        <div class="ar"><span class="bar" style="background:var(--act3)"></span><span><div class="nm">バースト</div><div class="out">Q を送る</div></span><span class="bdg g600">G600</span></div>
+      </div>
+      <div class="pane">
+        <div class="dtabs">
+          <div class="dtab on g13"><span class="dd g13"></span>G13 キーパッド<span class="st">接続中</span></div>
+          <div class="dtab"><span class="dd g600"></span>G600 マウス<span class="st">接続中</span></div>
+        </div>
+        <div class="stage">
+          <div class="chips"><span>いま見ている配置</span><span class="lc on">いつも</span><span class="lc">M2</span><span class="lc">M3</span></div>
+          <div class="fig">
+            <div class="shell">
+              <div class="lcd">接続中</div>
+              <div class="mrow"><div class="mk">M1</div><div class="mk">M2</div><div class="mk">M3</div><div class="mk">MR</div></div>
+              <div class="krow">
+                <div class="k hit"><b>G1</b> 回避／スキル1</div>
+                <div class="k">G2</div>
+                <div class="k">G3</div>
+                <div class="k dim">G4</div>
+                <div class="k">G5</div>
+                <div class="k">G6</div>
+                <div class="k">G7</div>
+              </div>
+              <div class="krow">
+                <div class="k">G8</div><div class="k">G9</div>
+                <div class="k a4 dim"><b>G10</b></div>
+                <div class="k dim">G11</div><div class="k dim">G12</div><div class="k">G13</div><div class="k">G14</div>
+              </div>
+              <div class="krow">
+                <div class="k">G15</div><div class="k">G16</div><div class="k">G17</div><div class="k">G18</div><div class="k">G19</div>
+              </div>
+              <div class="krow">
+                <div class="k">G20</div><div class="k">G21</div><div class="k">G22</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pane insp">
+        <div class="ttl"><span class="sw"></span>回避</div>
+        <div class="box"><b>Space</b><span style="color:#8bb4ff">変更…</span></div>
+        <div class="blk"><div class="h">G13 キーパッド</div><b>G1</b> · いつもの配置</div>
+        <div class="note err">G13 の G1 に「回避」と「スキル 1」が重なっています。どちらかを外すまで保存できません。</div>
+      </div>
+    </div>
+    <footer><span class="t">動作チェック</span><span>重なったままでは、ゲームには送りません</span></footer>
+  </div>
+</section>
+
+<section class="shot" id="unsaved">
+  <h2>3. 未保存 — 変更はあるが、まだ保存していない</h2>
+  <p class="why">保存できる。まだゲーム側は古い割当のまま、とは書かない（保存していないだけ）。</p>
+  <div class="pic">これは設計モックです——この絵は『未保存の変更があるときのメイン画面』を表します</div>
+  <div class="win">
+    <div class="titlebar"><div class="appico"></div><span>Input Studio</span></div>
+    <header>
+      <div class="brand">INPUT STUDIO</div>
+      <div class="pill"><span><em>設定中のアプリ</em><b>NIKKE</b></span></div>
+      <div class="live"><span class="dot"></span>いまゲームに届いている割当: <b>NIKKE 用</b></div>
+      <div class="save">
+        <span class="chip warn">未保存の変更あり</span>
+        <button class="btn primary" type="button">保存</button>
+        <button class="btn" type="button">元に戻す</button>
+      </div>
+    </header>
+    <div class="cols">
+      <div class="pane">
+        <div class="ph"><b>操作</b></div>
+        <div class="ar sel"><span class="bar" style="background:var(--act1)"></span><span><div class="nm">回避</div><div class="out">Space を送る</div></span><span><span class="bdg g13">G13</span> <span class="bdg g600">G600</span></span></div>
+        <div class="ar"><span class="bar" style="background:var(--act2)"></span><span><div class="nm">スキル 1</div><div class="out">E を送る</div></span><span class="bdg miss">G600 なし</span></div>
+      </div>
+      <div class="pane">
+        <div class="dtabs">
+          <div class="dtab on g13"><span class="dd g13"></span>G13 キーパッド<span class="st">接続中</span></div>
+          <div class="dtab"><span class="dd g600"></span>G600 マウス<span class="st">接続中</span></div>
+        </div>
+        <div class="stage">
+          <div class="chips"><span>いま見ている配置</span><span class="lc on">いつも</span><span class="lc">M2</span><span class="lc">M3</span></div>
+          <div class="fig">
+            <div class="shell">
+              <div class="lcd">接続中</div>
+              <div class="mrow"><div class="mk">M1</div><div class="mk">M2</div><div class="mk">M3</div><div class="mk">MR</div></div>
+              <div class="krow">
+                <div class="k a1"><b>G1</b> 回避</div>
+                <div class="k">G2</div>
+                <div class="k a2"><b>G3</b></div>
+                <div class="k dim">G4</div><div class="k">G5</div><div class="k">G6</div><div class="k">G7</div>
+              </div>
+              <div class="krow">
+                <div class="k">G8</div><div class="k">G9</div>
+                <div class="k a4 dim"><b>G10</b></div>
+                <div class="k dim">G11</div><div class="k dim">G12</div><div class="k">G13</div><div class="k">G14</div>
+              </div>
+              <div class="krow">
+                <div class="k">G15</div><div class="k">G16</div><div class="k">G17</div><div class="k">G18</div><div class="k">G19</div>
+              </div>
+              <div class="krow">
+                <div class="k">G20</div><div class="k">G21</div><div class="k">G22</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pane insp">
+        <div class="ttl"><span class="sw"></span>回避</div>
+        <div class="box"><b>Space</b><span style="color:#8bb4ff">変更…</span></div>
+        <div class="blk"><div class="h">G13 キーパッド</div><b>G1</b> · いつもの配置</div>
+        <div class="blk"><div class="h">G600 マウス</div><b>G12</b> · いつもの配置</div>
+        <div class="note warn">「スキル 1」は G600 にまだ載せていません。このままでも保存できます。</div>
+      </div>
+    </div>
+    <footer><span class="t">動作チェック</span><span>G600 の G12 を押した → 「回避」（Space）が送られました</span></footer>
+  </div>
+</section>
+
+<section class="shot" id="saved">
+  <h2>4. 保存直後 — 保存はできたが、ゲーム側はまだ前の内容</h2>
+  <p class="why">保存できたことと、ゲームに届くようになるタイミングを分ける。一つの「できました」ランプにはしない。</p>
+  <div class="pic">これは設計モックです——この絵は『保存した直後のメイン画面』を表します</div>
+  <div class="win">
+    <div class="titlebar"><div class="appico"></div><span>Input Studio</span></div>
+    <header>
+      <div class="brand">INPUT STUDIO</div>
+      <div class="pill"><span><em>設定中のアプリ</em><b>NIKKE</b></span></div>
+      <div class="live"><span class="dot"></span>いまゲームに届いている割当: <b>NIKKE 用</b></div>
+      <div class="save">
+        <span class="chip ok">保存しました</span>
+        <button class="btn primary" type="button" disabled>保存</button>
+        <button class="btn" type="button" disabled>元に戻す</button>
+      </div>
+    </header>
+    <div class="cols">
+      <div class="pane">
+        <div class="ph"><b>操作</b></div>
+        <div class="ar sel"><span class="bar" style="background:var(--act1)"></span><span><div class="nm">回避</div><div class="out">Space を送る</div></span><span><span class="bdg g13">G13</span> <span class="bdg g600">G600</span></span></div>
+        <div class="ar"><span class="bar" style="background:var(--act2)"></span><span><div class="nm">スキル 1</div><div class="out">E を送る</div></span><span class="bdg miss">G600 なし</span></div>
+      </div>
+      <div class="pane">
+        <div class="dtabs">
+          <div class="dtab on g13"><span class="dd g13"></span>G13 キーパッド<span class="st">接続中</span></div>
+          <div class="dtab"><span class="dd g600"></span>G600 マウス<span class="st">接続中</span></div>
+        </div>
+        <div class="stage">
+          <div class="chips"><span>いま見ている配置</span><span class="lc on">いつも</span><span class="lc">M2</span><span class="lc">M3</span></div>
+          <div class="fig">
+            <div class="shell">
+              <div class="lcd">接続中</div>
+              <div class="mrow"><div class="mk">M1</div><div class="mk">M2</div><div class="mk">M3</div><div class="mk">MR</div></div>
+              <div class="krow">
+                <div class="k a1"><b>G1</b> 回避</div>
+                <div class="k">G2</div>
+                <div class="k a2"><b>G3</b></div>
+                <div class="k dim">G4</div><div class="k">G5</div><div class="k">G6</div><div class="k">G7</div>
+              </div>
+              <div class="krow">
+                <div class="k">G8</div><div class="k">G9</div>
+                <div class="k a4 dim"><b>G10</b></div>
+                <div class="k dim">G11</div><div class="k dim">G12</div><div class="k">G13</div><div class="k">G14</div>
+              </div>
+              <div class="krow">
+                <div class="k">G15</div><div class="k">G16</div><div class="k">G17</div><div class="k">G18</div><div class="k">G19</div>
+              </div>
+              <div class="krow">
+                <div class="k">G20</div><div class="k">G21</div><div class="k">G22</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pane insp">
+        <div class="ttl"><span class="sw"></span>回避</div>
+        <div class="box"><b>Space</b><span style="color:#8bb4ff">変更…</span></div>
+        <div class="blk"><div class="h">G13 キーパッド</div><b>G1</b> · いつもの配置</div>
+        <div class="blk"><div class="h">G600 マウス</div><b>G12</b> · いつもの配置</div>
+        <div class="note ok">
+          <b>保存しました。</b>
+          ゲーム側への反映は再起動後です。今すぐ遊びたい割当は、まだ前の内容のままです。
+        </div>
+      </div>
+    </div>
+    <footer>
+      <span class="t">動作チェック</span>
+      <span>G600 の G12 を押した → 「回避」（Space）が送られました</span>
+    </footer>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

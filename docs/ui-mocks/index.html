@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Input Studio 画面見本</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0c0e12; color: #eceff4;
+    font-family: "Yu Gothic UI", "Segoe UI", Meiryo, sans-serif;
+    font-size: 14px; line-height: 1.55;
+    min-width: 720px;
+  }
+  .mock-banner {
+    background: #2a2414;
+    border-bottom: 1px solid #6a5420;
+    color: #e8c96a;
+    padding: 8px 16px;
+    font-size: 12px; line-height: 1.5;
+  }
+  .wrap { padding: 40px 48px 72px; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .sub { color: #8b93a1; margin-bottom: 28px; max-width: 680px; }
+  ol { list-style: none; max-width: 760px; }
+  li { border-top: 1px solid #2a2f38; }
+  a {
+    display: grid; grid-template-columns: 180px 1fr;
+    gap: 16px; align-items: baseline;
+    padding: 14px 4px; color: inherit; text-decoration: none;
+  }
+  a:hover .n { color: #8bb4ff; }
+  .n { font-weight: 700; color: #c5d4ff; }
+  .d { color: #8b93a1; }
+  .note {
+    margin-top: 36px; max-width: 760px;
+    border: 1px solid #2a2f38; border-radius: 4px;
+    padding: 12px 14px; color: #8b93a1; font-size: 13px;
+  }
+  .note b { color: #eceff4; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin: 0 2px; }
+</style>
+</head>
+<body>
+<div class="mock-banner">これは設計モックです——この絵は『画面見本の目次』を表します。各項目は、その画面が何の絵かを一行で書いています。</div>
+<div class="wrap">
+<h1>Input Studio 画面見本</h1>
+<p class="sub">設定に出してよい情報だけが残るデスクトップ面の見本です。診断の語彙は入れていません。</p>
+<ol>
+  <li><a href="main.html"><span class="n">main.html</span><span class="d">メイン画面。G13 / G600 タブをクリックすると、実機の配置図が切り替わる。</span></a></li>
+  <li><a href="flows.html"><span class="n">flows.html</span><span class="d">メイン画面の上にモーダルが開いた状態。上＝キーを録る、下＝アプリを選ぶ。</span></a></li>
+  <li><a href="states.html"><span class="n">states.html</span><span class="d">同じメイン画面の 4 状態。未接続・割当の重なり・未保存・保存直後。</span></a></li>
+</ol>
+<p class="note">
+  <b>識別色は下書きを継承。</b>
+  G13 = <span class="sw" style="background:#3ec9f0"></span>シアン、G600 = <span class="sw" style="background:#e8a04a"></span>アンバー。操作の4色（緑・紫・桃・青）と重ならず、冷たい盤面と暖かいマウスを一目で分けられるので差し替えない。
+</p>
+</div>
+</body>
+</html>

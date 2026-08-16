@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Input Studio — メイン画面</title>
+<style>
+  :root {
+    --bg: #0c0e12;
+    --chrome: #16181d;
+    --panel: #14171c;
+    --raised: #1b1f26;
+    --sunken: #0f1217;
+    --line: #2a2f38;
+    --line-2: #3a4150;
+    --text: #eceff4;
+    --muted: #8b93a1;
+    --g13: #3ec9f0;
+    --g600: #e8a04a;
+    --ok: #4ec87a;
+    --warn: #e6b34d;
+    --danger: #e25b5b;
+    --accent: #2f6fed;
+    --act1: #3dcc9a;
+    --act2: #a78bfa;
+    --act3: #f472b6;
+    --act4: #60a5fa;
+    --title-h: 32px;
+    --head-h: 52px;
+    --foot-h: 40px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: #050608;
+    color: var(--text);
+    font-family: "Yu Gothic UI", "Segoe UI", Meiryo, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; }
+
+  .mock-banner {
+    flex-shrink: 0;
+    background: #2a2414;
+    border-bottom: 1px solid #6a5420;
+    color: #e8c96a;
+    padding: 8px 16px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .mock-banner b { color: #f5e6b8; font-weight: 700; }
+
+  .win {
+    flex: 1;
+    min-width: 1100px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border: 1px solid #2c313c;
+  }
+  .titlebar {
+    height: var(--title-h);
+    background: var(--chrome);
+    display: flex; align-items: center; padding-left: 12px;
+    border-bottom: 1px solid var(--line); flex-shrink: 0;
+  }
+  .titlebar .appico {
+    width: 14px; height: 14px; margin-right: 8px;
+    background: linear-gradient(135deg, var(--g13), var(--g600));
+    border-radius: 3px;
+  }
+  .titlebar .apptitle { font-size: 12px; color: #c5cad3; }
+  .titlebar .caps { margin-left: auto; display: flex; height: 100%; }
+  .titlebar .cap {
+    width: 46px; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    color: #c5cad3; font-size: 10px;
+  }
+  .titlebar .cap.close:hover { background: #e81123; color: #fff; }
+
+  header {
+    height: var(--head-h);
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 16px; background: var(--chrome);
+    border-bottom: 1px solid var(--line); flex-shrink: 0;
+  }
+  .brand { font-size: 14px; font-weight: 600; letter-spacing: .04em; }
+  .brand span { color: var(--muted); font-weight: 400; letter-spacing: 0; margin-left: 8px; font-size: 12px; }
+  .app-pill {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--raised); border: 1px solid var(--line);
+    border-radius: 4px; padding: 5px 12px 5px 10px; height: 36px;
+  }
+  .app-pill:hover { border-color: var(--line-2); }
+  .app-ico {
+    width: 22px; height: 22px; border-radius: 4px;
+    background: #2a1840; color: #d4b3ff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .app-pill .lab { display: flex; flex-direction: column; line-height: 1.15; }
+  .app-pill .lab em { font-style: normal; color: var(--muted); font-size: 10px; }
+  .app-pill .lab b { font-size: 13px; font-weight: 600; }
+  .app-pill .caret { color: var(--muted); font-size: 10px; margin-left: 4px; }
+  .live { color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .live b { color: var(--text); font-weight: 600; }
+  .save-state { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .chip { font-size: 12px; font-weight: 600; border-radius: 3px; padding: 3px 8px; }
+  .chip.warn { background: rgba(230,179,77,.12); color: var(--warn); border: 1px solid rgba(230,179,77,.35); }
+  .btn {
+    background: var(--raised); color: var(--text);
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: default;
+  }
+  .btn.primary { background: var(--accent); border-color: #2458d6; color: #fff; }
+
+  .cols {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: 268px 1fr 292px;
+    gap: 1px; background: var(--line);
+  }
+  .pane { background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+  .pane-h { padding: 12px 14px 8px; font-size: 11px; font-weight: 600; color: var(--muted); }
+  .pane-h b { color: var(--text); font-size: 12px; font-weight: 650; margin-right: 6px; }
+
+  .action-row {
+    display: grid; grid-template-columns: 4px 1fr auto; gap: 10px; align-items: center;
+    padding: 9px 14px 9px 10px;
+  }
+  .action-row:hover { background: var(--raised); }
+  .action-row.sel { background: #1a222c; }
+  .action-row .bar { width: 4px; height: 28px; border-radius: 2px; }
+  .action-row .name { font-weight: 650; font-size: 13px; }
+  .action-row .out { color: var(--muted); font-size: 11px; margin-top: 1px; }
+  .where { display: flex; gap: 4px; }
+  .badge { font-size: 10px; font-weight: 700; border-radius: 3px; padding: 1px 5px; }
+  .badge.g13 { color: var(--g13); border: 1px solid rgba(62,201,240,.5); }
+  .badge.g600 { color: var(--g600); border: 1px solid rgba(232,160,74,.5); }
+  .badge.miss { color: #6b7380; border: 1px dashed #3a4150; }
+  .add-action {
+    margin: 10px 14px; padding: 8px; text-align: center; color: var(--muted);
+    border: 1px dashed var(--line); border-radius: 4px; font-size: 12px;
+  }
+
+  .dtabs { display: flex; gap: 0; padding: 10px 14px 0; }
+  .dtab {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 16px; border: 1px solid var(--line); border-bottom: none;
+    background: var(--sunken); color: var(--muted); font-weight: 650; font-size: 13px;
+    border-radius: 4px 4px 0 0; margin-right: 4px;
+    cursor: pointer;
+  }
+  .dtab.on { background: var(--raised); color: var(--text); }
+  .dtab.on.g13 { box-shadow: inset 0 2px 0 var(--g13); }
+  .dtab.on.g600 { box-shadow: inset 0 2px 0 var(--g600); }
+  .devdot { width: 7px; height: 7px; border-radius: 50%; }
+  .devdot.g13 { background: var(--g13); }
+  .devdot.g600 { background: var(--g600); }
+  .dtab .st { font-weight: 400; font-size: 11px; color: var(--ok); }
+  .stage {
+    flex: 1; min-height: 0;
+    background: var(--raised); margin: 0 14px 12px;
+    border: 1px solid var(--line); border-radius: 0 4px 4px 4px;
+    display: flex; flex-direction: column; padding: 12px 14px 10px;
+  }
+  .viewbar { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .viewbar .lab { color: var(--muted); font-size: 11px; margin-right: 4px; }
+  .lchip {
+    padding: 3px 10px; border-radius: 3px; border: 1px solid var(--line);
+    color: var(--muted); font-size: 12px; font-weight: 600;
+  }
+  .lchip.on.g13 { background: rgba(62,201,240,.12); color: var(--g13); border-color: rgba(62,201,240,.45); }
+  .lchip.on.g600 { background: rgba(232,160,74,.12); color: var(--g600); border-color: rgba(232,160,74,.45); }
+
+  .figure { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+  .fig-note { color: var(--muted); font-size: 11px; text-align: center; margin-top: 6px; }
+
+  /* ── G13 ── */
+  .g13-shell {
+    width: 456px;
+    background: #171b22;
+    border: 1px solid #2d3340;
+    border-radius: 14px 14px 72px 18px;
+    padding: 10px 18px 14px;
+    box-shadow: inset 0 1px 0 #2a3140;
+  }
+  .g13-lcd {
+    width: 200px; height: 44px; margin: 0 auto 6px;
+    background: #071416;
+    border: 1px solid #1e3a3e;
+    border-radius: 3px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #3ec9f0; font-size: 11px; letter-spacing: .14em; font-weight: 650;
+    box-shadow: inset 0 0 12px rgba(62,201,240,.12);
+  }
+  .g13-lcd em { font-style: normal; color: #2a6a72; font-size: 9px; letter-spacing: .08em; font-weight: 400; }
+  .mrow {
+    display: flex; justify-content: center; gap: 6px;
+    margin: 0 auto 10px;
+  }
+  .key {
+    width: 48px; height: 38px; border-radius: 5px;
+    background: #232833; border: 1px solid #353c4a;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: inset 0 1px 0 #3a4252;
+    position: relative;
+  }
+  .key .kid { font-size: 9px; color: #8b93a1; line-height: 1; }
+  .key .kact { font-size: 10px; font-weight: 700; max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; }
+  .key.a1 { border-color: var(--act1); background: rgba(61,204,154,.12); }
+  .key.a1 .kact { color: var(--act1); }
+  .key.a2 { border-color: var(--act2); background: rgba(167,139,250,.12); }
+  .key.a2 .kact { color: var(--act2); }
+  .key.a3 { border-color: var(--act3); background: rgba(244,114,182,.12); }
+  .key.a3 .kact { color: var(--act3); }
+  .key.a4 { border-color: var(--act4); background: rgba(96,165,250,.12); }
+  .key.a4 .kact { color: var(--act4); }
+  .key.sel { box-shadow: inset 0 1px 0 #3a4252, 0 0 0 2px var(--act1); }
+  .key.mode {
+    width: 40px; height: 26px; border-style: dashed; background: #1c2028;
+    box-shadow: none;
+  }
+  .key.mode .kact { color: var(--muted); font-size: 9px; font-weight: 600; }
+  .key.dimple::after {
+    content: "";
+    position: absolute;
+    bottom: 3px;
+    width: 10px; height: 5px;
+    border-radius: 50%;
+    background: #15181e;
+    box-shadow: inset 0 1px 2px #050608, 0 1px 0 #3a4252;
+  }
+  .keywell { background: var(--sunken); border-radius: 8px; padding: 10px 8px 8px; }
+  .krow { display: flex; justify-content: center; gap: 6px; }
+  .krow + .krow { margin-top: 6px; }
+  .r1 .key:nth-child(1) { transform: translateY(14px) rotate(-13deg); }
+  .r1 .key:nth-child(2) { transform: translateY(6px) rotate(-8deg); }
+  .r1 .key:nth-child(3) { transform: translateY(2px) rotate(-4deg); }
+  .r1 .key:nth-child(5) { transform: translateY(2px) rotate(4deg); }
+  .r1 .key:nth-child(6) { transform: translateY(6px) rotate(8deg); }
+  .r1 .key:nth-child(7) { transform: translateY(14px) rotate(13deg); }
+  .r2 { margin-top: 10px !important; }
+  .r2 .key:nth-child(1) { transform: translateY(10px) rotate(-10deg); }
+  .r2 .key:nth-child(2) { transform: translateY(4px) rotate(-6deg); }
+  .r2 .key:nth-child(3) { transform: translateY(1px) rotate(-3deg); }
+  .r2 .key:nth-child(5) { transform: translateY(1px) rotate(3deg); }
+  .r2 .key:nth-child(6) { transform: translateY(4px) rotate(6deg); }
+  .r2 .key:nth-child(7) { transform: translateY(10px) rotate(10deg); }
+  .r3 { margin-top: 10px !important; gap: 8px; }
+  .r3 .key:nth-child(1) { transform: translateY(6px) rotate(-7deg); }
+  .r3 .key:nth-child(2) { transform: translateY(2px) rotate(-3deg); }
+  .r3 .key:nth-child(4) { transform: translateY(2px) rotate(3deg); }
+  .r3 .key:nth-child(5) { transform: translateY(6px) rotate(7deg); }
+  .r4 { margin-top: 10px !important; gap: 10px; }
+  .thumb {
+    display: flex; align-items: flex-end; justify-content: flex-end;
+    margin-top: 12px; padding: 0 8px 0 4px;
+  }
+  .stick {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: #232833; border: 1px solid #353c4a;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 9px; text-align: center; line-height: 1.25;
+    box-shadow: inset 0 2px 6px #0a0c10;
+  }
+  .stick i { display: block; width: 16px; height: 16px; border-radius: 50%; background: #2e3542; margin: 0 auto 2px; }
+
+  /* ── G600 ── */
+  .g600-board { display: flex; align-items: stretch; gap: 14px; }
+  .side {
+    background: #171b22; border: 1px solid #2d3340; border-radius: 18px 8px 8px 28px;
+    padding: 8px 10px 10px; display: flex; flex-direction: column;
+  }
+  .side .cap {
+    font-size: 10px; color: var(--muted); text-align: center; margin-bottom: 6px; letter-spacing: .04em;
+  }
+  .side-axis {
+    display: flex; justify-content: space-between;
+    font-size: 9px; color: #6b7380; margin-bottom: 4px; padding: 0 2px;
+  }
+  .side-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 46px);
+    grid-template-rows: repeat(3, 36px);
+    gap: 5px;
+  }
+  .skey {
+    border-radius: 4px;
+    background: #232833; border: 1px solid #353c4a;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: inset 0 1px 0 #3a4252;
+    position: relative;
+  }
+  .skey .kid { font-size: 9px; color: #8b93a1; line-height: 1; }
+  .skey .kact { font-size: 10px; font-weight: 700; line-height: 1.15; }
+  .skey.a1 { border-color: var(--act1); background: rgba(61,204,154,.12); }
+  .skey.a1 .kact { color: var(--act1); }
+  .skey.a3 { border-color: var(--act3); background: rgba(244,114,182,.12); }
+  .skey.a3 .kact { color: var(--act3); }
+  .skey.sel { box-shadow: inset 0 1px 0 #3a4252, 0 0 0 2px var(--act1); }
+  .skey.nub::after {
+    content: "";
+    position: absolute;
+    bottom: 3px;
+    width: 7px; height: 4px;
+    border-radius: 1px 1px 3px 3px;
+    background: #9aa3b2;
+    box-shadow: 0 1px 0 #050608;
+  }
+  .mouse {
+    width: 220px;
+    background: #171b22; border: 1px solid #2d3340;
+    border-radius: 78px 78px 90px 90px;
+    padding: 12px 12px 16px;
+    display: flex; flex-direction: column; align-items: center;
+    box-shadow: inset 0 1px 0 #2a3140;
+    position: relative;
+  }
+  .mouse .cap { font-size: 10px; color: var(--muted); margin-bottom: 8px; letter-spacing: .04em; }
+  .top-row {
+    display: grid;
+    grid-template-columns: 62px 56px 62px;
+    gap: 4px;
+    align-items: stretch;
+  }
+  .mb {
+    background: #232833; border: 1px solid #353c4a; border-radius: 5px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--muted); font-weight: 600; text-align: center;
+  }
+  .mb.l { height: 72px; border-radius: 22px 6px 6px 8px; }
+  .mb.r { height: 72px; border-radius: 6px 22px 8px 6px; }
+  .wheel-col { display: flex; flex-direction: column; gap: 3px; }
+  .mb.wh {
+    height: 52px; border-radius: 12px;
+    background: #1a1e26;
+    font-size: 9px;
+  }
+  .mb.wh .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #3a4252; border: 1px solid #5a6270; margin-bottom: 2px;
+  }
+  .tilt {
+    display: flex; justify-content: space-between;
+    color: #6b7380; font-size: 8px; padding: 0 1px;
+  }
+  .g78 {
+    margin-top: 6px;
+    display: flex; flex-direction: column; gap: 3px;
+    width: 56px;
+  }
+  .g78 .mb { height: 22px; font-size: 10px; }
+  .g78 .kid { font-size: 9px; color: #8b93a1; }
+  .mouse-body {
+    margin-top: auto;
+    width: 100%;
+    display: flex; align-items: flex-end; justify-content: center;
+    position: relative;
+    min-height: 56px;
+  }
+  .palm {
+    width: 70px; height: 36px; border-radius: 0 0 40px 40px;
+    background: #12151b; border: 1px solid #252a33; border-top: none;
+  }
+  .gshift {
+    position: absolute;
+    right: -6px; bottom: 8px;
+    width: 52px;
+    background: #232833; border: 1px dashed #e8a04a;
+    border-radius: 6px 10px 10px 6px;
+    padding: 6px 4px;
+    text-align: center;
+    box-shadow: 0 0 0 1px rgba(232,160,74,.15);
+  }
+  .gshift .kid { display: block; font-size: 9px; color: var(--g600); font-weight: 700; }
+  .gshift .sub { display: block; font-size: 8px; color: #8b93a1; line-height: 1.25; margin-top: 2px; }
+
+  .insp { padding: 4px 14px 14px; display: flex; flex-direction: column; gap: 12px; }
+  .insp-title { display: flex; align-items: center; gap: 8px; }
+  .insp-title .sw { width: 10px; height: 10px; border-radius: 2px; background: var(--act1); }
+  .insp-title .name { font-size: 16px; font-weight: 700; }
+  .field label { display: block; color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+  .field .box {
+    background: var(--sunken); border: 1px solid var(--line); border-radius: 4px;
+    padding: 8px 10px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .field .box .v { font-weight: 700; font-size: 14px; }
+  .edit { color: #8bb4ff; font-size: 12px; }
+  .ablock { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .ablock .hd {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; background: var(--raised); font-weight: 650; font-size: 12px;
+  }
+  .ablock .bd { padding: 8px 10px; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .ablock .slot b { font-size: 13px; }
+  .ablock .slot .sub { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .link { color: #8bb4ff; font-size: 12px; white-space: nowrap; }
+  .note {
+    border: 1px solid rgba(230,179,77,.35); background: rgba(230,179,77,.08);
+    border-radius: 4px; padding: 8px 10px; color: var(--warn); font-size: 12px; line-height: 1.55;
+  }
+
+  footer {
+    height: var(--foot-h); flex-shrink: 0;
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; background: var(--chrome);
+    border-top: 1px solid var(--line); color: var(--muted); font-size: 12px;
+  }
+  footer .t { font-weight: 700; color: var(--text); font-size: 12px; }
+  footer .k { color: var(--g600); font-weight: 700; }
+  footer .res { color: var(--act1); font-weight: 700; }
+  footer .hint { margin-left: auto; }
+</style>
+</head>
+<body>
+<div class="mock-banner" id="mock-banner">これは設計モックです——この絵は『メイン画面で G13 タブを開いた状態』を表します。G13 / G600 のタブをクリックすると図が切り替わります。</div>
+<div class="win">
+  <div class="titlebar">
+    <div class="appico"></div>
+    <div class="apptitle">Input Studio</div>
+    <div class="caps"><div class="cap">─</div><div class="cap">□</div><div class="cap close">✕</div></div>
+  </div>
+
+  <header>
+    <div class="brand">INPUT STUDIO<span>G13 ＋ G600</span></div>
+    <a class="app-pill" href="flows.html#app">
+      <span class="app-ico">N</span>
+      <span class="lab"><em>設定中のアプリ</em><b>NIKKE</b></span>
+      <span class="caret">▾</span>
+    </a>
+    <div class="live"><span class="dot"></span>いまゲームに届いている割当: <b>NIKKE 用</b></div>
+    <div class="save-state">
+      <span class="chip warn">未保存の変更あり</span>
+      <button class="btn primary" type="button">保存</button>
+      <button class="btn" type="button">元に戻す</button>
+    </div>
+  </header>
+
+  <div class="cols">
+    <div class="pane">
+      <div class="pane-h"><b>操作</b>このアプリでやりたいこと</div>
+      <div class="action-row sel">
+        <span class="bar" style="background:var(--act1)"></span>
+        <span><div class="name">回避</div><div class="out">Space を送る</div></span>
+        <span class="where"><span class="badge g13">G13</span><span class="badge g600">G600</span></span>
+      </div>
+      <div class="action-row">
+        <span class="bar" style="background:var(--act2)"></span>
+        <span><div class="name">スキル 1</div><div class="out">E を送る</div></span>
+        <span class="where"><span class="badge g13">G13</span><span class="badge miss">G600 なし</span></span>
+      </div>
+      <div class="action-row">
+        <span class="bar" style="background:var(--act3)"></span>
+        <span><div class="name">バースト</div><div class="out">Q を送る</div></span>
+        <span class="where"><span class="badge g600">G600</span><span class="badge miss">G13 なし</span></span>
+      </div>
+      <div class="action-row">
+        <span class="bar" style="background:var(--act4)"></span>
+        <span><div class="name">リロード</div><div class="out">R を送る</div></span>
+        <span class="where"><span class="badge g13">G13</span></span>
+      </div>
+      <div class="add-action">＋ 操作を追加</div>
+    </div>
+
+    <div class="pane">
+      <div class="dtabs">
+        <button class="dtab on g13" type="button" data-dev="g13"><span class="devdot g13"></span>G13 キーパッド<span class="st">接続中</span></button>
+        <button class="dtab g600" type="button" data-dev="g600"><span class="devdot g600"></span>G600 マウス<span class="st">接続中</span></button>
+      </div>
+      <div class="stage">
+        <div class="viewbar" id="layers-g13">
+          <span class="lab">いま見ている配置</span>
+          <span class="lchip on g13">いつも</span>
+          <span class="lchip">M2</span>
+          <span class="lchip">M3</span>
+        </div>
+        <div class="viewbar" id="layers-g600" hidden>
+          <span class="lab">いま見ている配置</span>
+          <span class="lchip on g600">いつも</span>
+          <span class="lchip">G-Shift を押している間</span>
+        </div>
+        <div class="figure">
+          <div id="fig-g13">
+            <div class="g13-shell">
+              <div class="g13-lcd"><em>画面</em>接続中</div>
+              <div class="mrow">
+                <div class="key mode"><span class="kid">M1</span><span class="kact">いつも</span></div>
+                <div class="key mode"><span class="kid">M2</span></div>
+                <div class="key mode"><span class="kid">M3</span></div>
+                <div class="key mode"><span class="kid">MR</span></div>
+              </div>
+              <div class="keywell">
+                <div class="krow r1">
+                  <div class="key a1 sel"><span class="kid">G1</span><span class="kact">回避</span></div>
+                  <div class="key"><span class="kid">G2</span></div>
+                  <div class="key a2"><span class="kid">G3</span><span class="kact">スキル1</span></div>
+                  <div class="key dimple"><span class="kid">G4</span></div>
+                  <div class="key"><span class="kid">G5</span></div>
+                  <div class="key"><span class="kid">G6</span></div>
+                  <div class="key"><span class="kid">G7</span></div>
+                </div>
+                <div class="krow r2">
+                  <div class="key"><span class="kid">G8</span></div>
+                  <div class="key"><span class="kid">G9</span></div>
+                  <div class="key a4 dimple"><span class="kid">G10</span><span class="kact">リロード</span></div>
+                  <div class="key dimple"><span class="kid">G11</span></div>
+                  <div class="key dimple"><span class="kid">G12</span></div>
+                  <div class="key"><span class="kid">G13</span></div>
+                  <div class="key"><span class="kid">G14</span></div>
+                </div>
+                <div class="krow r3">
+                  <div class="key"><span class="kid">G15</span></div>
+                  <div class="key"><span class="kid">G16</span></div>
+                  <div class="key"><span class="kid">G17</span></div>
+                  <div class="key"><span class="kid">G18</span></div>
+                  <div class="key"><span class="kid">G19</span></div>
+                </div>
+                <div class="krow r4">
+                  <div class="key"><span class="kid">G20</span></div>
+                  <div class="key"><span class="kid">G21</span></div>
+                  <div class="key"><span class="kid">G22</span></div>
+                </div>
+              </div>
+              <div class="thumb">
+                <div class="stick"><i></i>スティック<br>押込み</div>
+              </div>
+            </div>
+          </div>
+          <div id="fig-g600" hidden>
+            <div class="g600-board">
+              <div class="side">
+                <div class="cap">親指側 · 横 4 列 × 縦 3 段</div>
+                <div class="side-axis"><span>手首側</span><span>前</span></div>
+                <div class="side-grid">
+                  <div class="skey"><span class="kid">G11</span></div>
+                  <div class="skey"><span class="kid">G14</span></div>
+                  <div class="skey"><span class="kid">G17</span></div>
+                  <div class="skey"><span class="kid">G20</span></div>
+                  <div class="skey"><span class="kid">G10</span></div>
+                  <div class="skey nub"><span class="kid">G13</span></div>
+                  <div class="skey nub"><span class="kid">G16</span></div>
+                  <div class="skey"><span class="kid">G19</span></div>
+                  <div class="skey"><span class="kid">G9</span></div>
+                  <div class="skey a1 sel"><span class="kid">G12</span><span class="kact">回避</span></div>
+                  <div class="skey a3"><span class="kid">G15</span><span class="kact">バースト</span></div>
+                  <div class="skey"><span class="kid">G18</span></div>
+                </div>
+              </div>
+              <div class="mouse">
+                <div class="cap">上面</div>
+                <div class="top-row">
+                  <div class="mb l">左クリック</div>
+                  <div class="wheel-col">
+                    <div class="mb wh"><span class="dot"></span>ホイール<br>押込み</div>
+                    <div class="tilt"><span>←左</span><span>右→</span></div>
+                  </div>
+                  <div class="mb r">右クリック</div>
+                </div>
+                <div class="g78">
+                  <div class="mb"><span class="kid">G7</span></div>
+                  <div class="mb"><span class="kid">G8</span></div>
+                </div>
+                <div class="mouse-body">
+                  <div class="palm"></div>
+                  <div class="gshift">
+                    <span class="kid">G-Shift</span>
+                    <span class="sub">押している間だけ層が変わる</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fig-note" id="note-g13">空のキーをクリックすると、左で選んでいる操作を載せます。色は左の操作と同じです。窪みは指のホーム位置です。</div>
+        <div class="fig-note" id="note-g600" hidden>左が親指で押す 12 ボタンです。同じ色は左の操作と対応します。突起は親指のホーム位置です。</div>
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="pane-h"><b>割当</b>選んだ操作をボタンへ</div>
+      <div class="insp">
+        <div class="insp-title"><span class="sw"></span><span class="name">回避</span></div>
+        <div class="field">
+          <label>ゲームに送るキー</label>
+          <div class="box"><span class="v">Space</span><a class="edit" href="flows.html#key">変更…</a></div>
+        </div>
+        <div class="ablock">
+          <div class="hd"><span class="devdot g13"></span>G13 キーパッド</div>
+          <div class="bd">
+            <span class="slot"><b>G1</b><span class="sub">いつもの配置 · 一番奥の左端</span></span>
+            <span class="link">変更 / 外す</span>
+          </div>
+        </div>
+        <div class="ablock">
+          <div class="hd"><span class="devdot g600"></span>G600 マウス</div>
+          <div class="bd">
+            <span class="slot"><b>G12</b><span class="sub">いつもの配置 · 親指側・後ろから 2 列目の下</span></span>
+            <span class="link">変更 / 外す</span>
+          </div>
+        </div>
+        <div class="note">「スキル 1」は G600 にまだ載せていません。このままでも保存できます。</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="t">動作チェック</span>
+    <span><span class="k">G600 の G12</span> を押した → <span class="res">「回避」（Space）が送られました</span></span>
+    <span class="hint">デバイスのボタンを押すと、ここに結果が出ます</span>
+  </footer>
+</div>
+<script>
+(function () {
+  var banner = document.getElementById("mock-banner");
+  var texts = {
+    g13: "これは設計モックです——この絵は『メイン画面で G13 タブを開いた状態』を表します。G13 / G600 のタブをクリックすると図が切り替わります。",
+    g600: "これは設計モックです——この絵は『メイン画面で G600 タブを開いた状態』を表します。G13 / G600 のタブをクリックすると図が切り替わります。"
+  };
+  function show(kind) {
+    var is13 = kind === "g13";
+    document.querySelectorAll(".dtab").forEach(function (el) {
+      el.classList.toggle("on", el.getAttribute("data-dev") === kind);
+    });
+    document.getElementById("fig-g13").hidden = !is13;
+    document.getElementById("fig-g600").hidden = is13;
+    document.getElementById("layers-g13").hidden = !is13;
+    document.getElementById("layers-g600").hidden = is13;
+    document.getElementById("note-g13").hidden = !is13;
+    document.getElementById("note-g600").hidden = is13;
+    banner.textContent = texts[kind];
+    if (history.replaceState) history.replaceState(null, "", "#" + kind);
+  }
+  document.querySelectorAll(".dtab").forEach(function (el) {
+    el.addEventListener("click", function () { show(el.getAttribute("data-dev")); });
+  });
+  var start = (location.hash === "#g600") ? "g600" : "g13";
+  show(start);
+})();
+</script>
+</body>
+</html>
