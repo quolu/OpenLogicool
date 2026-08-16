@@ -23,6 +23,9 @@ using OpenLogicool.Profiles;
 //   apps [--db <path>]
 //       Application Workspace 一覧（app→両 device の割当）と実行中 app 一覧を表示する。
 //       関連付けの path は必ずこの実行中一覧から選ぶ（手打ち path は Store app redirect の罠）。
+//   workspace <workspace.json> [--db <path>] [--dry-run]
+//       Action-centric workspace 文書を compile し、警告（MAP-004）を表示してから
+//       device 種別ごとの profile として保存する。--dry-run は表示だけで書き込まない。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -33,7 +36,8 @@ return command switch
     "ui" => Ui(args[1..]),
     "associate" when args.Length >= 3 => Associate(args[1], args[2], args[3..]),
     "apps" => Apps(args[1..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default> [--db <path>] | apps [--db <path>]]"),
+    "workspace" when args.Length >= 2 => Workspace(args[1], args[2..]),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run]]"),
 };
 
 static int Fail(string message)
@@ -279,6 +283,87 @@ static int Apps(string[] arguments)
     {
         var marker = associatedPaths.Contains(AppProfileResolver.NormalizePath(app.FullPath)) ? "[assoc]" : "[     ]";
         Console.WriteLine($"  {marker} {app.FullPath} — \"{app.WindowTitle}\"");
+    }
+
+    return 0;
+}
+
+static int Workspace(string workspaceJsonPath, string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    var dryRun = false;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            case "--dry-run":
+                dryRun = true;
+                break;
+            default:
+                return Fail($"unknown workspace option: {arguments[i]}");
+        }
+    }
+
+    var document = JsonSerializer.Deserialize<WorkspaceDocument>(File.ReadAllText(workspaceJsonPath))
+        ?? throw new InvalidOperationException($"'{workspaceJsonPath}' の JSON が null です。");
+
+    WorkspaceCompilation compilation;
+    try
+    {
+        compilation = WorkspaceCompiler.Compile(document);
+    }
+    catch (ArgumentException error)
+    {
+        return Fail($"workspace '{document.WorkspaceId}' は適用できません: {error.Message}");
+    }
+
+    Console.WriteLine($"workspace: {document.WorkspaceId}（action {document.Actions.Count} 件・binding {document.Bindings.Count} 件）");
+    foreach (var profile in compilation.Profiles)
+    {
+        Console.WriteLine($"  compile: {profile.ProfileId}（{profile.DeviceKind}・binding {profile.Bindings.Count} 件）");
+    }
+
+    foreach (var warning in compilation.Warnings)
+    {
+        Console.WriteLine($"  警告: {warning}");
+    }
+
+    if (dryRun)
+    {
+        Console.WriteLine("dry-run: 書き込みなし");
+        return 0;
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+
+    var store = new SqliteMappingProfileStore(connection);
+    var associationStore = new SqliteAppAssociationStore(connection);
+
+    // 書き込み後の全体が解決可能かを先に検証する（部分適用の状態を作らない）
+    var compiledIds = compilation.Profiles.Select(profile => profile.ProfileId).ToHashSet(StringComparer.Ordinal);
+    var prospective = store.ListAll()
+        .Where(existing => !compiledIds.Contains(existing.ProfileId))
+        .Concat(compilation.Profiles)
+        .ToList();
+    try
+    {
+        AppProfileResolver.Build(prospective, associationStore.ListAll());
+    }
+    catch (InvalidOperationException error)
+    {
+        return Fail($"workspace '{document.WorkspaceId}' を保存すると解決不能になります: {error.Message}");
+    }
+
+    foreach (var profile in compilation.Profiles)
+    {
+        store.Upsert(profile);
+        Console.WriteLine($"saved: {profile.ProfileId}");
     }
 
     return 0;
