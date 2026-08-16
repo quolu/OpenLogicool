@@ -4,10 +4,11 @@ using System.Windows.Controls;
 namespace OpenLogicool.Desktop;
 
 /// <summary>
-/// 現行 device 台帳（Phase 2 Exit 条件1・4の表示系）。新シェルでは Diagnostics 相当の
-/// 暫定右ペインとして埋め込む（設計 docs/ui-design-phase3.md §3.5 段階1）。
-/// 内容の組み立ては旧 InputStudioWindow から移設し、InputStudioReportBuilder は変更しない。
-/// 固定色（Brushes.DimGray 等）は使わず SystemColors を DynamicResource で参照する（UX-007）。
+/// device 台帳（Phase 2 Exit 条件1・4の表示系）。メイン画面からは撤去済みで、
+/// <see cref="DiagnosticsWindow"/> の中身として復活させる（t09 第4段残作業③）。
+/// InputStudioReportBuilder が持つ内部語彙（capability・Supported・Experimental 等）は
+/// DEV-005 の型として compile 時テストが検証する正の表現のためここでは変更せず、
+/// 画面表示だけ <see cref="TranslateForDisplay"/> で日本語へ張り替える（禁止語則）。
 /// </summary>
 public sealed class DeviceLedgerView : UserControl
 {
@@ -19,11 +20,11 @@ public sealed class DeviceLedgerView : UserControl
         {
             var noteBlock = new TextBlock
             {
-                Text = $"※ {note}",
+                Text = $"※ {TranslateForDisplay(note)}",
                 TextWrapping = TextWrapping.Wrap,
+                Foreground = Theme.Muted,
                 Margin = new Thickness(0, 0, 0, 4),
             };
-            noteBlock.SetResourceReference(TextBlock.ForegroundProperty, SystemColors.GrayTextBrushKey);
             root.Children.Add(noteBlock);
         }
 
@@ -48,23 +49,25 @@ public sealed class DeviceLedgerView : UserControl
             Text = device.DeviceKind,
             FontSize = 20,
             FontWeight = FontWeights.Bold,
+            Foreground = Theme.Text,
             Margin = new Thickness(0, 0, 0, 4),
         });
 
         foreach (var line in new[]
                  {
-                     $"接続: {device.ConnectionSummary}",
-                     $"所有・read/write: {device.OwnershipSummary}",
-                     $"profile: {device.ProfileSummary}",
+                     $"接続: {TranslateForDisplay(device.ConnectionSummary)}",
+                     $"所有・read/write: {TranslateForDisplay(device.OwnershipSummary)}",
+                     $"割当先 profile: {TranslateForDisplay(device.ProfileSummary)}",
                  })
         {
-            panel.Children.Add(new TextBlock { Text = line, TextWrapping = TextWrapping.Wrap });
+            panel.Children.Add(new TextBlock { Text = line, Foreground = Theme.Text, TextWrapping = TextWrapping.Wrap });
         }
 
         var constraintsHeader = new TextBlock
         {
             Text = "制約（隠さず表示）",
             FontWeight = FontWeights.Bold,
+            Foreground = Theme.Text,
             Margin = new Thickness(0, 8, 0, 2),
         };
         panel.Children.Add(constraintsHeader);
@@ -72,7 +75,8 @@ public sealed class DeviceLedgerView : UserControl
         {
             panel.Children.Add(new TextBlock
             {
-                Text = $"• {constraint}",
+                Text = $"• {TranslateForDisplay(constraint)}",
+                Foreground = Theme.Text,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(8, 0, 0, 2),
             });
@@ -85,17 +89,31 @@ public sealed class DeviceLedgerView : UserControl
             CanUserAddRows = false,
             HeadersVisibility = DataGridHeadersVisibility.Column,
             Margin = new Thickness(0, 8, 0, 0),
-            ItemsSource = device.ControlRows,
+            Background = Theme.Sunken,
+            Foreground = Theme.Text,
+            RowBackground = Theme.Panel,
+            AlternatingRowBackground = Theme.Raised,
+            ItemsSource = device.ControlRows.Select(ToDisplayRow).ToArray(),
         };
-        grid.Columns.Add(TextColumn("control", nameof(ControlRow.ControlId), 90));
-        grid.Columns.Add(TextColumn("根拠", nameof(ControlRow.Evidence), 90));
-        grid.Columns.Add(TextColumn("capability", nameof(ControlRow.Capability), 110));
-        grid.Columns.Add(TextColumn("役割", nameof(ControlRow.Role), 200));
-        grid.Columns.Add(TextColumn("割当（layer: outputs）", nameof(ControlRow.BindingSummary), 420));
+        grid.Columns.Add(TextColumn("コントロール", nameof(ControlDisplayRow.ControlId), 90));
+        grid.Columns.Add(TextColumn("根拠", nameof(ControlDisplayRow.Evidence), 90));
+        grid.Columns.Add(TextColumn("対応状況", nameof(ControlDisplayRow.CapabilityLabel), 130));
+        grid.Columns.Add(TextColumn("役割", nameof(ControlDisplayRow.Role), 200));
+        grid.Columns.Add(TextColumn("割当（配置: 送るキー）", nameof(ControlDisplayRow.BindingSummary), 420));
         panel.Children.Add(grid);
 
         return panel;
     }
+
+    /// <summary>DataGrid 表示専用の行（英語の Capability 値をここで日本語表示へ変換する）。</summary>
+    private sealed record ControlDisplayRow(string ControlId, string Evidence, string CapabilityLabel, string Role, string BindingSummary);
+
+    private static ControlDisplayRow ToDisplayRow(ControlRow row) => new(
+        row.ControlId,
+        row.Evidence,
+        TranslateForDisplay(row.Capability),
+        TranslateForDisplay(row.Role),
+        TranslateForDisplay(row.BindingSummary));
 
     private static DataGridTextColumn TextColumn(string header, string propertyPath, double width) =>
         new()
@@ -104,4 +122,15 @@ public sealed class DeviceLedgerView : UserControl
             Binding = new System.Windows.Data.Binding(propertyPath),
             Width = width,
         };
+
+    /// <summary>
+    /// 画面表示専用の禁止語置換（DEV-005 の内部語彙はデータ層のまま変更しない）。
+    /// InputStudioReportBuilder が実際に出力する英語語彙（capability／Supported／Experimental／
+    /// Unverified）だけを対象にする（token/assoc/revision/compile/identity/既定 は出現しない）。
+    /// </summary>
+    private static string TranslateForDisplay(string text) => text
+        .Replace("Supported", "対応確認済み", StringComparison.Ordinal)
+        .Replace("Experimental", "実験的対応（強い推定）", StringComparison.Ordinal)
+        .Replace("Unverified", "未確認", StringComparison.Ordinal)
+        .Replace("capability", "対応状況", StringComparison.Ordinal);
 }
