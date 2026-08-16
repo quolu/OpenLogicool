@@ -1,0 +1,41 @@
+{
+  "Probe": "sleep-smoke",
+  "CapturedAtUtc": "2026-08-16T03:41:17.1980304Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "DeviceKind": "g600",
+  "Devices": [
+    "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+  ],
+  "BaselineWorks": true,
+  "SleepDetected": true,
+  "MaxPollGapSeconds": 17.6,
+  "PostResumeWorks": true,
+  "DeviceChangesObserved": [],
+  "ProcessedInputCount": 42,
+  "DroppedInputCount": 0,
+  "WrongReleaseCount": 0,
+  "LiveDownCountAtEnd": 0,
+  "EmittedEdges": [
+    {
+      "AtMs": 173429.154,
+      "Output": "Key:F17",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 174281.523,
+      "Output": "Key:F17",
+      "Edge": "Up"
+    },
+    {
+      "AtMs": 271547.982,
+      "Output": "Key:F14",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 272108.333,
+      "Output": "Key:F14",
+      "Edge": "Up"
+    }
+  ]
+}

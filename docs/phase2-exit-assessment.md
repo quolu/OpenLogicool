@@ -13,7 +13,7 @@
 | foreground app identity | **未実装**（Phase 3 の app-first UX と一体で設計するのが自然な依存関係） | — |
 | read-only onboarding と device capability 表示 | **未実装**（Desktop UI 未着手のため） | — |
 | input acceptance（Notepad、通常 app、管理者 app、対象 game を分類） | **standard＝Delivered／elevated＝Blocked を受信側観測で確定**。Notepad・通常 app は standard 分類に包含。対象 game は Phase 7 pilot で個別実測（計画 §16 に記録済み） | `sendinput-accept` 証跡2件 |
-| hotplug、sleep、profile 切替、key 保持、queue overflow | **部分**: queue overflow は fault 停止＋全 release を実装・test 済み。profile 切替・key 保持は focused test 済み。**hotplug は切断検出＋fake suite まで実装・green**（抜線実測のみ実機手番）。**sleep の実測 suite は未実施** | `FastPathPump`／`HotplugTests` focused test |
+| hotplug、sleep、profile 切替、key 保持、queue overflow | **部分**: queue overflow は fault 停止＋全 release を実装・test 済み。profile 切替・key 保持は focused test 済み。**hotplug は fake suite＋抜線実測（G600 実機）まで成立、sleep も実機実測成立** | `HotplugTests`＋`hotplug-smoke`／`sleep-smoke` 証跡 |
 | driver decision record | **不要が確定**（user-mode B変種 route が成立したため driver 分岐に入らない） | route assessment |
 
 ## Exit 条件の判定
@@ -24,11 +24,12 @@
 
 ### 条件2: 1,000,000 report replay、1,000 generation race、hotplug suite が通る
 
-**replay・generation race は成立（2026-08-16 追記）・hotplug suite は未実施。**
+**完全成立（2026-08-16）。replay・generation race・hotplug（fake＋実機）・sleep 実測まですべて green。**
 
 - **1,000,000 report replay: G13/G600 とも green**（各 <1秒）。固定 LCG の生成器が各 report へ加えた変化（既知 bit 反転・wheel event・stick 変化・未確認 bit noise）を oracle として保持し、stream の出力 edge／wheel tick／stick sample が「加えた変化そのもの」と全 report で完全一致することを検証（生成器由来の独立 oracle であり、parser 出力の自己参照ではない）。終端 idle report で stuck control ゼロ、edge 総数下限も検証（G600: edge 70万規模＋tick 15万規模、G13: edge 60万規模＋sample 25万規模）。
 - **1,000 generation race: green**。profile 差し替え・latch 層切替・hold 層出入りの generation 変化 1,000 回を押下・解放と交錯させ、revision 刻印付き output token で「up が down 時 outputs と完全一致（再解決なし）」「二重 down・幽霊 up ゼロ」「終端 StopAndReleaseAll が保持中 output と完全一致」を検証。**wrong release 0 成立**。
 - **hotplug suite: fake suite 成立（2026-08-16 追記）・抜線実測のみ実機手番**。切断検出（WM_INPUT_DEVICE_CHANGE・RIDEV_DEVNOTIFY）を G13/G600 両 live source に実装し、`FastPathPump` が Removal で所有 output 全 release＋新規 down 停止（DEV-008）、Arrival で受理再開（default layer へ復帰・切断前状態は持ち越さない）を行う。fake suite（`HotplugTests` 6件）で「保持中切断の自動 release」「幽霊 up 無送出」「hold layer 復帰」「1,000 回抜挿 cycle で stuck 0・wrong release 0」を検証し green。**抜線実測も成立（2026-08-16・G600 実機）**: probe `hotplug-smoke` の3段階（押下中抜線→自動 release／挿し直し→受理再開／再押下→down/up 対）が全 pass——side ボタン押下中の抜線で物理 up なしの合成 release（`Key:F17` Up）を実測、wrong release 0・drop 0（`probe-output/hotplug-smoke-20260816-032656-711.json`）。**hotplug suite は fake・実機とも完全成立**。
+- **sleep 実測: 成立（2026-08-16・G600 実機）**。probe `sleep-smoke` の3段階（baseline down/up→スリープ→復帰後 down/up）が全 pass——スリープ復帰（poll 間隔 17.6s の跳びで検出）後も fast path は fault なしで動作継続、stuck 0・wrong release 0・drop 0。スリープ中の device change は発生せず（G600 は sleep で切断扱いにならないことを実測）（`probe-output/sleep-smoke-20260816-034117-199.json`）。
 
 ### 条件3: LGS virtual keyboard／bus に依存しない Supported path が明示される
 
@@ -44,7 +45,7 @@
 
 ## 判定
 
-**Exit 5条件のうち成立2（条件3・5）、部分成立3（条件1・4——表示系が未達、条件2——hotplug は fake・実機とも成立、sleep 実測のみ未実施）。**
+**Exit 5条件のうち成立3（条件2・3・5）、部分成立2（条件1・4——表示系が Desktop UI 待ち）。**
 
 残作業の性質で分けると:
 
@@ -52,8 +53,8 @@
 2. **Desktop UI（Phase 3 並行レーン）で閉じる**: 条件1・4の表示系、read-only onboarding、foreground app identity。計画上 Phase 2 と Phase 3 は並行であり、表示系条件は Phase 3 の UI 骨格で満たすのが自然
 3. **Phase 7 へ送付済み**: 対象 game の acceptance 分類（計画 §16 記録済み）
 
-推奨: 1 を先に閉じて条件2を完全成立させ、その後 Phase 3 レーン（Desktop UI 骨格）へ進んで表示系条件を満たす。sleep 実測は実機手番（スリープ操作）を要するため、suite 整備後にオーナー手番で1回実測する。
+推奨: finite macro を閉じ、その後 Phase 3 レーン（Desktop UI 骨格）へ進んで表示系条件（条件1・4）を満たす。
 
 ## 追記（2026-08-16 同日）
 
-条件2の 1M replay（G13/G600）と 1,000 generation race を実装し green を確認（`G600MillionReportReplayTests`／`G13MillionReportReplayTests`／`GenerationRaceTests`）。同日さらに hotplug の切断検出＋fake suite（`HotplugTests`）を実装し green、**抜線実測（G600 実機・probe `hotplug-smoke`）も全 pass で hotplug は完全成立**。条件2の残りは sleep 実測だけ。
+条件2の 1M replay（G13/G600）と 1,000 generation race を実装し green を確認（`G600MillionReportReplayTests`／`G13MillionReportReplayTests`／`GenerationRaceTests`）。同日さらに hotplug の切断検出＋fake suite（`HotplugTests`）を実装し green、**抜線実測（G600 実機・probe `hotplug-smoke`）も全 pass で hotplug は完全成立**。同日 sleep 実測（G600 実機・probe `sleep-smoke`）も全 pass し、**条件2は完全成立**。
