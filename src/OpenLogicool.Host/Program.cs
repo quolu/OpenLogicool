@@ -25,7 +25,14 @@ using OpenLogicool.Profiles;
 //       関連付けの path は必ずこの実行中一覧から選ぶ（手打ち path は Store app redirect の罠）。
 //   workspace <workspace.json> [--db <path>] [--dry-run]
 //       Action-centric workspace 文書を compile し、警告（MAP-004）を表示してから
-//       device 種別ごとの profile として保存する。--dry-run は表示だけで書き込まない。
+//       revision＋device 種別ごとの profile として単一 transaction で保存する（部分保存を作らない）。
+//       --dry-run は表示だけで書き込まない。export した JSON をこの command へ渡すのが import 経路。
+//   undo <workspaceId> [<revisionNumber>] [--db <path>]
+//       過去 revision（無指定は最新の一つ前）を新 revision として再適用する（MAP-009・append-only）。
+//   export <workspaceId> <out.json> [--db <path>]
+//       最新 revision の workspace 文書を JSON へ書き出す（workspace command で再取込できる形式）。
+//   revisions <workspaceId> [--db <path>]
+//       保存済み revision の一覧を表示する。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -37,7 +44,10 @@ return command switch
     "associate" when args.Length >= 3 => Associate(args[1], args[2], args[3..]),
     "apps" => Apps(args[1..]),
     "workspace" when args.Length >= 2 => Workspace(args[1], args[2..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run]]"),
+    "undo" when args.Length >= 2 => Undo(args[1], args[2..]),
+    "export" when args.Length >= 3 => Export(args[1], args[2], args[3..]),
+    "revisions" when args.Length >= 2 => Revisions(args[1], args[2..]),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>]]"),
 };
 
 static int Fail(string message)
@@ -333,7 +343,7 @@ static int Workspace(string workspaceJsonPath, string[] arguments)
 
     if (dryRun)
     {
-        Console.WriteLine("dry-run: 書き込みなし");
+        PrintStageReport(WorkspaceApplyReport.Build(savedRevisionNumber: null, IsHostResident()));
         return 0;
     }
 
@@ -342,18 +352,10 @@ static int Workspace(string workspaceJsonPath, string[] arguments)
     connection.Open();
     new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
 
-    var store = new SqliteMappingProfileStore(connection);
-    var associationStore = new SqliteAppAssociationStore(connection);
-
-    // 書き込み後の全体が解決可能かを先に検証する（部分適用の状態を作らない）
-    var compiledIds = compilation.Profiles.Select(profile => profile.ProfileId).ToHashSet(StringComparer.Ordinal);
-    var prospective = store.ListAll()
-        .Where(existing => !compiledIds.Contains(existing.ProfileId))
-        .Concat(compilation.Profiles)
-        .ToList();
+    long revisionNumber;
     try
     {
-        AppProfileResolver.Build(prospective, associationStore.ListAll());
+        revisionNumber = SaveCompilation(connection, document, compilation);
     }
     catch (InvalidOperationException error)
     {
@@ -362,8 +364,191 @@ static int Workspace(string workspaceJsonPath, string[] arguments)
 
     foreach (var profile in compilation.Profiles)
     {
-        store.Upsert(profile);
         Console.WriteLine($"saved: {profile.ProfileId}");
+    }
+
+    PrintStageReport(WorkspaceApplyReport.Build(revisionNumber, IsHostResident()));
+    return 0;
+}
+
+// revision 追記と profile upsert を単一 transaction で行う（APP-007: G13 保存成功／G600 失敗の部分保存を作らない）。
+// 保存後の全体が解決可能かも transaction 前に検証する。
+static long SaveCompilation(SqliteConnection connection, WorkspaceDocument document, WorkspaceCompilation compilation)
+{
+    var store = new SqliteMappingProfileStore(connection);
+    var associationStore = new SqliteAppAssociationStore(connection);
+
+    var compiledIds = compilation.Profiles.Select(profile => profile.ProfileId).ToHashSet(StringComparer.Ordinal);
+    var prospective = store.ListAll()
+        .Where(existing => !compiledIds.Contains(existing.ProfileId))
+        .Concat(compilation.Profiles)
+        .ToList();
+    AppProfileResolver.Build(prospective, associationStore.ListAll());
+
+    ExecuteSql(connection, "BEGIN IMMEDIATE;");
+    try
+    {
+        var revisionNumber = new SqliteWorkspaceRevisionStore(connection)
+            .Append(document, DateTime.UtcNow.ToString("o"));
+        foreach (var profile in compilation.Profiles)
+        {
+            store.Upsert(profile);
+        }
+
+        ExecuteSql(connection, "COMMIT;");
+        return revisionNumber;
+    }
+    catch
+    {
+        // SQLite 境界の失敗時に部分保存を残さない（原因はそのまま呼び出し元へ）
+        ExecuteSql(connection, "ROLLBACK;");
+        throw;
+    }
+}
+
+static void ExecuteSql(SqliteConnection connection, string sql)
+{
+    using var command = connection.CreateCommand();
+    command.CommandText = sql;
+    command.ExecuteNonQuery();
+}
+
+static bool IsHostResident()
+{
+    if (Mutex.TryOpenExisting(SingleInstanceGuard.DefaultName, out var mutex))
+    {
+        mutex.Dispose();
+        return true;
+    }
+
+    return false;
+}
+
+static void PrintStageReport(IReadOnlyList<WorkspaceStageStatus> stages)
+{
+    foreach (var stage in stages)
+    {
+        Console.WriteLine($"  {stage.Stage}: {stage.State} — {stage.Detail}");
+    }
+}
+
+static int Undo(string workspaceId, string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    long? requestedRevisionNumber = null;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            case var value when long.TryParse(value, out var number):
+                requestedRevisionNumber = number;
+                break;
+            default:
+                return Fail($"unknown undo option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+
+    var revisions = new SqliteWorkspaceRevisionStore(connection).ListRevisions(workspaceId);
+    WorkspaceRevisionRecord target;
+    try
+    {
+        target = WorkspaceUndo.SelectTarget(revisions, requestedRevisionNumber);
+    }
+    catch (InvalidOperationException error)
+    {
+        return Fail($"workspace '{workspaceId}' の undo: {error.Message}");
+    }
+
+    var compilation = WorkspaceCompiler.Compile(target.Document);
+    foreach (var warning in compilation.Warnings)
+    {
+        Console.WriteLine($"  警告: {warning}");
+    }
+
+    long revisionNumber;
+    try
+    {
+        revisionNumber = SaveCompilation(connection, target.Document, compilation);
+    }
+    catch (InvalidOperationException error)
+    {
+        return Fail($"workspace '{workspaceId}' の undo を保存すると解決不能になります: {error.Message}");
+    }
+
+    Console.WriteLine($"undo: revision {target.RevisionNumber} の内容を revision {revisionNumber} として再適用");
+    PrintStageReport(WorkspaceApplyReport.Build(revisionNumber, IsHostResident()));
+    return 0;
+}
+
+static int Export(string workspaceId, string outputJsonPath, string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            default:
+                return Fail($"unknown export option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+
+    var revisions = new SqliteWorkspaceRevisionStore(connection).ListRevisions(workspaceId);
+    if (revisions.Count == 0)
+    {
+        return Fail($"workspace '{workspaceId}' に保存済み revision がありません。");
+    }
+
+    var latest = revisions[^1];
+    File.WriteAllText(
+        outputJsonPath,
+        JsonSerializer.Serialize(latest.Document, new JsonSerializerOptions { WriteIndented = true }));
+    Console.WriteLine($"exported: {workspaceId} revision {latest.RevisionNumber} -> {Path.GetFullPath(outputJsonPath)}");
+    Console.WriteLine("import は `workspace <このJSON>` で行う（同一フォーマット）");
+    return 0;
+}
+
+static int Revisions(string workspaceId, string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            default:
+                return Fail($"unknown revisions option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+
+    var revisions = new SqliteWorkspaceRevisionStore(connection).ListRevisions(workspaceId);
+    Console.WriteLine($"workspace '{workspaceId}' revisions: {revisions.Count}");
+    foreach (var revision in revisions)
+    {
+        Console.WriteLine(
+            $"  revision {revision.RevisionNumber} ({revision.SavedAtUtc}): action {revision.Document.Actions.Count} 件・binding {revision.Document.Bindings.Count} 件");
     }
 
     return 0;

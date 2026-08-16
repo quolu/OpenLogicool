@@ -34,3 +34,22 @@ public sealed record WorkspaceDocument(
     IReadOnlyList<WorkspaceActionEntry> Actions,
     IReadOnlyList<WorkspaceDeviceLayout> Devices,
     IReadOnlyList<WorkspaceActionBinding> Bindings);
+
+/// <summary>保存済み workspace revision 1件（MAP-009）。RevisionNumber は workspace ごとの連番。</summary>
+public sealed record WorkspaceRevisionRecord(
+    long RevisionNumber,
+    string SavedAtUtc,
+    WorkspaceDocument Document);
+
+/// <summary>
+/// workspace revision の append-only 保存 port（MAP-009。実装は Persistence、意味 owner は Profiles）。
+/// revision は上書きせず追記だけを行い、undo は過去 revision を新 revision として再適用する。
+/// </summary>
+public interface IWorkspaceRevisionStore
+{
+    /// <summary>document を新 revision として追記し、採番した RevisionNumber を返す。</summary>
+    long Append(WorkspaceDocument document, string savedAtUtc);
+
+    /// <summary>指定 workspace の revision を RevisionNumber 昇順で返す。</summary>
+    IReadOnlyList<WorkspaceRevisionRecord> ListRevisions(string workspaceId);
+}

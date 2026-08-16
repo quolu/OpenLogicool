@@ -32,6 +32,18 @@ public static class InitialSqliteMigrations
                     PRIMARY KEY (application_full_path, device_kind)
                 );
                 """),
+            new SqlMigration(
+                4,
+                """
+                CREATE TABLE workspace_revisions (
+                    workspace_id TEXT NOT NULL,
+                    revision_number INTEGER NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    saved_at_utc TEXT NOT NULL,
+                    document_json TEXT NOT NULL,
+                    PRIMARY KEY (workspace_id, revision_number)
+                );
+                """),
         };
 }
 
