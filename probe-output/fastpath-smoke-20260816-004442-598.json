@@ -1,0 +1,108 @@
+{
+  "Probe": "fastpath-smoke",
+  "CapturedAtUtc": "2026-08-16T00:44:42.5980648Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "DurationMs": 45094,
+  "G13Devices": [
+    "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u00262837f99\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+  ],
+  "G600Devices": [
+    "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+  ],
+  "ProcessedInputCount": 30,
+  "DroppedG13": 0,
+  "DroppedG600": 0,
+  "EmittedEdges": [
+    {
+      "AtMs": 1585.178,
+      "Output": "Key:F16",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 1690.375,
+      "Output": "Key:F16",
+      "Edge": "Up"
+    },
+    {
+      "AtMs": 3123.8,
+      "Output": "Key:F21",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 3280.85,
+      "Output": "Key:F21",
+      "Edge": "Up"
+    },
+    {
+      "AtMs": 5289.194,
+      "Output": "Key:F19",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 5460.887,
+      "Output": "Key:F19",
+      "Edge": "Up"
+    },
+    {
+      "AtMs": 6616.184,
+      "Output": "Key:F24",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 6786.753,
+      "Output": "Key:F24",
+      "Edge": "Up"
+    },
+    {
+      "AtMs": 10255.764,
+      "Output": "Key:F22",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 10380.632,
+      "Output": "Key:F22",
+      "Edge": "Up"
+    },
+    {
+      "AtMs": 10799.613,
+      "Output": "Key:F23",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 10910.054,
+      "Output": "Key:F23",
+      "Edge": "Up"
+    },
+    {
+      "AtMs": 11191.853,
+      "Output": "Key:F24",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 11300.92,
+      "Output": "Key:F24",
+      "Edge": "Up"
+    },
+    {
+      "AtMs": 11954.412,
+      "Output": "Key:F14",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 12126.002,
+      "Output": "Key:F14",
+      "Edge": "Up"
+    },
+    {
+      "AtMs": 28147.858,
+      "Output": "Key:F24",
+      "Edge": "Down"
+    },
+    {
+      "AtMs": 28412.338,
+      "Output": "Key:F24",
+      "Edge": "Up"
+    }
+  ]
+}
