@@ -40,6 +40,11 @@ using OpenLogicool.Profiles;
 //   diagnostics [--db <path>]
 //       接続 device・保存 profile・app 関連付け・workspace revision・foreground identity・
 //       watchdog exe 所在を read-only で一覧表示する（Journey B-6）。実機・DB が無くても exit 0。
+//   onboarding [--db <path>]
+//       初回導入の判断材料（Journey A の機能中核）を read-only で表示する——共存ソフト検出
+//       （LGS/G HUB/Logi Options+ の実行中 process 検出のみ・断定しない）・device 接続件数
+//       （片側/両側未接続を明示）・G600 完全 backup 導線の有無・設定の現在地（件数のみ）。
+//       device への write は一切しない。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -55,7 +60,8 @@ return command switch
     "export" when args.Length >= 3 => Export(args[1], args[2], args[3..]),
     "revisions" when args.Length >= 2 => Revisions(args[1], args[2..]),
     "diagnostics" => Diagnostics(args[1..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>] | diagnostics [--db <path>]]"),
+    "onboarding" => Onboarding(args[1..]),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>]]"),
 };
 
 static int Fail(string message)
@@ -695,6 +701,64 @@ static int Diagnostics(string[] arguments)
 
     var watchdogPath = Path.Combine(AppContext.BaseDirectory, "OpenLogicool.Watchdog.exe");
     Console.WriteLine($"watchdog: {watchdogPath}（{(File.Exists(watchdogPath) ? "存在" : "不在")}）");
+
+    return 0;
+}
+
+// onboarding（Journey A の機能中核）: 初回導入の判断材料を read-only で表示する。
+// device への write は一切しない（共存ソフト検出・backup 導線・設定の現在地の案内だけ）。
+static int Onboarding(string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            default:
+                return Fail($"unknown onboarding option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+
+    int g13Count;
+    int g600Count;
+    using (var g13Source = new G13RawInputSource())
+    using (var g600Source = new G600RawInputSource())
+    {
+        g13Count = g13Source.EnumerateDevices().Count;
+        g600Count = g600Source.EnumerateDevices().Count;
+    }
+
+    var profileCount = new SqliteMappingProfileStore(connection).ListAll().Count;
+    var associationCount = new SqliteAppAssociationStore(connection).ListAll().Count;
+
+    int workspaceCount;
+    using (var command = connection.CreateCommand())
+    {
+        command.CommandText = "SELECT COUNT(DISTINCT workspace_id) FROM workspace_revisions;";
+        workspaceCount = Convert.ToInt32(command.ExecuteScalar());
+    }
+
+    var observations = new OnboardingObservations(
+        OnboardingObservationCollector.DetectCoexistingSoftware(),
+        g13Count,
+        g600Count,
+        OnboardingObservationCollector.CollectBackupStatus(),
+        profileCount,
+        associationCount,
+        workspaceCount);
+
+    foreach (var line in OnboardingReport.Build(observations))
+    {
+        Console.WriteLine(line);
+    }
 
     return 0;
 }
