@@ -111,6 +111,72 @@ public sealed class WorkspaceCompilerTests
     }
 
     [Fact]
+    public void All_colliding_bindings_are_enumerated_before_rejection()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => WorkspaceCompiler.Compile(Document(
+            actions:
+            [
+                new WorkspaceActionEntry("dodge", "回避", ["Key:Space"]),
+                new WorkspaceActionEntry("attack", "攻撃", ["Key:F"]),
+                new WorkspaceActionEntry("guard", "防御", ["Key:G"]),
+                new WorkspaceActionEntry("skill", "スキル", ["Key:H"]),
+            ],
+            bindings:
+            [
+                new WorkspaceActionBinding("dodge", "G13", "G1", "base"),
+                new WorkspaceActionBinding("attack", "G13", "G1", "base"),
+                new WorkspaceActionBinding("guard", "G600", "G9", "base"),
+                new WorkspaceActionBinding("skill", "G600", "G9", "base"),
+            ])));
+
+        Assert.Contains("G13", exception.Message);
+        Assert.Contains("'dodge'", exception.Message);
+        Assert.Contains("'attack'", exception.Message);
+        Assert.Contains("G600", exception.Message);
+        Assert.Contains("'guard'", exception.Message);
+        Assert.Contains("'skill'", exception.Message);
+    }
+
+    [Fact]
+    public void No_collisions_compiles_as_before()
+    {
+        var compilation = WorkspaceCompiler.Compile(Document(bindings:
+        [
+            new WorkspaceActionBinding("dodge", "G13", "G1", "base"),
+            new WorkspaceActionBinding("dodge", "G600", "G9", "base"),
+        ]));
+
+        Assert.Equal(2, compilation.Profiles.Count);
+        Assert.Empty(compilation.Warnings);
+    }
+
+    [Fact]
+    public void Unconfirmed_control_binding_produces_a_warning()
+    {
+        var compilation = WorkspaceCompiler.Compile(Document(bindings:
+        [
+            new WorkspaceActionBinding("dodge", "G13", "G21", "base"),
+        ]));
+
+        var warning = Assert.Single(compilation.Warnings);
+        Assert.Contains("未確認 control", warning);
+        Assert.Contains("G13", warning);
+        Assert.Contains("'G21'", warning);
+    }
+
+    [Fact]
+    public void Confirmed_control_only_produces_no_unknown_capability_warning()
+    {
+        var compilation = WorkspaceCompiler.Compile(Document(bindings:
+        [
+            new WorkspaceActionBinding("dodge", "G13", "G1", "base"),
+            new WorkspaceActionBinding("dodge", "G600", "G9", "base"),
+        ]));
+
+        Assert.Empty(compilation.Warnings);
+    }
+
+    [Fact]
     public void Duplicate_actions_and_unknown_schema_are_rejected()
     {
         Assert.Throws<ArgumentException>(() => WorkspaceCompiler.Compile(Document(actions:

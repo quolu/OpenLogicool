@@ -1,3 +1,5 @@
+using OpenLogicool.Contracts.Devices.G13;
+using OpenLogicool.Contracts.Devices.G600;
 using OpenLogicool.Contracts.Profiles;
 using OpenLogicool.Contracts.Shared;
 
@@ -77,6 +79,25 @@ public static class WorkspaceCompiler
             boundActionIds.Add(binding.ActionId);
         }
 
+        // binding 衝突（同一 device の同一 (control, layer) への複数 binding）は
+        // 1件目で止めず全件列挙してから拒否する（MAP-004: 適用前に表示）。
+        // 拒否という結果自体は Domain 検証（MappingProfile 構築子）と重複するが、
+        // ここでの列挙は表示の網羅化だけを担い、検証の正本は引き続き Domain に置く。
+        var collisionGroups = document.Bindings
+            .GroupBy(binding => (binding.DeviceKind, binding.ControlId, binding.LayerId))
+            .Where(group => group.Count() > 1)
+            .ToList();
+        if (collisionGroups.Count > 0)
+        {
+            var collisionLines = collisionGroups.Select(group =>
+                $"衝突: ({group.Key.DeviceKind}, {group.Key.ControlId}, {group.Key.LayerId}) に action "
+                + string.Join(", ", group.Select(binding => $"'{binding.ActionId}'"))
+                + " が重複しています。");
+            throw new ArgumentException(
+                "binding 衝突が見つかりました:\n" + string.Join("\n", collisionLines),
+                nameof(document));
+        }
+
         var warnings = new List<string>();
         foreach (var action in document.Actions)
         {
@@ -100,6 +121,26 @@ public static class WorkspaceCompiler
                 }
             }
 
+            // unknown capability 警告（根拠4値: 確認済み control 以外は Experimental）。
+            // 未知 DeviceKind は対象集合を持たないため警告を出さない（既存の検証に委ねる）。
+            var confirmedButtons = ConfirmedButtonsFor(device.DeviceKind);
+            if (confirmedButtons is not null)
+            {
+                var controlIds = bindingsByKind[device.DeviceKind]
+                    .Select(binding => binding.ControlId)
+                    .Concat(device.LatchSelectors.Select(selector => selector.ControlId))
+                    .Concat(device.HoldSelectors.Select(selector => selector.ControlId))
+                    .Distinct(StringComparer.Ordinal);
+                foreach (var controlId in controlIds)
+                {
+                    if (!confirmedButtons.Contains(controlId))
+                    {
+                        warnings.Add(
+                            $"未確認 control: {device.DeviceKind} の '{controlId}' への binding は実測根拠がありません（確認済み control 以外は Experimental）。");
+                    }
+                }
+            }
+
             var profile = new MappingProfileDocument(
                 ContractSchemaVersions.Revision01,
                 ProfileId: $"{document.WorkspaceId}-{device.DeviceKind}",
@@ -119,4 +160,12 @@ public static class WorkspaceCompiler
 
         return new WorkspaceCompilation(profiles, warnings);
     }
+
+    /// <summary>device 種別ごとの確認済み control 集合。未知 DeviceKind は null（この警告の対象外）。</summary>
+    private static IReadOnlySet<string>? ConfirmedButtonsFor(string deviceKind) => deviceKind switch
+    {
+        "G13" => G13Controls.ConfirmedButtons,
+        "G600" => G600Controls.ConfirmedButtons,
+        _ => null,
+    };
 }
