@@ -73,6 +73,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenLogicool.Watchdog", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenLogicool.Profiles.Tests", "tests\OpenLogicool.Profiles.Tests\OpenLogicool.Profiles.Tests.csproj", "{ADE8827D-27DE-427D-9A1A-B458739187C7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenLogicool.Host.Tests", "tests\OpenLogicool.Host.Tests\OpenLogicool.Host.Tests.csproj", "{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -467,6 +469,18 @@ Global
 		{ADE8827D-27DE-427D-9A1A-B458739187C7}.Release|x64.Build.0 = Release|Any CPU
 		{ADE8827D-27DE-427D-9A1A-B458739187C7}.Release|x86.ActiveCfg = Release|Any CPU
 		{ADE8827D-27DE-427D-9A1A-B458739187C7}.Release|x86.Build.0 = Release|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Debug|x64.Build.0 = Debug|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Debug|x86.Build.0 = Debug|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Release|x64.ActiveCfg = Release|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Release|x64.Build.0 = Release|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Release|x86.ActiveCfg = Release|Any CPU
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -504,5 +518,6 @@ Global
 		{93873130-7CA6-4833-AABE-4B352A4585F1} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{34A88AF2-DB37-448B-9A6B-AEFC3E5F615E} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{ADE8827D-27DE-427D-9A1A-B458739187C7} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{E7EFEF15-4B03-48BA-AFAA-ABE4506640C7} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
