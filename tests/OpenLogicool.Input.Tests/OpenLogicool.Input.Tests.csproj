@@ -13,5 +13,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\OpenLogicool.Input\OpenLogicool.Input.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Fakes\OpenLogicool.Fakes.csproj" />
   </ItemGroup>
 </Project>
