@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using OpenLogicool.Contracts.Devices.Shared;
+using OpenLogicool.Domain;
 
 namespace OpenLogicool.Input;
 
@@ -23,6 +25,7 @@ public sealed class FastPathPump : IDisposable
     private readonly IReadOnlyList<FastPathSource> _sources;
     private readonly IReadOnlyDictionary<string, DeviceMappingRuntime> _runtimes;
     private readonly IOutputEmitter _emitter;
+    private readonly ConcurrentQueue<(string DeviceInstanceId, MappingProfile Profile)> _profileChangeRequests = new();
     private readonly Thread _worker;
     private volatile bool _stopRequested;
     private volatile bool _started;
@@ -63,9 +66,28 @@ public sealed class FastPathPump : IDisposable
     /// 全 source を一巡 pull して処理する（worker loop の1反復。テストからは同期で呼べる）。
     /// 返り値は処理した input 件数。
     /// </summary>
+    /// <summary>
+    /// foreground app 切替等による profile 差し替えを依頼する（任意 thread から可）。
+    /// 適用は worker の次の RunOnce 冒頭で行われ、変更は新規 down から有効（DEV-007・MAP-010:
+    /// runtime mapping の差し替えのみで device write はしない）。
+    /// </summary>
+    public void RequestProfileChange(string deviceInstanceId, MappingProfile profile) =>
+        _profileChangeRequests.Enqueue((deviceInstanceId, profile));
+
     public int RunOnce()
     {
         var processed = 0;
+        while (_profileChangeRequests.TryDequeue(out var request))
+        {
+            if (!_runtimes.TryGetValue(request.DeviceInstanceId, out var runtime))
+            {
+                throw new FastPathFaultException(
+                    $"profile 変更対象の device instance '{request.DeviceInstanceId}' の Mapping Runtime が構成されていません。");
+            }
+
+            runtime.ApplyProfile(request.Profile);
+        }
+
         foreach (var entry in _sources)
         {
             if (entry.DroppedCountProbe is not null)

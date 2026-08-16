@@ -92,6 +92,63 @@ public sealed class FastPathPumpTests
     }
 
     [Fact]
+    public void Requested_profile_change_applies_before_next_inputs_and_held_press_releases_old_outputs()
+    {
+        var source = new FakeDeviceInputSource(
+            [Device("dev-a")],
+            [Edge("dev-a", "G9", PhysicalInputEdge.Down, 1)]);
+        var emitter = new RecordingEmitter();
+        using var pump = new FastPathPump(
+            [new FastPathSource(source)],
+            new Dictionary<string, DeviceMappingRuntime> { ["dev-a"] = Runtime("dev-a", "Key:F13") },
+            emitter);
+
+        pump.RunOnce();
+
+        pump.RequestProfileChange("dev-a", new MappingProfile(
+            "profile-r2",
+            "map-r2",
+            defaultLayerId: "base",
+            layerIds: ["base"],
+            latchSelectors: new Dictionary<string, string>(),
+            holdSelectors: new Dictionary<string, string>(),
+            bindings: [new MappingBinding("G9", "base", ["Key:F14"])]));
+        source.EnqueueInput(Edge("dev-a", "G9", PhysicalInputEdge.Up, 2));
+        source.EnqueueInput(Edge("dev-a", "G9", PhysicalInputEdge.Down, 3));
+        pump.RunOnce();
+
+        // 保持中 press は down 時の outputs（旧 profile）で解放され、新規 down から新 profile が効く
+        Assert.Equal(
+            [
+                new MappedOutputEdge("Key:F13", PhysicalInputEdge.Down),
+                new MappedOutputEdge("Key:F13", PhysicalInputEdge.Up),
+                new MappedOutputEdge("Key:F14", PhysicalInputEdge.Down),
+            ],
+            emitter.Emitted);
+    }
+
+    [Fact]
+    public void Profile_change_for_unknown_device_is_a_fault()
+    {
+        var source = new FakeDeviceInputSource([Device("dev-a")], []);
+        using var pump = new FastPathPump(
+            [new FastPathSource(source)],
+            new Dictionary<string, DeviceMappingRuntime> { ["dev-a"] = Runtime("dev-a", "Key:F13") },
+            new RecordingEmitter());
+
+        pump.RequestProfileChange("dev-unknown", new MappingProfile(
+            "profile-r2",
+            "map-r2",
+            defaultLayerId: "base",
+            layerIds: ["base"],
+            latchSelectors: new Dictionary<string, string>(),
+            holdSelectors: new Dictionary<string, string>(),
+            bindings: [new MappingBinding("G9", "base", ["Key:F14"])]));
+
+        Assert.Throws<FastPathFaultException>(() => pump.RunOnce());
+    }
+
+    [Fact]
     public void Stop_releases_owned_outputs()
     {
         var source = new FakeDeviceInputSource(

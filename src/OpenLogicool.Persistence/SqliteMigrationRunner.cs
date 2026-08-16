@@ -21,6 +21,17 @@ public static class InitialSqliteMigrations
                     document_json TEXT NOT NULL
                 );
                 """),
+            new SqlMigration(
+                3,
+                """
+                CREATE TABLE app_profile_associations (
+                    application_full_path TEXT NOT NULL,
+                    device_kind TEXT NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    profile_id TEXT NOT NULL,
+                    PRIMARY KEY (application_full_path, device_kind)
+                );
+                """),
         };
 }
 

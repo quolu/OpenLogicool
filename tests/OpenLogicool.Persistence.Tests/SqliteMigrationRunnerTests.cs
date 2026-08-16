@@ -1,4 +1,4 @@
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
 using OpenLogicool.Persistence;
 using Xunit;
 
@@ -13,7 +13,7 @@ public sealed class SqliteMigrationRunnerTests
 
         new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
 
-        Assert.Equal(new long[] { 1, 2 }, ReadMigrationNumbers(connection));
+        Assert.Equal(new long[] { 1, 2, 3 }, ReadMigrationNumbers(connection));
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public sealed class SqliteMigrationRunnerTests
         runner.Apply(connection);
         runner.Apply(connection);
 
-        Assert.Equal(new long[] { 1, 2 }, ReadMigrationNumbers(connection));
+        Assert.Equal(new long[] { 1, 2, 3 }, ReadMigrationNumbers(connection));
     }
 
     [Fact]
@@ -78,3 +78,4 @@ public sealed class SqliteMigrationRunnerTests
         return numbers.ToArray();
     }
 }
+

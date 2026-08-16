@@ -53,3 +53,24 @@ public interface IMappingProfileStore
     /// <summary>保存済み document を ProfileId 昇順で返す。</summary>
     IReadOnlyList<MappingProfileDocument> ListAll();
 }
+
+/// <summary>
+/// foreground app（EXE full path）と profile の関連付け（app-first 切替の永続化 wire type）。
+/// ApplicationFullPath は正規化済み小文字 full path、または既定を表す "*"。
+/// 現段階の app 識別は full path 完全一致のみ（PackageIdentity・WindowMatcher は Phase 3 完全形で拡張）。
+/// </summary>
+public sealed record AppProfileAssociation(
+    string SchemaVersion,
+    string ApplicationFullPath,
+    string DeviceKind,
+    string ProfileId);
+
+/// <summary>app→profile 関連付けの保存 port（実装は Persistence、意味 owner は Profiles）。</summary>
+public interface IAppAssociationStore
+{
+    /// <summary>(ApplicationFullPath, DeviceKind) で upsert する。</summary>
+    void Upsert(AppProfileAssociation association);
+
+    /// <summary>保存済み関連付けを (ApplicationFullPath, DeviceKind) 昇順で返す。</summary>
+    IReadOnlyList<AppProfileAssociation> ListAll();
+}

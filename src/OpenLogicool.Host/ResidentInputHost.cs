@@ -2,6 +2,7 @@ using System.IO;
 using Microsoft.Data.Sqlite;
 using OpenLogicool.Contracts.Profiles;
 using OpenLogicool.Devices.G13;
+using OpenLogicool.Domain;
 using OpenLogicool.Devices.G600;
 using OpenLogicool.Input;
 using OpenLogicool.Persistence;
@@ -14,7 +15,8 @@ public sealed record ResidentHostStatus(
     IReadOnlyList<string> LoadedProfileIds,
     IReadOnlyList<string> G13DeviceInstanceIds,
     IReadOnlyList<string> G600DeviceInstanceIds,
-    IReadOnlyList<string> WiredDeviceInstanceIds);
+    IReadOnlyList<string> WiredDeviceInstanceIds,
+    int AppAssociationCount);
 
 /// <summary>
 /// Input Studio の resident 実行体（計画 §6.2 の初期 process model）。
@@ -31,6 +33,8 @@ public sealed class ResidentInputHost : IDisposable
     private G600RawInputSource? _g600Source;
     private WatchdogChannel? _watchdog;
     private FastPathPump? _pump;
+    private Thread? _foregroundPollThread;
+    private volatile bool _foregroundPollStop;
     private bool _stopped;
 
     public ResidentInputHost(string databasePath, string watchdogExePath)
@@ -55,7 +59,14 @@ public sealed class ResidentInputHost : IDisposable
         new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(_connection);
 
         var documents = new SqliteMappingProfileStore(_connection).ListAll();
-        var profilesByKind = HostProfileSelection.SelectByDeviceKind(documents);
+        var associations = new SqliteAppAssociationStore(_connection).ListAll();
+        var resolver = AppProfileResolver.Build(documents, associations);
+
+        // 全 profile を起動時に materialize する（不正 profile は最初の切替時でなくここでエラーになる）
+        var profilesById = documents.ToDictionary(
+            document => document.ProfileId,
+            MappingProfileMaterializer.ToProfile,
+            StringComparer.Ordinal);
 
         _g13Source = new G13RawInputSource();
         _g600Source = new G600RawInputSource();
@@ -63,18 +74,21 @@ public sealed class ResidentInputHost : IDisposable
         var g600Devices = _g600Source.EnumerateDevices();
 
         var runtimes = new Dictionary<string, DeviceMappingRuntime>(StringComparer.Ordinal);
+        var instancesByKind = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         foreach (var (kind, devices) in new[] { ("G13", g13Devices), ("G600", g600Devices) })
         {
-            if (!profilesByKind.TryGetValue(kind, out var document))
+            if (!resolver.DefaultByKind.TryGetValue(kind, out var document))
             {
                 continue;
             }
 
-            var profile = MappingProfileMaterializer.ToProfile(document);
+            var profile = profilesById[document.ProfileId];
             foreach (var device in devices)
             {
                 runtimes[device.DeviceInstanceId] = new DeviceMappingRuntime(device.DeviceInstanceId, profile);
             }
+
+            instancesByKind[kind] = devices.Select(device => device.DeviceInstanceId).ToArray();
         }
 
         _watchdog = WatchdogChannel.Start(_watchdogExePath);
@@ -89,11 +103,72 @@ public sealed class ResidentInputHost : IDisposable
             emitter);
         _pump.Start();
 
+        if (resolver.HasAppAssociations && instancesByKind.Count > 0)
+        {
+            StartForegroundPolling(resolver, profilesById, instancesByKind);
+        }
+
         return new ResidentHostStatus(
             documents.Select(document => document.ProfileId).ToArray(),
             g13Devices.Select(device => device.DeviceInstanceId).ToArray(),
             g600Devices.Select(device => device.DeviceInstanceId).ToArray(),
-            runtimes.Keys.Order(StringComparer.Ordinal).ToArray());
+            runtimes.Keys.Order(StringComparer.Ordinal).ToArray(),
+            associations.Count);
+    }
+
+    /// <summary>
+    /// foreground app の監視（app-first 切替）。fast path 外の専用 thread が 200ms 間隔で
+    /// foreground EXE を観測し、適用 profile が変わる時だけ pump へ差し替えを依頼する
+    /// （切替は新規 down から有効・device write はしない＝MAP-010）。
+    /// </summary>
+    private void StartForegroundPolling(
+        AppProfileResolver resolver,
+        IReadOnlyDictionary<string, MappingProfile> profilesById,
+        IReadOnlyDictionary<string, IReadOnlyList<string>> instancesByKind)
+    {
+        _foregroundPollThread = new Thread(() =>
+        {
+            var activeProfileIdByKind = instancesByKind.Keys.ToDictionary(
+                kind => kind,
+                kind => resolver.DefaultByKind[kind].ProfileId,
+                StringComparer.Ordinal);
+            string? lastPath = null;
+            var first = true;
+
+            while (!_foregroundPollStop)
+            {
+                var path = ForegroundAppTracker.GetForegroundProcessFullPath();
+                if (first || !string.Equals(path, lastPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    first = false;
+                    lastPath = path;
+                    foreach (var (kind, instanceIds) in instancesByKind)
+                    {
+                        var target = resolver.Resolve(kind, path)!;
+                        if (target.ProfileId == activeProfileIdByKind[kind])
+                        {
+                            continue;
+                        }
+
+                        activeProfileIdByKind[kind] = target.ProfileId;
+                        var profile = profilesById[target.ProfileId];
+                        foreach (var instanceId in instanceIds)
+                        {
+                            _pump!.RequestProfileChange(instanceId, profile);
+                        }
+
+                        Console.WriteLine($"profile switch: {kind} -> '{target.ProfileId}'（foreground: {path ?? "<不明>"}）");
+                    }
+                }
+
+                Thread.Sleep(200);
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "OpenLogicoolForegroundPoll",
+        };
+        _foregroundPollThread.Start();
     }
 
     /// <summary>handled shutdown（DEV-008）: pump 停止→所有 output release→watchdog graceful 終了。</summary>
@@ -105,6 +180,8 @@ public sealed class ResidentInputHost : IDisposable
         }
 
         _stopped = true;
+        _foregroundPollStop = true;
+        _foregroundPollThread?.Join(2000);
         _pump?.Stop();
         _watchdog?.Shutdown();
     }

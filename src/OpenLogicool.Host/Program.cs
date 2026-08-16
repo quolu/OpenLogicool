@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using OpenLogicool.Contracts.Profiles;
+using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Desktop;
 using OpenLogicool.Devices.G13;
 using OpenLogicool.Devices.G600;
@@ -17,6 +18,8 @@ using OpenLogicool.Profiles;
 //       MappingProfileDocument の JSON 配列を store へ upsert する（UI 実装までの投入経路）。
 //   ui [--db <path>] [--duration-ms N]
 //       表示骨格（Phase 2 Exit 条件1・4の表示系）を read-only で開く。fast path は起動しない。
+//   associate <profileId> <app.exe の full path | default> [--db <path>]
+//       foreground app→profile の関連付けを保存する（"default" はその device 種別の既定 profile 指定）。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -25,7 +28,8 @@ return command switch
     "run" => Run(args[1..]),
     "import" when args.Length >= 2 => Import(args[1], args[2..]),
     "ui" => Ui(args[1..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N]]"),
+    "associate" when args.Length >= 3 => Associate(args[1], args[2], args[3..]),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default> [--db <path>]]"),
 };
 
 static int Fail(string message)
@@ -74,6 +78,7 @@ static int Run(string[] arguments)
 
     Console.WriteLine($"db: {databasePath}");
     Console.WriteLine($"profiles: [{string.Join(", ", status.LoadedProfileIds)}]");
+    Console.WriteLine($"app associations: {status.AppAssociationCount}");
     Console.WriteLine($"g13 devices: {status.G13DeviceInstanceIds.Count}");
     Console.WriteLine($"g600 devices: {status.G600DeviceInstanceIds.Count}");
     Console.WriteLine($"wired devices: {status.WiredDeviceInstanceIds.Count}");
@@ -134,7 +139,9 @@ static int Ui(string[] arguments)
     using var connection = new SqliteConnection($"Data Source={databasePath}");
     connection.Open();
     new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
-    var profilesByKind = HostProfileSelection.SelectByDeviceKind(new SqliteMappingProfileStore(connection).ListAll());
+    var profilesByKind = AppProfileResolver.Build(
+        new SqliteMappingProfileStore(connection).ListAll(),
+        new SqliteAppAssociationStore(connection).ListAll()).DefaultByKind;
 
     int g13Count;
     int g600Count;
@@ -175,6 +182,52 @@ static int Ui(string[] arguments)
     thread.Start();
     thread.Join();
     return exitCode;
+}
+
+static int Associate(string profileId, string appPathOrDefault, string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            default:
+                return Fail($"unknown associate option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+
+    var document = new SqliteMappingProfileStore(connection).ListAll()
+        .SingleOrDefault(candidate => candidate.ProfileId == profileId);
+    if (document is null)
+    {
+        return Fail($"profile '{profileId}' は保存されていません。先に import してください。");
+    }
+
+    var applicationFullPath = appPathOrDefault is "default" or AppProfileResolver.DefaultMarker
+        ? AppProfileResolver.DefaultMarker
+        : AppProfileResolver.NormalizePath(Path.GetFullPath(appPathOrDefault));
+
+    var association = new AppProfileAssociation(
+        ContractSchemaVersions.Revision01, applicationFullPath, document.DeviceKind, profileId);
+    new SqliteAppAssociationStore(connection).Upsert(association);
+
+    // 保存後の全体が解決可能かをその場で検証する（既定の欠落等は保存時点で顕在化させる）
+    AppProfileResolver.Build(
+        new SqliteMappingProfileStore(connection).ListAll(),
+        new SqliteAppAssociationStore(connection).ListAll());
+
+    Console.WriteLine(applicationFullPath == AppProfileResolver.DefaultMarker
+        ? $"associated: 既定（{document.DeviceKind}）-> '{profileId}'"
+        : $"associated: {applicationFullPath}（{document.DeviceKind}）-> '{profileId}'");
+    return 0;
 }
 
 static int Import(string documentsJsonPath, string[] arguments)
