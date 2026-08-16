@@ -34,7 +34,7 @@ return command switch
     "sendinput-accept" => OpenLogicool.Probe.SendInputAcceptProbe.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
-    "input-target" => OpenLogicool.Probe.SendInputAcceptProbe.RunTarget(),
+    "input-target" => OpenLogicool.Probe.SendInputAcceptProbe.RunTarget(args[1..]),
     "fastpath-smoke" => OpenLogicool.Probe.FastPathSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),

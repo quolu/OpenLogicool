@@ -1,0 +1,38 @@
+{
+  "Probe": "sendinput-accept",
+  "CapturedAtUtc": "2026-08-16T02:27:36.1027144Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "TargetLabel": "elevated",
+  "TargetElevated": true,
+  "ForegroundConfirmed": true,
+  "Sent": [
+    {
+      "Edge": "DOWN",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "UP",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "DOWN",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "DOWN",
+      "VirtualKey": "7D"
+    },
+    {
+      "Edge": "UP",
+      "VirtualKey": "7C"
+    },
+    {
+      "Edge": "UP",
+      "VirtualKey": "7D"
+    }
+  ],
+  "Received": [],
+  "AllReceivedInOrder": false,
+  "Verdict": "Blocked: no key messages reached the elevated foreground window (UIPI-consistent)."
+}
