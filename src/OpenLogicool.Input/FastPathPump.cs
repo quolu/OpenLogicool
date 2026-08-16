@@ -27,19 +27,33 @@ public sealed class FastPathPump : IDisposable
     private readonly IOutputEmitter _emitter;
     private readonly ConcurrentQueue<(string DeviceInstanceId, MappingProfile Profile)> _profileChangeRequests = new();
     private readonly Thread _worker;
+    private readonly bool _traceEnabled;
+    private readonly int _traceCapacity;
+    private readonly ConcurrentQueue<InputTraceEntry> _traceBuffer = new();
     private volatile bool _stopRequested;
     private volatile bool _started;
     private Exception? _failure;
     private long _processedCount;
+    private long _traceSequence;
+    private long _traceApproxCount;
 
+    /// <summary>
+    /// trace（test field・Journey A-6）は既定 off。有効化すると worker が処理した各 input を
+    /// 非 blocking で有界 buffer（既定 256 件・drop-oldest）へ enqueue する。in-memory enqueue は
+    /// 計画 §6.1 の「AI・network・capture・SQLite・UI を待たない」の禁止対象ではない（待機を作らない限り）。
+    /// </summary>
     public FastPathPump(
         IReadOnlyList<FastPathSource> sources,
         IReadOnlyDictionary<string, DeviceMappingRuntime> runtimesByDeviceInstanceId,
-        IOutputEmitter emitter)
+        IOutputEmitter emitter,
+        bool enableTrace = false,
+        int traceCapacity = 256)
     {
         _sources = sources;
         _runtimes = runtimesByDeviceInstanceId;
         _emitter = emitter;
+        _traceEnabled = enableTrace;
+        _traceCapacity = traceCapacity;
         _worker = new Thread(Worker) { IsBackground = true, Name = "OpenLogicoolFastPath" };
     }
 
@@ -108,7 +122,10 @@ public sealed class FastPathPump : IDisposable
                         $"device instance '{input.DeviceInstanceId}' の Mapping Runtime が構成されていません。");
                 }
 
-                _emitter.Emit(runtime.Process(input));
+                var layerId = runtime.CurrentLayerId;
+                var edges = runtime.Process(input);
+                RecordTrace(input, layerId, edges);
+                _emitter.Emit(edges);
                 processed++;
                 Interlocked.Increment(ref _processedCount);
             }
@@ -195,6 +212,48 @@ public sealed class FastPathPump : IDisposable
                     releaseFailure);
             }
         }
+    }
+
+    /// <summary>trace が off なら何もしない（enqueue 自体を行わない構成で既存 test 挙動に影響を出さない）。</summary>
+    private void RecordTrace(PhysicalInput input, string layerId, IReadOnlyList<MappedOutputEdge> edges)
+    {
+        if (!_traceEnabled)
+        {
+            return;
+        }
+
+        var entry = new InputTraceEntry(
+            input.DeviceInstanceId,
+            input.ControlId,
+            input.Edge,
+            layerId,
+            edges.Select(edge => edge.Output).ToArray(),
+            edges.Count > 0,
+            Interlocked.Increment(ref _traceSequence));
+
+        _traceBuffer.Enqueue(entry);
+        if (Interlocked.Increment(ref _traceApproxCount) > _traceCapacity && _traceBuffer.TryDequeue(out _))
+        {
+            Interlocked.Decrement(ref _traceApproxCount);
+        }
+    }
+
+    /// <summary>buffer に溜まっている trace を全て取り出す（main thread から呼ぶ。worker を待たない）。</summary>
+    public IReadOnlyList<InputTraceEntry> DrainTrace()
+    {
+        if (_traceBuffer.IsEmpty)
+        {
+            return [];
+        }
+
+        var drained = new List<InputTraceEntry>();
+        while (_traceBuffer.TryDequeue(out var entry))
+        {
+            Interlocked.Decrement(ref _traceApproxCount);
+            drained.Add(entry);
+        }
+
+        return drained;
     }
 
     private void ReleaseAllOwnedOutputs()

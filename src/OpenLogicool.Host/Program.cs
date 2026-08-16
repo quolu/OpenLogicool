@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
+using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Contracts.Profiles;
 using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Desktop;
@@ -12,8 +13,10 @@ using OpenLogicool.Profiles;
 
 // OpenLogicool Input Studio resident host（計画 §6.2 初期 process model の最小形）。
 // command:
-//   run [--db <path>] [--watchdog <path>] [--duration-ms N]
+//   run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace]
 //       profile を復元して fast path を常駐実行する。--duration-ms 省略時は Ctrl+C まで動く。
+//       --trace は fast path が処理した input（device/control/edge/layer/output/emitted）を
+//       1行1 event で表示する（test field・Journey A-6。既定 off・fast path 本体の挙動は変えない）。
 //   import <documents.json> [--db <path>]
 //       MappingProfileDocument の JSON 配列を store へ upsert する（UI 実装までの投入経路）。
 //   ui [--db <path>] [--duration-ms N]
@@ -34,6 +37,9 @@ using OpenLogicool.Profiles;
 //       最新 revision の workspace 文書を JSON へ書き出す（workspace command で再取込できる形式）。
 //   revisions <workspaceId> [--db <path>]
 //       保存済み revision の一覧を表示する。
+//   diagnostics [--db <path>]
+//       接続 device・保存 profile・app 関連付け・workspace revision・foreground identity・
+//       watchdog exe 所在を read-only で一覧表示する（Journey B-6）。実機・DB が無くても exit 0。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -48,7 +54,8 @@ return command switch
     "undo" when args.Length >= 2 => Undo(args[1], args[2..]),
     "export" when args.Length >= 3 => Export(args[1], args[2], args[3..]),
     "revisions" when args.Length >= 2 => Revisions(args[1], args[2..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>]]"),
+    "diagnostics" => Diagnostics(args[1..]),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>] | diagnostics [--db <path>]]"),
 };
 
 static int Fail(string message)
@@ -68,6 +75,7 @@ static int Run(string[] arguments)
     var databasePath = DefaultDatabasePath();
     var watchdogPath = Path.Combine(AppContext.BaseDirectory, "OpenLogicool.Watchdog.exe");
     int? durationMs = null;
+    var traceEnabled = false;
     for (var i = 0; i < arguments.Length; i++)
     {
         switch (arguments[i])
@@ -81,6 +89,9 @@ static int Run(string[] arguments)
             case "--duration-ms" when i + 1 < arguments.Length:
                 durationMs = int.Parse(arguments[++i]);
                 break;
+            case "--trace":
+                traceEnabled = true;
+                break;
             default:
                 return Fail($"unknown run option: {arguments[i]}");
         }
@@ -92,7 +103,7 @@ static int Run(string[] arguments)
         return Fail("OpenLogicool.Host は既に起動しています（二重起動防止・計画 §6.2）。");
     }
 
-    using var host = new ResidentInputHost(databasePath, watchdogPath);
+    using var host = new ResidentInputHost(databasePath, watchdogPath, traceEnabled);
     var status = host.Start();
 
     Console.WriteLine($"db: {databasePath}");
@@ -120,6 +131,19 @@ static int Run(string[] arguments)
     var deadline = durationMs is null ? DateTime.MaxValue : DateTime.UtcNow.AddMilliseconds(durationMs.Value);
     while (!stopRequested.IsSet && DateTime.UtcNow < deadline && host.Pump.Failure is null)
     {
+        if (traceEnabled)
+        {
+            foreach (var traceEntry in host.Pump.DrainTrace())
+            {
+                var edgeLabel = traceEntry.Edge == PhysicalInputEdge.Down ? "down" : "up";
+                var outputsLabel = traceEntry.OutputTokens.Count == 0
+                    ? "(割当なし)"
+                    : $"[{string.Join(", ", traceEntry.OutputTokens)}]";
+                Console.WriteLine(
+                    $"trace: {traceEntry.DeviceInstanceId} {traceEntry.ControlId} {edgeLabel} layer={traceEntry.LayerId} -> {outputsLabel} {(traceEntry.Emitted ? "emitted" : "no-op")}");
+            }
+        }
+
         Thread.Sleep(100);
     }
 
@@ -577,6 +601,100 @@ static int Revisions(string workspaceId, string[] arguments)
         Console.WriteLine(
             $"  revision {revision.RevisionNumber} ({revision.SavedAtUtc}): action {revision.Document.Actions.Count} 件・binding {revision.Document.Bindings.Count} 件");
     }
+
+    return 0;
+}
+
+// diagnostics（Journey B-6）: 接続 device・保存 profile・app 関連付け・workspace revision・
+// foreground identity・watchdog exe 所在を read-only で一覧表示する。書き込みは migrate だけ
+// （既存 command と同じ前提）。実機・DB が空でも 0 件表示のまま exit 0 で終える。
+static int Diagnostics(string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            default:
+                return Fail($"unknown diagnostics option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+
+    Console.WriteLine($"db: {databasePath}");
+
+    IReadOnlyList<string> g13Ids;
+    IReadOnlyList<string> g600Ids;
+    using (var g13Source = new G13RawInputSource())
+    using (var g600Source = new G600RawInputSource())
+    {
+        g13Ids = g13Source.EnumerateDevices().Select(device => device.DeviceInstanceId).ToArray();
+        g600Ids = g600Source.EnumerateDevices().Select(device => device.DeviceInstanceId).ToArray();
+    }
+
+    Console.WriteLine($"devices: g13={g13Ids.Count} g600={g600Ids.Count}");
+    foreach (var id in g13Ids)
+    {
+        Console.WriteLine($"  g13: {id}");
+    }
+
+    foreach (var id in g600Ids)
+    {
+        Console.WriteLine($"  g600: {id}");
+    }
+
+    var documents = new SqliteMappingProfileStore(connection).ListAll();
+    Console.WriteLine($"profiles: {documents.Count}");
+    foreach (var document in documents)
+    {
+        var profile = MappingProfileMaterializer.ToProfile(document);
+        Console.WriteLine(
+            $"  {document.ProfileId}（{document.DeviceKind}・revision={profile.MappingRevision}・binding {profile.Bindings.Count} 件）");
+    }
+
+    var associations = new SqliteAppAssociationStore(connection).ListAll();
+    Console.WriteLine($"app associations: {associations.Count}");
+    foreach (var association in associations)
+    {
+        var target = association.ApplicationFullPath == AppProfileResolver.DefaultMarker
+            ? "既定"
+            : association.ApplicationFullPath;
+        Console.WriteLine($"  {association.MatcherKind}:{target}（{association.DeviceKind}）-> '{association.ProfileId}'");
+    }
+
+    using (var command = connection.CreateCommand())
+    {
+        command.CommandText =
+            "SELECT workspace_id, COUNT(*), MAX(revision_number) FROM workspace_revisions GROUP BY workspace_id ORDER BY workspace_id;";
+        using var reader = command.ExecuteReader();
+        var rows = new List<(string WorkspaceId, long Count, long Latest)>();
+        while (reader.Read())
+        {
+            rows.Add((reader.GetString(0), reader.GetInt64(1), reader.GetInt64(2)));
+        }
+
+        Console.WriteLine($"workspaces: {rows.Count}");
+        foreach (var row in rows)
+        {
+            Console.WriteLine($"  {row.WorkspaceId}: revision {row.Count} 件（最新 {row.Latest}）");
+        }
+    }
+
+    var identity = ForegroundAppTracker.GetForegroundIdentity();
+    Console.WriteLine(identity is null
+        ? "foreground: 取得不能"
+        : $"foreground: {identity.NormalizedFullPath ?? "取得不能"}" +
+            $"{(identity.PackageFamilyName is { } pkg ? $" [pkg:{pkg}]" : string.Empty)}");
+
+    var watchdogPath = Path.Combine(AppContext.BaseDirectory, "OpenLogicool.Watchdog.exe");
+    Console.WriteLine($"watchdog: {watchdogPath}（{(File.Exists(watchdogPath) ? "存在" : "不在")}）");
 
     return 0;
 }
