@@ -15,7 +15,7 @@ public sealed class WorkspaceScreenProjectionTests
 
     private static readonly ApplicationRailEntryInput[] RailEntries =
     [
-        new("*", "既定", IsRunning: false, IsAssociated: true),
+        new("*", "共通設定（どのアプリでもない時）", IsRunning: false, IsAssociated: true),
         new(@"c:\game\nikke.exe", "NIKKE", IsRunning: true, IsAssociated: true),
         new(@"c:\windows\explorer.exe", "explorer.exe", IsRunning: true, IsAssociated: false),
     ];
@@ -34,10 +34,19 @@ public sealed class WorkspaceScreenProjectionTests
         var view = WorkspaceScreenProjection.Project(Snapshot(revisionNumber: 5), @"c:\game\nikke.exe");
 
         Assert.Equal("NIKKE", view.Chrome.EditingLabel);
+        Assert.Equal("NIKKE 用", view.Chrome.LiveAssignmentLabel);
         Assert.Equal("一致 app（path）", view.Chrome.CurrentEffectiveLabel);
         Assert.Equal("NIKKE（一致 app（path））", view.Chrome.TargetWindowLabel);
         Assert.Equal("revision 5", view.Chrome.AppliedRevisionLabel);
         Assert.Equal("手動入力", view.Chrome.ExecutionModeLabel);
+    }
+
+    [Fact]
+    public void Live_assignment_label_states_unavailable_without_a_foreground_window_title()
+    {
+        var view = WorkspaceScreenProjection.Project(Snapshot(foregroundWindowTitle: null), "*");
+
+        Assert.Equal("取得不能", view.Chrome.LiveAssignmentLabel);
     }
 
     [Fact]

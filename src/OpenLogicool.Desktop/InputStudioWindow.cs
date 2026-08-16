@@ -1,20 +1,20 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using OpenLogicool.Contracts.Profiles;
 
 namespace OpenLogicool.Desktop;
 
 /// <summary>
-/// Input Studio 新シェル（設計 docs/ui-design-phase3.md 案A・§3.5 段階1〜3）。
-/// ヘッダ（編集中／現在有効／対象window／適用revision／実行mode＋段階4セル）＋
-/// 左 ApplicationRail＋中央 Action 盤＋右 Binding Inspector（唯一の editor）＋現行 device 台帳を配置する。
-/// 編集対象（ApplicationRail の選択）は Host の観測値（現在有効・foreground）が変わっても動かさない
-/// ——これが「Alt+Tab で編集対象を失わない」構造（設計 §2.3）。
-/// Desktop は I/O を持たないため、document の読み込み・compile・保存・undo はすべて
-/// <see cref="IWorkspaceEditorIntents"/>（実装は Host）を通す（設計 §3.1）。
-/// 模式図（device figure）・test field は段階4以降の範囲外。
+/// Input Studio メイン画面（t09 第4段・オーナー承認済みモック docs/ui-mocks/main.html・states.html 準拠）。
+/// 上部バー（設定中のアプリ pill・いまゲームに届いている割当・保存状態）＋
+/// 左＝操作一覧・中央＝G13/G600 模式図・右＝割当パネル（唯一の editor）＋下部＝動作チェック strip。
+/// Desktop は I/O を持たないため、document の読み込み・compile・保存・破棄はすべて
+/// <see cref="IWorkspaceEditorIntents"/>（実装は Host）を通す。旧 device 台帳（<see cref="DeviceLedgerView"/>）は
+/// この画面から撤去した（class 自体は次段の診断画面向けに残す）。
 /// </summary>
 public sealed class InputStudioWindow : Window
 {
@@ -25,35 +25,55 @@ public sealed class InputStudioWindow : Window
     private WorkspaceDocument _document = null!;
     private string? _selectedActionId;
     private WorkspaceCompileOutcome _compileOutcome = null!;
+    private bool _hasUnsavedChanges;
+    private bool _justSaved;
+    private string? _saveErrorMessage;
+    private bool _isRenamingAction;
 
-    private readonly TextBlock _editingText = new();
-    private readonly TextBlock _currentEffectiveText = new();
-    private readonly TextBlock _targetWindowText = new();
-    private readonly TextBlock _revisionText = new();
-    private readonly TextBlock _executionModeText = new();
-    private readonly StackPanel _stageStrip = new() { Orientation = Orientation.Horizontal };
-    private readonly ListBox _applicationRail = new();
+    private string _selectedFigureDeviceKind = "G13";
+    private readonly Dictionary<string, string> _figureLayerByDevice = new(StringComparer.Ordinal);
 
-    // Action 盤（設計 §1 案A: 行=Semantic Action、列=出力／device ごとの割当）
-    private readonly TextBox _newActionNameBox = new() { Width = 110, Margin = new Thickness(0, 0, 4, 0) };
-    private readonly TextBox _newActionOutputsBox = new() { Width = 150, Margin = new Thickness(0, 0, 4, 0) };
-    private readonly Button _addActionButton = new() { Content = "＋ action" };
-    private readonly ListBox _actionBoard = new();
+    // 上部バー
+    private readonly Button _appPillButton = new();
+    private readonly TextBlock _appPillLabel = new() { FontWeight = FontWeights.SemiBold, Foreground = Theme.Text, FontSize = 13 };
+    private readonly ListBox _appPickerList = new();
+    private readonly Popup _appPickerPopup = new() { StaysOpen = false, Placement = PlacementMode.Bottom };
+    private readonly TextBlock _liveAssignmentText = new() { Foreground = Theme.Muted, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
+    private readonly Border _saveChip = new() { CornerRadius = new CornerRadius(3), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 8, 0) };
+    private readonly TextBlock _saveChipText = new() { FontWeight = FontWeights.SemiBold, FontSize = 12 };
+    private readonly Button _saveButton = new() { Content = "保存", Padding = new Thickness(14, 6, 14, 6) };
+    private readonly Button _revertButton = new() { Content = "元に戻す", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(8, 0, 0, 0) };
 
-    // Binding Inspector（唯一の editor・設計 §2.2「右ペイン常時」）
-    private readonly TextBlock _inspectorTitle = new() { FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 4) };
-    private readonly TextBox _inspectorNameBox = new() { Margin = new Thickness(0, 0, 0, 4) };
-    private readonly TextBox _inspectorOutputsBox = new() { Margin = new Thickness(0, 0, 0, 4) };
-    private readonly StackPanel _inspectorBindingsPanel = new();
-    private readonly ComboBox _bindingDeviceCombo = new() { Margin = new Thickness(0, 0, 4, 0) };
-    private readonly ComboBox _bindingLayerCombo = new() { Margin = new Thickness(0, 0, 4, 0) };
-    private readonly ComboBox _bindingControlCombo = new() { Margin = new Thickness(0, 0, 4, 0) };
-    private readonly Button _assignButton = new() { Content = "このキーへ割当" };
-    private readonly TextBlock _compileStatusText = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 8) };
-    private readonly Button _saveButton = new() { Content = "保存（revision）" };
-    private readonly Button _undoButton = new() { Content = "undo" };
-    private readonly TextBox _undoRevisionBox = new() { Width = 48, ToolTip = "revision 番号（未入力なら最新の一つ前）" };
-    private readonly TextBlock _saveStatusText = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
+    // 左ペイン: 操作一覧
+    private readonly ListBox _actionList = new();
+    private readonly Button _addActionButton = new() { Content = "＋ 操作を追加" };
+
+    // 中央ペイン: device タブ・配置チップ・模式図
+    private readonly Button _g13TabButton = new();
+    private readonly Button _g600TabButton = new();
+    private readonly StackPanel _layerChipRow = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+    private readonly Border _figureHost = new()
+    {
+        Background = Theme.Raised,
+        BorderBrush = Theme.Line,
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(0, 4, 4, 4),
+        Padding = new Thickness(14, 12, 14, 10),
+    };
+    private readonly TextBlock _figureNoteText = new() { Foreground = Theme.Muted, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0), TextAlignment = TextAlignment.Center };
+
+    // 右ペイン: 割当パネル（唯一の editor）
+    private readonly Button _inspectorTitleButton = new() { HorizontalContentAlignment = HorizontalAlignment.Left, Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
+    private readonly TextBox _inspectorNameBox = new();
+    private readonly TextBox _outputsBox = new();
+    private readonly StackPanel _conflictNotePanel = new();
+    private readonly StackPanel _g13BindingsPanel = new();
+    private readonly StackPanel _g600BindingsPanel = new();
+    private readonly StackPanel _actionNotesPanel = new();
+    private readonly StackPanel _inspectorEmptyPanel = new();
+
+    // 下部: 動作チェック
+    private readonly TextBlock _testFieldHint = new() { Foreground = Theme.Muted, FontSize = 12 };
 
     public InputStudioWindow(
         WorkspaceScreenSnapshot snapshot,
@@ -61,11 +81,14 @@ public sealed class InputStudioWindow : Window
         string initialSelectedApplicationFullPath,
         IWorkspaceEditorIntents intents)
     {
+        _ = ledgerReport; // 旧 device 台帳は撤去済み（DeviceLedgerView は次段の診断画面向けに残す）。
         _intents = intents;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
 
         Title = "OpenLogicool Input Studio";
+        Background = Theme.Bg;
+        Foreground = Theme.Text;
         MinWidth = 1100;
         MinHeight = 720;
         Width = 1360;
@@ -73,179 +96,323 @@ public sealed class InputStudioWindow : Window
 
         var root = new Grid();
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        var chromeHeader = BuildChromeHeader();
-        Grid.SetRow(chromeHeader, 0);
-        root.Children.Add(chromeHeader);
+        var header = BuildHeader();
+        Grid.SetRow(header, 0);
+        root.Children.Add(header);
 
-        _stageStrip.Margin = new Thickness(12, 0, 12, 8);
-        Grid.SetRow(_stageStrip, 1);
-        root.Children.Add(_stageStrip);
-
-        var body = new Grid();
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(220) });
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.3, GridUnitType.Star) });
+        var body = new Grid { Margin = new Thickness(0, 1, 0, 1) };
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(268) });
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(292) });
 
-        AutomationProperties.SetName(_applicationRail, "Application Rail");
-        _applicationRail.SelectionChanged += OnRailSelectionChanged;
-        Grid.SetColumn(_applicationRail, 0);
-        body.Children.Add(_applicationRail);
+        var actionPane = BuildActionListPane();
+        Grid.SetColumn(actionPane, 0);
+        body.Children.Add(actionPane);
 
-        var actionBoardColumn = BuildActionBoardColumn();
-        Grid.SetColumn(actionBoardColumn, 1);
-        body.Children.Add(actionBoardColumn);
+        var figurePane = BuildFigurePane();
+        Grid.SetColumn(figurePane, 1);
+        body.Children.Add(figurePane);
 
-        var inspectorColumn = BuildInspectorColumn();
-        Grid.SetColumn(inspectorColumn, 2);
-        body.Children.Add(inspectorColumn);
+        var bindingPane = BuildBindingPane();
+        Grid.SetColumn(bindingPane, 2);
+        body.Children.Add(bindingPane);
 
-        var ledgerView = new DeviceLedgerView(ledgerReport);
-        Grid.SetColumn(ledgerView, 3);
-        body.Children.Add(ledgerView);
-
-        Grid.SetRow(body, 2);
+        Grid.SetRow(body, 1);
         root.Children.Add(body);
+
+        var footer = BuildFooter();
+        Grid.SetRow(footer, 2);
+        root.Children.Add(footer);
 
         Content = root;
 
-        PreviewKeyDown += OnWindowPreviewKeyDown;
-        _addActionButton.Click += (_, _) => OnAddAction();
-        _newActionOutputsBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) { OnAddAction(); e.Handled = true; } };
-        _actionBoard.SelectionChanged += OnActionBoardSelectionChanged;
-        _actionBoard.PreviewKeyDown += OnActionBoardPreviewKeyDown;
-        _inspectorNameBox.LostFocus += (_, _) => OnInspectorNameCommitted();
-        _inspectorNameBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) { OnInspectorNameCommitted(); e.Handled = true; } };
-        _inspectorOutputsBox.LostFocus += (_, _) => OnInspectorOutputsCommitted();
-        _inspectorOutputsBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) { OnInspectorOutputsCommitted(); e.Handled = true; } };
-        _bindingDeviceCombo.SelectionChanged += OnBindingDeviceChanged;
-        _assignButton.Click += (_, _) => AssignSelectedBinding();
-        _bindingControlCombo.KeyDown += (_, e) => { if (e.Key == Key.Enter) { AssignSelectedBinding(); e.Handled = true; } };
-        _saveButton.Click += (_, _) => SaveCurrentDocument();
-        _undoButton.Click += (_, _) => UndoCurrentWorkspace(ParseRevisionNumber());
-
+        WireEvents();
         LoadSelectedWorkspace();
         Render();
     }
 
-    private Grid BuildChromeHeader()
+    private void WireEvents()
     {
-        var grid = new Grid { Margin = new Thickness(12, 12, 12, 4) };
-        for (var i = 0; i < 5; i++)
+        _appPillButton.Click += (_, _) =>
         {
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        }
+            _appPickerPopup.PlacementTarget = _appPillButton;
+            _appPickerPopup.IsOpen = true;
+        };
+        _appPickerList.SelectionChanged += OnAppPickerSelectionChanged;
 
-        void Place(TextBlock block, int column, string automationName)
+        _addActionButton.Click += (_, _) => OnAddAction();
+        _actionList.SelectionChanged += OnActionListSelectionChanged;
+        _actionList.PreviewKeyDown += OnActionListPreviewKeyDown;
+
+        _g13TabButton.Click += (_, _) => { _selectedFigureDeviceKind = "G13"; Render(); };
+        _g600TabButton.Click += (_, _) => { _selectedFigureDeviceKind = "G600"; Render(); };
+
+        _inspectorTitleButton.Click += (_, _) =>
         {
-            block.TextWrapping = TextWrapping.Wrap;
-            block.Margin = new Thickness(0, 0, 8, 0);
-            AutomationProperties.SetName(block, automationName);
-            Grid.SetColumn(block, column);
-            grid.Children.Add(block);
-        }
+            _isRenamingAction = true;
+            Render();
+            _inspectorNameBox.Focus();
+            _inspectorNameBox.SelectAll();
+        };
+        _inspectorNameBox.LostFocus += (_, _) => OnInspectorNameCommitted();
+        _inspectorNameBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) { OnInspectorNameCommitted(); e.Handled = true; } };
 
-        Place(_editingText, 0, "編集中");
-        Place(_currentEffectiveText, 1, "現在有効");
-        Place(_targetWindowText, 2, "対象 window");
-        Place(_revisionText, 3, "適用 revision");
-        Place(_executionModeText, 4, "実行 mode");
+        _outputsBox.LostFocus += (_, _) => OnInspectorOutputsCommitted();
+        _outputsBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) { OnInspectorOutputsCommitted(); e.Handled = true; } };
 
-        return grid;
-    }
+        _saveButton.Click += (_, _) => SaveCurrentDocument();
+        _revertButton.Click += (_, _) => DiscardUnsavedChanges();
 
-    private UIElement BuildActionBoardColumn()
-    {
-        var panel = new DockPanel { Margin = new Thickness(12, 0, 12, 12) };
-
-        var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-        AutomationProperties.SetName(_newActionNameBox, "新規 action 名");
-        _newActionNameBox.ToolTip = "action 名（例: 回避）";
-        AutomationProperties.SetName(_newActionOutputsBox, "新規 action 出力");
-        _newActionOutputsBox.ToolTip = "出力 token（例: Key:LShift）";
-        toolbar.Children.Add(_newActionNameBox);
-        toolbar.Children.Add(_newActionOutputsBox);
-        toolbar.Children.Add(_addActionButton);
-        DockPanel.SetDock(toolbar, Dock.Top);
-        panel.Children.Add(toolbar);
-
-        AutomationProperties.SetName(_actionBoard, "Action 盤");
-        panel.Children.Add(_actionBoard);
-
-        return panel;
-    }
-
-    private UIElement BuildInspectorColumn()
-    {
-        var panel = new StackPanel { Margin = new Thickness(0, 0, 12, 12) };
-
-        panel.Children.Add(_inspectorTitle);
-
-        panel.Children.Add(new TextBlock { Text = "名前" });
-        AutomationProperties.SetName(_inspectorNameBox, "action 名");
-        panel.Children.Add(_inspectorNameBox);
-
-        panel.Children.Add(new TextBlock { Text = "出力 token（空白区切り・canonical 表記）" });
-        AutomationProperties.SetName(_inspectorOutputsBox, "action 出力 token");
-        panel.Children.Add(_inspectorOutputsBox);
-
-        panel.Children.Add(new TextBlock { Text = "割当", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 8, 0, 4) });
-        panel.Children.Add(_inspectorBindingsPanel);
-
-        var assignRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
-        AutomationProperties.SetName(_bindingDeviceCombo, "割当先 device");
-        AutomationProperties.SetName(_bindingLayerCombo, "割当先 layer");
-        AutomationProperties.SetName(_bindingControlCombo, "割当先 control");
-        assignRow.Children.Add(_bindingDeviceCombo);
-        assignRow.Children.Add(_bindingLayerCombo);
-        assignRow.Children.Add(_bindingControlCombo);
-        assignRow.Children.Add(_assignButton);
-        panel.Children.Add(assignRow);
-
-        AutomationProperties.SetName(_compileStatusText, "compile 状態");
-        panel.Children.Add(_compileStatusText);
-
-        var saveRow = new StackPanel { Orientation = Orientation.Horizontal };
-        saveRow.Children.Add(_saveButton);
-        saveRow.Children.Add(new TextBlock { Text = "  undo:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 4, 0) });
-        saveRow.Children.Add(_undoRevisionBox);
-        saveRow.Children.Add(_undoButton);
-        panel.Children.Add(saveRow);
-
-        panel.Children.Add(_saveStatusText);
-
-        return panel;
+        PreviewKeyDown += OnWindowPreviewKeyDown;
     }
 
     private void OnWindowPreviewKeyDown(object? sender, KeyEventArgs e)
     {
         var ctrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
-        var shift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
-
-        if (ctrl && shift && e.Key == Key.Z)
-        {
-            _undoRevisionBox.Focus();
-            _undoRevisionBox.SelectAll();
-            e.Handled = true;
-        }
-        else if (ctrl && e.Key == Key.Z)
-        {
-            UndoCurrentWorkspace(revisionNumber: null);
-            e.Handled = true;
-        }
-        else if (ctrl && e.Key == Key.S)
+        if (ctrl && e.Key == Key.S)
         {
             SaveCurrentDocument();
             e.Handled = true;
         }
+        else if (ctrl && e.Key == Key.Z)
+        {
+            DiscardUnsavedChanges();
+            e.Handled = true;
+        }
     }
 
-    private void OnRailSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    // ─────────────────────────── header ───────────────────────────
+
+    private UIElement BuildHeader()
     {
-        if (_applicationRail.SelectedItem is not ListBoxItem { Tag: string applicationFullPath })
+        var bar = new Border { Background = Theme.Chrome, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(16, 8, 16, 8) };
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var left = new StackPanel { Orientation = Orientation.Horizontal };
+        left.Children.Add(new TextBlock
+        {
+            Text = "INPUT STUDIO",
+            FontWeight = FontWeights.Bold,
+            FontSize = 14,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        left.Children.Add(new TextBlock
+        {
+            Text = "G13 ＋ G600",
+            Foreground = Theme.Muted,
+            FontSize = 12,
+            Margin = new Thickness(8, 2, 20, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+
+        AutomationProperties.SetName(_appPillButton, "設定中のアプリ");
+        _appPillButton.Background = Theme.Raised;
+        _appPillButton.BorderBrush = Theme.Line;
+        _appPillButton.Padding = new Thickness(10, 5, 10, 5);
+        var pillContent = new StackPanel { Orientation = Orientation.Horizontal };
+        var pillLabel = new StackPanel();
+        pillLabel.Children.Add(new TextBlock { Text = "設定中のアプリ", Foreground = Theme.Muted, FontSize = 10 });
+        pillLabel.Children.Add(_appPillLabel);
+        pillContent.Children.Add(pillLabel);
+        pillContent.Children.Add(new TextBlock { Text = " ▾", Foreground = Theme.Muted, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) });
+        _appPillButton.Content = pillContent;
+        left.Children.Add(_appPillButton);
+
+        left.Children.Add(_liveAssignmentText);
+        grid.Children.Add(left);
+
+        _appPickerPopup.Child = new Border
+        {
+            Background = Theme.Raised,
+            BorderBrush = Theme.Line,
+            BorderThickness = new Thickness(1),
+            Child = new ScrollViewer { MaxHeight = 320, MinWidth = 260, Content = _appPickerList },
+        };
+
+        var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        _saveChip.Child = _saveChipText;
+        right.Children.Add(_saveChip);
+        _saveButton.Background = Theme.Accent;
+        _saveButton.Foreground = Brushes.White;
+        right.Children.Add(_saveButton);
+        right.Children.Add(_revertButton);
+        Grid.SetColumn(right, 1);
+        grid.Children.Add(right);
+
+        bar.Child = grid;
+        return bar;
+    }
+
+    // ─────────────────────────── 左ペイン: 操作 ───────────────────────────
+
+    private UIElement BuildActionListPane()
+    {
+        var pane = new Border { Background = Theme.Panel, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 1, 0) };
+        var dock = new DockPanel { Margin = new Thickness(0, 10, 0, 10) };
+
+        var header = new StackPanel { Margin = new Thickness(14, 0, 14, 8) };
+        header.Children.Add(new TextBlock { Text = "操作", FontWeight = FontWeights.Bold, FontSize = 12 });
+        header.Children.Add(new TextBlock { Text = "このアプリでやりたいこと", Foreground = Theme.Muted, FontSize = 11 });
+        DockPanel.SetDock(header, Dock.Top);
+        dock.Children.Add(header);
+
+        var addRow = new Border
+        {
+            Margin = new Thickness(14, 8, 14, 0),
+            BorderBrush = Theme.Line,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(8),
+        };
+        addRow.Child = _addActionButton;
+        _addActionButton.HorizontalAlignment = HorizontalAlignment.Stretch;
+        _addActionButton.HorizontalContentAlignment = HorizontalAlignment.Center;
+        _addActionButton.Foreground = Theme.Muted;
+        _addActionButton.Background = Brushes.Transparent;
+        _addActionButton.BorderThickness = new Thickness(0);
+        AutomationProperties.SetName(_addActionButton, "操作を追加");
+        DockPanel.SetDock(addRow, Dock.Bottom);
+        dock.Children.Add(addRow);
+
+        AutomationProperties.SetName(_actionList, "操作一覧");
+        _actionList.Background = Brushes.Transparent;
+        _actionList.BorderThickness = new Thickness(0);
+        dock.Children.Add(_actionList);
+
+        pane.Child = dock;
+        return pane;
+    }
+
+    // ─────────────────────────── 中央ペイン: 模式図 ───────────────────────────
+
+    private UIElement BuildFigurePane()
+    {
+        var pane = new Border { Background = Theme.Panel };
+        var dock = new DockPanel { Margin = new Thickness(14, 10, 14, 10) };
+
+        var tabs = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 0) };
+        ConfigureTabButton(_g13TabButton, Theme.G13);
+        ConfigureTabButton(_g600TabButton, Theme.G600);
+        tabs.Children.Add(_g13TabButton);
+        tabs.Children.Add(_g600TabButton);
+        DockPanel.SetDock(tabs, Dock.Top);
+        dock.Children.Add(tabs);
+
+        var stageBorder = new Border
+        {
+            Background = Theme.Raised,
+            BorderBrush = Theme.Line,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(0, 4, 4, 4),
+            Padding = new Thickness(14, 12, 14, 10),
+        };
+        var stageStack = new StackPanel();
+        stageStack.Children.Add(_layerChipRow);
+
+        var figureScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxHeight = 520 };
+        var figureCenter = new Grid { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 8, 0, 0) };
+        _figureHost.Child = null;
+        figureCenter.Children.Add(_figureHost);
+        figureScroll.Content = figureCenter;
+        stageStack.Children.Add(figureScroll);
+        stageStack.Children.Add(_figureNoteText);
+        stageBorder.Child = stageStack;
+        dock.Children.Add(stageBorder);
+
+        pane.Child = dock;
+        return pane;
+    }
+
+    private static void ConfigureTabButton(Button button, Brush accent)
+    {
+        button.Padding = new Thickness(16, 7, 16, 7);
+        button.Background = Theme.Raised;
+        button.BorderBrush = Theme.Line;
+        button.BorderThickness = new Thickness(1, 1, 1, 0);
+        button.Margin = new Thickness(0, 0, 4, 0);
+        button.Foreground = Theme.Text;
+        button.Tag = accent;
+    }
+
+    // ─────────────────────────── 右ペイン: 割当パネル ───────────────────────────
+
+    private UIElement BuildBindingPane()
+    {
+        var pane = new Border { Background = Theme.Panel, BorderBrush = Theme.Line, BorderThickness = new Thickness(1, 0, 0, 0) };
+        var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        var stack = new StackPanel { Margin = new Thickness(14, 10, 14, 14) };
+
+        var header = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
+        header.Children.Add(new TextBlock { Text = "割当", FontWeight = FontWeights.Bold, FontSize = 12 });
+        header.Children.Add(new TextBlock { Text = "選んだ操作をボタンへ", Foreground = Theme.Muted, FontSize = 11 });
+        stack.Children.Add(header);
+
+        stack.Children.Add(_conflictNotePanel);
+
+        _inspectorTitleButton.FontSize = 16;
+        _inspectorTitleButton.FontWeight = FontWeights.Bold;
+        _inspectorNameBox.Margin = new Thickness(0, 0, 0, 10);
+        stack.Children.Add(_inspectorTitleButton);
+        stack.Children.Add(_inspectorNameBox);
+
+        stack.Children.Add(_inspectorEmptyPanel);
+
+        var outputsLabel = new TextBlock { Text = "ゲームに送るキー", Foreground = Theme.Muted, FontSize = 11, Margin = new Thickness(0, 8, 0, 4) };
+        stack.Children.Add(outputsLabel);
+        _outputsBox.Background = Theme.Sunken;
+        _outputsBox.BorderBrush = Theme.Line;
+        _outputsBox.Foreground = Theme.Text;
+        _outputsBox.Padding = new Thickness(8, 6, 8, 6);
+        _outputsBox.Margin = new Thickness(0, 0, 0, 12);
+        AutomationProperties.SetName(_outputsBox, "ゲームに送るキー");
+        _outputsBox.ToolTip = "空白区切りで複数キーを送れます（例: Key:LCtrl Key:C）";
+        stack.Children.Add(_outputsBox);
+
+        stack.Children.Add(BuildDeviceBlockHeader("G13 キーパッド", Theme.G13));
+        stack.Children.Add(_g13BindingsPanel);
+        stack.Children.Add(BuildDeviceBlockHeader("G600 マウス", Theme.G600));
+        stack.Children.Add(_g600BindingsPanel);
+
+        stack.Children.Add(_actionNotesPanel);
+
+        scroll.Content = stack;
+        pane.Child = scroll;
+        return pane;
+    }
+
+    private static Border BuildDeviceBlockHeader(string label, Brush accent)
+    {
+        var header = new Border { Background = Theme.Raised, BorderBrush = Theme.Line, BorderThickness = new Thickness(1, 1, 1, 0), Padding = new Thickness(8, 6, 8, 6), Margin = new Thickness(0, 10, 0, 0) };
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        row.Children.Add(new Ellipse2(accent));
+        row.Children.Add(new TextBlock { Text = label, FontWeight = FontWeights.SemiBold, FontSize = 12, Margin = new Thickness(8, 0, 0, 0) });
+        header.Child = row;
+        return header;
+    }
+
+    // ─────────────────────────── footer ───────────────────────────
+
+    private UIElement BuildFooter()
+    {
+        var bar = new Border { Background = Theme.Chrome, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(16, 8, 16, 8) };
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        row.Children.Add(new TextBlock { Text = "動作チェック", FontWeight = FontWeights.Bold, FontSize = 12, Margin = new Thickness(0, 0, 12, 0) });
+        _testFieldHint.Text = "デバイスのボタンを押すと、ここに結果が流れます";
+        row.Children.Add(_testFieldHint);
+        bar.Child = row;
+        return bar;
+    }
+
+    // ─────────────────────────── data flow ───────────────────────────
+
+    private void OnAppPickerSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        _appPickerPopup.IsOpen = false;
+        if (_appPickerList.SelectedItem is not ListBoxItem { Tag: string applicationFullPath })
         {
             return;
         }
@@ -255,8 +422,7 @@ public sealed class InputStudioWindow : Window
             return;
         }
 
-        // 選択切替は未保存の編集内容を破棄する（Phase 3 は確認ダイアログを持たない——
-        // 保存済み revision は revision store に残るため失われるのは未保存の下書きだけ）。
+        // アプリ切替は未保存の編集内容を破棄する（保存済み revision は revision store に残る）。
         _selectedApplicationFullPath = applicationFullPath;
         LoadSelectedWorkspace();
         Render();
@@ -267,37 +433,41 @@ public sealed class InputStudioWindow : Window
         var result = _intents.LoadDocument(_selectedApplicationFullPath);
         _document = result.Document;
         _selectedActionId = null;
+        _isRenamingAction = false;
         _compileOutcome = _intents.Compile(_document);
         _snapshot = _snapshot with { SelectedWorkspaceRevisionNumber = result.RevisionNumber, Stages = result.Stages };
-        _saveStatusText.Text = string.Empty;
+        _hasUnsavedChanges = false;
+        _justSaved = false;
+        _saveErrorMessage = null;
+
+        _figureLayerByDevice.Clear();
+        foreach (var device in _document.Devices)
+        {
+            _figureLayerByDevice[device.DeviceKind] = device.DefaultLayerId;
+        }
     }
 
-    private void OnActionBoardSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void OnActionListSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        var selectedActionId = _actionBoard.SelectedItem is ListBoxItem { Tag: string actionId } ? actionId : null;
+        var selectedActionId = _actionList.SelectedItem is ListBoxItem { Tag: string actionId } ? actionId : null;
         if (selectedActionId == _selectedActionId)
         {
             return;
         }
 
         _selectedActionId = selectedActionId;
-        RenderInspector();
+        _isRenamingAction = false;
+        Render();
     }
 
-    private void OnActionBoardPreviewKeyDown(object? sender, KeyEventArgs e)
+    private void OnActionListPreviewKeyDown(object? sender, KeyEventArgs e)
     {
         if (_selectedActionId is null)
         {
             return;
         }
 
-        if (e.Key == Key.F2)
-        {
-            _inspectorNameBox.Focus();
-            _inspectorNameBox.SelectAll();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Delete)
+        if (e.Key == Key.Delete)
         {
             var actionId = _selectedActionId;
             _selectedActionId = null;
@@ -312,25 +482,21 @@ public sealed class InputStudioWindow : Window
 
     private void OnAddAction()
     {
-        var name = _newActionNameBox.Text.Trim();
-        if (name.Length == 0)
+        var actionId = GenerateActionId("action");
+        var name = GenerateActionName();
+        if (TryMutateDocument(document => WorkspaceDocumentEditor.AddAction(document, actionId, name, [])))
         {
-            return;
-        }
-
-        var actionId = GenerateActionId(name);
-        var outputs = WorkspaceEditorProjection.ParseOutputs(_newActionOutputsBox.Text);
-        if (TryMutateDocument(document => WorkspaceDocumentEditor.AddAction(document, actionId, name, outputs)))
-        {
-            _newActionNameBox.Text = string.Empty;
-            _newActionOutputsBox.Text = string.Empty;
             _selectedActionId = actionId;
+            _isRenamingAction = true;
             Render();
+            _inspectorNameBox.Focus();
+            _inspectorNameBox.SelectAll();
         }
     }
 
     private void OnInspectorNameCommitted()
     {
+        _isRenamingAction = false;
         if (_selectedActionId is null)
         {
             return;
@@ -352,64 +518,23 @@ public sealed class InputStudioWindow : Window
         }
 
         var actionId = _selectedActionId;
-        var outputs = WorkspaceEditorProjection.ParseOutputs(_inspectorOutputsBox.Text);
+        var outputs = WorkspaceEditorProjection.ParseOutputs(_outputsBox.Text);
         if (TryMutateDocument(document => WorkspaceDocumentEditor.SetActionOutputs(document, actionId, outputs)))
         {
             Render();
         }
     }
 
-    private void OnBindingDeviceChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_bindingDeviceCombo.SelectedItem is not ComboBoxItem { Tag: DeviceBindingOptionsView deviceOptions })
-        {
-            _bindingLayerCombo.Items.Clear();
-            _bindingControlCombo.Items.Clear();
-            return;
-        }
-
-        _bindingLayerCombo.Items.Clear();
-        foreach (var layerId in deviceOptions.LayerIds)
-        {
-            var label = layerId == deviceOptions.DefaultLayerId ? $"{layerId}（既定）" : layerId;
-            _bindingLayerCombo.Items.Add(new ComboBoxItem { Content = label, Tag = layerId });
-        }
-
-        if (_bindingLayerCombo.Items.Count > 0)
-        {
-            _bindingLayerCombo.SelectedIndex = 0;
-        }
-
-        _bindingControlCombo.Items.Clear();
-        foreach (var control in deviceOptions.Controls)
-        {
-            var label = control.IsConfirmed ? control.ControlId : $"{control.ControlId}（強い推定）";
-            _bindingControlCombo.Items.Add(new ComboBoxItem { Content = label, Tag = control });
-        }
-
-        if (_bindingControlCombo.Items.Count > 0)
-        {
-            _bindingControlCombo.SelectedIndex = 0;
-        }
-    }
-
-    private void AssignSelectedBinding()
+    private void OnFigureKeyClicked(string deviceKind, string controlId)
     {
         if (_selectedActionId is null)
         {
             return;
         }
 
-        if (_bindingDeviceCombo.SelectedItem is not ComboBoxItem { Tag: DeviceBindingOptionsView deviceOptions } ||
-            _bindingLayerCombo.SelectedItem is not ComboBoxItem { Tag: string layerId } ||
-            _bindingControlCombo.SelectedItem is not ComboBoxItem { Tag: ControlOptionView control })
-        {
-            return;
-        }
-
         var actionId = _selectedActionId;
-        if (TryMutateDocument(document =>
-                WorkspaceDocumentEditor.SetBinding(document, actionId, deviceOptions.DeviceKind, control.ControlId, layerId)))
+        var layerId = _figureLayerByDevice.TryGetValue(deviceKind, out var currentLayer) ? currentLayer : "base";
+        if (TryMutateDocument(document => WorkspaceDocumentEditor.SetBinding(document, actionId, deviceKind, controlId, layerId)))
         {
             Render();
         }
@@ -417,9 +542,8 @@ public sealed class InputStudioWindow : Window
 
     private void SaveCurrentDocument()
     {
-        if (!_compileOutcome.IsValid)
+        if (!_compileOutcome.IsValid || !_hasUnsavedChanges)
         {
-            _saveStatusText.Text = $"保存できません: {_compileOutcome.ErrorMessage}";
             return;
         }
 
@@ -427,39 +551,33 @@ public sealed class InputStudioWindow : Window
         {
             var outcome = _intents.Save(_document);
             _snapshot = _snapshot with { SelectedWorkspaceRevisionNumber = outcome.RevisionNumber, Stages = outcome.Stages };
-            _saveStatusText.Text = $"保存しました（revision {outcome.RevisionNumber}）";
+            _hasUnsavedChanges = false;
+            _justSaved = true;
+            _saveErrorMessage = null;
             Render();
         }
         catch (InvalidOperationException error)
         {
-            _saveStatusText.Text = $"保存に失敗しました: {error.Message}";
+            _saveErrorMessage = $"保存できませんでした: {error.Message}";
+            Render();
         }
     }
 
-    private void UndoCurrentWorkspace(long? revisionNumber)
+    private void DiscardUnsavedChanges()
     {
-        try
+        if (!_hasUnsavedChanges)
         {
-            var outcome = _intents.Undo(_document.WorkspaceId, revisionNumber);
-            _document = outcome.Document;
-            _selectedActionId = null;
-            _compileOutcome = _intents.Compile(_document);
-            _snapshot = _snapshot with { SelectedWorkspaceRevisionNumber = outcome.RevisionNumber, Stages = outcome.Stages };
-            _saveStatusText.Text = $"undo: revision {outcome.RevisionNumber} として再適用しました";
-            Render();
+            return;
         }
-        catch (InvalidOperationException error)
-        {
-            _saveStatusText.Text = $"undo に失敗しました: {error.Message}";
-        }
-    }
 
-    private long? ParseRevisionNumber() =>
-        long.TryParse(_undoRevisionBox.Text, out var parsed) ? parsed : null;
+        LoadSelectedWorkspace();
+        Render();
+    }
 
     /// <summary>
     /// document を変更する（<see cref="WorkspaceDocumentEditor"/> は構造エラーを ArgumentException で
-    /// 投げる——ここで拾って画面へ出す。成功時は compile を取り直すだけで、呼び出し側が Render する）。
+    /// 投げる——ここで拾って画面へ出す。成功時は compile を取り直し、未保存 flag を立てるだけで、
+    /// 呼び出し側が Render する）。
     /// </summary>
     private bool TryMutateDocument(Func<WorkspaceDocument, WorkspaceDocument> mutate)
     {
@@ -470,42 +588,32 @@ public sealed class InputStudioWindow : Window
         }
         catch (ArgumentException error)
         {
-            _saveStatusText.Text = $"編集できません: {error.Message}";
+            _saveErrorMessage = $"編集できません: {error.Message}";
+            Render();
             return false;
         }
 
         _document = updated;
         _compileOutcome = _intents.Compile(_document);
+        _hasUnsavedChanges = true;
+        _justSaved = false;
+        _saveErrorMessage = null;
         return true;
     }
 
-    private string GenerateActionId(string name)
+    private string GenerateActionId(string baseSlug)
     {
-        var slugChars = name.ToLowerInvariant()
-            .Select(character => char.IsLetterOrDigit(character) ? character : '-')
-            .ToArray();
-        var slug = new string(slugChars).Trim('-');
-        while (slug.Contains("--", StringComparison.Ordinal))
-        {
-            slug = slug.Replace("--", "-", StringComparison.Ordinal);
-        }
-
-        if (slug.Length == 0)
-        {
-            slug = "action";
-        }
-
         var existingIds = _document.Actions.Select(action => action.ActionId).ToHashSet(StringComparer.Ordinal);
-        if (!existingIds.Contains(slug))
+        if (!existingIds.Contains(baseSlug))
         {
-            return slug;
+            return baseSlug;
         }
 
         var suffix = 2;
         string candidate;
         do
         {
-            candidate = $"{slug}-{suffix}";
+            candidate = $"{baseSlug}-{suffix}";
             suffix++;
         }
         while (existingIds.Contains(candidate));
@@ -513,167 +621,418 @@ public sealed class InputStudioWindow : Window
         return candidate;
     }
 
+    private string GenerateActionName()
+    {
+        var existingNames = _document.Actions.Select(action => action.Name).ToHashSet(StringComparer.Ordinal);
+        const string baseName = "新しい操作";
+        if (!existingNames.Contains(baseName))
+        {
+            return baseName;
+        }
+
+        var suffix = 2;
+        string candidate;
+        do
+        {
+            candidate = $"{baseName} {suffix}";
+            suffix++;
+        }
+        while (existingNames.Contains(candidate));
+
+        return candidate;
+    }
+
+    // ─────────────────────────── render ───────────────────────────
+
     private void Render()
     {
         var view = WorkspaceScreenProjection.Project(_snapshot, _selectedApplicationFullPath);
-
-        _editingText.Text = $"編集中: {view.Chrome.EditingLabel}";
-        _currentEffectiveText.Text = $"現在有効: {view.Chrome.CurrentEffectiveLabel}";
-        _targetWindowText.Text = $"対象 window: {view.Chrome.TargetWindowLabel}";
-        _revisionText.Text = $"適用 revision: {view.Chrome.AppliedRevisionLabel}";
-        _executionModeText.Text = $"実行: {view.Chrome.ExecutionModeLabel}";
-
-        _stageStrip.Children.Clear();
-        foreach (var stage in view.Chrome.StageCells)
-        {
-            var cell = new TextBlock
-            {
-                Text = $"{stage.Stage} {stage.State}",
-                Margin = new Thickness(0, 0, 16, 0),
-            };
-            AutomationProperties.SetName(cell, $"{stage.Stage}: {stage.State}");
-            ToolTipService.SetToolTip(cell, stage.Detail);
-            _stageStrip.Children.Add(cell);
-        }
-
-        _applicationRail.Items.Clear();
-        foreach (var row in view.RailRows)
-        {
-            var suffixParts = new List<string>();
-            if (row.IsRunning)
-            {
-                suffixParts.Add("実行中");
-            }
-
-            if (row.IsAssociated)
-            {
-                suffixParts.Add("assoc");
-            }
-
-            var suffix = suffixParts.Count == 0 ? string.Empty : $" [{string.Join(", ", suffixParts)}]";
-
-            var item = new ListBoxItem
-            {
-                Content = $"{row.DisplayName}{suffix}",
-                Tag = row.ApplicationFullPath,
-                IsSelected = row.IsSelected,
-            };
-            AutomationProperties.SetName(item, row.DisplayName);
-            _applicationRail.Items.Add(item);
-        }
-
-        RenderActionBoard();
-        RenderInspector();
-    }
-
-    private void RenderActionBoard()
-    {
         var boardView = WorkspaceEditorProjection.Project(_document, _selectedActionId);
 
-        _actionBoard.Items.Clear();
+        RenderHeader(view);
+        RenderActionList(boardView);
+        RenderFigurePane();
+        RenderBindingPane(boardView);
+    }
+
+    private void RenderHeader(WorkspaceScreenView view)
+    {
+        _appPillLabel.Text = view.Chrome.EditingLabel;
+        _liveAssignmentText.Text = $"いまゲームに届いている割当: {view.Chrome.LiveAssignmentLabel}";
+
+        _appPickerList.Items.Clear();
+        foreach (var row in view.RailRows)
+        {
+            var item = new ListBoxItem
+            {
+                Content = row.IsRunning ? $"{row.DisplayName}（実行中）" : row.DisplayName,
+                Tag = row.ApplicationFullPath,
+                IsSelected = row.IsSelected,
+                Padding = new Thickness(10, 6, 10, 6),
+            };
+            AutomationProperties.SetName(item, row.DisplayName);
+            _appPickerList.Items.Add(item);
+        }
+
+        var chipText = !_compileOutcome.IsValid
+            ? "保存できません"
+            : _hasUnsavedChanges
+                ? "未保存の変更あり"
+                : _justSaved
+                    ? "保存しました。ゲーム側への反映は再起動後"
+                    : null;
+
+        _saveChip.Visibility = chipText is null ? Visibility.Collapsed : Visibility.Visible;
+        if (chipText is not null)
+        {
+            _saveChipText.Text = chipText;
+            var brush = !_compileOutcome.IsValid ? Theme.Danger : _hasUnsavedChanges ? Theme.Warn : Theme.Ok;
+            _saveChipText.Foreground = brush;
+            _saveChip.BorderBrush = brush;
+            _saveChip.BorderThickness = new Thickness(1);
+        }
+
+        _saveButton.IsEnabled = _compileOutcome.IsValid && _hasUnsavedChanges;
+        _revertButton.IsEnabled = _hasUnsavedChanges;
+    }
+
+    private void RenderActionList(ActionBoardView boardView)
+    {
+        var actionIndexById = _document.Actions
+            .Select((action, index) => (action.ActionId, index))
+            .ToDictionary(pair => pair.ActionId, pair => pair.index, StringComparer.Ordinal);
+
+        _actionList.Items.Clear();
         foreach (var row in boardView.Rows)
         {
-            var line = new StackPanel { Orientation = Orientation.Horizontal };
-            line.Children.Add(new TextBlock { Text = row.Name, Width = 110, TextWrapping = TextWrapping.Wrap });
-            line.Children.Add(new TextBlock
+            var colorIndex = actionIndexById.TryGetValue(row.ActionId, out var index) ? index : 0;
+
+            var grid = new Grid { Margin = new Thickness(4, 4, 4, 4) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var bar = new Border { Background = Theme.ActionColorAt(colorIndex), CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 10, 0) };
+            grid.Children.Add(bar);
+
+            var labels = new StackPanel();
+            labels.Children.Add(new TextBlock { Text = row.Name, FontWeight = FontWeights.SemiBold, FontSize = 13 });
+            labels.Children.Add(new TextBlock
             {
-                Text = row.OutputsLabel.Length == 0 ? "（出力未設定）" : row.OutputsLabel,
-                Width = 150,
-                TextWrapping = TextWrapping.Wrap,
+                Text = row.OutputsLabel.Length == 0 ? "（送るキー未設定）" : $"{row.OutputsLabel} を送る",
+                Foreground = Theme.Muted,
+                FontSize = 11,
             });
+            Grid.SetColumn(labels, 1);
+            grid.Children.Add(labels);
+
+            var badges = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             foreach (var cell in row.DeviceAssignments)
             {
-                line.Children.Add(new TextBlock
+                var isBound = cell.AssignmentLabel != "—";
+                var accent = cell.DeviceKind == "G13" ? Theme.G13 : Theme.G600;
+                badges.Children.Add(new Border
                 {
-                    Text = $"{cell.DeviceKind}: {cell.AssignmentLabel}",
-                    Width = 110,
-                    Margin = new Thickness(8, 0, 0, 0),
+                    BorderBrush = isBound ? accent : Theme.Line2,
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(3),
+                    Padding = new Thickness(4, 1, 4, 1),
+                    Margin = new Thickness(2, 0, 0, 0),
+                    Child = new TextBlock
+                    {
+                        Text = isBound ? cell.DeviceKind : $"{cell.DeviceKind} なし",
+                        Foreground = isBound ? accent : Theme.Muted,
+                        FontSize = 9,
+                        FontWeight = FontWeights.Bold,
+                    },
                 });
             }
 
-            var item = new ListBoxItem { Content = line, Tag = row.ActionId, IsSelected = row.IsSelected };
-            AutomationProperties.SetName(item, $"action {row.Name}");
-            _actionBoard.Items.Add(item);
-        }
+            Grid.SetColumn(badges, 2);
+            grid.Children.Add(badges);
 
-        RenderCompileStatus();
+            var item = new ListBoxItem
+            {
+                Content = grid,
+                Tag = row.ActionId,
+                IsSelected = row.IsSelected,
+                Background = row.IsSelected ? Theme.Raised : Brushes.Transparent,
+                Padding = new Thickness(6, 4, 6, 4),
+            };
+            AutomationProperties.SetName(item, $"操作 {row.Name}");
+            _actionList.Items.Add(item);
+        }
     }
 
-    private void RenderCompileStatus()
+    private void RenderFigurePane()
     {
-        _saveButton.IsEnabled = _compileOutcome.IsValid;
+        var isG13 = _selectedFigureDeviceKind == "G13";
+        _g13TabButton.Content = "G13 キーパッド　" + (_snapshot.G13ConnectedCount > 0 ? "接続中" : "未接続");
+        _g600TabButton.Content = "G600 マウス　" + (_snapshot.G600ConnectedCount > 0 ? "接続中" : "未接続");
+        StyleTab(_g13TabButton, isG13, Theme.G13);
+        StyleTab(_g600TabButton, !isG13, Theme.G600);
 
+        var layout = _document.Devices.FirstOrDefault(device => device.DeviceKind == _selectedFigureDeviceKind);
+        _layerChipRow.Children.Clear();
+        _layerChipRow.Children.Add(new TextBlock { Text = "いま見ている配置", Foreground = Theme.Muted, FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+        if (layout is not null)
+        {
+            var currentLayerId = _figureLayerByDevice.TryGetValue(_selectedFigureDeviceKind, out var layer) ? layer : layout.DefaultLayerId;
+            foreach (var layerId in layout.LayerIds)
+            {
+                var isOn = layerId == currentLayerId;
+                var chip = new Border
+                {
+                    BorderBrush = isOn ? (_selectedFigureDeviceKind == "G13" ? Theme.G13 : Theme.G600) : Theme.Line,
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(3),
+                    Padding = new Thickness(10, 3, 10, 3),
+                    Margin = new Thickness(0, 0, 4, 0),
+                    Background = isOn ? Theme.Sunken : Brushes.Transparent,
+                    Child = new TextBlock
+                    {
+                        Text = LayerLabel(_selectedFigureDeviceKind, layerId),
+                        Foreground = isOn ? Theme.Text : Theme.Muted,
+                        FontWeight = FontWeights.SemiBold,
+                        FontSize = 12,
+                    },
+                };
+                var capturedLayerId = layerId;
+                chip.MouseLeftButtonUp += (_, _) => { _figureLayerByDevice[_selectedFigureDeviceKind] = capturedLayerId; Render(); };
+                chip.Cursor = Cursors.Hand;
+                _layerChipRow.Children.Add(chip);
+            }
+
+            var lookupLayerId = _figureLayerByDevice.TryGetValue(_selectedFigureDeviceKind, out var lookupLayer) ? lookupLayer : layout.DefaultLayerId;
+            var bindings = BuildFigureBindingLookup(_selectedFigureDeviceKind, lookupLayerId);
+            _figureHost.Child = isG13
+                ? InputStudioFigures.BuildG13(bindings, controlId => OnFigureKeyClicked("G13", controlId))
+                : InputStudioFigures.BuildG600(bindings, controlId => OnFigureKeyClicked("G600", controlId));
+        }
+
+        _figureNoteText.Text = isG13
+            ? "空のキーをクリックすると、左で選んでいる操作を載せます。色は左の操作と同じです。窪みは指のホーム位置です。"
+            : "左が親指で押す 12 ボタンです。同じ色は左の操作と対応します。突起は親指のホーム位置です。";
+    }
+
+    private static void StyleTab(Button button, bool isOn, Brush accent)
+    {
+        button.Background = isOn ? Theme.Raised : Theme.Sunken;
+        button.Foreground = isOn ? Theme.Text : Theme.Muted;
+        button.BorderBrush = isOn ? accent : Theme.Line;
+    }
+
+    private Dictionary<string, InputStudioFigures.FigureBinding> BuildFigureBindingLookup(string deviceKind, string layerId)
+    {
+        var colors = _document.Actions
+            .Select((action, index) => (action.ActionId, Color: Theme.ActionColorAt(index)))
+            .ToDictionary(pair => pair.ActionId, pair => pair.Color, StringComparer.Ordinal);
+
+        var result = new Dictionary<string, InputStudioFigures.FigureBinding>(StringComparer.Ordinal);
+        foreach (var binding in _document.Bindings)
+        {
+            if (binding.DeviceKind != deviceKind || binding.LayerId != layerId)
+            {
+                continue;
+            }
+
+            var action = _document.Actions.FirstOrDefault(candidate => candidate.ActionId == binding.ActionId);
+            if (action is null)
+            {
+                continue;
+            }
+
+            result[binding.ControlId] = new InputStudioFigures.FigureBinding(action.Name, colors[binding.ActionId]);
+        }
+
+        return result;
+    }
+
+    private void RenderBindingPane(ActionBoardView boardView)
+    {
+        _conflictNotePanel.Children.Clear();
         if (!_compileOutcome.IsValid)
         {
-            _compileStatusText.Text = $"衝突: {_compileOutcome.ErrorMessage}";
-            return;
+            _conflictNotePanel.Children.Add(NoteBlock(
+                $"同じボタンに複数の操作が重なっています: {_compileOutcome.ErrorMessage}（解消するまで保存できません）", Theme.Danger));
         }
 
-        _compileStatusText.Text = _compileOutcome.Warnings.Count == 0
-            ? $"compile 成立（profile {_compileOutcome.ProfileCount} 件・警告なし）"
-            : $"compile 成立（profile {_compileOutcome.ProfileCount} 件）\n" + string.Join("\n", _compileOutcome.Warnings.Select(warning => $"警告: {warning}"));
-    }
+        if (_saveErrorMessage is not null)
+        {
+            _conflictNotePanel.Children.Add(NoteBlock(_saveErrorMessage, Theme.Danger));
+        }
 
-    private void RenderInspector()
-    {
-        var view = WorkspaceEditorProjection.Project(_document, _selectedActionId);
-        var inspector = view.Inspector;
+        var inspector = boardView.Inspector;
+        _inspectorEmptyPanel.Children.Clear();
+        _g13BindingsPanel.Children.Clear();
+        _g600BindingsPanel.Children.Clear();
+        _actionNotesPanel.Children.Clear();
 
         if (inspector is null)
         {
-            _inspectorTitle.Text = "action を選択してください";
-            _inspectorNameBox.IsEnabled = false;
-            _inspectorNameBox.Text = string.Empty;
-            _inspectorOutputsBox.IsEnabled = false;
-            _inspectorOutputsBox.Text = string.Empty;
-            _inspectorBindingsPanel.Children.Clear();
-            _bindingDeviceCombo.Items.Clear();
-            _bindingLayerCombo.Items.Clear();
-            _bindingControlCombo.Items.Clear();
-            _assignButton.IsEnabled = false;
+            _inspectorTitleButton.Visibility = Visibility.Collapsed;
+            _inspectorNameBox.Visibility = Visibility.Collapsed;
+            _outputsBox.IsEnabled = false;
+            _outputsBox.Text = string.Empty;
+            _inspectorEmptyPanel.Children.Add(new TextBlock
+            {
+                Text = "左の一覧から操作を選ぶと、ここに割当を出します。",
+                Foreground = Theme.Muted,
+                TextWrapping = TextWrapping.Wrap,
+            });
             return;
         }
 
-        _inspectorTitle.Text = $"action: {inspector.Name}";
-        _inspectorNameBox.IsEnabled = true;
-        _inspectorNameBox.Text = inspector.Name;
-        _inspectorOutputsBox.IsEnabled = true;
-        _inspectorOutputsBox.Text = inspector.OutputsTokenText;
-        _assignButton.IsEnabled = true;
+        var colorIndex = _document.Actions.ToList().FindIndex(action => action.ActionId == inspector.ActionId);
+        var color = Theme.ActionColorAt(Math.Max(colorIndex, 0));
 
-        _inspectorBindingsPanel.Children.Clear();
-        if (inspector.Bindings.Count == 0)
+        if (_isRenamingAction)
         {
-            _inspectorBindingsPanel.Children.Add(new TextBlock { Text = "（未割当）" });
+            _inspectorTitleButton.Visibility = Visibility.Collapsed;
+            _inspectorNameBox.Visibility = Visibility.Visible;
+            _inspectorNameBox.Text = inspector.Name;
+        }
+        else
+        {
+            _inspectorTitleButton.Visibility = Visibility.Visible;
+            _inspectorNameBox.Visibility = Visibility.Collapsed;
+            var titleContent = new StackPanel { Orientation = Orientation.Horizontal };
+            titleContent.Children.Add(new Border { Width = 10, Height = 10, Background = color, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 8, 0) });
+            titleContent.Children.Add(new TextBlock { Text = inspector.Name, FontSize = 16, FontWeight = FontWeights.Bold });
+            _inspectorTitleButton.Content = titleContent;
+            AutomationProperties.SetName(_inspectorTitleButton, $"操作名: {inspector.Name}（クリックで変更）");
         }
 
-        foreach (var binding in inspector.Bindings)
+        _outputsBox.IsEnabled = true;
+        if (!_outputsBox.IsFocused)
         {
-            var row = new DockPanel { Margin = new Thickness(0, 0, 0, 2) };
-            var removeButton = new Button { Content = "削除", Margin = new Thickness(4, 0, 0, 0) };
-            removeButton.Click += (_, _) =>
-            {
-                var actionId = inspector.ActionId;
-                if (TryMutateDocument(document => WorkspaceDocumentEditor.RemoveBinding(document, actionId, binding.DeviceKind, binding.LayerId)))
-                {
-                    Render();
-                }
-            };
-            DockPanel.SetDock(removeButton, Dock.Right);
-            row.Children.Add(removeButton);
-            row.Children.Add(new TextBlock { Text = $"{binding.DeviceKind} {binding.ControlId} ・ {binding.LayerId}" });
-            _inspectorBindingsPanel.Children.Add(row);
+            _outputsBox.Text = inspector.OutputsTokenText;
         }
 
-        _bindingDeviceCombo.Items.Clear();
         foreach (var deviceOptions in inspector.DeviceOptions)
         {
-            _bindingDeviceCombo.Items.Add(new ComboBoxItem { Content = deviceOptions.DeviceKind, Tag = deviceOptions });
+            var panel = deviceOptions.DeviceKind == "G13" ? _g13BindingsPanel : _g600BindingsPanel;
+            var deviceBindings = inspector.Bindings.Where(binding => binding.DeviceKind == deviceOptions.DeviceKind).ToArray();
+
+            if (deviceBindings.Length == 0)
+            {
+                panel.Children.Add(new TextBlock { Text = "（未割当）", Foreground = Theme.Muted, Margin = new Thickness(0, 4, 0, 4) });
+                _actionNotesPanel.Children.Add(NoteBlock(
+                    $"『{inspector.Name}』は{deviceOptions.DeviceKind}にまだ割り当てられていません（未割当でも保存できます）", Theme.Warn));
+            }
+
+            foreach (var binding in deviceBindings)
+            {
+                var row = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                var slot = new StackPanel();
+                slot.Children.Add(new TextBlock { Text = binding.ControlId, FontWeight = FontWeights.Bold, FontSize = 13 });
+                slot.Children.Add(new TextBlock { Text = LayerLabel(deviceOptions.DeviceKind, binding.LayerId), Foreground = Theme.Muted, FontSize = 11 });
+                row.Children.Add(slot);
+
+                var removeButton = new Button { Content = "外す", Background = Brushes.Transparent, BorderThickness = new Thickness(0), Foreground = Theme.Accent, VerticalAlignment = VerticalAlignment.Top };
+                var capturedDeviceKind = deviceOptions.DeviceKind;
+                var capturedLayerId = binding.LayerId;
+                removeButton.Click += (_, _) =>
+                {
+                    var actionId = inspector.ActionId;
+                    if (TryMutateDocument(document => WorkspaceDocumentEditor.RemoveBinding(document, actionId, capturedDeviceKind, capturedLayerId)))
+                    {
+                        Render();
+                    }
+                };
+                Grid.SetColumn(removeButton, 1);
+                row.Children.Add(removeButton);
+
+                panel.Children.Add(row);
+            }
+
+            panel.Children.Add(BuildAssignRow(inspector, deviceOptions));
+        }
+    }
+
+    private UIElement BuildAssignRow(BindingInspectorView inspector, DeviceBindingOptionsView deviceOptions)
+    {
+        var layerCombo = new ComboBox { Margin = new Thickness(0, 4, 4, 0), MinWidth = 90 };
+        foreach (var layerId in deviceOptions.LayerIds)
+        {
+            layerCombo.Items.Add(new ComboBoxItem { Content = LayerLabel(deviceOptions.DeviceKind, layerId), Tag = layerId });
         }
 
-        if (_bindingDeviceCombo.Items.Count > 0)
+        if (layerCombo.Items.Count > 0)
         {
-            _bindingDeviceCombo.SelectedIndex = 0;
+            layerCombo.SelectedIndex = 0;
         }
+
+        var controlCombo = new ComboBox { Margin = new Thickness(0, 4, 4, 0), MinWidth = 90 };
+        foreach (var control in deviceOptions.Controls)
+        {
+            controlCombo.Items.Add(new ComboBoxItem { Content = control.IsConfirmed ? control.ControlId : $"{control.ControlId}（強い推定）", Tag = control.ControlId });
+        }
+
+        if (controlCombo.Items.Count > 0)
+        {
+            controlCombo.SelectedIndex = 0;
+        }
+
+        var assignButton = new Button { Content = "割り当てる", Margin = new Thickness(0, 4, 0, 0) };
+        assignButton.Click += (_, _) =>
+        {
+            if (layerCombo.SelectedItem is not ComboBoxItem { Tag: string layerId } ||
+                controlCombo.SelectedItem is not ComboBoxItem { Tag: string controlId })
+            {
+                return;
+            }
+
+            var actionId = inspector.ActionId;
+            var deviceKind = deviceOptions.DeviceKind;
+            if (TryMutateDocument(document => WorkspaceDocumentEditor.SetBinding(document, actionId, deviceKind, controlId, layerId)))
+            {
+                Render();
+            }
+        };
+
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        AutomationProperties.SetName(layerCombo, $"{deviceOptions.DeviceKind} 割当先の配置");
+        AutomationProperties.SetName(controlCombo, $"{deviceOptions.DeviceKind} 割当先のボタン");
+        row.Children.Add(layerCombo);
+        row.Children.Add(controlCombo);
+        row.Children.Add(assignButton);
+        return row;
+    }
+
+    private static TextBlock NoteBlock(string text, Brush accent) => new()
+    {
+        Text = text,
+        Foreground = accent,
+        TextWrapping = TextWrapping.Wrap,
+        Margin = new Thickness(0, 0, 0, 8),
+    };
+
+    /// <summary>層 ID の表示名。既定 layer 構成（<see cref="WorkspaceDocumentEditor.CreateDraft"/>）に対応する固定表記で、
+    /// 未知の layer ID はそのまま表示する（fallback を隠さない）。</summary>
+    private static string LayerLabel(string deviceKind, string layerId) => (deviceKind, layerId) switch
+    {
+        ("G13", "base") => "いつも",
+        ("G13", "m2") => "M2",
+        ("G13", "m3") => "M3",
+        ("G600", "base") => "いつも",
+        ("G600", "shift") => "G-Shift を押している間",
+        _ => layerId,
+    };
+}
+
+/// <summary>device dot（mock の .devdot）を表す小さな丸。Ellipse を直接使わず単純化した Border ラッパー。</summary>
+internal sealed class Ellipse2 : Border
+{
+    public Ellipse2(Brush color)
+    {
+        Width = 8;
+        Height = 8;
+        CornerRadius = new CornerRadius(4);
+        Background = color;
+        VerticalAlignment = VerticalAlignment.Center;
     }
 }

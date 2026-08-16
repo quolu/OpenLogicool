@@ -27,9 +27,14 @@ public sealed record WorkspaceScreenSnapshot(
     int G600ConnectedCount,
     IReadOnlyList<ApplicationRailEntryInput> RailEntries);
 
-/// <summary>WorkspaceChrome のヘッダ5欄＋段階セル（設計 §1 案A固定）。</summary>
+/// <summary>
+/// WorkspaceChrome のヘッダ欄一式。EditingLabel／LiveAssignmentLabel＋app pill／save chip が
+/// mock（docs/ui-mocks/main.html）の画面本体（t09 第4段）。残りは次段の診断画面向けに保持する
+/// （CurrentEffectiveLabel・TargetWindowLabel・AppliedRevisionLabel・ExecutionModeLabel・StageCells）。
+/// </summary>
 public sealed record WorkspaceChromeView(
     string EditingLabel,
+    string LiveAssignmentLabel,
     string CurrentEffectiveLabel,
     string TargetWindowLabel,
     string AppliedRevisionLabel,
@@ -78,8 +83,14 @@ public static class WorkspaceScreenProjection
             ? $"revision {revisionNumber}"
             : "下書き";
 
+        // mock の「いまゲームに届いている割当」= 現在 foreground にある window の表示名（取得できたときだけ）。
+        var liveAssignmentLabel = snapshot.ForegroundWindowTitle is { } liveTitle
+            ? $"{liveTitle} 用"
+            : "取得不能";
+
         var chrome = new WorkspaceChromeView(
             editingLabel,
+            liveAssignmentLabel,
             snapshot.ForegroundStateLabel,
             targetWindowLabel,
             revisionLabel,

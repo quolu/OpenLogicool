@@ -308,7 +308,7 @@ static IReadOnlyList<ApplicationRailEntryInput> BuildRailEntries(
         var isDefault = row.ApplicationFullPath == AppProfileResolver.DefaultMarker;
         if (isDefault)
         {
-            entries.Add(new ApplicationRailEntryInput(row.ApplicationFullPath, "既定", IsRunning: false, hasDefaultAssociation));
+            entries.Add(new ApplicationRailEntryInput(row.ApplicationFullPath, "共通設定（どのアプリでもない時）", IsRunning: false, hasDefaultAssociation));
             continue;
         }
 
