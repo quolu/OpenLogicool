@@ -1,0 +1,142 @@
+using OpenLogicool.Contracts.Devices.Shared;
+using OpenLogicool.Domain;
+
+namespace OpenLogicool.Input;
+
+/// <summary>物理 edge から解決された output token の down/up。Input Emitter への指示単位。</summary>
+public sealed record MappedOutputEdge(
+    string Output,
+    PhysicalInputEdge Edge);
+
+/// <summary>
+/// 一つの device instance の PhysicalInput（button edge）を output token の down/up へ変換する
+/// Mapping Runtime の中核。fast path 上の pure 状態機であり、I/O を持たない。
+/// ホイール tick 等の非 edge 入力は扱わない（binding 対象は button edge のみ）。
+///
+/// 契約（計画 §6.5・MAP-003/005/006・DEV-007/008）:
+/// - down 時に profile revision・layer・mapping revision・output 集合を PressOwnership へ固定する
+/// - up は down 時の output 集合だけを解放し、現在 mapping を再解決しない
+/// - profile／layer 変更は新規 down から有効（generation で識別）
+/// - Stop は新規 down を止めてから全所有 output を解放する
+/// </summary>
+public sealed class DeviceMappingRuntime
+{
+    private readonly string _deviceInstanceId;
+    private readonly HashSet<string> _ownedControls = new(StringComparer.Ordinal);
+    private readonly List<string> _holdStack = [];
+    private MappingProfile _profile;
+    private PressOwnershipState _state;
+    private string _latchedLayerId;
+
+    public DeviceMappingRuntime(string deviceInstanceId, MappingProfile profile)
+    {
+        _deviceInstanceId = deviceInstanceId;
+        _profile = profile;
+        _latchedLayerId = profile.DefaultLayerId;
+        _state = PressOwnershipState.Create(profile.ProfileRevision, profile.DefaultLayerId, profile.MappingRevision);
+    }
+
+    /// <summary>新規 down に適用される layer（hold selector 押下中は hold layer が優先）。</summary>
+    public string CurrentLayerId =>
+        _holdStack.Count > 0 ? _profile.HoldSelectors[_holdStack[^1]] : _latchedLayerId;
+
+    public bool AcceptsNewDowns => _state.AcceptsNewDowns;
+
+    /// <summary>一つの物理 edge を処理し、送出すべき output edge 列を返す（layer 操作・未割当は空）。</summary>
+    public IReadOnlyList<MappedOutputEdge> Process(PhysicalInput input)
+    {
+        if (input.DeviceInstanceId != _deviceInstanceId)
+        {
+            throw new ArgumentException(
+                $"この runtime は device '{_deviceInstanceId}' 専用です。実際: '{input.DeviceInstanceId}'", nameof(input));
+        }
+
+        return input.Edge == PhysicalInputEdge.Down ? ProcessDown(input) : ProcessUp(input);
+    }
+
+    /// <summary>
+    /// profile を差し替える。既存の所有 output は down 時の固定内容のまま維持され、
+    /// 対応する up で旧 output 集合が解放される。layer は新 profile の default へ戻る。
+    /// </summary>
+    public void ApplyProfile(MappingProfile profile)
+    {
+        _profile = profile;
+        _latchedLayerId = profile.DefaultLayerId;
+        _holdStack.Clear();
+        _state = _state.ChangeProfile(profile.ProfileRevision, profile.DefaultLayerId, profile.MappingRevision);
+    }
+
+    /// <summary>新規 down を止め、全所有 output の up を返す（pause・切断・通常終了時）。</summary>
+    public IReadOnlyList<MappedOutputEdge> StopAndReleaseAll()
+    {
+        var result = _state.StopAndReleaseAll();
+        _state = result.State;
+        _ownedControls.Clear();
+        _holdStack.Clear();
+
+        return result.Releases
+            .SelectMany(release => release.Outputs)
+            .Select(output => new MappedOutputEdge(output, PhysicalInputEdge.Up))
+            .ToArray();
+    }
+
+    private IReadOnlyList<MappedOutputEdge> ProcessDown(PhysicalInput input)
+    {
+        if (!_state.AcceptsNewDowns)
+        {
+            return [];
+        }
+
+        if (_profile.LatchSelectors.TryGetValue(input.ControlId, out var latchLayer))
+        {
+            _latchedLayerId = latchLayer;
+            SyncStateLayer();
+            return [];
+        }
+
+        if (_profile.HoldSelectors.ContainsKey(input.ControlId))
+        {
+            _holdStack.Add(input.ControlId);
+            SyncStateLayer();
+            return [];
+        }
+
+        if (!_profile.TryResolve(input.ControlId, CurrentLayerId, out var outputs))
+        {
+            return [];
+        }
+
+        var result = _state.Down(input, outputs);
+        _state = result.State;
+        _ownedControls.Add(input.ControlId);
+
+        return result.Ownership.Outputs
+            .Select(output => new MappedOutputEdge(output, PhysicalInputEdge.Down))
+            .ToArray();
+    }
+
+    private IReadOnlyList<MappedOutputEdge> ProcessUp(PhysicalInput input)
+    {
+        if (_ownedControls.Remove(input.ControlId))
+        {
+            var result = _state.Up(input);
+            _state = result.State;
+
+            return result.Release.Outputs
+                .Select(output => new MappedOutputEdge(output, PhysicalInputEdge.Up))
+                .ToArray();
+        }
+
+        // hold selector の解放。profile 変更や Stop で stack が消えた後の up は所有なしとして無視する。
+        if (_holdStack.Remove(input.ControlId))
+        {
+            SyncStateLayer();
+        }
+
+        return [];
+    }
+
+    /// <summary>layer 変更を PressOwnershipState へ反映する（generation が進み、新規 down から有効になる）。</summary>
+    private void SyncStateLayer() =>
+        _state = _state.ChangeProfile(_profile.ProfileRevision, CurrentLayerId, _profile.MappingRevision);
+}
