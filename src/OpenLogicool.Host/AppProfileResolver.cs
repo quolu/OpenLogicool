@@ -108,21 +108,38 @@ public sealed class AppProfileResolver
     /// foreground app に適用すべき profile（種別に profile が無ければ null）。
     /// 照合順序: ①package family name 一致 →②full path 一致 →③既定。
     /// </summary>
-    public MappingProfileDocument? Resolve(string deviceKind, ForegroundApplicationIdentity? identity)
+    public MappingProfileDocument? Resolve(string deviceKind, ForegroundApplicationIdentity? identity) =>
+        ResolveWithReason(deviceKind, identity).Document;
+
+    /// <summary>
+    /// Resolve と同じ解決規則に、診断用の一致種別（APP-005）を添えて返す。
+    /// 一致種別: "package"（package family name 一致）／"path"（full path 一致）／
+    /// "default"（識別はできたがどの関連付けにも一致せず既定へ）／
+    /// "identity-unavailable"（foreground window/process の識別要素が一つも取得できず既定へ）。
+    /// 判定規則はここが正であり、Resolve はこの結果から Document だけを取り出す（二重実装しない）。
+    /// </summary>
+    public (MappingProfileDocument? Document, string MatchKind) ResolveWithReason(
+        string deviceKind, ForegroundApplicationIdentity? identity)
     {
-        if (identity?.PackageFamilyName is { } packageFamilyName &&
+        if (identity is null || (identity.NormalizedFullPath is null && identity.PackageFamilyName is null))
+        {
+            return (_defaultByKind.TryGetValue(deviceKind, out var unavailableFallback) ? unavailableFallback : null,
+                "identity-unavailable");
+        }
+
+        if (identity.PackageFamilyName is { } packageFamilyName &&
             _byPackage.TryGetValue((NormalizePackage(packageFamilyName), deviceKind), out var packageMatch))
         {
-            return packageMatch;
+            return (packageMatch, "package");
         }
 
-        if (identity?.NormalizedFullPath is { } normalizedFullPath &&
+        if (identity.NormalizedFullPath is { } normalizedFullPath &&
             _byApp.TryGetValue((NormalizePath(normalizedFullPath), deviceKind), out var pathMatch))
         {
-            return pathMatch;
+            return (pathMatch, "path");
         }
 
-        return _defaultByKind.TryGetValue(deviceKind, out var fallback) ? fallback : null;
+        return (_defaultByKind.TryGetValue(deviceKind, out var fallback) ? fallback : null, "default");
     }
 
     /// <summary>関連付け保存・照合に使う path 正規化（Windows path は大文字小文字を区別しない）。</summary>

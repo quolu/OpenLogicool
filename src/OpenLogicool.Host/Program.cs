@@ -702,6 +702,14 @@ static int Diagnostics(string[] arguments)
     var watchdogPath = Path.Combine(AppContext.BaseDirectory, "OpenLogicool.Watchdog.exe");
     Console.WriteLine($"watchdog: {watchdogPath}（{(File.Exists(watchdogPath) ? "存在" : "不在")}）");
 
+    // 最近の切替判断（診断可能化・APP-005）: decision ring は resident host の process 内メモリだけに
+    // 存在し永続化しない。diagnostics は別 process 起動なので、この process 自身が resident host を
+    // 起動していない限り参照できない（この command は resident host を起動しない）。
+    Console.WriteLine("最近の切替判断:");
+    Console.WriteLine(IsHostResident()
+        ? "  常駐 host あり——切替判断は別 process 内の ring のため diagnostics からは参照できません（run 実行中の profile switch log を確認してください）。"
+        : "  常駐 host なし——切替判断は run 実行中に記録されます。");
+
     return 0;
 }
 
