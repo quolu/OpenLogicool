@@ -1,5 +1,6 @@
 # Phase 3 campaign — App-first Unified UX 完遂（統括レーン）
 
+- status: **completed**（2026-08-18 オーナー Exit 宣言・全 11 task done・全 3 phase accepted・終端監査 accepted。証跡は [evidence/phase3-app-first/terminal-audit.md](../evidence/phase3-app-first/terminal-audit.md)・Exit 判定は [phase3-exit-assessment.md](phase3-exit-assessment.md) が正）
 - 起票: 2026-08-16（オーナー指示「Phase 3 を Lattice に書き起こして円卓で進める」）
 - 統括: ベル（セッション主モデル Fable 5）
 - 実行 TODO の正本: **Lattice plan `phase3-app-first`**（typed discovery 判定済み。本書は目的・思想・非目標・受入条件だけを所有し、ToDo を二重化しない）
