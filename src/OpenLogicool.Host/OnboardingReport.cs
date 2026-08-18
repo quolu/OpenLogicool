@@ -69,6 +69,9 @@ public static class OnboardingReport
         lines.Add(observations.Backup.Exists
             ? $"  G600 完全 backup: あり（{observations.Backup.FileCount} file・SHA-256 封入・restore は probe g600-restore-retry が正）"
             : "  G600 完全 backup: なし——確認できない（repo 外から実行時は repo 直下で確認すること）。G600 への write を行う前に Migration Safety Gate（docs/migration-safety-gate.md）に従い backup を作成すること。");
+        lines.Add(observations.CoexistingSoftware.Any(software => software.Detected)
+            ? "  出荷割当の無効化: 共存ソフト検出中は常駐開始でも書かない（二重入力のまま）"
+            : "  出荷割当の無効化: 常駐開始時に G600 の本体割当を無効化し、停止時に戻す（LGS なし運用）");
 
         lines.Add("== 設定の現在地 ==");
         lines.Add($"  profiles: {observations.ProfileCount} 件");

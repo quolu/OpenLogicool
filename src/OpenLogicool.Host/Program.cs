@@ -47,6 +47,11 @@ using OpenLogicool.Profiles;
 //       （LGS/G HUB/Logi Options+ の実行中 process 検出のみ・断定しない）・device 接続件数
 //       （片側/両側未接続を明示）・G600 完全 backup 導線の有無・設定の現在地（件数のみ）。
 //       device への write は一切しない。
+//   leftover <apply|restore|status> [--db <path>]
+//       G600 出荷時 side 割当の残置無害化（B変種）。apply は F3 を中間 usage へ書いて残す。
+//       restore は残置前 baseline へ戻す。status は現在の F3 / baseline / 共存ソフトを表示する。
+//       run / ui --resident は配線時に apply、handled shutdown で restore する。
+//       LGS / G HUB / Options+ 実行中は書かない。foreground 切替では書かない（MAP-010）。
 //   ui-test-scenario [--out <path>]
 //       t10（Phase 3 Exit 条件5）: UI test scenario（アプリ選択→操作作成→両 device binding→保存→
 //       適用状態表示）を fake（in-memory）と real（新規 temp SQLite・実 device 列挙）の両方の
@@ -69,8 +74,9 @@ return command switch
     "revisions" when args.Length >= 2 => Revisions(args[1], args[2..]),
     "diagnostics" => Diagnostics(args[1..]),
     "onboarding" => Onboarding(args[1..]),
+    "leftover" when args.Length >= 2 => Leftover(args[1], args[2..]),
     "ui-test-scenario" => UiTestScenarioCommand(args[1..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | ui-test-scenario [--out <path>]]"),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | ui-test-scenario [--out <path>]]"),
 };
 
 static int Fail(string message)
@@ -118,7 +124,11 @@ static int Run(string[] arguments)
         return Fail("OpenLogicool.Host は既に起動しています（二重起動防止・計画 §6.2）。");
     }
 
-    using var host = new ResidentInputHost(databasePath, watchdogPath, traceEnabled);
+    using var host = new ResidentInputHost(
+        databasePath,
+        watchdogPath,
+        traceEnabled,
+        G600LeftoverHostSupport.CreateSession(databasePath));
     var status = host.Start();
 
     Console.WriteLine($"db: {databasePath}");
@@ -130,6 +140,11 @@ static int Run(string[] arguments)
     foreach (var deviceInstanceId in status.WiredDeviceInstanceIds)
     {
         Console.WriteLine($"  wired: {deviceInstanceId}");
+    }
+
+    if (status.LeftoverApply is { } leftover)
+    {
+        Console.WriteLine(G600LeftoverHostSupport.Describe(leftover));
     }
 
     Console.WriteLine(durationMs is null
@@ -212,7 +227,11 @@ static int Ui(string[] arguments)
             return Fail("OpenLogicool.Host は既に起動しています（ui --resident は二重起動できません・計画 §6.2）。");
         }
 
-        residentHost = new ResidentInputHost(databasePath, watchdogPath, enableTrace: true);
+        residentHost = new ResidentInputHost(
+            databasePath,
+            watchdogPath,
+            enableTrace: true,
+            G600LeftoverHostSupport.CreateSession(databasePath));
         residentStatus = residentHost.Start();
     }
 
@@ -889,6 +908,69 @@ static int Onboarding(string[] arguments)
     }
 
     return 0;
+}
+
+static int Leftover(string action, string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            default:
+                return Fail($"unknown leftover option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    var session = G600LeftoverHostSupport.CreateSession(databasePath);
+
+    switch (action)
+    {
+        case "apply":
+        {
+            var result = session.Apply(managed: true);
+            Console.WriteLine(G600LeftoverHostSupport.Describe(result));
+            return result.IsHardFailure ? 2 : 0;
+        }
+        case "restore":
+        {
+            var result = session.Restore();
+            Console.WriteLine(G600LeftoverHostSupport.Describe(result));
+            return result.IsHardFailure ? 2 : 0;
+        }
+        case "status":
+        {
+            var directory = Path.GetDirectoryName(Path.GetFullPath(databasePath))!;
+            byte[]? baseline = null;
+            try
+            {
+                baseline = new FileG600OnboardBaselineStore(directory).LoadF3();
+            }
+            catch (InvalidDataException ex)
+            {
+                Console.WriteLine($"baseline: 壊れている（{ex.Message}）");
+                return 2;
+            }
+
+            var current = G600EvidenceWrite.TryRead(
+                new G600FeatureHidAccess(),
+                G600EvidenceWrite.ProfileReportIdF3,
+                Thread.Sleep,
+                settleMs: 0);
+            Console.WriteLine($"共存ソフト: {(G600LeftoverHostSupport.IsCoexistenceRunning() ? "検出" : "非検出")}");
+            Console.WriteLine(current is null
+                ? "F3: 読めない（未接続または feature collection を開けない）"
+                : $"F3: {(G600SideRemap.IsApplied(current) ? "残置済み（中間 usage）" : "出荷割当のまま")}");
+            Console.WriteLine(baseline is null ? "baseline: なし" : "baseline: あり（154-byte F3）");
+            return 0;
+        }
+        default:
+            return Fail("usage: leftover <apply|restore|status> [--db <path>]");
+    }
 }
 
 static int Import(string documentsJsonPath, string[] arguments)

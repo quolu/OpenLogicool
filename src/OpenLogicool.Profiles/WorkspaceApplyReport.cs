@@ -35,7 +35,10 @@ public static class WorkspaceApplyReport
                 : new("runtime 適用", "未適用", "host 非常駐——次回起動時に保存済み構成を読み込む"));
         }
 
-        stages.Add(new("device 反映", "対象外", "onboard write は製品経路外（MAP-010: foreground 切替でも device へ write しない）"));
+        stages.Add(new(
+            "device 反映",
+            "対象外",
+            "保存では書かない（MAP-010）。常駐開始時に本体の出荷割当を無効化する"));
         return stages;
     }
 }

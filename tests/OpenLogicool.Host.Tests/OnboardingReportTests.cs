@@ -94,6 +94,22 @@ public sealed class OnboardingReportTests
     }
 
     [Fact]
+    public void Leftover_is_withheld_when_coexistence_is_detected()
+    {
+        var lines = OnboardingReport.Build(Observations(coexistingDetected: true));
+
+        Assert.Contains(lines, line => line.Contains("出荷割当の無効化") && line.Contains("書かない"));
+    }
+
+    [Fact]
+    public void Leftover_is_announced_when_coexistence_is_absent()
+    {
+        var lines = OnboardingReport.Build(Observations(coexistingDetected: false));
+
+        Assert.Contains(lines, line => line.Contains("出荷割当の無効化") && line.Contains("常駐開始時"));
+    }
+
+    [Fact]
     public void Current_configuration_counts_are_reported()
     {
         var lines = OnboardingReport.Build(Observations());
