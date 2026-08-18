@@ -20,13 +20,17 @@ AI なしで、停止・修正・再開の正しさを GameLab 上で完成す�
 
 ## 円卓（知能の配置。役割→ティアは dotagents/docs/02_models.md が正）
 
+円卓の入口は **peertable room** だけである。手順は peertable の `skill/SKILL.md`（setup → launch-seat → parent-join）。Windows native は 2026-08-16 の席対応修理後に利用可。Grok 親は room MCP を後付けできないので HTTP API で着卓する。物量は円卓へ流す。
+
+Grok の `spawn_subagent` は円卓ではない。host 内子への実装委譲を円卓の代替にしない。
+
 | 役割 | 配置 | 入口 |
 |---|---|---|
-| 統括・裁定・受入・commit | Grok 4.6（親） | 本人 |
-| 実装物量（A） | `sonnet`×medium | Agent `implementer`（本端末は Codex 不可） |
-| 監査 finder | `sonnet`×low | Agent |
-| 反証（契約クリティカル） | Grok 4.6×high | 親直轄または `spawn_subagent` refuter（read-only） |
-| Phase 4 exit 監査 | Grok 4.6 read-only | Codex は本環境 sandbox 破損のため使わない |
+| 統括・裁定・受入・commit | Grok 4.6（親） | 本人。peertable に parent-join。裁定と受入だけ |
+| 実装物量（A） | `sonnet`×medium | peertable の Claude 席（`launch-seat.sh`）。本端末の Codex 席は使わない |
+| 監査 finder | `sonnet`×low | 同じ円卓の別席。監査専用席は増やさない |
+| 反証（契約クリティカル） | Grok 4.6×high | 親直轄。円卓外の read-only 確認に限って `spawn_subagent` refuter を使ってよい |
+| Phase 4 exit 監査 | Grok 4.6 read-only | 親直轄。Codex は本環境 sandbox 破損のため使わない |
 
 ## 非目標（やらないこと）
 
@@ -40,6 +44,7 @@ AI なしで、停止・修正・再開の正しさを GameLab 上で完成す�
 ## 既知の罠
 
 - 本端末は Codex sidecar／CLI とも Windows sandbox 破損。監査は Grok に限る
+- 円卓は peertable room。`spawn_subagent` implementer を円卓と読まない（2026-08-19 実被弾）
 - lattice.kitepon.dev が 503 のときはこの PC の dashboard daemon 死亡。`lattice bridge reconfigure` のあと todo 系書込み 1 発で復旧
 - fast path 純潔: Playbook executor は Device Input→Mapping Runtime→Emitter を待たせない。dispatch は所有 model の上で別経路
 - Input API 成功をゲーム内成功と扱わない（PB-005）。Confirmed には Observation が必須
