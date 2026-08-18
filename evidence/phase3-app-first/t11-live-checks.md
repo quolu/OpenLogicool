@@ -7,7 +7,7 @@
 
 1. **キー録画 modal（t09 持ち越し）: 成立**。録画（chord 表示・録り直し）・「これに決める」確定・Esc キャンセル（割当不変）をオーナー目視で確認。
    - **発見バグ→根治**: IME オン時に実キーが `Key.ImeProcessed` に化けて録れない（`Vk:0xE5` が保存される）。modal 内 IME 無効化＋`ImeProcessedKey` 解決で修正（commit 13d35cd）。
-2. **実機接続下 `ui --resident` 保存→即時反映（t09 持ち越し・Exit 条件成立要素）: 成立**。G9→`Key:A` 保存後にメモ帳へ「a」、録り直して `Key:B` 保存後に再起動なしで「b」（`db` の b。d は G600 firmware の出荷時割当——onboard 無害化は次フェーズ範囲）。
+2. **実機接続下 `ui --resident` 保存→即時反映（t09 持ち越し・Exit 条件成立要素）: 成立**。G9→`Key:A` 保存後にメモ帳へ「a」、録り直して `Key:B` 保存後に再起動なしで「b」（`db` の b。d は併存中の LGS（LCore 常駐を実測確認）のゲーム別割当が同時発動したもの——不具合ではなく LGS 併存の想定動作。移行時に LGS を止めれば消える。LGS 非常駐時は onboard 割当が同様に発動するため、その無害化＝B変種残置運用は移行フェーズの範囲）。
    - **発見バグ→根治**: `ui --resident` 同居時、表示用 raw input source の生成→Dispose がプロセス単位の raw input 登録を横取り・解除し、resident の実機入力が全死する（`run` 単体・実機なしでは再現しない）。resident 起動時の列挙結果を再利用して修正（commit 3584440）。
 3. **Alt+Tab 編集対象保持（Exit 条件2）: 成立**。未保存変更（操作追加）を作って Alt+Tab 往復→編集内容・「未保存の変更あり」表示とも保持をオーナー目視で確認。
 4. **NIKKE launcher→本体遷移（Exit 条件3・p1-core 持ち越し）: 成立**。`default-G600` を `C:\NIKKE\NIKKE\GAME\NIKKE.EXE` へ関連付け、`run --trace` の判断 log で観測:
