@@ -55,6 +55,7 @@ Grok の `spawn_subagent` は円卓ではない。host 内子への実装委譲�
 - **Windows Claude SessionStart hook**: パスの `\` が Git Bash に食われ `C:Userskite_...python3.exe` になる。本体は動く。caveat `windows-claude-sessionstart-hook-eats-backslashes-in-python-path`
 - **peertable source tree は launch に使わない**: `Documents/Program/peertable` は `@modelcontextprotocol/sdk` が無く `SEAT_AITERM_LAUNCH_FAILED`。公式は global `npm` の 0.4.1
 - **Windows では seat identity が書けない**: launch-seat の `ps -Ao` が Git Bash で `unknown option -- A`。着席自体は成立。caveat `peertable-0-4-1-seat-identity-uses-posix-ps-ao-on-windows`
+- **parent-watch の Lattice 読みは Windows で失敗する**: `execFile` が npm の extensionless `lattice` shim を起動できない（ENOENT）。room 追従は生きる。工程は shell の `lattice todo status` で読む。caveat `peertable-parent-watch-execfile-cannot-run-npm-lattice-shim-on-windows`
 
 ## 受入条件（campaign 単位）
 
