@@ -19,6 +19,23 @@ public sealed class RunEventSequenceModel
         _runs = runs;
     }
 
+    /// <summary>
+    /// 永続化済み journal から状態を再生成する（OPS-008、§6.8「checkpoint は journal から再生成する」）。
+    /// event は保存順（run ごとに runSequence 昇順）で渡す。連番の穴・stale epoch は Append と同じ検証で例外になる。
+    /// </summary>
+    public static RunEventSequenceModel Replay(IEnumerable<RunEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+
+        var model = new RunEventSequenceModel();
+        foreach (var runEvent in events)
+        {
+            model = model.Append(runEvent);
+        }
+
+        return model;
+    }
+
     public RunEventSequenceModel Append(RunEvent runEvent)
     {
         var current = _runs.TryGetValue(runEvent.RunId, out var existing)
