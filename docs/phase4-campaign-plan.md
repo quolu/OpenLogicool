@@ -14,7 +14,7 @@ AI なしで、停止・修正・再開の正しさを GameLab 上で完成す�
 
 統括レーン成立根拠: ①計画に中断が組込済み（GameLab 目視・Exit 裁定）②受入が多段連鎖（kernel→制御／観測→Lab／Exit）④裁定証跡が必要（crash matrix・journal replay）。
 
-- **F（統括直轄）**: Data Flow Contract、各 ToDo の受入裁定、commit・push、計画正本の更新、Phase gate、Contracts 配下の wire type
+- **F（統括直轄）**: Data Flow Contract、監査担当クローズの観測、commit・push、計画正本の更新、Phase gate、Contracts 配下の wire type。各 ToDo のクローズは監査担当。親は代行しない
 - **A（委譲可の実装物量）**: 仕様固定後の Playbook／journal／Attempt／GameLab 実装＋focused test
 - **H（オーナー手番）**: GameLab の停止／再開面の目視、Phase 4 Exit 裁定。G600 残置の実機確認は本 campaign 外（先行実装済み・[g600-leftover-operation.md](g600-leftover-operation.md)）
 
@@ -73,7 +73,7 @@ Grok の `spawn_subagent` は円卓ではない。host 内子への実装委譲�
 
 ## 運用
 
-- 各 ToDo は「仕様固定（F）→実装委譲（A）→受入（F）→commit/push（F）」で閉じ、次 ToDo へ自動継続。止まるのは H と blocker だけ
+- 各 ToDo は「仕様固定（F）→実装委譲（A）→監査担当クローズ→intake accept→着地（F）」で閉じ、次 ToDo へは監査担当の「次の工程に着手してください」で継続。止まるのは H と blocker だけ
 - 発見した別問題は Lattice の maintenance note へ記録し、無断で完了条件へ追加しない
 - Data Flow Contract（§6.12）は journal 永続化より先に閉じる
 
