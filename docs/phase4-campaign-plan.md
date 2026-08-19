@@ -1,6 +1,6 @@
 # Phase 4 campaign — Durable Automation Lab
 
-- status: **active**（2026-08-19 起票）
+- status: **active**（2026-08-19 起票。2026-08-20 t11 材料済み・オーナー裁定待ち）
 - 起票: 2026-08-19（オーナー指示「Phase 4 を統括レーンで起票。実画面はまだ使わない」）
 - 統括: ベル（本セッション親は Grok 4.6）
 - 実行 TODO の正本: **Lattice plan `phase4-durable-lab`**（typed discovery 判定済み。本書は目的・思想・非目標・受入条件だけを所有し、ToDo を二重化しない）
