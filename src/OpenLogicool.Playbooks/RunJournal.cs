@@ -91,6 +91,13 @@ public sealed class RunJournal
                 when runEvent.ActorType != RunEventActorType.User:
                 throw new ArgumentException(
                     $"{runEvent.PayloadType} event の ActorType は User だけです（PB-013）。", nameof(runEvent));
+            // disarm はどの Attempt を保証付きで止めたかが本体（§6.7・t07）。
+            case RunEventPayloadTypes.Disarm when runEvent.AttemptId is null:
+                throw new ArgumentException("disarm event には AttemptId が必要です（§6.7）。", nameof(runEvent));
+            // disarm は runtime の保証判定の記録であり、利用者操作でも自動化の成功でもない（t07）。
+            case RunEventPayloadTypes.Disarm when runEvent.ActorType != RunEventActorType.System:
+                throw new ArgumentException(
+                    "disarm event の ActorType は System だけです（runtime の保証判定の記録）。", nameof(runEvent));
             default:
                 break;
         }
