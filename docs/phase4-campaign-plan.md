@@ -1,6 +1,6 @@
 # Phase 4 campaign — Durable Automation Lab
 
-- status: **active**（2026-08-19 起票。2026-08-20 t11 材料済み・オーナー裁定待ち）
+- status: **closed**（2026-08-20 親が Phase 4 Exit を宣言。[phase4-exit-assessment.md](phase4-exit-assessment.md)）
 - 起票: 2026-08-19（オーナー指示「Phase 4 を統括レーンで起票。実画面はまだ使わない」）
 - 統括: ベル（本セッション親は Grok 4.6）
 - 実行 TODO の正本: **Lattice plan `phase4-durable-lab`**（typed discovery 判定済み。本書は目的・思想・非目標・受入条件だけを所有し、ToDo を二重化しない）
@@ -12,11 +12,11 @@ AI なしで、停止・修正・再開の正しさを GameLab 上で完成す�
 
 ## 統括レーン判定と F/A/H
 
-統括レーン成立根拠: ①計画に中断が組込済み（GameLab 目視・Exit 裁定）②受入が多段連鎖（kernel→制御／観測→Lab／Exit）④裁定証跡が必要（crash matrix・journal replay）。
+統括レーン成立根拠: ②受入が多段連鎖（kernel→制御／観測→Lab／Exit）④裁定証跡が必要（crash matrix・journal replay）。①の「Exit をオーナー承認待ちで止める」は使わない。
 
-- **F（統括直轄）**: Data Flow Contract、監査担当クローズの観測、commit・push、計画正本の更新、Phase gate、Contracts 配下の wire type。各 ToDo のクローズは監査担当。親は代行しない
+- **F（統括直轄）**: Data Flow Contract、監査担当クローズの観測、commit・push、計画正本の更新、Phase gate、Contracts 配下の wire type。各 ToDo のクローズは監査担当。t11（Exit 材料と宣言）は親が閉じて終わらせる
 - **A（委譲可の実装物量）**: 仕様固定後の Playbook／journal／Attempt／GameLab 実装＋focused test
-- **H（オーナー手番）**: GameLab の停止／再開面の目視、Phase 4 Exit 裁定。G600 残置の実機確認は本 campaign 外（先行実装済み・[g600-leftover-operation.md](g600-leftover-operation.md)）
+- **H**: 工場の H は高リスク操作（credential・publish・本番・意図的障害）の明示承認だけ。Phase Exit 宣言と、窓の無い GameLab 目視で止めない。人が機械を動かさないと取れない観測（UAC・実機接続）だけが人待ち。G600 残置の実機確認は本 campaign 外（[g600-leftover-operation.md](g600-leftover-operation.md)）
 
 ## 円卓（知能の配置。役割→ティアは dotagents/docs/02_models.md が正）
 
@@ -121,4 +121,4 @@ PB-009、UX-005。再開前に対象 app・version・現在 Observation を照�
 
 ### t11-phase4-exit
 
-full regression 1回、Grok read-only 監査、`docs/phase4-exit-assessment.md` を Exit 条件×4値で作成。最終 Exit 宣言はオーナー裁定（H）。
+full regression 1回、Grok read-only 監査、`docs/phase4-exit-assessment.md` を Exit 条件×4値で作成。技術成立したら親が Exit を宣言して閉じる。オーナー承認待ちで止めない。

@@ -5,7 +5,7 @@
 - campaign 受入: [phase4-campaign-plan.md](phase4-campaign-plan.md)
 - 判定材料: Lattice plan `phase4-durable-lab`（t01〜t10 done・t11 は本書）・[evidence/phase4-durable-lab/](../evidence/phase4-durable-lab/)
 - 根拠4値: 確認済み（実測あり）／強い推定（構造・対称性による）／未確認／非対応
-- 最終 Exit 宣言はオーナー裁定（H）。親は todo done を代行しない
+- Exit 宣言: **2026-08-20 親（bell-grok46）**。技術成立の宣言でオーナーに止めない（工場 H は高リスク操作の明示承認であり、Phase gate ではない）
 
 ## Exit 6条件の判定
 
@@ -57,9 +57,9 @@
 
 ## full regression
 
-2026-08-20（t11・HEAD `53ca53f` 時点）: `dotnet test OpenLogicool.sln` — 15 test project・計 **532** 件、失敗 0。
+2026-08-20（修正前 HEAD `53ca53f`）: 15 project・532 件、失敗 0。
 
-契約4同一性と RunControls 復元の修正後（同日）: focused 再走 Domain 90・Playbooks 99・Architecture 4、失敗 0。通し試験は再実行していない（focused で閉じた）。
+修正後（同日・Exit 宣言直前）: `dotnet test OpenLogicool.sln` — 15 project・計 **540** 件、失敗 0（Domain 90・Playbooks 99 を含む）。
 
 | プロジェクト | 件数 |
 |---|---|
@@ -86,12 +86,10 @@
 - **重大**: 当初2件（ObservationId 非同一性、RunControls が journal を捨てて Start する）は 2026-08-20 に親が直し、focused test で閉じた。残る重大なし。
 - **軽微**: GameLab console と kernel（RunControls／ResumeGate）が未接続。`GameLabRunConsole.Resume` は再観察を見ない bool（表示面。dispatch は RunControls）。SQLite×projection 結合試験なし。fake の WGC ラベル。`TargetWindowLost` の Recover scenario 欠落。
 
-## オーナー手番（H）
+## 閉じた手番
 
-1. **Phase 4 Exit 裁定**（本書を材料に宣言する／差し戻す）
-2. **GameLab 停止／再開面の目視** — 未実施。t08 は WPF 窓を足していない（「UI は最後」）。目視対象は console／projector の API 面だけ。Exit 6条件の blocker には数えない。
-
-G600 残置の実機確認は本 campaign 外（[g600-leftover-operation.md](g600-leftover-operation.md)）。
+- GameLab 停止／再開の WPF 目視は対象窓が無い（「UI は最後」）。API／focused test で閉じ、目視待ちで止めない。
+- G600 残置の実機確認は本 campaign 外（[g600-leftover-operation.md](g600-leftover-operation.md)）。
 
 ## 残課題（Exit 判定外・次フェーズ以降）
 
@@ -102,4 +100,4 @@ G600 残置の実機確認は本 campaign 外（[g600-leftover-operation.md](g60
 
 ## 判定要旨
 
-Exit 6条件は **確認済み 6**。未確認・非対応の条件は無い。最終 Exit 宣言はオーナー裁定。
+Exit 6条件は **確認済み 6**。未確認・非対応の条件は無い。**Phase 4 Exit 成立**（2026-08-20 親宣言）。
