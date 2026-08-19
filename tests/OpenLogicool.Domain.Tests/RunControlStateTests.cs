@@ -1,3 +1,4 @@
+using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Domain;
 using Xunit;
 
@@ -118,4 +119,62 @@ public sealed class RunControlStateTests
         Assert.Throws<InvalidOperationException>(() => paused.Pause());
         Assert.Throws<InvalidOperationException>(() => paused.EndManualIntervention());
     }
+
+    [Fact]
+    public void From_journal_does_not_resume_running_and_keeps_reobservation()
+    {
+        Assert.Equal(RunControlPhase.Running, RunControlState.FromJournal([]).Phase);
+
+        var recorded = RunControlState.FromJournal([Event(1, RunEventPayloadTypes.Proposal)]);
+        Assert.Equal(RunControlPhase.Paused, recorded.Phase);
+        Assert.False(recorded.CanDispatch);
+        Assert.True(recorded.CanStep);
+
+        var intervening = RunControlState.FromJournal([Event(1, RunEventPayloadTypes.ManualIntervention)]);
+        Assert.Equal(RunControlPhase.ManualIntervention, intervening.Phase);
+        Assert.False(intervening.CanStep);
+
+        var waiting = RunControlState.FromJournal(
+        [
+            Event(1, RunEventPayloadTypes.ManualIntervention),
+            Event(2, RunEventPayloadTypes.ManualIntervention),
+        ]);
+        Assert.Equal(RunControlPhase.Paused, waiting.Phase);
+        Assert.True(waiting.NeedsReobservation);
+        Assert.False(waiting.CanStep);
+
+        var reobserved = RunControlState.FromJournal(
+        [
+            Event(1, RunEventPayloadTypes.ManualIntervention),
+            Event(2, RunEventPayloadTypes.ManualIntervention),
+            Event(3, RunEventPayloadTypes.Observation, observationId: "observation-1"),
+        ]);
+        Assert.False(reobserved.NeedsReobservation);
+        Assert.True(reobserved.CanStep);
+        Assert.True(reobserved.ObservedInCurrentHold);
+
+        var abandoned = RunControlState.FromJournal([Event(1, RunEventPayloadTypes.Abandon)]);
+        Assert.Equal(RunControlPhase.Abandoned, abandoned.Phase);
+    }
+
+    private static RunEvent Event(long sequence, string payloadType, string? observationId = null) =>
+        new(
+            "0.1.0",
+            $"event-{sequence}",
+            "run-1",
+            sequence,
+            "playbook-1",
+            "version-1",
+            null,
+            null,
+            null,
+            "cause-1",
+            $"correlation-{sequence}",
+            1,
+            RunEventActorType.User,
+            new DateTimeOffset(2026, 8, 19, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 8, 19, 0, 0, 1, TimeSpan.Zero),
+            observationId,
+            payloadType,
+            "{}");
 }

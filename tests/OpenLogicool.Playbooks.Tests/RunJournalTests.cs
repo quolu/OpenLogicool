@@ -238,7 +238,7 @@ public sealed class RunJournalTests
         var mutators = typeof(RunJournal)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
             .Where(method => method.DeclaringType == typeof(RunJournal))
-            .Where(method => method.Name is not ("Append" or "Restore"))
+            .Where(method => method.Name is not ("Append" or "Restore" or "ReadRun"))
             .Where(method => !method.IsSpecialName);
         Assert.Empty(mutators);
     }

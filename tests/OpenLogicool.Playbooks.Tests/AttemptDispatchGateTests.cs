@@ -239,7 +239,7 @@ public sealed class AttemptDispatchGateTests
         journal.Append(Event(6, RunEventPayloadTypes.Proposal, "attempt-done"));
         journal.Append(Event(7, RunEventPayloadTypes.Approval, "attempt-done"));
         journal.Append(Event(8, RunEventPayloadTypes.Dispatch, "attempt-done"));
-        journal.Append(Event(9, RunEventPayloadTypes.Observation, "attempt-done"));
+        journal.Append(Event(9, RunEventPayloadTypes.Observation, "attempt-done", observationId: "observation-done"));
         journal.Append(Event(10, RunEventPayloadTypes.Confirmation, "attempt-done", observationId: "observation-done"));
 
         var recovered = AttemptDispatchGate.Recover(store, RunJournal.Restore(store, new NullSink()));
@@ -261,7 +261,7 @@ public sealed class AttemptDispatchGateTests
         journal.Append(Event(3, RunEventPayloadTypes.Dispatch, "attempt-armed"));
         journal.Append(Event(4, RunEventPayloadTypes.Proposal, "attempt-done"));
         journal.Append(Event(5, RunEventPayloadTypes.Dispatch, "attempt-done"));
-        journal.Append(Event(6, RunEventPayloadTypes.Observation, "attempt-done"));
+        journal.Append(Event(6, RunEventPayloadTypes.Observation, "attempt-done", observationId: "observation-done"));
         journal.Append(Event(7, RunEventPayloadTypes.Confirmation, "attempt-done", observationId: "observation-done"));
         journal.Append(Event(8, RunEventPayloadTypes.Abandon) with { AttemptId = null, ActorType = RunEventActorType.User });
 
@@ -294,5 +294,34 @@ public sealed class AttemptDispatchGateTests
         // OPS-008×契約5: 復元された OutcomeUnknown も未解決であり、次の dispatch を自動生成できない。
         Assert.Throws<InvalidOperationException>(() => recovered.ArmThenDispatch(
             Event(sequence, RunEventPayloadTypes.Dispatch, "attempt-next"), () => { }));
+    }
+
+    [Fact]
+    public void Confirmation_rejects_an_observation_id_that_was_not_committed()
+    {
+        var (gate, store) = NewGate();
+        var sequence = PrepareAttempt(gate, "attempt-1", 1);
+        gate.ArmThenDispatch(Event(sequence, RunEventPayloadTypes.Dispatch), () => { });
+        gate.CommitReported(Event(sequence + 1, RunEventPayloadTypes.DispatchResult));
+        gate.CommitObserving(Event(sequence + 2, RunEventPayloadTypes.Observation, observationId: "observation-1"));
+
+        Assert.Throws<InvalidOperationException>(() =>
+            gate.CommitConfirmed(Event(sequence + 3, RunEventPayloadTypes.Confirmation, observationId: "observation-2")));
+        Assert.Equal(AttemptState.Observing, gate.Get("attempt-1").State);
+        Assert.DoesNotContain(store.Events, e => e.PayloadType == RunEventPayloadTypes.Confirmation);
+    }
+
+    [Fact]
+    public void Recover_rejects_confirmation_without_the_same_observation_event()
+    {
+        var store = new RecordingStore();
+        var journal = new RunJournal(store, new NullSink());
+        journal.Append(Event(1, RunEventPayloadTypes.Proposal, "attempt-done"));
+        journal.Append(Event(2, RunEventPayloadTypes.Dispatch, "attempt-done"));
+        journal.Append(Event(3, RunEventPayloadTypes.Observation, "attempt-done", observationId: "observation-1"));
+        journal.Append(Event(4, RunEventPayloadTypes.Confirmation, "attempt-done", observationId: "observation-done"));
+
+        Assert.Throws<InvalidOperationException>(() =>
+            AttemptDispatchGate.Recover(store, RunJournal.Restore(store, new NullSink())));
     }
 }

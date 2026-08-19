@@ -17,7 +17,7 @@ public sealed class DurableAttemptTests
     {
         var confirmed = Armed()
             .TransitionTo(AttemptState.DispatchReported)
-            .TransitionTo(AttemptState.Observing)
+            .TransitionTo(AttemptState.Observing, "observation-1")
             .TransitionTo(AttemptState.Confirmed, "observation-1");
 
         Assert.Equal(AttemptState.Confirmed, confirmed.State);
@@ -30,13 +30,31 @@ public sealed class DurableAttemptTests
     {
         var observing = Armed()
             .TransitionTo(AttemptState.DispatchReported)
-            .TransitionTo(AttemptState.Observing);
+            .TransitionTo(AttemptState.Observing, "observation-1");
 
         Assert.Throws<InvalidOperationException>(() => observing.TransitionTo(AttemptState.Confirmed));
     }
 
     [Fact]
-    public void Only_the_confirmed_transition_accepts_an_observation()
+    public void Observing_requires_an_observation()
+    {
+        var reported = Armed().TransitionTo(AttemptState.DispatchReported);
+
+        Assert.Throws<InvalidOperationException>(() => reported.TransitionTo(AttemptState.Observing));
+    }
+
+    [Fact]
+    public void Confirmed_rejects_a_different_observation_than_observing()
+    {
+        var observing = Armed()
+            .TransitionTo(AttemptState.DispatchReported)
+            .TransitionTo(AttemptState.Observing, "observation-1");
+
+        Assert.Throws<InvalidOperationException>(() => observing.TransitionTo(AttemptState.Confirmed, "observation-2"));
+    }
+
+    [Fact]
+    public void Observation_id_is_accepted_only_on_observing_and_confirmed()
     {
         var proposed = DurableAttempt.Propose("attempt-1");
 

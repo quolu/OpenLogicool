@@ -41,6 +41,9 @@ public sealed class RunJournal
         return new RunJournal(store, engineeringLog, model);
     }
 
+    /// <summary>1 Run の永続 event 列（runSequence 昇順）。復元と契約4の Observation 突合が読む。</summary>
+    public IReadOnlyList<RunEvent> ReadRun(string runId) => _store.ReadRun(runId);
+
     public void Append(RunEvent runEvent)
     {
         ArgumentNullException.ThrowIfNull(runEvent);

@@ -410,4 +410,57 @@ public sealed class RunControlsTests
             Event(1, RunEventPayloadTypes.Skip, nodeOrTransitionId: "step", runId: "run-2")));
         Assert.Empty(store.Events);
     }
+
+    [Fact]
+    public void Reconstructing_from_journal_does_not_drop_reobservation()
+    {
+        var (controls, _, store) = NewControls();
+        controls.BeginManualIntervention(Event(1, RunEventPayloadTypes.ManualIntervention));
+        controls.EndManualIntervention(Event(2, RunEventPayloadTypes.ManualIntervention));
+
+        var restored = Reconstruct(store);
+
+        Assert.Equal(RunControlPhase.Paused, restored.State.Phase);
+        Assert.True(restored.State.NeedsReobservation);
+        Assert.Throws<InvalidOperationException>(restored.Resume);
+        Assert.Throws<InvalidOperationException>(() => restored.StepOnce(
+            Event(3, RunEventPayloadTypes.Dispatch, "attempt-1", "command-1", actorType: RunEventActorType.Automation),
+            () => { }));
+    }
+
+    [Fact]
+    public void Reconstructing_mid_intervention_stays_intervening()
+    {
+        var (controls, _, store) = NewControls();
+        controls.BeginManualIntervention(Event(1, RunEventPayloadTypes.ManualIntervention));
+
+        var restored = Reconstruct(store);
+
+        Assert.Equal(RunControlPhase.ManualIntervention, restored.State.Phase);
+        Assert.Throws<InvalidOperationException>(() => restored.RecordObservation(
+            Event(2, RunEventPayloadTypes.Observation, observationId: "observation-1")));
+    }
+
+    [Fact]
+    public void Reconstructing_a_recorded_run_does_not_auto_dispatch()
+    {
+        var store = new RecordingStore();
+        var journal = new RunJournal(store, new NullSink());
+        journal.Append(Event(1, RunEventPayloadTypes.Proposal, "attempt-1", actorType: RunEventActorType.Automation));
+
+        var restored = Reconstruct(store);
+
+        Assert.Equal(RunControlPhase.Paused, restored.State.Phase);
+        Assert.False(restored.State.CanDispatch);
+        restored.Resume();
+        Assert.Equal(RunControlPhase.Running, restored.State.Phase);
+    }
+
+    private static RunControls Reconstruct(RecordingStore store)
+    {
+        var journal = new RunJournal(store, new NullSink());
+        var gate = AttemptDispatchGate.Recover(store, journal);
+        var run = PlaybookRun.Start(PlaybookId, PlaybookMaterializer.ToGraph(Version(Version1)));
+        return new RunControls(journal, gate, RunId, run);
+    }
 }

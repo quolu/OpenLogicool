@@ -1,3 +1,5 @@
+using OpenLogicool.Contracts.Playbooks;
+
 namespace OpenLogicool.Domain;
 
 public enum RunControlPhase
@@ -26,6 +28,45 @@ public sealed class RunControlState
     }
 
     public static RunControlState Start() => new(RunControlPhase.Running, needsReobservation: false, observedInCurrentHold: false);
+
+    /// <summary>
+    /// journal の実 event から制御状態を再構築する（§6.8・OPS-008）。
+    /// pause／resume は journal に無いので、event のある Run は Running へ戻さない（再起動後に自動で走らない）。
+    /// manual-intervention は開始・終了が同 type の対。奇数個なら介入中、偶数個で終了後に observation が無ければ再観察待ち。
+    /// </summary>
+    public static RunControlState FromJournal(IReadOnlyList<RunEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (events.Count == 0)
+        {
+            return Start();
+        }
+
+        if (events.Any(runEvent => string.Equals(runEvent.PayloadType, RunEventPayloadTypes.Abandon, StringComparison.Ordinal)))
+        {
+            return new(RunControlPhase.Abandoned, needsReobservation: false, observedInCurrentHold: false);
+        }
+
+        var interventions = events
+            .Where(runEvent => string.Equals(runEvent.PayloadType, RunEventPayloadTypes.ManualIntervention, StringComparison.Ordinal))
+            .ToList();
+
+        if (interventions.Count % 2 == 1)
+        {
+            return new(RunControlPhase.ManualIntervention, needsReobservation: false, observedInCurrentHold: false);
+        }
+
+        var lastInterventionSequence = interventions.Count == 0
+            ? 0
+            : interventions[^1].RunSequence;
+        var observedAfterHold = events.Any(runEvent =>
+            string.Equals(runEvent.PayloadType, RunEventPayloadTypes.Observation, StringComparison.Ordinal)
+            && runEvent.RunSequence > lastInterventionSequence);
+
+        var needsReobservation = interventions.Count > 0 && !observedAfterHold;
+        return new(RunControlPhase.Paused, needsReobservation, observedInCurrentHold: observedAfterHold);
+    }
 
     public RunControlPhase Phase { get; }
 

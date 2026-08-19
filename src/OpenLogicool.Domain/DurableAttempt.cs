@@ -83,7 +83,9 @@ public sealed class DurableAttempt
 
     public AttemptState State { get; }
 
-    /// <summary>Confirmed の根拠 Observation（契約4）。Confirmed 以外では遷移時に渡されたものを保持しない。</summary>
+    /// <summary>
+    /// Observing 以降に束縛した Observation（§6.7）。Confirmed の根拠はここで持っている ID と同一でなければならない。
+    /// </summary>
     public string? ObservationId { get; }
 
     public bool IsTerminal => TerminalStates.Contains(State);
@@ -100,17 +102,40 @@ public sealed class DurableAttempt
             throw new InvalidOperationException($"Attempt '{AttemptId}' の {State} から {next} への遷移は §6.7 に存在しません。");
         }
 
-        if (next == AttemptState.Confirmed && observationId is null)
+        if (next == AttemptState.Observing)
         {
-            throw new InvalidOperationException($"Attempt '{AttemptId}' を Confirmed にするには同じ Attempt を参照する Observation が必要です（§6.7 契約4）。");
+            if (observationId is null)
+            {
+                throw new InvalidOperationException(
+                    $"Attempt '{AttemptId}' を Observing にするには ObservationId が必要です（§6.7）。");
+            }
+
+            return new DurableAttempt(AttemptId, next, observationId);
         }
 
-        if (next != AttemptState.Confirmed && observationId is not null)
+        if (next == AttemptState.Confirmed)
         {
-            throw new ArgumentException($"ObservationId は Confirmed への遷移だけが受け取ります（指定先: {next}）。", nameof(observationId));
+            if (observationId is null)
+            {
+                throw new InvalidOperationException($"Attempt '{AttemptId}' を Confirmed にするには同じ Attempt を参照する Observation が必要です（§6.7 契約4）。");
+            }
+
+            if (ObservationId is not null
+                && !string.Equals(ObservationId, observationId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Attempt '{AttemptId}' の Confirmed は Observing の Observation '{ObservationId}' と同一でなければなりません（実際: '{observationId}'）。");
+            }
+
+            return new DurableAttempt(AttemptId, next, observationId);
         }
 
-        return new DurableAttempt(AttemptId, next, next == AttemptState.Confirmed ? observationId : ObservationId);
+        if (observationId is not null)
+        {
+            throw new ArgumentException($"ObservationId は Observing と Confirmed への遷移だけが受け取ります（指定先: {next}）。", nameof(observationId));
+        }
+
+        return new DurableAttempt(AttemptId, next, ObservationId);
     }
 
     /// <summary>

@@ -123,22 +123,25 @@ public sealed class AttemptDispatchGate
         _attempts[attemptId] = next;
     }
 
-    /// <summary>observation event を commit し、DispatchReported→Observing。</summary>
+    /// <summary>observation event を commit し、DispatchReported→Observing。ObservationId を Attempt へ束縛する。</summary>
     public void CommitObserving(RunEvent observationEvent)
     {
         var attemptId = RequireAttemptId(observationEvent, RunEventPayloadTypes.Observation);
-        var next = Get(attemptId).TransitionTo(AttemptState.Observing);
+        var observationId = observationEvent.ObservationId
+            ?? throw new ArgumentException("observation event には ObservationId が必要です。", nameof(observationEvent));
+        var next = Get(attemptId).TransitionTo(AttemptState.Observing, observationId);
         _journal.Append(observationEvent);
         _attempts[attemptId] = next;
     }
 
     /// <summary>
-    /// confirmation event（AttemptId＋ObservationId 併記——journal が検証する）を commit し、
-    /// Observing→Confirmed。Confirmed の根拠 Observation は event のものだけ（§6.7 契約4）。
+    /// confirmation event（AttemptId＋ObservationId 併記）を commit し、Observing→Confirmed。
+    /// 同じ Attempt の commit 済み observation event と ObservationId が一致しなければならない（§6.7 契約4）。
     /// </summary>
     public void CommitConfirmed(RunEvent confirmationEvent)
     {
         var attemptId = RequireAttemptId(confirmationEvent, RunEventPayloadTypes.Confirmation);
+        RequireCommittedObservation(confirmationEvent);
         var next = Get(attemptId).TransitionTo(AttemptState.Confirmed, confirmationEvent.ObservationId);
         _journal.Append(confirmationEvent);
         _attempts[attemptId] = next;
@@ -199,6 +202,12 @@ public sealed class AttemptDispatchGate
             var confirmation = attemptEvents.FirstOrDefault(e => e.PayloadType == RunEventPayloadTypes.Confirmation);
             if (confirmation is not null)
             {
+                if (!HasCommittedObservation(attemptEvents, confirmation.ObservationId))
+                {
+                    throw new InvalidOperationException(
+                        $"Attempt '{attemptEvents.Key}' の confirmation は Observation '{confirmation.ObservationId}' を束縛するが、同じ Attempt の observation event が journal に無い（§6.7 契約4）。");
+                }
+
                 gate._attempts[attemptEvents.Key] = DurableAttempt.Restore(
                     attemptEvents.Key, AttemptState.Confirmed, confirmation.ObservationId);
                 continue;
@@ -232,6 +241,28 @@ public sealed class AttemptDispatchGate
         }
 
         return gate;
+    }
+
+    private void RequireCommittedObservation(RunEvent confirmationEvent)
+    {
+        if (!HasCommittedObservation(_journal.ReadRun(confirmationEvent.RunId), confirmationEvent.ObservationId, confirmationEvent.AttemptId))
+        {
+            throw new InvalidOperationException(
+                $"Attempt '{confirmationEvent.AttemptId}' を Confirmed にするには、同じ Observation '{confirmationEvent.ObservationId}' の observation event が journal に必要です（§6.7 契約4）。");
+        }
+    }
+
+    private static bool HasCommittedObservation(IEnumerable<RunEvent> events, string? observationId, string? attemptId = null)
+    {
+        if (observationId is null)
+        {
+            return false;
+        }
+
+        return events.Any(runEvent =>
+            string.Equals(runEvent.PayloadType, RunEventPayloadTypes.Observation, StringComparison.Ordinal)
+            && string.Equals(runEvent.ObservationId, observationId, StringComparison.Ordinal)
+            && (attemptId is null || string.Equals(runEvent.AttemptId, attemptId, StringComparison.Ordinal)));
     }
 
     private static string RequireAttemptId(RunEvent runEvent, string expectedPayloadType)

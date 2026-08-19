@@ -57,7 +57,9 @@ public sealed class RunControls
         _gate = gate;
         _runId = runId;
         _run = run;
-        _state = RunControlState.Start();
+        // event の無い新規 Run だけ Start()＝Running。既存 journal は再構築し、再観察待ちを捨てない。
+        var recorded = journal.ReadRun(runId);
+        _state = recorded.Count == 0 ? RunControlState.Start() : RunControlState.FromJournal(recorded);
     }
 
     public RunControlState State => _state;

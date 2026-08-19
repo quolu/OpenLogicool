@@ -16,12 +16,10 @@
 - 実測: `FaultMatrixTests` が計画 §10.2 の全境界を fixture 化。focused test と 2026-08-20 の full regression が green。
 - 注記: `TargetWindowLost` は分類器の写像として閉じ、Recover 専用 scenario は無い。分類結果は Disarmed／OutcomeUnknown に落ちるので不変条件は崩れない。
 
-### 条件2: Confirmed に Observation が必ず存在する — **確認済み（ObservationId 必須）／強い推定（Observing event との同一性）**
+### 条件2: Confirmed に Observation が必ず存在する — **確認済み**
 
-- 構造（確認済み側）: `DurableAttempt.TransitionTo(Confirmed)` と `Restore(Confirmed)` は ObservationId なしを拒否。journal の confirmation は AttemptId＋ObservationId 併記必須（§6.7 契約4）。live の `CommitConfirmed` は Observing 経由だけ。Perception／`FakeObservations` は AttemptId を受け取らない。
-- 計画 §6.7 607行は「契約4は confirmation RunEvent の併記だけで成立」と読む。この読みでは Confirmed に ObservationId が無い経路は型と journal の両方で閉じている。
-- 同一性（強い推定に残す側）: `CommitConfirmed` も `Recover` も、Observing に入った observation event の ObservationId と confirmation の ObservationId を比較しない。`AttemptDispatchGateTests.Recover_classifies_attempts_from_journal_events_only` は observation event 既定値 `observation-1` に対し confirmation を `observation-done` として Confirmed を合法にしている。store へ confirmation を直接積めば observation event 無しでも Recover は Confirmed を作れる。
-- 判定を全部確認済みに上げない。契約4の弱い読み（併記）は満たし、Exit 文言の強い読み（同じ Attempt の commit 済み Observation event と同一）は未閉鎖。実装はしない（本 task は材料）。残課題へ記録する。
+- 構造: Observing は ObservationId 必須。Confirmed は Observing と同じ ID だけを受け付ける。`CommitConfirmed` は同じ Attempt の commit 済み observation event と ID が一致しなければ journal へ書かない。`Recover` は confirmation があっても一致する observation event が無ければ例外（Confirmed へ丸めない）。
+- 実測: Domain／Playbooks focused test（不一致 live・不一致 Recover・observation 無し Recover を含む）。2026-08-20 修正（親直轄）。
 
 ### 条件3: journal replay と projection が一致する — **確認済み**
 
@@ -35,11 +33,11 @@
 - crash: `SessionRecorder.Restore` は store の実 event の replay だけ。復元 API が version を書き換える口は無い。switch の journal append 失敗では pin も replay も旧 version のまま（`FaultMatrixTests` 境界9）。
 - version-switch は「勝手に変わる」抜け穴ではない。journal に入った明示切替を replay が追うのが仕様。
 
-### 条件5: manual intervention 後は再観察なしに進まない — **強い推定**
+### 条件5: manual intervention 後は再観察なしに進まない — **確認済み**
 
-- プロセス内（確認済みに近い）: `RunControlState.Resume` は `NeedsReobservation` で例外。`StepOnce`／`Skip`／`SwitchVersion`／`CommitAttemptObserving` も同じ。介入中の observation は run-level と attempt 束縛の両方で拒否。`ResumeReadiness.SatisfiesReobservation` は最後の intervention より後の、指定 ObservationId の observation event だけ真。介入開始だけで crash した run は偽。
-- 落とせた点: `RunControls` に journal からの再構築が無い。コンストラクタは常に `RunControlState.Start()`（Running・再観察待ちなし）。crash 後に host がこれで組んで `StepOnce` すると、journal 上は再観察未充足でも進行できる。`ResumeGate` は journal 事実を見るが `RunControls.Resume` には繋がっていない。
-- 連続実行 executor はまだ無いので、今の製品経路で自動進行は起きない。それでも Exit 文言は「進まない」であり、復元口が flag を捨てる以上、確認済みには上げない。
+- プロセス内: `RunControlState.Resume` は `NeedsReobservation` で例外。`StepOnce`／`Skip`／`SwitchVersion`／`CommitAttemptObserving` も同じ。介入中の observation は run-level と attempt 束縛の両方で拒否。
+- 復元: event の無い新規 Run だけ `Start()`＝Running。既存 journal は `FromJournal` で再構築する——abandon は Abandoned、介入 event が奇数個なら介入中、偶数個で終了後に observation が無ければ再観察待ち、それ以外は Paused（pause は journal に無いので Running へ戻さない）。
+- 実測: `FromJournal` の各分岐、再構築後の Resume／StepOnce 拒否、介入中の観測拒否。2026-08-20 修正（親直轄）。
 
 ### 条件6: 現在 state は GameLab oracle／fake Observation に限る。実画面 resume claim は使わない — **確認済み**
 
@@ -60,6 +58,8 @@
 ## full regression
 
 2026-08-20（t11・HEAD `53ca53f` 時点）: `dotnet test OpenLogicool.sln` — 15 test project・計 **532** 件、失敗 0。
+
+契約4同一性と RunControls 復元の修正後（同日）: focused 再走 Domain 90・Playbooks 99・Architecture 4、失敗 0。通し試験は再実行していない（focused で閉じた）。
 
 | プロジェクト | 件数 |
 |---|---|
@@ -83,11 +83,8 @@
 
 2026-08-20（親直読＋`refuter` 1席。Codex は本環境 sandbox 破損のため使わない。円卓監査席は 2026-08-19 leave-seat 済みで立て直していない）。
 
-- **重大（Exit の4値を動かす）**: 2件。いずれも実装せず、上の条件2・5に反映した。
-  1. Recover／`CommitConfirmed` が Observing の ObservationId と confirmation の ObservationId を同一視しない。不一致 Recover がテストで合法。
-  2. `RunControls` に journal からの再観察復元が無い。条件5はプロセス内だけ。
-- **軽微**: GameLab console と kernel（RunControls／ResumeGate）が未接続。`GameLabRunConsole.Resume` は再観察を見ない bool。SQLite×projection 結合試験なし。fake の WGC ラベル。`TargetWindowLost` の Recover scenario 欠落。
-- 反証は「6条件すべて確認済み」を殺した。材料としてオーナー裁定に出せる、が結論。
+- **重大**: 当初2件（ObservationId 非同一性、RunControls が journal を捨てて Start する）は 2026-08-20 に親が直し、focused test で閉じた。残る重大なし。
+- **軽微**: GameLab console と kernel（RunControls／ResumeGate）が未接続。`GameLabRunConsole.Resume` は再観察を見ない bool（表示面。dispatch は RunControls）。SQLite×projection 結合試験なし。fake の WGC ラベル。`TargetWindowLost` の Recover scenario 欠落。
 
 ## オーナー手番（H）
 
@@ -98,8 +95,6 @@ G600 残置の実機確認は本 campaign 外（[g600-leftover-operation.md](g60
 
 ## 残課題（Exit 判定外・次フェーズ以降）
 
-- Observing と confirmation の ObservationId 同一性（Recover 含む）
-- `RunControls` の journal 再構築（`SatisfiesReobservation` を捨てない）
 - UX-005 の GameLab 描画、Disarmed の表示語彙、GameLab pause と RunControls の配線
 - 実画面 UniqueMatch 再開（Phase 5）
 - UI 保存と関連付けの導線統合（Phase 3 持ち越し）
@@ -107,4 +102,4 @@ G600 残置の実機確認は本 campaign 外（[g600-leftover-operation.md](g60
 
 ## 判定要旨
 
-Exit 6条件は **確認済み 4**（条件1・3・4・6）／**確認済み＋強い推定 1**（条件2）／**強い推定 1**（条件5）。未確認・非対応の条件は無い。未閉鎖の2点は成功扱いにしていない。最終 Exit 宣言はオーナー裁定。
+Exit 6条件は **確認済み 6**。未確認・非対応の条件は無い。最終 Exit 宣言はオーナー裁定。
