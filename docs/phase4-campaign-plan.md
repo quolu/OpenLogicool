@@ -28,7 +28,7 @@ Grok の `spawn_subagent` は円卓ではない。host 内子への実装委譲�
 |---|---|---|
 | 統括・裁定・受入・commit | Grok 4.6（親） | 本人。peertable に parent-join。裁定と受入だけ |
 | 実装物量（A） | `sonnet`×medium | peertable の Claude 席（`launch-seat.sh`）。本端末の Codex 席は使わない |
-| 監査 finder | `sonnet`×low | 同じ円卓の別席。監査専用席は増やさない |
+| 監査担当（閉じ） | `fable`×high | 同じ円卓の別席。役割は `02_models.md` の反証・検証（リポ実読）。finder の `sonnet`×low を閉じ役に使わない。監査専用席は増やさない |
 | 反証（契約クリティカル） | Grok 4.6×high | 親直轄。円卓外の read-only 確認に限って `spawn_subagent` refuter を使ってよい |
 | Phase 4 exit 監査 | Grok 4.6 read-only | 親直轄。Codex は本環境 sandbox 破損のため使わない |
 
