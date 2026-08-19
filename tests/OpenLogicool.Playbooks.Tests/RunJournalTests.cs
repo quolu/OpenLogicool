@@ -78,13 +78,32 @@ public sealed class RunJournalTests
                 commandId: "command-1",
                 observationId: "observation-1",
                 nodeOrTransitionId: "node-1",
-                actorType: ControlPayloadTypes.Contains(payloadType, StringComparer.Ordinal)
-                    ? RunEventActorType.User
-                    : RunEventActorType.Automation));
+                actorType: payloadType == RunEventPayloadTypes.Disarm
+                    ? RunEventActorType.System
+                    : ControlPayloadTypes.Contains(payloadType, StringComparer.Ordinal)
+                        ? RunEventActorType.User
+                        : RunEventActorType.Automation));
         }
 
         Assert.Equal(RunEventPayloadTypes.All.Count, store.Events.Count);
         Assert.Equal(RunEventPayloadTypes.All, store.Events.Select(e => e.PayloadType));
+    }
+
+    [Fact]
+    public void Append_rejects_a_disarm_event_without_attempt_or_with_wrong_actor()
+    {
+        var store = new RecordingStore();
+        var journal = new RunJournal(store, new RecordingSink());
+
+        // §6.7: disarm はどの Attempt を保証付きで止めたかが本体。
+        Assert.Throws<ArgumentException>(() => journal.Append(Event(
+            1, RunEventPayloadTypes.Disarm, actorType: RunEventActorType.System)));
+        // disarm は runtime の保証判定の記録——User／Automation では保存しない。
+        Assert.Throws<ArgumentException>(() => journal.Append(Event(
+            1, RunEventPayloadTypes.Disarm, attemptId: "attempt-1", actorType: RunEventActorType.User)));
+        Assert.Throws<ArgumentException>(() => journal.Append(Event(
+            1, RunEventPayloadTypes.Disarm, attemptId: "attempt-1", actorType: RunEventActorType.Automation)));
+        Assert.Empty(store.Events);
     }
 
     [Fact]

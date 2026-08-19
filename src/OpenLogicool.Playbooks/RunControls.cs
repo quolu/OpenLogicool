@@ -155,6 +155,31 @@ public sealed class RunControls
     }
 
     /// <summary>
+    /// Attempt 束縛の observation を制御状態の下で gate へ通す（t07・すずね [119] note の閉鎖）。
+    /// manual intervention 中は拒否——「介入開始と終了の間に observation event が現れない」journal 並び
+    /// （再開照合 PB-009 の前提）を attempt 束縛側でも保証する。介入終了後は run-level の再照合
+    /// （RecordObservation）が済むまで拒否する（§6.8: 進行は再観察の後）。
+    /// </summary>
+    public void CommitAttemptObserving(RunEvent observationEvent)
+    {
+        RequirePayloadType(observationEvent, RunEventPayloadTypes.Observation);
+        if (_state.Phase is RunControlPhase.ManualIntervention or RunControlPhase.Abandoned)
+        {
+            throw new InvalidOperationException(
+                $"Run 制御の {_state.Phase} で Attempt の観測は記録できません（PB-013・§6.8）。");
+        }
+
+        if (_state.NeedsReobservation)
+        {
+            throw new InvalidOperationException(
+                "manual intervention 後は run-level の再照合（新しい Observation の記録）が済むまで Attempt の観測を進められません（§6.8）。");
+        }
+
+        RequireCurrentRunAndPin(observationEvent);
+        _gate.CommitObserving(observationEvent);
+    }
+
+    /// <summary>
     /// 物理入力が Semantic Action へ解決された時の仲裁（PB-013・§6.5）。Run の Playbook が使う action
     /// なら manual intervention として停止し、Run 進行へは合流させない。それ以外は Run の関知外。
     /// </summary>

@@ -31,12 +31,13 @@ Semantic owner は Playbooks。RunEvent は durable journal の event を表し�
 | dispatch | attemptId ＋ commandId |
 | dispatch-result | attemptId |
 | skip | nodeOrTransitionId（§6.8: どの手順を飛ばしたかが本体） |
+| disarm | attemptId（§6.7: どの Attempt を保証付きで止めたかが本体） |
 
 `observationId` は Observing より前の event で存在しない。これは schema 初版からの null 許容であり、計画 §6.7 の明示仕様である。
 
-## journal payload type（PB-006・t03 確定、run 制御3種は t05 追加）
+## journal payload type（PB-006・t03 確定、run 制御3種は t05・disarm は t07 追加）
 
-journal（`IRunJournalStore`）に保存できる payload type は次の閉集合だけであり、未知の種別は append 時に拒否される: `observation`、`proposal`、`approval`、`dispatch`、`dispatch-result`、`confirmation`、`correction`、`manual-intervention`、`skip`、`abandon`、`version-switch`。訂正（correction）は新しい event の追記であり、確定済み event は変更されない。
+journal（`IRunJournalStore`）に保存できる payload type は次の閉集合だけであり、未知の種別は append 時に拒否される: `observation`、`proposal`、`approval`、`dispatch`、`dispatch-result`、`confirmation`、`correction`、`manual-intervention`、`skip`、`abandon`、`version-switch`、`disarm`。訂正（correction）は新しい event の追記であり、確定済み event は変更されない。
 
 ## run 制御 event（PB-007／PB-013・t05 確定）
 
@@ -46,3 +47,9 @@ journal（`IRunJournalStore`）に保存できる payload type は次の閉集�
 - `manual-intervention` は開始・終了の2 event として現れる（区別は payload。ID field は同形）。開始と終了の間に `observation` event は現れない（介入開始で executor が止まり、run-level 観測の記録も拒否される）。終了 event の後、新しい `observation` event が記録されるまで Run は進行しない（§6.8）。再開照合（PB-009・t10）はこの並びを前提に「最後の manual-intervention event より後の observation」を新しい観測と読む。
 - pause／resume は journal 対象外: durable な進行効果を持たず（再起動後に自動で走り出す経路が無い）、記録すべき「進行の変更」が無い。
 - run 制御 event（skip・abandon・version-switch・manual-intervention）の `actorType` は `User` だけである（PB-013: 制御操作を自動化へ帰属させない）。skip・abandon・version-switch は journal の append 検証が拒否し、manual-intervention は制御経路（`RunControls`）が拒否する（t03 確定の journal 検証を遡って変えない）。
+
+## fault 解決 event（§6.7・NFR-012・t07 確定）
+
+- `disarm`: DispatchArmed 後、外部入力 API を一度も呼んでいないことを runtime 自身が保証できる場合だけの中止終端の記録。保証根拠（handled stop・対象 window 喪失等）は payload に記録する。`actorType` は `System` だけ（runtime の保証判定であり、利用者操作でも自動化の成功でもない——journal の append 検証が拒否する）。復元時、disarm event のある Attempt は Disarmed のまま（OutcomeUnknown へ劣化しない）。partial SendInput は外部入力 API が呼ばれた事実そのものであり、disarm では表現できない（分類は `AttemptFaultClassifier` が矛盾を例外にする）。
+- OutcomeUnknown は journal event を持たない: 「dispatch 済みで解決の記録が無い」ことが OutcomeUnknown の定義そのもの（§6.7 契約2）であり、復元の既定分類と live の分類が同じ根拠を読む。
+- 外部効果の回数は 1 と仮定しない（§10.2）: 0 回保証＝Disarmed（disarm event）、報告あり＝DispatchReported（dispatch-result event）、partial／unknown＝OutcomeUnknown（event なし）で表現する。

@@ -22,6 +22,7 @@ public sealed class AttemptDispatchGate
 {
     private readonly RunJournal _journal;
     private readonly Dictionary<string, DurableAttempt> _attempts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _commandOwners = new(StringComparer.Ordinal);
 
     public AttemptDispatchGate(RunJournal journal)
     {
@@ -36,7 +37,11 @@ public sealed class AttemptDispatchGate
             ? attempt
             : throw new InvalidOperationException($"Attempt '{attemptId}' はこの gate に登録されていません。");
 
-    /// <summary>proposal event を journal へ commit し、Attempt を Proposed で登録する。</summary>
+    /// <summary>
+    /// proposal event を journal へ commit し、Attempt を Proposed で登録する。
+    /// CommandId を運ぶ proposal は重複を Attempt 生成前に排除する（§10.2 不変条件・t07）——
+    /// UI の二重 command が2つ目の Attempt を作る経路を持たない。
+    /// </summary>
     public void CommitProposed(RunEvent proposalEvent)
     {
         var attemptId = RequireAttemptId(proposalEvent, RunEventPayloadTypes.Proposal);
@@ -45,8 +50,18 @@ public sealed class AttemptDispatchGate
             throw new InvalidOperationException($"Attempt '{attemptId}' は既に登録済みです。前提が変わった Attempt は再利用せず、新しい AttemptId で作り直します（§6.7 契約8）。");
         }
 
+        if (proposalEvent.CommandId is not null && _commandOwners.ContainsKey(proposalEvent.CommandId))
+        {
+            throw new InvalidOperationException(
+                $"command '{proposalEvent.CommandId}' には既に Attempt '{_commandOwners[proposalEvent.CommandId]}' があります。重複 command は Attempt 生成前に排除します（§10.2）。");
+        }
+
         _journal.Append(proposalEvent);
         _attempts[attemptId] = DurableAttempt.Propose(attemptId);
+        if (proposalEvent.CommandId is not null)
+        {
+            _commandOwners[proposalEvent.CommandId] = attemptId;
+        }
     }
 
     /// <summary>approval event を journal へ commit し、Proposed→Authorized。</summary>
@@ -82,9 +97,19 @@ public sealed class AttemptDispatchGate
                 $"未解決の Attempt '{unresolved.AttemptId}'（{unresolved.State}）がある間、次の dispatch を生成できません（§6.7 契約5）。");
         }
 
+        // 同じ command を別 Attempt が dispatch する経路を塞ぐ（§10.2: duplicate UI command の排除）。
+        // 自 Attempt の command（proposal で登録済み）はそのまま通る。
+        var commandId = dispatchEvent.CommandId!;
+        if (_commandOwners.TryGetValue(commandId, out var owner) && !string.Equals(owner, attemptId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"command '{commandId}' は Attempt '{owner}' の所有であり、Attempt '{attemptId}' から dispatch できません（§10.2）。");
+        }
+
         var armed = attempt.TransitionTo(AttemptState.DispatchArmed);
         _journal.Append(dispatchEvent);
         _attempts[attemptId] = armed;
+        _commandOwners[commandId] = attemptId;
 
         externalInput();
     }
@@ -120,10 +145,24 @@ public sealed class AttemptDispatchGate
     }
 
     /// <summary>
-    /// dispatch の外部効果を伴わない解決・進行（Rejected／Disarmed／OutcomeUnknown／Reconciling 等）を
-    /// 台帳へ反映する。遷移の可否は Domain がそのまま検証する。journal への解決 event 表現は
-    /// run controls（t05）・fault matrix（t07)で確定するため、この口は journal を書かない——
-    /// 記録されない解決は Recover で未解決（OutcomeUnknown）へ戻る。
+    /// disarm event を journal へ commit し、DispatchArmed→Disarmed（§6.7・t07）。
+    /// Disarmed は「外部入力 API を一度も呼んでいない」と runtime が保証できる場合だけの終端であり、
+    /// その保証の判定は AttemptFaultClassifier（partial SendInput では成立しない）が与える。
+    /// journal に記録するため、再起動後も Disarmed のまま復元される（OutcomeUnknown へ劣化しない）。
+    /// </summary>
+    public void CommitDisarmed(RunEvent disarmEvent)
+    {
+        var attemptId = RequireAttemptId(disarmEvent, RunEventPayloadTypes.Disarm);
+        var next = Get(attemptId).TransitionTo(AttemptState.Disarmed);
+        _journal.Append(disarmEvent);
+        _attempts[attemptId] = next;
+    }
+
+    /// <summary>
+    /// dispatch の外部効果を伴わない解決・進行（Rejected／OutcomeUnknown／Reconciling 等）を
+    /// 台帳へ反映する。遷移の可否は Domain がそのまま検証する。この口は journal を書かない——
+    /// 記録されない解決は Recover で未解決（OutcomeUnknown）へ戻る（保証付き Disarmed は
+    /// CommitDisarmed が、run 中止は abandon event（t05）が journal 表現を持つ）。
     /// </summary>
     public void ResolveLocally(string attemptId, AttemptState next)
     {
@@ -152,11 +191,24 @@ public sealed class AttemptDispatchGate
 
         foreach (var attemptEvents in eventsByAttempt)
         {
+            foreach (var carrier in attemptEvents.Where(e => e.CommandId is not null))
+            {
+                gate._commandOwners[carrier.CommandId!] = attemptEvents.Key;
+            }
+
             var confirmation = attemptEvents.FirstOrDefault(e => e.PayloadType == RunEventPayloadTypes.Confirmation);
             if (confirmation is not null)
             {
                 gate._attempts[attemptEvents.Key] = DurableAttempt.Restore(
                     attemptEvents.Key, AttemptState.Confirmed, confirmation.ObservationId);
+                continue;
+            }
+
+            // disarm は journal に記録された保証付き終端（t07）——復元で OutcomeUnknown へ劣化させない。
+            if (attemptEvents.Any(e => e.PayloadType == RunEventPayloadTypes.Disarm))
+            {
+                gate._attempts[attemptEvents.Key] = DurableAttempt.Restore(
+                    attemptEvents.Key, AttemptState.Disarmed, observationId: null);
                 continue;
             }
 

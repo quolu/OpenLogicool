@@ -168,12 +168,13 @@ public sealed class AttemptDispatchGateTests
         gate.ArmThenDispatch(Event(sequence, RunEventPayloadTypes.Dispatch), () => { });
         var next = PrepareAttempt(gate, "attempt-2", sequence + 1);
 
+        // command は attempt ごとに別（同一 command の別 attempt dispatch は §10.2 の重複排除対象・t07）。
         Assert.Throws<InvalidOperationException>(() => gate.ArmThenDispatch(
-            Event(next, RunEventPayloadTypes.Dispatch, "attempt-2"), () => { }));
+            Event(next, RunEventPayloadTypes.Dispatch, "attempt-2", commandId: "command-2"), () => { }));
 
         // §6.7 契約5: 終端だけが解決。Disarmed へ解決した後は次の dispatch が通る。
         gate.ResolveLocally("attempt-1", AttemptState.Disarmed);
-        gate.ArmThenDispatch(Event(next, RunEventPayloadTypes.Dispatch, "attempt-2"), () => { });
+        gate.ArmThenDispatch(Event(next, RunEventPayloadTypes.Dispatch, "attempt-2", commandId: "command-2"), () => { });
         Assert.Equal(AttemptState.DispatchArmed, gate.Get("attempt-2").State);
     }
 
@@ -272,9 +273,10 @@ public sealed class AttemptDispatchGateTests
         Assert.Equal(AttemptState.Abandoned, recovered.Get("attempt-armed").State);
         Assert.Equal(AttemptState.Confirmed, recovered.Get("attempt-done").State);
 
-        // 全 Attempt が終端＝未解決なし。次の dispatch は契約5に塞がれない。
+        // 全 Attempt が終端＝未解決なし。次の dispatch は契約5に塞がれない
+        // （command は新規——既定 command-1 は復元済み attempt の所有で §10.2 の重複排除対象・t07）。
         var sequence = PrepareAttempt(recovered, "attempt-next", 9);
-        recovered.ArmThenDispatch(Event(sequence, RunEventPayloadTypes.Dispatch, "attempt-next"), () => { });
+        recovered.ArmThenDispatch(Event(sequence, RunEventPayloadTypes.Dispatch, "attempt-next", commandId: "command-next"), () => { });
         Assert.Equal(AttemptState.DispatchArmed, recovered.Get("attempt-next").State);
     }
 

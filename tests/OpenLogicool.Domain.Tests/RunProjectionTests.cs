@@ -71,7 +71,7 @@ public sealed class RunProjectionTests
         Assert.Equal("run-1-event-4", projection.LastEventId);
         // 観測 event だけが LastObservationId を進める（confirmation 等の observationId 併記では動かさない）。
         Assert.Equal("observation-2", projection.LastObservationId);
-        Assert.Equal(new RunEventTally(2, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0), projection.Tally);
+        Assert.Equal(new RunEventTally(2, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0), projection.Tally);
     }
 
     [Fact]
