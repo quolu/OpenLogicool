@@ -132,14 +132,21 @@ public sealed class AttemptDispatchGate
 
     /// <summary>
     /// 再起動復元（OPS-008・§6.7 契約2）: journal の実 event だけから Attempt を再分類して gate を作る。
+    /// abandon event（PB-007・t05）のある Run の Attempt は、RunControls.Abandon と同じ分類で終端へ復元する:
+    /// confirmation 済みは Confirmed のまま、dispatch し得た未確定は Abandoned、dispatch 前は Cancelled。
     /// </summary>
     public static AttemptDispatchGate Recover(IRunJournalStore store, RunJournal journal)
     {
         ArgumentNullException.ThrowIfNull(store);
         var gate = new AttemptDispatchGate(journal);
 
-        var eventsByAttempt = store.ListRunIds()
-            .SelectMany(store.ReadRun)
+        var allEvents = store.ListRunIds().SelectMany(store.ReadRun).ToList();
+        var abandonedRunIds = allEvents
+            .Where(runEvent => runEvent.PayloadType == RunEventPayloadTypes.Abandon)
+            .Select(runEvent => runEvent.RunId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var eventsByAttempt = allEvents
             .Where(runEvent => runEvent.AttemptId is not null)
             .GroupBy(runEvent => runEvent.AttemptId!, StringComparer.Ordinal);
 
@@ -154,6 +161,16 @@ public sealed class AttemptDispatchGate
             }
 
             var dispatched = attemptEvents.Any(e => e.PayloadType == RunEventPayloadTypes.Dispatch);
+            var abandoned = attemptEvents.Any(e => abandonedRunIds.Contains(e.RunId));
+            if (abandoned)
+            {
+                gate._attempts[attemptEvents.Key] = DurableAttempt.Restore(
+                    attemptEvents.Key,
+                    dispatched ? AttemptState.Abandoned : AttemptState.Cancelled,
+                    observationId: null);
+                continue;
+            }
+
             gate._attempts[attemptEvents.Key] = DurableAttempt.Restore(
                 attemptEvents.Key,
                 dispatched
