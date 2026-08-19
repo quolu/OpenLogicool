@@ -50,12 +50,7 @@ Grok の `spawn_subagent` は円卓ではない。host 内子への実装委譲�
 - Input API 成功をゲーム内成功と扱わない（PB-005）。Confirmed には Observation が必須
 - 未解決 DispatchArmed から次 dispatch を自動生成しない。失敗を別経路へ fallback しない
 - GameLab Prototype の oracle は実験資産。製品 GameLab は Contracts の Observation／Playbook を正とし、Prototype を黙って製品扱いにしない
-- **peertable 0.4.1 × Windows psmux（2026-08-19 実測）**: `launch-seat.sh` の `tmux -S` は psmux 既定 namespace へ落ち、aiterm の `-L aiterm-<hash>` 席を見ない。着席直後に `LAUNCH_BRIEF_ROLLED_BACK`。再着席口は `.team/bin/tmux`（`-S` を剥いで `-L` へ）を PATH 先頭に置く。caveat `peertable-0-4-1-launch-seat-tmux-s-fails-on-windows-psmux`
-- **aiterm `claude_agent` は `--dangerously-skip-permissions` を付けない**: 初回の project `room` MCP 同意で member 登録が 30 秒内に届かず rollback。既知ダイアログは `psmux -L <ns> send-keys` で通す。caveat `peertable-0-4-1-aiterm-launch-leaves-claude-on-room-mcp-consent`
-- **Windows Claude SessionStart hook**: パスの `\` が Git Bash に食われ `C:Userskite_...python3.exe` になる。本体は動く。caveat `windows-claude-sessionstart-hook-eats-backslashes-in-python-path`
-- **peertable source tree は launch に使わない**: `Documents/Program/peertable` は `@modelcontextprotocol/sdk` が無く `SEAT_AITERM_LAUNCH_FAILED`。公式は global `npm` の 0.4.1
-- **Windows では seat identity が書けない**: launch-seat の `ps -Ao` が Git Bash で `unknown option -- A`。着席自体は成立。caveat `peertable-0-4-1-seat-identity-uses-posix-ps-ao-on-windows`
-- **parent-watch の Lattice 読みは Windows で失敗する**: `execFile` が npm の extensionless `lattice` shim を起動できない（ENOENT）。room 追従は生きる。工程は shell の `lattice todo status` で読む。caveat `peertable-parent-watch-execfile-cannot-run-npm-lattice-shim-on-windows`
+- **peertable 0.4.2 で Windows 着席穴を閉じた（2026-08-19 npm）**: `tmux -S`→`-L`、room MCP 同意、seat identity、parent-watch の lattice.cmd、Windows の `prepublishOnly`。次の立卓は global 0.4.2。Claude SessionStart hook の `\` 消失は peertable 外（本体は動く）
 
 ## 受入条件（campaign 単位）
 
