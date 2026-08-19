@@ -47,6 +47,31 @@ public static class InitialSqliteMigrations
             new SqlMigration(
                 5,
                 "ALTER TABLE app_profile_associations ADD COLUMN matcher_kind TEXT NOT NULL DEFAULT 'path';"),
+            new SqlMigration(
+                6,
+                """
+                CREATE TABLE run_events (
+                    run_id TEXT NOT NULL,
+                    run_sequence INTEGER NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    event_id TEXT NOT NULL UNIQUE,
+                    playbook_id TEXT NOT NULL,
+                    playbook_version_id TEXT NOT NULL,
+                    node_or_transition_id TEXT NULL,
+                    command_id TEXT NULL,
+                    attempt_id TEXT NULL,
+                    causation_id TEXT NOT NULL,
+                    correlation_id TEXT NOT NULL,
+                    executor_epoch INTEGER NOT NULL,
+                    actor_type TEXT NOT NULL,
+                    occurred_utc TEXT NOT NULL,
+                    persisted_utc TEXT NOT NULL,
+                    observation_id TEXT NULL,
+                    payload_type TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    PRIMARY KEY (run_id, run_sequence)
+                );
+                """),
         };
 }
 

@@ -13,7 +13,7 @@ public sealed class SqliteMigrationRunnerTests
 
         new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
 
-        Assert.Equal(new long[] { 1, 2, 3, 4, 5 }, ReadMigrationNumbers(connection));
+        Assert.Equal(new long[] { 1, 2, 3, 4, 5, 6 }, ReadMigrationNumbers(connection));
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public sealed class SqliteMigrationRunnerTests
         runner.Apply(connection);
         runner.Apply(connection);
 
-        Assert.Equal(new long[] { 1, 2, 3, 4, 5 }, ReadMigrationNumbers(connection));
+        Assert.Equal(new long[] { 1, 2, 3, 4, 5, 6 }, ReadMigrationNumbers(connection));
     }
 
     [Fact]

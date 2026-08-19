@@ -102,6 +102,32 @@ public sealed class DomainModelTests
         _ = sequence.Append(Event(runSequence: 4, executorEpoch: 2));
     }
 
+    [Fact]
+    public void Run_event_replay_rebuilds_sequence_state_across_runs()
+    {
+        var replayed = RunEventSequenceModel.Replay(
+        [
+            Event(runSequence: 1, executorEpoch: 1),
+            Event(runSequence: 1, executorEpoch: 1) with { RunId = "run-2", EventId = "event-r2-1" },
+            Event(runSequence: 2, executorEpoch: 2),
+        ]);
+
+        _ = replayed.Append(Event(runSequence: 3, executorEpoch: 2));
+        _ = replayed.Append(Event(runSequence: 2, executorEpoch: 1) with { RunId = "run-2", EventId = "event-r2-2" });
+        Assert.Throws<InvalidOperationException>(() => replayed.Append(Event(runSequence: 2, executorEpoch: 2)));
+        Assert.Throws<InvalidOperationException>(() => replayed.Append(Event(runSequence: 3, executorEpoch: 1)));
+    }
+
+    [Fact]
+    public void Run_event_replay_rejects_a_gapped_journal()
+    {
+        Assert.Throws<InvalidOperationException>(() => RunEventSequenceModel.Replay(
+        [
+            Event(runSequence: 1, executorEpoch: 1),
+            Event(runSequence: 3, executorEpoch: 1),
+        ]));
+    }
+
     private static SemanticAction Action(string actionId) =>
         new("0.1.0", actionId, "Open menu", RiskClass.Low, "{}");
 
