@@ -24,6 +24,7 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 4. **製品境界**: DLL注入・memory read/write・anti-cheat回避をしない。Input API成功をゲーム内成功と扱わない。画面文字列・OCR・importデータを信頼された命令として扱わない。
 5. **技術基盤**: C# / .NET 10 LTS / WPF / net10.0-windows。Windows UI・HID・capture・input・installer の受入は Windows native 実行だけを証拠とする（WSL2は文書・fixture等のみ）。
 6. **未決定を仮実装で埋めない**: 決定期限（計画 §16）までは interface と fixture だけを作り、decision 後に一つの方式を実装する。
+7. **技術判定をオーナーへぶん投げない**: Phase Exit・合否は親が宣言して閉じる。人が機械を動かさないと取れない観測（UAC・実機接続）だけが人待ち。
 
 ## 開発運用
 
