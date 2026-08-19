@@ -2,8 +2,10 @@ namespace OpenLogicool.Contracts.Playbooks;
 
 /// <summary>
 /// journal に保存できる RunEvent の payload type 閉集合（PB-006）。
-/// 観測・提案・承認・dispatch・結果・確定・訂正・手動介入の8種だけを受け入れ、
-/// 未知の種別は保存せず拒否する。
+/// 観測・提案・承認・dispatch・結果・確定・訂正・手動介入の8種（t03）に、
+/// run 制御の skip・abandon・version-switch の3種（PB-007・§6.8・t05）を加えた11種だけを受け入れ、
+/// 未知の種別は保存せず拒否する。pause／resume は durable な進行効果を持たないため journal 対象外
+/// （再起動後に自動で走り出す経路が存在せず、記録すべき「進行の変更」が無い）。
 /// </summary>
 public static class RunEventPayloadTypes
 {
@@ -16,8 +18,20 @@ public static class RunEventPayloadTypes
     public const string Correction = "correction";
     public const string ManualIntervention = "manual-intervention";
 
+    /// <summary>手順1個を実行せず飛ばした記録（§6.8「skipを別eventにする」）。NodeOrTransitionId 必須。</summary>
+    public const string Skip = "skip";
+
+    /// <summary>Run 単位の中止（PB-007）。この event 以降、同じ Run へ event は積まれない。</summary>
+    public const string Abandon = "abandon";
+
+    /// <summary>
+    /// 正規の version 切替（PB-007・§6.8）。event の PlaybookVersionId が切替後の新 version を運ぶ
+    /// （pin と異なる version を運んでよい唯一の event）。切替前 version は payload に記録する。
+    /// </summary>
+    public const string VersionSwitch = "version-switch";
+
     public static IReadOnlyList<string> All { get; } =
-        [Observation, Proposal, Approval, Dispatch, DispatchResult, Confirmation, Correction, ManualIntervention];
+        [Observation, Proposal, Approval, Dispatch, DispatchResult, Confirmation, Correction, ManualIntervention, Skip, Abandon, VersionSwitch];
 
     public static bool IsKnown(string payloadType) => All.Contains(payloadType, StringComparer.Ordinal);
 }

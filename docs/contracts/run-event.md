@@ -30,9 +30,19 @@ Semantic owner は Playbooks。RunEvent は durable journal の event を表し�
 | confirmation | attemptId ＋ observationId（§6.7 契約4の併記） |
 | dispatch | attemptId ＋ commandId |
 | dispatch-result | attemptId |
+| skip | nodeOrTransitionId（§6.8: どの手順を飛ばしたかが本体） |
 
 `observationId` は Observing より前の event で存在しない。これは schema 初版からの null 許容であり、計画 §6.7 の明示仕様である。
 
-## journal payload type（PB-006・t03 確定）
+## journal payload type（PB-006・t03 確定、run 制御3種は t05 追加）
 
-journal（`IRunJournalStore`）に保存できる payload type は次の閉集合だけであり、未知の種別は append 時に拒否される: `observation`、`proposal`、`approval`、`dispatch`、`dispatch-result`、`confirmation`、`correction`、`manual-intervention`。訂正（correction）は新しい event の追記であり、確定済み event は変更されない。
+journal（`IRunJournalStore`）に保存できる payload type は次の閉集合だけであり、未知の種別は append 時に拒否される: `observation`、`proposal`、`approval`、`dispatch`、`dispatch-result`、`confirmation`、`correction`、`manual-intervention`、`skip`、`abandon`、`version-switch`。訂正（correction）は新しい event の追記であり、確定済み event は変更されない。
+
+## run 制御 event（PB-007／PB-013・t05 確定）
+
+- `skip`: 手順1個を実行せず飛ばした記録（§6.8「skipを別eventにする」）。dispatch も Attempt も作らない。
+- `abandon`: Run 単位の中止。この event 以降、同じ Run へ event は積まれない。復元時、この Run の未確定 Attempt は dispatch 前なら Cancelled、dispatch し得た後なら Abandoned へ分類される（Attempt ごとの終端 event は持たない——run 単位の abandon event が正）。
+- `version-switch`: 正規の version 切替（§6.8: Paused かつ現在 state 再照合後だけ）。event の `playbookVersionId` が切替後の新 version を運ぶ——pin と異なる version を運んでよい唯一の event であり、以後の event は新 version を運ぶ。切替前 version は payload に記録する。
+- `manual-intervention` は開始・終了の2 event として現れる（区別は payload。ID field は同形）。開始と終了の間に `observation` event は現れない（介入開始で executor が止まり、run-level 観測の記録も拒否される）。終了 event の後、新しい `observation` event が記録されるまで Run は進行しない（§6.8）。再開照合（PB-009・t10）はこの並びを前提に「最後の manual-intervention event より後の observation」を新しい観測と読む。
+- pause／resume は journal 対象外: durable な進行効果を持たず（再起動後に自動で走り出す経路が無い）、記録すべき「進行の変更」が無い。
+- run 制御 event（skip・abandon・version-switch・manual-intervention）の `actorType` は `User` だけである（PB-013: 制御操作を自動化へ帰属させない）。skip・abandon・version-switch は journal の append 検証が拒否し、manual-intervention は制御経路（`RunControls`）が拒否する（t03 確定の journal 検証を遡って変えない）。

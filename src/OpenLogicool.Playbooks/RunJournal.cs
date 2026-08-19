@@ -83,6 +83,14 @@ public sealed class RunJournal
                 throw new ArgumentException("dispatch event には AttemptId と CommandId が必要です。", nameof(runEvent));
             case RunEventPayloadTypes.DispatchResult when runEvent.AttemptId is null:
                 throw new ArgumentException("dispatch-result event には AttemptId が必要です。", nameof(runEvent));
+            // skip は「どの手順を飛ばしたか」が本体であり、node／transition の束縛なしでは意味を持たない（§6.8）。
+            case RunEventPayloadTypes.Skip when runEvent.NodeOrTransitionId is null:
+                throw new ArgumentException("skip event には NodeOrTransitionId が必要です（§6.8）。", nameof(runEvent));
+            // run 制御3種（t05）は利用者操作の記録だけを受ける（PB-013: 制御操作を自動化へ帰属させない）。
+            case RunEventPayloadTypes.Skip or RunEventPayloadTypes.Abandon or RunEventPayloadTypes.VersionSwitch
+                when runEvent.ActorType != RunEventActorType.User:
+                throw new ArgumentException(
+                    $"{runEvent.PayloadType} event の ActorType は User だけです（PB-013）。", nameof(runEvent));
             default:
                 break;
         }

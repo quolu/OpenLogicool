@@ -251,6 +251,34 @@ public sealed class AttemptDispatchGateTests
     }
 
     [Fact]
+    public void Recover_classifies_attempts_of_an_abandoned_run_as_terminal()
+    {
+        var store = new RecordingStore();
+        var journal = new RunJournal(store, new NullSink());
+        journal.Append(Event(1, RunEventPayloadTypes.Proposal, "attempt-pre"));
+        journal.Append(Event(2, RunEventPayloadTypes.Proposal, "attempt-armed"));
+        journal.Append(Event(3, RunEventPayloadTypes.Dispatch, "attempt-armed"));
+        journal.Append(Event(4, RunEventPayloadTypes.Proposal, "attempt-done"));
+        journal.Append(Event(5, RunEventPayloadTypes.Dispatch, "attempt-done"));
+        journal.Append(Event(6, RunEventPayloadTypes.Observation, "attempt-done"));
+        journal.Append(Event(7, RunEventPayloadTypes.Confirmation, "attempt-done", observationId: "observation-done"));
+        journal.Append(Event(8, RunEventPayloadTypes.Abandon) with { AttemptId = null, ActorType = RunEventActorType.User });
+
+        var recovered = AttemptDispatchGate.Recover(store, RunJournal.Restore(store, new NullSink()));
+
+        // PB-007（t05）: abandon 済み Run の Attempt は RunControls.Abandon と同じ分類で終端へ復元する。
+        // 確定済みはそのまま・dispatch 前は Cancelled・dispatch し得た未確定は OutcomeUnknown でなく Abandoned。
+        Assert.Equal(AttemptState.Cancelled, recovered.Get("attempt-pre").State);
+        Assert.Equal(AttemptState.Abandoned, recovered.Get("attempt-armed").State);
+        Assert.Equal(AttemptState.Confirmed, recovered.Get("attempt-done").State);
+
+        // 全 Attempt が終端＝未解決なし。次の dispatch は契約5に塞がれない。
+        var sequence = PrepareAttempt(recovered, "attempt-next", 9);
+        recovered.ArmThenDispatch(Event(sequence, RunEventPayloadTypes.Dispatch, "attempt-next"), () => { });
+        Assert.Equal(AttemptState.DispatchArmed, recovered.Get("attempt-next").State);
+    }
+
+    [Fact]
     public void Recovered_unknown_outcome_still_blocks_the_next_dispatch()
     {
         var store = new RecordingStore();

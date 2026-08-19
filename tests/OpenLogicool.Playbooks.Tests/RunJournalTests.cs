@@ -31,12 +31,17 @@ public sealed class RunJournalTests
         public void Record(EngineeringLogEntry entry) => Entries.Add(entry);
     }
 
+    private static readonly string[] ControlPayloadTypes =
+        [RunEventPayloadTypes.Skip, RunEventPayloadTypes.Abandon, RunEventPayloadTypes.VersionSwitch];
+
     private static RunEvent Event(
         long sequence,
         string payloadType,
         string? attemptId = null,
         string? commandId = null,
-        string? observationId = null) =>
+        string? observationId = null,
+        string? nodeOrTransitionId = null,
+        RunEventActorType actorType = RunEventActorType.Automation) =>
         new(
             "0.1.0",
             $"event-{sequence}",
@@ -44,13 +49,13 @@ public sealed class RunJournalTests
             sequence,
             "playbook-1",
             "playbook-version-1",
-            null,
+            nodeOrTransitionId,
             commandId,
             attemptId,
             "cause-1",
             $"correlation-{sequence}",
             1,
-            RunEventActorType.Automation,
+            actorType,
             new DateTimeOffset(2026, 8, 19, 0, 0, 0, TimeSpan.Zero),
             new DateTimeOffset(2026, 8, 19, 0, 0, 1, TimeSpan.Zero),
             observationId,
@@ -71,11 +76,42 @@ public sealed class RunJournalTests
                 payloadType,
                 attemptId: "attempt-1",
                 commandId: "command-1",
-                observationId: "observation-1"));
+                observationId: "observation-1",
+                nodeOrTransitionId: "node-1",
+                actorType: ControlPayloadTypes.Contains(payloadType, StringComparer.Ordinal)
+                    ? RunEventActorType.User
+                    : RunEventActorType.Automation));
         }
 
         Assert.Equal(RunEventPayloadTypes.All.Count, store.Events.Count);
         Assert.Equal(RunEventPayloadTypes.All, store.Events.Select(e => e.PayloadType));
+    }
+
+    [Fact]
+    public void Append_rejects_a_skip_event_without_its_node_binding()
+    {
+        var store = new RecordingStore();
+        var journal = new RunJournal(store, new RecordingSink());
+
+        // §6.8: skip は「どの手順を飛ばしたか」の束縛なしでは意味を持たない。
+        Assert.Throws<ArgumentException>(() => journal.Append(Event(
+            1, RunEventPayloadTypes.Skip, actorType: RunEventActorType.User)));
+        Assert.Empty(store.Events);
+    }
+
+    [Theory]
+    [InlineData(RunEventPayloadTypes.Skip)]
+    [InlineData(RunEventPayloadTypes.Abandon)]
+    [InlineData(RunEventPayloadTypes.VersionSwitch)]
+    public void Append_rejects_control_events_not_recorded_as_the_user(string payloadType)
+    {
+        var store = new RecordingStore();
+        var journal = new RunJournal(store, new RecordingSink());
+
+        // PB-013: run 制御は利用者操作の記録だけ——自動化 actor の制御 event は保存しない。
+        Assert.Throws<ArgumentException>(() => journal.Append(Event(
+            1, payloadType, nodeOrTransitionId: "node-1", actorType: RunEventActorType.Automation)));
+        Assert.Empty(store.Events);
     }
 
     [Fact]
