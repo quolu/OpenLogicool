@@ -2,7 +2,7 @@
 
 - status: **active**（2026-08-20 起票）
 - 起票: 2026-08-20（オーナー指示「Lattice を使って円卓を立てろ」）
-- 統括: ベル（本セッション親は Grok 4.6）
+- 統括: ベル（本セッション親は Grok 4.6）。2026-08-20 円卓再立：実装 Terra×high（Codex）／監査 Grok 4.6×medium。Phase 4 の sonnet/fable 表は使わない
 - 実行 TODO の正本: **Lattice plan `phase5-capture-perception`**（本書は目的・思想・非目標・受入条件だけを所有し、ToDo を二重化しない）
 - 上位正本: [development-plan.md](development-plan.md) §Phase 5 および §6.9、CAP／PER／KP-001〜004
 - 先行: Phase 4 Exit 成立（[phase4-exit-assessment.md](phase4-exit-assessment.md)）。resume の判定は Phase 4。本 campaign は実画面 Observation を供給して UniqueMatch 再開を閉じる
@@ -26,9 +26,9 @@
 | 役割 | 配置 | 入口 |
 |---|---|---|
 | 統括・受入・commit | Grok 4.6（親） | HTTP API。member は bell |
-| 実装物量（A） | `sonnet`×medium | peertable Claude 席 |
-| 監査担当（閉じ） | `fable`×high | 同じ円卓の別席。Codex 席は立てない |
-| 契約クリティカル反証 | Grok 4.6×high | 親直轄。円卓外 read-only の `spawn_subagent` refuter は可 |
+| 実装物量（A） | Terra×high（`gpt-5.6-terra`） | peertable Codex 席。worker は ready＋active 実装 ToDo 数 |
+| 監査担当（閉じ） | Grok 4.6×medium | 同じ円卓の別席。実装と監査は別ベンダー |
+| 契約クリティカル反証 | Grok 4.6×high | 親直轄。円卓外 read-only の `spawn_subagent` refuter は可。実装成果が Grok のときは反証を別ベンダーにする |
 
 Grok の `spawn_subagent` は円卓ではない。
 
@@ -48,8 +48,9 @@ Grok の `spawn_subagent` は円卓ではない。
 - capture 失敗を別 backend へ黙って切り替えない（CAP-004）
 - fast path 純潔: capture／Perception は Device Input→Emitter を待たせない
 - Perception は Attempt を知らない。Confirmed 束縛は Playbook の RunEvent
-- Codex は本環境 sandbox 破損。監査席は fable。Exit 監査は Grok
+- Codex Windows sandbox は 2026-08-20 に復旧（Store/WindowsApps の pwsh エイリアスが原因。PATH は MSI の `C:\Program Files\PowerShell\7\pwsh.exe`）
 - 円卓は peertable。`spawn_subagent` implementer を円卓と読まない
+- in-progress の start actor と席名が一致しないと pull run intake が `TASK_START_BINDING_UNSUPPORTED` になる。散会後の再開は同名再着席か、元 actor の retract だけ
 
 ## 受入条件
 
