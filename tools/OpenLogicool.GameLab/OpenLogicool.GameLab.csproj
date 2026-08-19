@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OpenLogicool.Contracts\OpenLogicool.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\OpenLogicool.Playbooks\OpenLogicool.Playbooks.csproj" />
+  </ItemGroup>
 </Project>
