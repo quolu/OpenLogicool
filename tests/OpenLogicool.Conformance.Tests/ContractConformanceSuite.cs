@@ -8,14 +8,34 @@ public static class ContractConformanceSuite
 {
     public static void Verify(ObservationResult observation)
     {
+        if (string.IsNullOrWhiteSpace(observation.ObservationId))
+        {
+            throw new InvalidOperationException("ObservationResult には observationId が必要です（RunEvent からの参照キー）。");
+        }
+
         if (observation.Status == ObservationStatus.Known && observation.StateCandidates.Count == 0)
         {
             throw new InvalidOperationException("Known ObservationResult には state candidate が必要です。");
         }
 
+        if (observation.Status == ObservationStatus.Ambiguous && observation.StateCandidates.Count < 2)
+        {
+            throw new InvalidOperationException("Ambiguous は複数候補の判別不能を表すため、state candidate が2つ以上必要です。");
+        }
+
+        if (observation.Status == ObservationStatus.Unavailable && observation.StateCandidates.Count > 0)
+        {
+            throw new InvalidOperationException("Unavailable ObservationResult は state candidate を持てません（観測が成立していません）。");
+        }
+
         if (observation.Status == ObservationStatus.Unavailable && observation.UnavailableReason is null)
         {
             throw new InvalidOperationException("Unavailable ObservationResult には unavailable reason が必要です。");
+        }
+
+        if (observation.Status != ObservationStatus.Unavailable && observation.UnavailableReason is not null)
+        {
+            throw new InvalidOperationException("unavailable reason は status=Unavailable の時だけ持てます。");
         }
 
         if (observation.StateCandidates.Any(candidate => candidate.Confidence < 0 || candidate.Confidence > 1))
