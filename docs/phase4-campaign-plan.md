@@ -50,7 +50,8 @@ Grok の `spawn_subagent` は円卓ではない。host 内子への実装委譲�
 - Input API 成功をゲーム内成功と扱わない（PB-005）。Confirmed には Observation が必須
 - 未解決 DispatchArmed から次 dispatch を自動生成しない。失敗を別経路へ fallback しない
 - GameLab Prototype の oracle は実験資産。製品 GameLab は Contracts の Observation／Playbook を正とし、Prototype を黙って製品扱いにしない
-- **peertable 0.4.2 で Windows 着席穴を閉じた（2026-08-19 npm）**: `tmux -S`→`-L`、room MCP 同意、seat identity、parent-watch の lattice.cmd、Windows の `prepublishOnly`。次の立卓は global 0.4.2。Claude SessionStart hook の `\` 消失は peertable 外（本体は動く）
+- **peertable 0.4.3（2026-08-19 npm）**: Windows 着席（`-L`・MCP 同意・seat identity・lattice.cmd・prepublish）に加え、parent-watch の `shell:true` / DEP0190 を外した
+- **Claude Windows hook の `\` 消失**: `apply-claude-config` が path を引用するようにした（2026-08-19 適用済み）。次の Claude 席から効く
 
 ## 受入条件（campaign 単位）
 
