@@ -71,7 +71,7 @@ public sealed class RunProjectionTests
         Assert.Equal("run-1-event-4", projection.LastEventId);
         // 観測 event だけが LastObservationId を進める（confirmation 等の observationId 併記では動かさない）。
         Assert.Equal("observation-2", projection.LastObservationId);
-        Assert.Equal(new RunEventTally(2, 1, 0, 1, 0, 0, 0, 0), projection.Tally);
+        Assert.Equal(new RunEventTally(2, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0), projection.Tally);
     }
 
     [Fact]
@@ -120,6 +120,17 @@ public sealed class RunProjectionTests
         Assert.Throws<InvalidOperationException>(() =>
             projection.Apply(Event(2, RunEventPayloadTypes.Proposal, versionId: "playbook-version-2")));
         Assert.Equal("playbook-version-1", projection.PinnedPlaybookVersionId);
+    }
+
+    [Fact]
+    public void Apply_repins_on_an_explicit_version_switch()
+    {
+        var projection = RunProjection
+            .FromFirstEvent(Event(1, RunEventPayloadTypes.Proposal))
+            .Apply(Event(2, RunEventPayloadTypes.VersionSwitch, versionId: "playbook-version-2"));
+
+        Assert.Equal("playbook-version-2", projection.PinnedPlaybookVersionId);
+        Assert.Equal(1, projection.Tally.VersionSwitches);
     }
 
     [Fact]

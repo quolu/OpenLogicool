@@ -7,19 +7,15 @@ namespace OpenLogicool.Playbooks;
 /// t05 が追加する payload type（interface 決定 room [90]・[97]）を event 直読で扱う:
 /// abandon は run の閉止、version-switch は採用 version の移動、manual-intervention は
 /// 「最後の manual-intervention event の後に新しい observation が commit されるまで進行不可」。
-/// RunProjection には依存しない（3 type の projection 統合は別仕分け）。
+/// RunProjection には依存しない（照合は event 直読。tally 側の 3 type は projection が数える）。
 /// </summary>
 public static class ResumeReadiness
 {
-    // t05 所有の wire 文字列（room [90]）。定数の正本は t05 が RunEventPayloadTypes へ置く。
-    private const string AbandonPayloadType = "abandon";
-    private const string VersionSwitchPayloadType = "version-switch";
-
     /// <summary>abandon event を持つ run は閉じており、再開できない。</summary>
     public static bool IsRunClosed(IReadOnlyList<RunEvent> events)
     {
         ArgumentNullException.ThrowIfNull(events);
-        return events.Any(e => string.Equals(e.PayloadType, AbandonPayloadType, StringComparison.Ordinal));
+        return events.Any(e => string.Equals(e.PayloadType, RunEventPayloadTypes.Abandon, StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -36,7 +32,7 @@ public static class ResumeReadiness
         }
 
         var lastSwitch = events.LastOrDefault(e =>
-            string.Equals(e.PayloadType, VersionSwitchPayloadType, StringComparison.Ordinal));
+            string.Equals(e.PayloadType, RunEventPayloadTypes.VersionSwitch, StringComparison.Ordinal));
         return (lastSwitch ?? events[0]).PlaybookVersionId;
     }
 

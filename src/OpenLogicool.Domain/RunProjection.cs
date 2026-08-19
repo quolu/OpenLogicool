@@ -11,9 +11,12 @@ public sealed record RunEventTally(
     long DispatchResults,
     long Confirmations,
     long Corrections,
-    long ManualInterventions)
+    long ManualInterventions,
+    long Skips,
+    long Abandons,
+    long VersionSwitches)
 {
-    public static RunEventTally Empty { get; } = new(0, 0, 0, 0, 0, 0, 0, 0);
+    public static RunEventTally Empty { get; } = new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     public RunEventTally Increment(string payloadType) => payloadType switch
     {
@@ -25,6 +28,9 @@ public sealed record RunEventTally(
         RunEventPayloadTypes.Confirmation => this with { Confirmations = checked(Confirmations + 1) },
         RunEventPayloadTypes.Correction => this with { Corrections = checked(Corrections + 1) },
         RunEventPayloadTypes.ManualIntervention => this with { ManualInterventions = checked(ManualInterventions + 1) },
+        RunEventPayloadTypes.Skip => this with { Skips = checked(Skips + 1) },
+        RunEventPayloadTypes.Abandon => this with { Abandons = checked(Abandons + 1) },
+        RunEventPayloadTypes.VersionSwitch => this with { VersionSwitches = checked(VersionSwitches + 1) },
         _ => throw new ArgumentException($"payload type '{payloadType}' は journal の閉集合にありません（PB-006）。", nameof(payloadType)),
     };
 }
@@ -94,9 +100,10 @@ public sealed record RunProjection(
                 $"Run '{RunId}' の PlaybookId は '{PlaybookId}' から変えられません。");
         }
 
-        // PB-002: Run は開始時の version へ pin される。異なる version を運ぶ event は
-        // 黙って採用せず例外にする（明示的な version switch は PB-007＝t05 の面であり、ここに口を作らない）。
-        if (!string.Equals(runEvent.PlaybookVersionId, PinnedPlaybookVersionId, StringComparison.Ordinal))
+        // PB-002: 黙った version 変更は拒否する。正規の切替は version-switch だけが新 version を運ぶ（PB-007）。
+        var isVersionSwitch = string.Equals(runEvent.PayloadType, RunEventPayloadTypes.VersionSwitch, StringComparison.Ordinal);
+        if (!isVersionSwitch
+            && !string.Equals(runEvent.PlaybookVersionId, PinnedPlaybookVersionId, StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
                 $"Run '{RunId}' は Playbook version '{PinnedPlaybookVersionId}' へ pin されており、'{runEvent.PlaybookVersionId}' の event は適用できません。");
@@ -104,6 +111,7 @@ public sealed record RunProjection(
 
         return this with
         {
+            PinnedPlaybookVersionId = isVersionSwitch ? runEvent.PlaybookVersionId : PinnedPlaybookVersionId,
             LastSequence = runEvent.RunSequence,
             CurrentExecutorEpoch = runEvent.ExecutorEpoch,
             LastEventId = runEvent.EventId,
