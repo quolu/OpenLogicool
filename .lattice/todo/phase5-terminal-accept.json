@@ -1,0 +1,28 @@
+{
+  "schema": "lattice.phase_accept_input.v1",
+  "review_event_digest": "1b670e5fd2c3b196b432c92862e01c171ffd82a83d69ad662375e8def849c7b6",
+  "input_digest": "",
+  "decision_evidence": {
+    "evidence_id": "phase5-exit-assessment",
+    "repo_id": "self",
+    "path": "docs/phase5-exit-assessment.md",
+    "git_blob_oid": "9a57db5723e6144c0a19d03174388e00b4a96401",
+    "content_digest": "6a06b5edc0e12698f07a0de3e349d695c4af3407171796dfa6d18eeaf220be68",
+    "media_type": "text/markdown",
+    "anchor_digest": null
+  },
+  "evidence_slots": [
+    {
+      "slot_id": "terminal-audit",
+      "evidence": {
+        "evidence_id": "phase5-terminal-audit",
+        "repo_id": "self",
+        "path": "evidence/phase5-capture-perception/terminal-audit.md",
+        "git_blob_oid": "1c0f29ccb2f6ce4b8882273630510a7d2e2b7dae",
+        "content_digest": "e752261bee5d8c9dd2c7301041adf03c18b9d23ad9a11cfa75e0f055a404ef53",
+        "media_type": "text/markdown",
+        "anchor_digest": null
+      }
+    }
+  ]
+}

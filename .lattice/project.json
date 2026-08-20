@@ -1,5 +1,10 @@
 {
   "schema": "lattice.project_identity.v1",
   "project_id": "OpenLogicool",
-  "display_name": "OpenLogicool"
+  "display_name": "OpenLogicool",
+  "external_pane": {
+    "title": "円卓",
+    "url": "https://peertable.kitepon.dev/OpenLogicool",
+    "probe_url": "https://peertable.kitepon.dev/api/OpenLogicool/members"
+  }
 }
