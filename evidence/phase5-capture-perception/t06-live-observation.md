@@ -19,3 +19,9 @@
 | --- | --- |
 | `dotnet test tests/OpenLogicool.Perception.Tests/OpenLogicool.Perception.Tests.csproj --no-restore` | 9/9 green |
 | `dotnet test tests/OpenLogicool.Conformance.Tests/OpenLogicool.Conformance.Tests.csproj` | 18/18 green |
+
+## solution regression への登録
+
+- **未成立**: `OpenLogicool.Perception.Tests` はこの commit 時点で `OpenLogicool.sln` に未登録であり、Phase 5 の solution full regression には含まれない。
+- **理由**: t06 の既存 intake manifest は solution への write を宣言していない。完了後に scope を広げると、manifest 更新経路がない Lattice の既知不具合により accept が止まるため、この task では宣言境界を拡張しない。
+- **担当と時期**: `t11-phase5-exit` の親（bell）が full regression の**前**に `OpenLogicool.Perception.Tests` を solution へ登録し、その commit が canonical に着地したことを確認してから、Phase 5 の full regression を一回だけ実行する。
