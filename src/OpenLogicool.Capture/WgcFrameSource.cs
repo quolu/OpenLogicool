@@ -53,6 +53,7 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
     private readonly GraphicsCaptureItem item;
     private readonly Direct3D11CaptureFramePool framePool;
     private readonly GraphicsCaptureSession session;
+    private readonly FrameTransformTracker transformTracker = new();
     private long sequence;
     private bool disposed;
 
@@ -166,7 +167,7 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
             var byteCount = checked((int)(mapped.RowPitch * textureDescription.Height));
             var pixels = new byte[byteCount];
             Marshal.Copy(mapped.DataPointer, pixels, 0, pixels.Length);
-            return new FrameAvailable(new WgcFrameMetadata(
+            var captured = new WgcFrameMetadata(
                 Interlocked.Increment(ref sequence),
                 frame.SystemRelativeTime.TotalMilliseconds,
                 DateTimeOffset.UtcNow,
@@ -175,7 +176,10 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
                 textureDescription.Format.ToString(),
                 dpi,
                 dpi,
-                new FramePixels(pixels, checked((int)mapped.RowPitch))).ToCapturedFrame(sourceId));
+                new FramePixels(pixels, checked((int)mapped.RowPitch))).ToCapturedFrame(sourceId);
+            return new FrameAvailable(transformTracker.Apply(
+                captured,
+                new FrameRect(0, 0, contentSize.Width, contentSize.Height)));
         }
         finally
         {

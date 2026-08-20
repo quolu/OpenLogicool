@@ -113,11 +113,13 @@ public sealed class WgcFrameSourceTests
         Assert.Null(failure);
         Assert.NotNull(initial);
         Assert.Equal(CaptureBackend.WindowsGraphicsCapture, initial!.Backend);
+        Assert.True(initial.TransformRevision >= 1);
         Assert.True(initial.Pixels!.Bgra8.Length > 0);
         Assert.True(initial.Pixels.Stride >= initial.Width * 4);
         Assert.True(poolRecreated);
         Assert.NotNull(resized);
-        Assert.True(resized!.Pixels!.Bgra8.Length > 0);
+        Assert.True(resized!.TransformRevision > initial.TransformRevision);
+        Assert.True(resized.Pixels!.Bgra8.Length > 0);
         Assert.True(resized.Pixels.Stride >= resized.Width * 4);
     }
 }
