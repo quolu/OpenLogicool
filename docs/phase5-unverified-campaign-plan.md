@@ -1,8 +1,8 @@
 # Phase 5 campaign — Unverified close
 
-- status: **active**（2026-08-20 起票。Phase 5 Exit 成立後の未確認を閉じる）
+- status: **completed**（2026-08-20 終端監査 accept。判定は [phase5-unverified-assessment.md](phase5-unverified-assessment.md)）
 - 起票: 2026-08-20（オーナー指示「未確認事項の Lattice を作れ。その上で Phase 6 も作れ」）
-- 統括: ベル（Grok 4.6）。実装 Terra×high（Codex）／監査 Claude opus×medium（実装と監査は別ベンダー）
+- 統括: ベル（Grok 4.6）。実装 Terra×high（Codex）／監査 Grok 4.6×medium（実装と監査は別ベンダー。1位不通を次順位へ落とさない）
 - 実行 TODO の正本: **Lattice plan `phase5-unverified`**
 - 上位正本: [phase5-exit-assessment.md](phase5-exit-assessment.md) 残課題、[development-plan.md](development-plan.md) §Phase 5
 - 先行: Phase 5 Exit 成立。本 campaign は Exit 判定外の未確認を4値で閉じるか、閉じられないものは未確認のまま残す
@@ -27,9 +27,9 @@ Exit で「未確認として残した」面を、自走できるものは実測
 |---|---|
 | 統括 | Grok 4.6（bell） |
 | 実装 | Terra×high Codex |
-| 監査 | Claude opus×medium |
+| 監査 | Grok 4.6×medium |
 
-待機中は `[次の行動]` 自己DMを出さない（peertable 0.4.16）。
+待機中は `[次の行動]` 自己DMを出さない。preflight 失敗は席を立てず、別 model へ落とさない。
 
 ## 非目標
 

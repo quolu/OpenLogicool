@@ -2,7 +2,7 @@
 
 - status: **active**（2026-08-20 起票）
 - 起票: 2026-08-20（オーナー指示。Phase 5 Exit 成立後）
-- 統括: ベル（Grok 4.6）。実装 Terra×high（Codex）／監査 Claude opus×medium
+- 統括: ベル（Grok 4.6）。実装 Terra×high（Codex）／監査 Grok 4.6×medium
 - 実行 TODO の正本: **Lattice plan `phase6-ai-teach`**
 - 上位正本: [development-plan.md](development-plan.md) §Phase 6、§6.10、AI-002、EXP-AI-01
 - 先行: Phase 5 Exit 成立。provider は未選定のまま（§16。Teach 実装前に EXP-AI-01）
@@ -27,7 +27,7 @@
 |---|---|
 | 統括 | Grok 4.6（bell） |
 | 実装 | Terra×high Codex |
-| 監査 | Claude opus×medium |
+| 監査 | Grok 4.6×medium |
 
 待機中は `[次の行動]` 自己DMを出さない。
 
