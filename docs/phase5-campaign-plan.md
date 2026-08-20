@@ -1,6 +1,6 @@
 # Phase 5 campaign — Capture／Perception
 
-- status: **closed**（2026-08-20 親が Phase 5 Exit を未成立と宣言。[phase5-exit-assessment.md](phase5-exit-assessment.md)）
+- status: **closed**（2026-08-20 初回 Exit は未成立。同日 companion `phase5-perception-close` で取り直し、親が成立を宣言。[phase5-exit-assessment.md](phase5-exit-assessment.md)）
 - 起票: 2026-08-20（オーナー指示「Lattice を使って円卓を立てろ」）
 - 統括: ベル（本セッション親は Grok 4.6）。2026-08-20 円卓再立：実装 Terra×high（Codex）／監査 Grok 4.6×medium。Phase 4 の sonnet/fable 表は使わない
 - 実行 TODO の正本: **Lattice plan `phase5-capture-perception`**（本書は目的・思想・非目標・受入条件だけを所有し、ToDo を二重化しない）

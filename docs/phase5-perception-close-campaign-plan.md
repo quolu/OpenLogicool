@@ -1,6 +1,6 @@
 # Phase 5 campaign — Perception close
 
-- status: **active**（2026-08-20 起票。Phase 5 Exit 未成立の残りを閉じる）
+- status: **closed**（2026-08-20 親が Phase 5 Exit を取り直し成立と宣言。[phase5-exit-assessment.md](phase5-exit-assessment.md)）
 - 起票: 2026-08-20（オーナー指示「すすめて。Lattice工程更新して円卓できるわね」）
 - 統括: ベル（本セッション親は Grok 4.6）。実装 Terra×high（Codex）／監査 Claude opus×medium（Grok 席固着と Fable 5 quota 切れの実績を継承。実装と監査は別ベンダー）
 - 実行 TODO の正本: **Lattice plan `phase5-perception-close`**（本書は目的・思想・非目標・受入条件だけを所有し、ToDo を二重化しない）
