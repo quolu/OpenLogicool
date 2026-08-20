@@ -1,6 +1,6 @@
 # Phase 6 campaign — AI Teach／Learn
 
-- status: **active**（2026-08-20 起票）
+- status: **completed**（2026-08-20 Exit 宣言・[phase6-exit-assessment.md](phase6-exit-assessment.md)）
 - 起票: 2026-08-20（オーナー指示。Phase 5 Exit 成立後）
 - 統括: ベル（Grok 4.6）。実装 Terra×high（Codex）／監査 Grok 4.6×medium
 - 実行 TODO の正本: **Lattice plan `phase6-ai-teach`**
