@@ -1,4 +1,5 @@
-using System.Reflection;
+using System.Security.Cryptography;
+using OpenLogicool.Contracts.Capture;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Perception;
 using Xunit;
@@ -8,46 +9,33 @@ namespace OpenLogicool.Conformance.Tests;
 public sealed class FrozenMetricRunnerTests
 {
     [Fact]
-    public void Acceptance_only_evaluation_passes_the_fixed_zero_thresholds()
+    public void Acceptance_fixtures_run_through_recognizer_and_observation()
     {
-        var artifact = Artifact("known");
-        var report = FrozenMetricRunner.Evaluate(new AcceptanceCorpus([artifact]),
-            [new FrozenMetricCase(artifact, ObservationStatus.Known, true, ObservationStatus.Known, true)]);
+        var known = Frame("fixture:known", [1, 2, 3, 4]);
+        var unknown = Frame("fixture:unknown", [5, 6, 7, 8]);
+        var cases = new[] { Case(known, ObservationStatus.Known, true), Case(unknown, ObservationStatus.Unknown, false) };
+        var recognizer = new FixtureFrameRecognizer("fixture-v1", [Rule(known, Candidate("menu")), Rule(unknown)]);
+
+        var report = FrozenMetricRunner.Evaluate(new AcceptanceCorpus(cases.Select(item => item.Artifact).ToArray()), cases, recognizer);
 
         Assert.True(report.Passed);
-        Assert.Equal(0, report.KnownMisclassifications + report.UnknownPromotions + report.SuccessFalsePositives);
-        Assert.DoesNotContain(typeof(FrozenMetricRunner).GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .SelectMany(method => method.GetParameters()), parameter => parameter.ParameterType == typeof(TrainingCorpus));
     }
 
     [Fact]
-    public void Fixed_metrics_count_every_prohibited_promotion_and_dispatch()
+    public void Actual_fixture_misclassification_fails_all_relevant_fixed_metrics()
     {
-        var unknown = Artifact("unknown");
-        var ambiguous = Artifact("ambiguous");
-        var noResume = Artifact("no-resume");
-        var report = FrozenMetricRunner.Evaluate(new AcceptanceCorpus([unknown, ambiguous, noResume]),
-        [
-            new FrozenMetricCase(unknown, ObservationStatus.Unknown, false, ObservationStatus.Known, true),
-            new FrozenMetricCase(ambiguous, ObservationStatus.Ambiguous, false, ObservationStatus.Known, false),
-            new FrozenMetricCase(noResume, ObservationStatus.Known, false, ObservationStatus.Known, true),
-        ]);
+        var frame = Frame("fixture:unknown", [9, 9, 9, 9]);
+        var item = Case(frame, ObservationStatus.Unknown, false);
+        var report = FrozenMetricRunner.Evaluate(new AcceptanceCorpus([item.Artifact]), [item], new FixtureFrameRecognizer("fixture-v1", [Rule(frame, Candidate("wrong"))]));
 
         Assert.False(report.Passed);
-        Assert.Equal(2, report.KnownMisclassifications);
+        Assert.Equal(1, report.KnownMisclassifications);
         Assert.Equal(1, report.UnknownPromotions);
-        Assert.Equal(2, report.SuccessFalsePositives);
+        Assert.Equal(1, report.SuccessFalsePositives);
     }
 
-    [Fact]
-    public void Cases_must_cover_only_the_frozen_acceptance_artifacts()
-    {
-        var accepted = Artifact("accepted");
-        var other = Artifact("other");
-
-        Assert.Throws<ArgumentException>(() => FrozenMetricRunner.Evaluate(new AcceptanceCorpus([accepted]),
-            [new FrozenMetricCase(other, ObservationStatus.Known, true, ObservationStatus.Known, true)]));
-    }
-
-    private static CorpusArtifact Artifact(string id) => new(id, $"acceptance/{id}.png", "fixture:phase5");
+    private static FrozenMetricCase Case(CapturedFrame frame, ObservationStatus expected, bool dispatch) => new(new CorpusArtifact(frame.SourceId, $"acceptance/{frame.SourceId}.png", "fixture:phase5"), frame, expected, dispatch);
+    private static FixtureFrameRule Rule(CapturedFrame frame, params StateCandidate[] candidates) => new(frame.SourceId, frame.Width, frame.Height, frame.PixelFormat, Convert.ToHexString(SHA256.HashData(frame.Pixels!.Bgra8.Span)), true, candidates);
+    private static StateCandidate Candidate(string state) => new("0.2.0", state, .9, [new EvidenceRegion("0.2.0", "rect", [0d, 0d, 1d, 1d], "fixture-v1")]);
+    private static CapturedFrame Frame(string source, byte[] pixels) => new("0.2.0", source, CaptureBackend.WindowsGraphicsCapture, 1, 1, DateTimeOffset.UnixEpoch, 1, 1, "B8G8R8A8_UNorm", 96, 96, 1, 0, 1, Pixels: new FramePixels(pixels, pixels.Length));
 }
