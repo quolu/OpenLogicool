@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using OpenLogicool.Contracts.Capture;
 using Vortice.Direct3D;
@@ -58,6 +59,7 @@ public sealed class WgcFrameSource : IDetailedFrameSource, IDisposable
     private readonly GraphicsCaptureSession session;
     private readonly FrameTransformTracker transformTracker = new();
     private readonly FrameFreshnessTracker freshnessTracker = new();
+    private readonly Stopwatch arrivalClock = Stopwatch.StartNew();
     private Windows.Graphics.SizeInt32 observedItemSize;
     private long sequence;
     private bool disposed;
@@ -197,7 +199,7 @@ public sealed class WgcFrameSource : IDetailedFrameSource, IDisposable
             var pixels = new byte[byteCount];
             Marshal.Copy(mapped.DataPointer, pixels, 0, pixels.Length);
             var monotonicMs = checked((long)frame.SystemRelativeTime.TotalMilliseconds);
-            var freshness = freshnessTracker.Observe(monotonicMs, pixels);
+            var freshness = freshnessTracker.Observe(monotonicMs, arrivalClock.ElapsedMilliseconds, pixels);
             var captured = new WgcFrameMetadata(
                 Interlocked.Increment(ref sequence),
                 monotonicMs,
@@ -247,23 +249,30 @@ public sealed record FrameFreshness(long FreshnessMs, long LastChangeMs);
 public sealed class FrameFreshnessTracker
 {
     private ulong? fingerprint;
-    private long lastChangeMs;
+    private long? qpcOriginMs;
+    private long? arrivalOriginMs;
+    private long lastChangeAtMs;
 
-    public FrameFreshness Observe(long monotonicMs, ReadOnlySpan<byte> pixels)
+    public FrameFreshness Observe(long monotonicMs, long arrivalMs, ReadOnlySpan<byte> pixels)
     {
-        if (monotonicMs < 0)
+        if (monotonicMs < 0 || arrivalMs < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(monotonicMs));
+            throw new ArgumentOutOfRangeException("frame time は負にできません。");
         }
+
+        qpcOriginMs ??= monotonicMs;
+        arrivalOriginMs ??= arrivalMs;
 
         var nextFingerprint = Fingerprint(pixels);
         if (fingerprint is null || fingerprint != nextFingerprint)
         {
             fingerprint = nextFingerprint;
-            lastChangeMs = monotonicMs;
+            lastChangeAtMs = monotonicMs;
         }
 
-        return new FrameFreshness(monotonicMs - lastChangeMs, lastChangeMs);
+        var expectedArrivalMs = arrivalOriginMs.Value + monotonicMs - qpcOriginMs.Value;
+        var freshnessMs = Math.Max(0, arrivalMs - expectedArrivalMs);
+        return new FrameFreshness(freshnessMs, monotonicMs - lastChangeAtMs);
     }
 
     private static ulong Fingerprint(ReadOnlySpan<byte> pixels)
