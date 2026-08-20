@@ -3,15 +3,15 @@
 ## 実施
 
 - `FrameCoordinateTransform` を追加し、source→content→normalized→client→input を純粋変換として明示した。
-- `FrameTransformTracker` は size、DPI、pixel format、letterbox content bounds の変化で revision を単調に進める。
-- `WgcFrameSource` は frame ごとに frame 全体を content bounds として tracker に渡す。resize 後の最初の有効 frame は新しい transform revision を持つ。
+- `FrameTransformTracker` は size、DPI、pixel format、letterbox content bounds、monitor handle の変化で revision を単調に進める。
+- `WgcFrameSource` は frame ごとに frame 全体を content bounds と capture 時点の monitor handle を tracker に渡す。resize 後または別 display への移動後に供給された最初の有効 frame は新しい transform revision を持つ。
 - locator の有効性は同じ transform revision に pin される。fault 状態、backend change、stale の分類は t05 の所有であり、本 task は先取りしない。
 
 ## 根拠水準
 
 - **確認済み**: Windows native の自前 window で resize→frame pool 再作成→拡大後 BGRA8 frame を実測し、transform revision が増えることを確認した。
-- **確認済み**: pure test で DPI、pixel format（HDR format を含む表現）、letterbox content bounds の各変化が revision を進め、座標変換の全段と範囲外拒否を確認した。
-- **未確認**: 複数 display 間の実移動、実 HDR display での frame format 変化、実ゲームの letterbox 検出。t02 の support matrix は未確認を Supported と表示しない。
+- **確認済み**: pure test で monitor handle、DPI、pixel format（HDR format を含む表現）、letterbox content bounds の各変化が revision を進め、座標変換の全段と範囲外拒否を確認した。
+- **未確認**: 複数 display 間の実移動、実 HDR display での frame format 変化、実ゲームの letterbox 検出。display 移動の実装は capture 時点の monitor handle を signature に含める。t02 の support matrix は未確認を Supported と表示しない。
 
 ## focused verification
 
