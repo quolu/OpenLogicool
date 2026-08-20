@@ -57,6 +57,21 @@ public sealed class CaptureCapabilityMatrixTests
         Assert.Equal(CaptureEvidenceLevel.Confirmed, decision.Evidence);
         Assert.Equal(CaptureRouteAvailability.ProbedOnly, decision.Availability);
         Assert.False(decision.CanCapture);
+        Assert.Contains("採用していません", decision.Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Select_ProbedGdiBackend_ReportsConfirmedNonAdoptionReason()
+    {
+        var decision = matrix.Select(
+            CaptureBackend.GdiBitBlt,
+            CaptureTargetKind.Display,
+            CaptureCondition.Windowed);
+
+        Assert.Equal(CaptureEvidenceLevel.Confirmed, decision.Evidence);
+        Assert.Equal(CaptureRouteAvailability.ProbedOnly, decision.Availability);
+        Assert.False(decision.CanCapture);
+        Assert.Contains("採用していません", decision.Reason, StringComparison.Ordinal);
     }
 
     [Fact]
