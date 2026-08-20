@@ -7,6 +7,7 @@ Capture が Perception へ渡す一枚の frame。意味 owner は Capture（Pha
 - `monotonicMs` は WGC compositor の QPC 時刻、`wallClockUtc` は取得時刻である。
 - `width`、`height`、`pixelFormat`、`dpiX`、`dpiY`、`rotation`、`crop` は pixel buffer の座標系を表す。
 - WGC first backend は BGRA8 buffer を `pixels` に保持する。`stride` は buffer の一行の byte 数である。
-- WGC API は色空間を返さないため、t01 では `colorSpace=Unknown` とする。HDR 等を推定しない。
+- WGC API は色空間も rotation も返さないため、t01 では `colorSpace=Unknown`、`rotation=Unknown` とする。HDR と回転 display は未実測であり、推定しない。
 - t01 は crop を行わず、`crop` は content 全体を表す。transform revision、resize、stale の意味付けは t04／t05 が所有する。
+- frame surface の size と `contentSize` が異なる frame は map せず、frame pool を content size で再作成して `FrameUnavailable` を返す。旧 pool の領域外を pixel buffer として渡さない。
 - frame 非到着は静止画面では正常であり、`FrameUnavailable` を capture failure と解釈しない。

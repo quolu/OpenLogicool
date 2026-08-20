@@ -14,6 +14,7 @@ public enum FrameColorSpace
 
 public enum FrameRotation
 {
+    Unknown,
     None,
     Clockwise90,
     Clockwise180,
@@ -40,7 +41,7 @@ public sealed record CapturedFrame(
     long FreshnessMs,
     long LastChangeMs,
     FrameColorSpace ColorSpace = FrameColorSpace.Unknown,
-    FrameRotation Rotation = FrameRotation.None,
+    FrameRotation Rotation = FrameRotation.Unknown,
     FrameCrop? Crop = null,
     FramePixels? Pixels = null);
 
