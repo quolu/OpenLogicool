@@ -88,6 +88,27 @@ public sealed class ProjectReferenceDirectionTests
     }
 
     [Fact]
+    public void Ai_project_isolated_from_execution_device_storage_and_capture_modules()
+    {
+        var referencesByProject = LoadReferences();
+        var aiReferences = referencesByProject["OpenLogicool.AI"];
+
+        Assert.Equal(Set("OpenLogicool.Contracts"), aiReferences);
+
+        foreach (var forbiddenReference in new[]
+                 {
+                     "OpenLogicool.Input",
+                     "OpenLogicool.Devices.G13",
+                     "OpenLogicool.Devices.G600",
+                     "OpenLogicool.Persistence",
+                     "OpenLogicool.Capture",
+                 })
+        {
+            Assert.DoesNotContain(forbiddenReference, aiReferences);
+        }
+    }
+
+    [Fact]
     public void Package_references_match_module_policy()
     {
         var packageReferencesByProject = LoadPackageReferences();
