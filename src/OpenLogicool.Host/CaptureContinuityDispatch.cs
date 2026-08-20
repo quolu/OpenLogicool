@@ -30,4 +30,25 @@ public sealed class CaptureContinuityDispatch(RunControls controls, CaptureConti
         controls.StepOnce(dispatchEvent, externalInput);
         return true;
     }
+
+    /// <summary>実画面再開の照合が UniqueMatch と対象一致を満たす時だけ dispatch する。</summary>
+    public bool TryResumeStepOnce(
+        LiveResumeBinding binding,
+        LiveResumeContext context,
+        IReadOnlyList<RunEvent> events,
+        string expectedStateId,
+        long freshnessBudgetMs,
+        long stabilityWindowMs,
+        RunEvent dispatchEvent,
+        Action externalInput)
+    {
+        var decision = LiveResumeGate.Judge(
+            binding,
+            context,
+            events,
+            expectedStateId,
+            freshnessBudgetMs,
+            stabilityWindowMs);
+        return decision.DispatchAllowed && TryStepOnce(dispatchEvent, externalInput);
+    }
 }
