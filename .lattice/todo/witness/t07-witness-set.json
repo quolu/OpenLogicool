@@ -1,0 +1,89 @@
+{
+  "schema": "lattice.todo_witness_set.v5",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase4-durable-lab",
+  "capacity": {
+    "executors": 1
+  },
+  "sensor_query_set": {
+    "queries": [
+      {
+        "id": "status",
+        "operation": "status"
+      }
+    ]
+  },
+  "manual_witness": {
+    "t07-fault-matrix": {
+      "owns": [
+        {
+          "kind": "path",
+          "target": "evidence/phase4-durable-lab/t07-fault-matrix.md"
+        },
+        {
+          "kind": "path",
+          "target": "docs/contracts/run-event.md"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Contracts/Playbooks/RunJournalContracts.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Domain/AttemptFaultClassifier.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Domain/RunProjection.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/AttemptDispatchGate.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/RunControls.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/RunJournal.cs"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Domain.Tests/"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Playbooks.Tests/"
+        }
+      ],
+      "reads": [
+        "docs/development-plan.md",
+        "docs/phase4-campaign-plan.md"
+      ],
+      "writes": [
+        "evidence/phase4-durable-lab/t07-fault-matrix.md",
+        "docs/contracts/run-event.md",
+        "src/OpenLogicool.Contracts/Playbooks/RunJournalContracts.cs",
+        "src/OpenLogicool.Domain/AttemptFaultClassifier.cs",
+        "src/OpenLogicool.Domain/RunProjection.cs",
+        "src/OpenLogicool.Playbooks/AttemptDispatchGate.cs",
+        "src/OpenLogicool.Playbooks/RunControls.cs",
+        "src/OpenLogicool.Playbooks/RunJournal.cs",
+        "tests/OpenLogicool.Domain.Tests/",
+        "tests/OpenLogicool.Playbooks.Tests/"
+      ],
+      "resources": [],
+      "state_effects": [],
+      "sensor_provenance": {
+        "queries": []
+      },
+      "affected_tests": [
+        "tests/OpenLogicool.Domain.Tests",
+        "tests/OpenLogicool.Playbooks.Tests"
+      ],
+      "unknowns": []
+    }
+  },
+  "witness_set_digest": "20276d53f1624e4d06d4f226354da3f3f4394e836ad7a999c87a46955743853b"
+}

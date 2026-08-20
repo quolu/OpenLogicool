@@ -1,0 +1,70 @@
+{
+  "schema": "lattice.todo_witness_set.v5",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase4-durable-lab",
+  "capacity": {
+    "executors": 2
+  },
+  "sensor_query_set": {
+    "queries": [
+      {
+        "id": "status",
+        "operation": "status"
+      }
+    ]
+  },
+  "manual_witness": {
+    "t09-recorder-replay": {
+      "owns": [
+        {
+          "kind": "path",
+          "target": "evidence/phase4-durable-lab/t09-recorder-replay.md"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Domain/RunProjection.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/SessionRecorder.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/SessionReplayer.cs"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Domain.Tests/"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Playbooks.Tests/"
+        }
+      ],
+      "reads": [
+        "docs/contracts/data-flow-contract.md",
+        "docs/contracts/run-event.md",
+        "docs/development-plan.md"
+      ],
+      "writes": [
+        "evidence/phase4-durable-lab/t09-recorder-replay.md",
+        "src/OpenLogicool.Domain/RunProjection.cs",
+        "src/OpenLogicool.Playbooks/SessionRecorder.cs",
+        "src/OpenLogicool.Playbooks/SessionReplayer.cs",
+        "tests/OpenLogicool.Domain.Tests/",
+        "tests/OpenLogicool.Playbooks.Tests/"
+      ],
+      "resources": [],
+      "state_effects": [],
+      "sensor_provenance": {
+        "queries": []
+      },
+      "affected_tests": [
+        "tests/OpenLogicool.Domain.Tests",
+        "tests/OpenLogicool.Playbooks.Tests"
+      ],
+      "unknowns": []
+    }
+  },
+  "witness_set_digest": "e25e954690039114856a2629ac0612e31edeefd01000bc5343aff779daf94cf2"
+}

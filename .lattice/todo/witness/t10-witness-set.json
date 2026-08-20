@@ -1,0 +1,186 @@
+{
+  "schema": "lattice.todo_witness_set.v5",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase4-durable-lab",
+  "capacity": {
+    "executors": 3
+  },
+  "sensor_query_set": {
+    "queries": [
+      {
+        "id": "status",
+        "operation": "status"
+      }
+    ]
+  },
+  "manual_witness": {
+    "t05-run-controls": {
+      "affected_tests": [
+        "tests/OpenLogicool.Domain.Tests/RunControlStateTests.cs",
+        "tests/OpenLogicool.Playbooks.Tests/AttemptDispatchGateTests.cs",
+        "tests/OpenLogicool.Playbooks.Tests/RunControlsTests.cs",
+        "tests/OpenLogicool.Playbooks.Tests/RunJournalTests.cs"
+      ],
+      "owns": [
+        {
+          "kind": "path",
+          "target": "evidence/phase4-durable-lab/t05-run-controls.md"
+        },
+        {
+          "kind": "path",
+          "target": "docs/contracts/run-event.md"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Contracts/Playbooks/RunJournalContracts.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Domain/RunControlState.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/AttemptDispatchGate.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/RunControls.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/RunJournal.cs"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Domain.Tests/RunControlStateTests.cs"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Playbooks.Tests/AttemptDispatchGateTests.cs"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Playbooks.Tests/RunControlsTests.cs"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Playbooks.Tests/RunJournalTests.cs"
+        }
+      ],
+      "reads": [
+        "docs/development-plan.md",
+        "docs/phase4-campaign-plan.md"
+      ],
+      "resources": [],
+      "sensor_provenance": {
+        "queries": []
+      },
+      "state_effects": [],
+      "unknowns": [],
+      "writes": [
+        "evidence/phase4-durable-lab/t05-run-controls.md",
+        "docs/contracts/run-event.md",
+        "src/OpenLogicool.Contracts/Playbooks/RunJournalContracts.cs",
+        "src/OpenLogicool.Domain/RunControlState.cs",
+        "src/OpenLogicool.Playbooks/AttemptDispatchGate.cs",
+        "src/OpenLogicool.Playbooks/RunControls.cs",
+        "src/OpenLogicool.Playbooks/RunJournal.cs",
+        "tests/OpenLogicool.Domain.Tests/RunControlStateTests.cs",
+        "tests/OpenLogicool.Playbooks.Tests/AttemptDispatchGateTests.cs",
+        "tests/OpenLogicool.Playbooks.Tests/RunControlsTests.cs",
+        "tests/OpenLogicool.Playbooks.Tests/RunJournalTests.cs"
+      ]
+    },
+    "t08-gamelab-oracle": {
+      "affected_tests": [
+        "tests/OpenLogicool.GameLab.Tests"
+      ],
+      "owns": [
+        {
+          "kind": "path",
+          "target": "evidence/phase4-durable-lab/t08-gamelab-oracle.md"
+        },
+        {
+          "kind": "path",
+          "target": "fixtures/scenarios/"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.GameLab.Tests/"
+        },
+        {
+          "kind": "path",
+          "target": "tools/OpenLogicool.GameLab/"
+        }
+      ],
+      "reads": [
+        "docs/development-plan.md",
+        "src/OpenLogicool.Contracts/Perception/PerceptionContracts.cs",
+        "src/OpenLogicool.Contracts/Playbooks/AttemptContracts.cs"
+      ],
+      "resources": [],
+      "sensor_provenance": {
+        "queries": []
+      },
+      "state_effects": [],
+      "unknowns": [],
+      "writes": [
+        "evidence/phase4-durable-lab/t08-gamelab-oracle.md",
+        "fixtures/scenarios/",
+        "tests/OpenLogicool.GameLab.Tests/",
+        "tools/OpenLogicool.GameLab/"
+      ]
+    },
+    "t10-resume-ux": {
+      "affected_tests": [
+        "tests/OpenLogicool.Domain.Tests",
+        "tests/OpenLogicool.Playbooks.Tests"
+      ],
+      "owns": [
+        {
+          "kind": "path",
+          "target": "evidence/phase4-durable-lab/t10-resume-ux.md"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Domain/ResumeGate.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/ResumeReadiness.cs"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/ResumeReport.cs"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Domain.Tests/ResumeGateTests.cs"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Playbooks.Tests/ResumeTests.cs"
+        }
+      ],
+      "reads": [
+        "docs/contracts/observation-result.md",
+        "docs/development-plan.md"
+      ],
+      "resources": [],
+      "sensor_provenance": {
+        "queries": []
+      },
+      "state_effects": [],
+      "unknowns": [],
+      "writes": [
+        "evidence/phase4-durable-lab/t10-resume-ux.md",
+        "src/OpenLogicool.Domain/ResumeGate.cs",
+        "src/OpenLogicool.Playbooks/ResumeReadiness.cs",
+        "src/OpenLogicool.Playbooks/ResumeReport.cs",
+        "tests/OpenLogicool.Domain.Tests/ResumeGateTests.cs",
+        "tests/OpenLogicool.Playbooks.Tests/ResumeTests.cs"
+      ]
+    }
+  },
+  "witness_set_digest": "ae07b4299b356c5da480260179e0e37de4ec394fd8597feaf2059d7581384564"
+}

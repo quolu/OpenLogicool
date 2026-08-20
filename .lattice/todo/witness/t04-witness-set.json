@@ -1,0 +1,86 @@
+{
+  "schema": "lattice.todo_witness_set.v5",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase4-durable-lab",
+  "capacity": {
+    "executors": 1
+  },
+  "sensor_query_set": {
+    "queries": [
+      {
+        "id": "status",
+        "operation": "status"
+      }
+    ]
+  },
+  "manual_witness": {
+    "t04-attempt-sm": {
+      "owns": [
+        {
+          "kind": "path",
+          "target": "evidence/phase4-durable-lab/t04-attempt-sm.md"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Contracts/Playbooks/"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Contracts/Shared/"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Domain/"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Persistence/"
+        },
+        {
+          "kind": "path",
+          "target": "src/OpenLogicool.Playbooks/"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Domain.Tests/"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Persistence.Tests/"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Playbooks.Tests/"
+        }
+      ],
+      "reads": [
+        "docs/contracts/data-flow-contract.md",
+        "docs/contracts/run-event.md",
+        "docs/development-plan.md"
+      ],
+      "writes": [
+        "evidence/phase4-durable-lab/t04-attempt-sm.md",
+        "src/OpenLogicool.Contracts/Playbooks/",
+        "src/OpenLogicool.Contracts/Shared/",
+        "src/OpenLogicool.Domain/",
+        "src/OpenLogicool.Persistence/",
+        "src/OpenLogicool.Playbooks/",
+        "tests/OpenLogicool.Domain.Tests/",
+        "tests/OpenLogicool.Persistence.Tests/",
+        "tests/OpenLogicool.Playbooks.Tests/"
+      ],
+      "resources": [],
+      "state_effects": [],
+      "sensor_provenance": {
+        "queries": []
+      },
+      "affected_tests": [
+        "tests/OpenLogicool.Domain.Tests",
+        "tests/OpenLogicool.Persistence.Tests",
+        "tests/OpenLogicool.Playbooks.Tests"
+      ],
+      "unknowns": []
+    }
+  },
+  "witness_set_digest": "c97cbd96bc4a21ebdc94e4e1f47335bb1d8206f6f539ee7e4fbd7797a9722ef2"
+}

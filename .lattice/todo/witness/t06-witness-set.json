@@ -1,0 +1,53 @@
+{
+  "schema": "lattice.todo_witness_set.v5",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase4-durable-lab",
+  "capacity": {
+    "executors": 1
+  },
+  "sensor_query_set": {
+    "queries": [
+      {
+        "id": "status",
+        "operation": "status"
+      }
+    ]
+  },
+  "manual_witness": {
+    "t06-fake-observation": {
+      "owns": [
+        {
+          "kind": "path",
+          "target": "evidence/phase4-durable-lab/t06-fake-observation.md"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Conformance.Tests/"
+        },
+        {
+          "kind": "path",
+          "target": "tests/OpenLogicool.Fakes/"
+        }
+      ],
+      "reads": [
+        "docs/contracts/observation-result.md",
+        "src/OpenLogicool.Contracts/Perception/PerceptionContracts.cs"
+      ],
+      "writes": [
+        "evidence/phase4-durable-lab/t06-fake-observation.md",
+        "tests/OpenLogicool.Conformance.Tests/",
+        "tests/OpenLogicool.Fakes/"
+      ],
+      "resources": [],
+      "state_effects": [],
+      "sensor_provenance": {
+        "queries": []
+      },
+      "affected_tests": [
+        "tests/OpenLogicool.Conformance.Tests"
+      ],
+      "unknowns": []
+    }
+  },
+  "witness_set_digest": "a619c41c862507b8f14d450e83f2858abe9b2fc3863792fcbeee1407e7f1cdca"
+}
