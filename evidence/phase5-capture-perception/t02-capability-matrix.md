@@ -23,6 +23,8 @@ dotnet test tests/OpenLogicool.Capture.Matrix.Tests/OpenLogicool.Capture.Matrix.
 
 `git diff --check` も成功した。
 
+`OpenLogicool.Capture.Matrix.Tests` は `OpenLogicool.sln` へ登録済みである。したがって t11 の solution 単位 regression にこの5件も含まれる。
+
 ## 変更ファイル
 
 - `docs/contracts/capture-support-matrix.md`
@@ -30,6 +32,7 @@ dotnet test tests/OpenLogicool.Capture.Matrix.Tests/OpenLogicool.Capture.Matrix.
 - `src/OpenLogicool.Capture/CaptureCapabilityMatrix.cs`
 - `tests/OpenLogicool.Capture.Matrix.Tests/OpenLogicool.Capture.Matrix.Tests.csproj`
 - `tests/OpenLogicool.Capture.Matrix.Tests/CaptureCapabilityMatrixTests.cs`
+- `OpenLogicool.sln`
 - 本証跡
 
 ## 範囲外
