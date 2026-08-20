@@ -4,36 +4,6 @@
   "plan_key": "phase8a-input-studio-dist",
   "capacity": { "executors": 2 },
   "tasks": {
-    "t01-support-matrix-claim": {
-      "owns": [
-        { "path": "src/OpenLogicool.Desktop/InputStudioSupportMatrix.cs", "creates": true },
-        { "path": "tests/OpenLogicool.Desktop.Tests/InputStudioSupportMatrixTests.cs", "creates": true },
-        { "path": "docs/contracts/input-studio-support-matrix.md", "creates": true },
-        { "path": "docs/release-notes-partial-lgs-replacement.md", "creates": true },
-        { "path": "evidence/phase8a-input-studio-dist/t01-support-matrix-claim.md", "creates": true }
-      ],
-      "reads": [
-        "docs/phase8a-campaign-plan.md",
-        "docs/lgs-parity-inventory-2026-08-15.md",
-        "docs/g600-route-assessment-2026-08-15.md",
-        "docs/windows-support-matrix.md",
-        "src/OpenLogicool.Desktop/InputStudioReport.cs"
-      ]
-    },
-    "t02-lgs-import-dry-run": {
-      "owns": [
-        { "path": "src/OpenLogicool.Profiles/LgsXmlDryRun.cs", "creates": true },
-        { "path": "tests/OpenLogicool.Profiles.Tests/LgsXmlDryRunTests.cs", "creates": true },
-        { "path": "docs/contracts/lgs-import-dry-run.md", "creates": true },
-        { "path": "fixtures/lgs/profile-dry-run.v1.xml", "creates": true },
-        { "path": "evidence/phase8a-input-studio-dist/t02-lgs-import-dry-run.md", "creates": true }
-      ],
-      "reads": [
-        "docs/phase8a-campaign-plan.md",
-        "docs/lgs-parity-inventory-2026-08-15.md",
-        "src/OpenLogicool.Profiles/WorkspaceCompiler.cs"
-      ]
-    },
     "t03-timed-macro": {
       "owns": [
         { "path": "src/OpenLogicool.Input/TimedMacro.cs", "creates": true },
