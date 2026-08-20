@@ -25,4 +25,10 @@ public sealed class FrameTransformTracker
 
         return revision;
     }
+
+    public CapturedFrame Apply(CapturedFrame frame, FrameRect contentBounds) =>
+        frame with { TransformRevision = Observe(frame, contentBounds) };
+
+    public bool IsCurrent(long locatorTransformRevision) =>
+        revision > 0 && locatorTransformRevision == revision;
 }

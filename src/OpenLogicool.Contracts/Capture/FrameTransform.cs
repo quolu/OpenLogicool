@@ -36,7 +36,7 @@ public sealed record NormalizedPoint(double X, double Y)
 /// <summary>一つの frame revision に固定された source→content→normalized→client→input の座標変換。</summary>
 public sealed record FrameCoordinateTransform(long Revision, FrameRect ContentBounds)
 {
-    public NormalizedPoint SourceToNormalized(FramePoint source)
+    public FramePoint SourceToContent(FramePoint source)
     {
         ContentBounds.RequirePositive(nameof(ContentBounds));
         if (!ContentBounds.Contains(source))
@@ -44,10 +44,23 @@ public sealed record FrameCoordinateTransform(long Revision, FrameRect ContentBo
             throw new ArgumentOutOfRangeException(nameof(source), "source 座標が content 範囲外です。");
         }
 
-        return new NormalizedPoint(
-            (source.X - ContentBounds.X) / ContentBounds.Width,
-            (source.Y - ContentBounds.Y) / ContentBounds.Height);
+        return new FramePoint(source.X - ContentBounds.X, source.Y - ContentBounds.Y);
     }
+
+    public NormalizedPoint ContentToNormalized(FramePoint content)
+    {
+        ContentBounds.RequirePositive(nameof(ContentBounds));
+        if (content.X < 0 || content.X > ContentBounds.Width
+            || content.Y < 0 || content.Y > ContentBounds.Height)
+        {
+            throw new ArgumentOutOfRangeException(nameof(content), "content 座標が範囲外です。");
+        }
+
+        return new NormalizedPoint(content.X / ContentBounds.Width, content.Y / ContentBounds.Height);
+    }
+
+    public NormalizedPoint SourceToNormalized(FramePoint source) =>
+        ContentToNormalized(SourceToContent(source));
 
     public FramePoint NormalizedToClient(NormalizedPoint normalized, FrameSize clientSize)
     {
