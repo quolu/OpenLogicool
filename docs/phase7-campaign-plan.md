@@ -1,6 +1,6 @@
 # Phase 7 campaign — Daily Mission Pilot
 
-- status: **active**（2026-08-21 起票）
+- status: **completed**（2026-08-21 Exit 宣言・[phase7-exit-assessment.md](phase7-exit-assessment.md)）
 - 起票: 2026-08-21（オーナー指示「次に進もう」Phase 6 Exit 後）
 - 統括: ベル（Grok 4.6）。実装 Terra×high（Codex）／監査 Grok 4.6×medium
 - 実行 TODO の正本: **Lattice plan `phase7-daily-pilot`**
