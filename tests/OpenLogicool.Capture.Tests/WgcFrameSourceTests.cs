@@ -31,6 +31,18 @@ public sealed class WgcFrameSourceTests
         Assert.Equal(FrameRotation.Unknown, captured.Rotation);
         Assert.Equal(new FrameCrop(0, 0, 4, 2), captured.Crop);
         Assert.Equal(pixels, captured.Pixels);
+        Assert.Equal(0, captured.FreshnessMs);
+        Assert.Equal(0, captured.LastChangeMs);
+    }
+
+    [Fact]
+    public void Wgc_freshness_tracks_time_since_last_pixel_change()
+    {
+        var tracker = new FrameFreshnessTracker();
+
+        Assert.Equal(new FrameFreshness(0, 100), tracker.Observe(100, [1, 2, 3]));
+        Assert.Equal(new FrameFreshness(25, 100), tracker.Observe(125, [1, 2, 3]));
+        Assert.Equal(new FrameFreshness(0, 150), tracker.Observe(150, [3, 2, 1]));
     }
 
     [Fact]

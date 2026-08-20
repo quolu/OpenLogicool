@@ -19,7 +19,9 @@ public sealed record WgcFrameMetadata(
     string PixelFormat,
     double DpiX,
     double DpiY,
-    FramePixels Pixels)
+    FramePixels Pixels,
+    long FreshnessMs = 0,
+    long LastChangeMs = 0)
 {
     public CapturedFrame ToCapturedFrame(string sourceId) => new(
         "0.2.0",
@@ -34,8 +36,8 @@ public sealed record WgcFrameMetadata(
         DpiX,
         DpiY,
         TransformRevision: 0,
-        FreshnessMs: 0,
-        LastChangeMs: 0,
+        FreshnessMs,
+        LastChangeMs,
         ColorSpace: FrameColorSpace.Unknown,
         Rotation: FrameRotation.Unknown,
         Crop: new FrameCrop(0, 0, Width, Height),
@@ -55,6 +57,7 @@ public sealed class WgcFrameSource : IDetailedFrameSource, IDisposable
     private readonly Direct3D11CaptureFramePool framePool;
     private readonly GraphicsCaptureSession session;
     private readonly FrameTransformTracker transformTracker = new();
+    private readonly FrameFreshnessTracker freshnessTracker = new();
     private Windows.Graphics.SizeInt32 observedItemSize;
     private long sequence;
     private bool disposed;
@@ -193,16 +196,20 @@ public sealed class WgcFrameSource : IDetailedFrameSource, IDisposable
             var byteCount = checked((int)(mapped.RowPitch * textureDescription.Height));
             var pixels = new byte[byteCount];
             Marshal.Copy(mapped.DataPointer, pixels, 0, pixels.Length);
+            var monotonicMs = checked((long)frame.SystemRelativeTime.TotalMilliseconds);
+            var freshness = freshnessTracker.Observe(monotonicMs, pixels);
             var captured = new WgcFrameMetadata(
                 Interlocked.Increment(ref sequence),
-                frame.SystemRelativeTime.TotalMilliseconds,
+                monotonicMs,
                 DateTimeOffset.UtcNow,
                 contentSize.Width,
                 contentSize.Height,
                 textureDescription.Format.ToString(),
                 dpi,
                 dpi,
-                new FramePixels(pixels, checked((int)mapped.RowPitch))).ToCapturedFrame(sourceId);
+                new FramePixels(pixels, checked((int)mapped.RowPitch)),
+                freshness.FreshnessMs,
+                freshness.LastChangeMs).ToCapturedFrame(sourceId);
             return CaptureRead.Available(transformTracker.Apply(
                 captured,
                 new FrameRect(0, 0, contentSize.Width, contentSize.Height),
@@ -231,5 +238,43 @@ public sealed class WgcFrameSource : IDetailedFrameSource, IDisposable
         }
 
         return monitor;
+    }
+}
+
+public sealed record FrameFreshness(long FreshnessMs, long LastChangeMs);
+
+/// <summary>同じ画素内容の後続 frame に、最後に内容が変わってからの QPC 時間を付与する。</summary>
+public sealed class FrameFreshnessTracker
+{
+    private ulong? fingerprint;
+    private long lastChangeMs;
+
+    public FrameFreshness Observe(long monotonicMs, ReadOnlySpan<byte> pixels)
+    {
+        if (monotonicMs < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(monotonicMs));
+        }
+
+        var nextFingerprint = Fingerprint(pixels);
+        if (fingerprint is null || fingerprint != nextFingerprint)
+        {
+            fingerprint = nextFingerprint;
+            lastChangeMs = monotonicMs;
+        }
+
+        return new FrameFreshness(monotonicMs - lastChangeMs, lastChangeMs);
+    }
+
+    private static ulong Fingerprint(ReadOnlySpan<byte> pixels)
+    {
+        var value = 14695981039346656037UL;
+        foreach (var pixel in pixels)
+        {
+            value ^= pixel;
+            value *= 1099511628211UL;
+        }
+
+        return value;
     }
 }
