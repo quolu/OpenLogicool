@@ -23,5 +23,13 @@ public sealed class CorpusPartitionTests
         Assert.Throws<ArgumentException>(() => new CorpusPartition([], [Artifact("same")], [Artifact("same")]));
     }
 
+    [Fact]
+    public void Same_artifact_path_with_a_different_id_cannot_cross_into_acceptance()
+    {
+        var calibration = new CorpusArtifact("cal-042", "corpus\\nikke\\frame001.png", "experiment:nikke");
+        var acceptance = new CorpusArtifact("acc-007", "CORPUS/nikke/frame001.png", "experiment:nikke");
+        Assert.Throws<ArgumentException>(() => new CorpusPartition([], [calibration], [acceptance]));
+    }
+
     private static CorpusArtifact Artifact(string id) => new(id, $"corpus/{id}.png", "experiment:gamelab");
 }
