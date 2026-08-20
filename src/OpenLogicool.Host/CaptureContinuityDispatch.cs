@@ -1,4 +1,5 @@
 using OpenLogicool.Capture;
+using OpenLogicool.Contracts.Capture;
 using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Playbooks;
 
@@ -50,5 +51,68 @@ public sealed class CaptureContinuityDispatch(RunControls controls, CaptureConti
             freshnessBudgetMs,
             stabilityWindowMs);
         return decision.DispatchAllowed && TryStepOnce(dispatchEvent, externalInput);
+    }
+}
+
+/// <summary>
+/// Host が capture read と dispatch 境界を接続する一回分の loop。
+/// capture の取得・再校正・dispatch は fast path と別の呼び出し側が明示的に順序付ける。
+/// </summary>
+public sealed class CaptureContinuityDispatchLoop(CaptureContinuityDispatch dispatch, CaptureContinuityGate continuityGate)
+{
+    private readonly CaptureContinuityDispatch dispatch = dispatch ?? throw new ArgumentNullException(nameof(dispatch));
+    private readonly CaptureContinuityGate continuityGate = continuityGate ?? throw new ArgumentNullException(nameof(continuityGate));
+
+    /// <summary>
+    /// 現在の capture read を gate へ反映した後、明示的に渡された同一 frame だけで再校正し、
+    /// 通常の一手を dispatch する。再校正の省略は既存の block 状態を維持する。
+    /// </summary>
+    public bool TryStepOnce(
+        CaptureRead read,
+        long staleAfterMs,
+        CapturedFrame? recalibrationFrame,
+        RunEvent dispatchEvent,
+        Action externalInput)
+    {
+        ObserveAndMaybeRecalibrate(read, staleAfterMs, recalibrationFrame);
+        return dispatch.TryStepOnce(dispatchEvent, externalInput);
+    }
+
+    /// <summary>
+    /// 上と同じ capture continuity を通した上で、resume の UniqueMatch 条件も満たす時だけ dispatch する。
+    /// </summary>
+    public bool TryResumeStepOnce(
+        CaptureRead read,
+        long staleAfterMs,
+        CapturedFrame? recalibrationFrame,
+        LiveResumeBinding binding,
+        LiveResumeContext context,
+        IReadOnlyList<RunEvent> events,
+        string expectedStateId,
+        long freshnessBudgetMs,
+        long stabilityWindowMs,
+        RunEvent dispatchEvent,
+        Action externalInput)
+    {
+        ObserveAndMaybeRecalibrate(read, staleAfterMs, recalibrationFrame);
+        return dispatch.TryResumeStepOnce(
+            binding,
+            context,
+            events,
+            expectedStateId,
+            freshnessBudgetMs,
+            stabilityWindowMs,
+            dispatchEvent,
+            externalInput);
+    }
+
+    private void ObserveAndMaybeRecalibrate(CaptureRead read, long staleAfterMs, CapturedFrame? recalibrationFrame)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+        continuityGate.Observe(read, staleAfterMs);
+        if (recalibrationFrame is not null)
+        {
+            continuityGate.Recalibrate(recalibrationFrame);
+        }
     }
 }

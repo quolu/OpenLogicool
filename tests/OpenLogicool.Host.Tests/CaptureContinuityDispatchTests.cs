@@ -42,6 +42,25 @@ public sealed class CaptureContinuityDispatchTests
         Assert.Equal(AttemptState.DispatchArmed, gate.Get("attempt-1").State);
     }
 
+    [Fact]
+    public void Host_loop_observes_and_recalibrates_before_dispatch()
+    {
+        var (dispatch, gate, continuity) = NewDispatch();
+        var loop = new CaptureContinuityDispatchLoop(dispatch, continuity);
+        var called = 0;
+
+        var allowed = loop.TryStepOnce(
+            CaptureRead.Available(Frame()),
+            staleAfterMs: 100,
+            recalibrationFrame: Frame(),
+            Event(3),
+            () => called++);
+
+        Assert.True(allowed);
+        Assert.Equal(1, called);
+        Assert.Equal(AttemptState.DispatchArmed, gate.Get("attempt-1").State);
+    }
+
     private static void BreakContinuity(CaptureContinuityGate continuity, CaptureFaultKind kind)
     {
         var frame = Frame();
