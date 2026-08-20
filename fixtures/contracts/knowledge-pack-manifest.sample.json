@@ -3,12 +3,14 @@
   "packId": "pack.gamelab-prototype",
   "packVersion": "0.1.0",
   "game": {
+    "schemaVersion": "0.1.0",
     "name": "GameLab Prototype",
     "build": "gamelab-2026.08",
     "locale": "ja-JP"
   },
   "supportedEnvironments": [
     {
+      "schemaVersion": "0.1.0",
       "build": "gamelab-2026.08",
       "locale": "ja-JP",
       "uiScale": 1.0,
@@ -23,18 +25,19 @@
     }
   ],
   "sections": {
-    "application-identities": { "path": "application-identities.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
-    "semantic-actions": { "path": "semantic-actions.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
-    "states": { "path": "states.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
-    "recognizers": { "path": "recognizers.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
-    "visual-targets": { "path": "visual-targets.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
-    "screen-graph": { "path": "screen-graph.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
-    "playbooks": { "path": "playbooks/", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
-    "fixtures": { "path": "fixtures/", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
-    "policy-record": { "path": "policy-record.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
-    "migrations": { "path": "migrations/", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" }
+    "application-identities": { "schemaVersion": "0.1.0", "path": "application-identities.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "semantic-actions": { "schemaVersion": "0.1.0", "path": "semantic-actions.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "states": { "schemaVersion": "0.1.0", "path": "states.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "recognizers": { "schemaVersion": "0.1.0", "path": "recognizers.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "visual-targets": { "schemaVersion": "0.1.0", "path": "visual-targets.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "screen-graph": { "schemaVersion": "0.1.0", "path": "screen-graph.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "playbooks": { "schemaVersion": "0.1.0", "path": "playbooks/", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "fixtures": { "schemaVersion": "0.1.0", "path": "fixtures/", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "policy-record": { "schemaVersion": "0.1.0", "path": "policy-record.json", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+    "migrations": { "schemaVersion": "0.1.0", "path": "migrations/", "sha256": "0000000000000000000000000000000000000000000000000000000000000000" }
   },
   "provenance": {
+    "schemaVersion": "0.1.0",
     "author": "OpenLogicool GameLab",
     "createdUtc": "2026-08-15T06:00:00Z",
     "source": "first-party",

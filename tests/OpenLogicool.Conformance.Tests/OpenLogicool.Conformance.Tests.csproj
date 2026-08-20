@@ -15,5 +15,6 @@
   <ItemGroup>
     <ProjectReference Include="..\OpenLogicool.Fakes\OpenLogicool.Fakes.csproj" />
     <ProjectReference Include="..\..\tools\OpenLogicool.GameLab\OpenLogicool.GameLab.csproj" />
+    <ProjectReference Include="..\..\src\OpenLogicool.Perception\OpenLogicool.Perception.csproj" />
   </ItemGroup>
 </Project>
