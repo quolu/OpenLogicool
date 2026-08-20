@@ -114,26 +114,6 @@
         "src/OpenLogicool.Packaging/PackageIdentity.cs",
         "docs/g600-leftover-operation.md"
       ]
-    },
-    "t09-authenticode": {
-      "owns": [
-        { "path": "docs/contracts/authenticode.md", "creates": true },
-        { "path": "evidence/phase8a-input-studio-dist/t09-authenticode.md", "creates": true }
-      ],
-      "reads": [
-        "docs/phase8a-campaign-plan.md",
-        "src/OpenLogicool.Packaging/PackageIdentity.cs"
-      ]
-    },
-    "t10-phase8a-exit": {
-      "owns": [
-        { "path": "docs/phase8a-exit-assessment.md", "creates": true },
-        { "path": "evidence/phase8a-input-studio-dist/t10-phase8a-exit.md", "creates": true }
-      ],
-      "reads": [
-        "docs/phase8a-campaign-plan.md",
-        "docs/development-plan.md"
-      ]
     }
   }
 }
