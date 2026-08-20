@@ -42,7 +42,7 @@ public sealed record WgcFrameMetadata(
         Pixels);
 }
 
-public sealed class WgcFrameSource : IFrameSource, IDisposable
+public sealed class WgcFrameSource : IDetailedFrameSource, IDisposable
 {
     private const int BufferCount = 2;
     private const uint MonitorDefaultToNearest = 2;
@@ -55,6 +55,7 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
     private readonly Direct3D11CaptureFramePool framePool;
     private readonly GraphicsCaptureSession session;
     private readonly FrameTransformTracker transformTracker = new();
+    private Windows.Graphics.SizeInt32 observedItemSize;
     private long sequence;
     private bool disposed;
 
@@ -94,6 +95,7 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
             DirectXPixelFormat.B8G8R8A8UIntNormalized,
             BufferCount,
             item.Size);
+        observedItemSize = item.Size;
         session = framePool.CreateCaptureSession(item);
         session.StartCapture();
     }
@@ -101,15 +103,33 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
     public static WgcFrameSource CreateForWindow(nint window, string sourceId) =>
         new((IntPtr)window, sourceId);
 
-    public FrameReadResult Pull()
+    public FrameReadResult Pull() => PullDetailed().Result;
+
+    public CaptureRead PullDetailed()
     {
         ThrowIfDisposed();
+
+        var currentItemSize = item.Size;
+        if (currentItemSize.Width <= 0 || currentItemSize.Height <= 0)
+        {
+            return CaptureRead.Unavailable(new CaptureFault(
+                CaptureFaultKind.Minimized,
+                "wgc capture item が最小化により有効な size を持ちません。"));
+        }
+
+        if (currentItemSize != observedItemSize)
+        {
+            observedItemSize = currentItemSize;
+            return CaptureRead.Unavailable(new CaptureFault(
+                CaptureFaultKind.Resize,
+                "wgc capture item の size が変わりました。"));
+        }
 
         var frame = framePool.TryGetNextFrame();
         if (frame is null)
         {
             // WGC は内容の再描画に伴って frame を供給する。静止しているだけなら正常である。
-            return new FrameUnavailable("wgc frame はまだ到着していません。");
+            return CaptureRead.Unavailable("wgc frame はまだ到着していません。");
         }
 
         using (frame)
@@ -133,7 +153,7 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
         d3dDevice.Dispose();
     }
 
-    private FrameReadResult Capture(Direct3D11CaptureFrame frame, double dpi)
+    private CaptureRead Capture(Direct3D11CaptureFrame frame, double dpi)
     {
         var contentSize = frame.ContentSize;
         var access = frame.Surface.As<IDirect3DDxgiInterfaceAccess>();
@@ -148,7 +168,9 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
                 DirectXPixelFormat.B8G8R8A8UIntNormalized,
                 BufferCount,
                 contentSize);
-            return new FrameUnavailable("wgc frame pool を content size に合わせて再作成しました。");
+            return CaptureRead.Unavailable(new CaptureFault(
+                CaptureFaultKind.Resize,
+                "wgc frame pool を content size に合わせて再作成しました。"));
         }
 
         var stagingDescription = textureDescription with
@@ -181,7 +203,7 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
                 dpi,
                 dpi,
                 new FramePixels(pixels, checked((int)mapped.RowPitch))).ToCapturedFrame(sourceId);
-            return new FrameAvailable(transformTracker.Apply(
+            return CaptureRead.Available(transformTracker.Apply(
                 captured,
                 new FrameRect(0, 0, contentSize.Width, contentSize.Height),
                 MonitorForWindow()));

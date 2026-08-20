@@ -40,6 +40,7 @@ public sealed class WgcFrameSourceTests
         CapturedFrame? initial = null;
         CapturedFrame? resized = null;
         var poolRecreated = false;
+        CaptureFault? resizeFault = null;
         Exception? failure = null;
         var worker = new Thread(() =>
         {
@@ -85,11 +86,13 @@ public sealed class WgcFrameSourceTests
                     window.Update();
                     Application.DoEvents();
 
-                    var result = source.Pull();
+                    var detailed = source.PullDetailed();
+                    var result = detailed.Result;
                     if (result is FrameUnavailable { Reason: var reason }
                         && reason.Contains("frame pool", StringComparison.Ordinal))
                     {
                         poolRecreated = true;
+                        resizeFault = detailed.Fault;
                     }
                     else if (result is FrameAvailable { Frame: var available }
                              && available.Width > initial.Width
@@ -117,6 +120,7 @@ public sealed class WgcFrameSourceTests
         Assert.True(initial.Pixels!.Bgra8.Length > 0);
         Assert.True(initial.Pixels.Stride >= initial.Width * 4);
         Assert.True(poolRecreated);
+        Assert.Equal(CaptureFaultKind.Resize, resizeFault?.Kind);
         Assert.NotNull(resized);
         Assert.True(resized!.TransformRevision > initial.TransformRevision);
         Assert.True(resized.Pixels!.Bgra8.Length > 0);
