@@ -14,6 +14,7 @@
 - 規則が未校正なら、候補が一つでも `LiveObservationSource` が `Unknown` にする。
 - 校正済みの候補が一つなら `Known`、複数なら `Ambiguous`、候補なしなら `Unknown`。既存の4状態正規化以外の丸めはしない。
 - 状態候補と evidence region は caller が fixture rule として明示登録する。認識器は Attempt、dispatch、InputEmitter を参照しない。
+- live WGC frame の rule は capture 前に catalog として登録する。取得済み frame の SHA-256 から rule を作って照合を成立させてはならず、不一致は `Unknown` のままにする。
 
 ## 非目標
 
