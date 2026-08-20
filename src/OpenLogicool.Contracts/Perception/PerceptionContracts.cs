@@ -96,6 +96,13 @@ public sealed record KnowledgePackMigration(
     string ToPackVersion,
     IReadOnlyDictionary<string, string> FieldRenames);
 
+public sealed record KnowledgePackState(
+    string SchemaVersion,
+    string StateId,
+    IReadOnlyList<string> AnchorRefs,
+    IReadOnlyList<string> SuccessConditionRefs,
+    IReadOnlyList<string> ActionRefs);
+
 public sealed record KnowledgePackManifest(
     string SchemaVersion,
     string PackId,
@@ -132,3 +139,8 @@ public sealed record ScreenGraph(
     IReadOnlyList<ScreenGraphNode> Nodes,
     IReadOnlyList<ScreenGraphEdge> Edges,
     string EnvironmentScope);
+
+public sealed record KnowledgePackDocument(
+    KnowledgePackManifest Manifest,
+    IReadOnlyList<KnowledgePackState> States,
+    ScreenGraph ScreenGraph);
