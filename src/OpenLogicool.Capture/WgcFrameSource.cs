@@ -37,7 +37,7 @@ public sealed record WgcFrameMetadata(
         FreshnessMs: 0,
         LastChangeMs: 0,
         ColorSpace: FrameColorSpace.Unknown,
-        Rotation: FrameRotation.None,
+        Rotation: FrameRotation.Unknown,
         Crop: new FrameCrop(0, 0, Width, Height),
         Pixels);
 }
@@ -110,7 +110,7 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
         using (frame)
         {
             var dpi = WgcInterop.DpiForWindow(window);
-            return new FrameAvailable(Capture(frame, dpi).ToCapturedFrame(sourceId));
+            return Capture(frame, dpi);
         }
     }
 
@@ -128,13 +128,24 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
         d3dDevice.Dispose();
     }
 
-    private WgcFrameMetadata Capture(Direct3D11CaptureFrame frame, double dpi)
+    private FrameReadResult Capture(Direct3D11CaptureFrame frame, double dpi)
     {
         var contentSize = frame.ContentSize;
         var access = frame.Surface.As<IDirect3DDxgiInterfaceAccess>();
         var texturePtr = access.GetInterface(typeof(ID3D11Texture2D).GUID);
         using var texture = new ID3D11Texture2D(texturePtr);
         var textureDescription = texture.Description;
+        if (textureDescription.Width != contentSize.Width
+            || textureDescription.Height != contentSize.Height)
+        {
+            framePool.Recreate(
+                direct3DDevice,
+                DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                BufferCount,
+                contentSize);
+            return new FrameUnavailable("wgc frame pool を content size に合わせて再作成しました。");
+        }
+
         var stagingDescription = textureDescription with
         {
             Usage = ResourceUsage.Staging,
@@ -152,10 +163,10 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
             Vortice.Direct3D11.MapFlags.None);
         try
         {
-            var byteCount = checked((int)(mapped.RowPitch * contentSize.Height));
+            var byteCount = checked((int)(mapped.RowPitch * textureDescription.Height));
             var pixels = new byte[byteCount];
             Marshal.Copy(mapped.DataPointer, pixels, 0, pixels.Length);
-            return new WgcFrameMetadata(
+            return new FrameAvailable(new WgcFrameMetadata(
                 Interlocked.Increment(ref sequence),
                 frame.SystemRelativeTime.TotalMilliseconds,
                 DateTimeOffset.UtcNow,
@@ -164,7 +175,7 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
                 textureDescription.Format.ToString(),
                 dpi,
                 dpi,
-                new FramePixels(pixels, checked((int)mapped.RowPitch)));
+                new FramePixels(pixels, checked((int)mapped.RowPitch))).ToCapturedFrame(sourceId));
         }
         finally
         {
