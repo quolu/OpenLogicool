@@ -72,9 +72,9 @@ public sealed class CaptureCapabilityMatrix
             "遮蔽された window capture は未実測です。"),
         new(CaptureBackend.DesktopDuplication, CaptureTargetKind.Display, CaptureCondition.Windowed,
             CaptureEvidenceLevel.Confirmed, CaptureRouteAvailability.ProbedOnly,
-            "reference display の probe は確認済みですが、製品 backend 化は t03 の採否待ちです。"),
+            "reference display の probe は確認済みですが、この Phase では製品 backend に採用していません。"),
         new(CaptureBackend.GdiBitBlt, CaptureTargetKind.Display, CaptureCondition.Windowed,
             CaptureEvidenceLevel.Confirmed, CaptureRouteAvailability.ProbedOnly,
-            "virtual desktop の probe は確認済みですが、製品 backend 化は t03 の採否待ちです。"),
+            "virtual desktop の probe は確認済みですが、この Phase では製品 backend に採用していません。"),
     ];
 }
