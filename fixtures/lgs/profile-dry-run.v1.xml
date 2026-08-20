@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<profiles xmlns="http://www.logitech.com/Cassandra/2010.7/Profile">
+  <profile name="Pilot">
+    <target path="C:\Games\Pilot\pilot.exe" />
+    <macros>
+      <macro guid="key-space" name="Jump">
+        <keystroke><key value="Space" /></keystroke>
+      </macro>
+      <macro guid="lua-script" name="Unsafe script">
+        <script>os.execute('not trusted')</script>
+      </macro>
+    </macros>
+    <assignments>
+      <assignment contextid="G1" macroguid="key-space" original="false" />
+      <assignment contextid="G2" macroguid="lua-script" original="false" />
+      <assignment contextid="G3" macroguid="key-space" original="true" />
+    </assignments>
+  </profile>
+</profiles>
