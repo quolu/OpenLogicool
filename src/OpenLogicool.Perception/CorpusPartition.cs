@@ -25,6 +25,11 @@ public sealed class CorpusPartition
         var all = this.development.Concat(this.calibration).Concat(this.acceptance).Select(artifact => artifact.Id).ToArray();
         if (all.Distinct(StringComparer.Ordinal).Count() != all.Length)
             throw new ArgumentException("corpus artifact ID は partition をまたいで重複できません。");
+
+        var paths = this.development.Concat(this.calibration).Concat(this.acceptance)
+            .Select(artifact => NormalizePath(artifact.RelativePath)).ToArray();
+        if (paths.Distinct(StringComparer.Ordinal).Count() != paths.Length)
+            throw new ArgumentException("同じ corpus 実体を複数の partition へ登録できません。");
     }
 
     public TrainingCorpus ForTraining() => new(development, calibration);
@@ -37,4 +42,6 @@ public sealed class CorpusPartition
             throw new ArgumentException("corpus artifact には ID、相対 path、出典が必要です。", name);
         return artifacts.ToArray();
     }
+
+    private static string NormalizePath(string path) => path.Replace('\\', '/').Trim().ToUpperInvariant();
 }
