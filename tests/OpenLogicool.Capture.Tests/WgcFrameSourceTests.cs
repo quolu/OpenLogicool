@@ -1,5 +1,7 @@
 using OpenLogicool.Capture;
 using OpenLogicool.Contracts.Capture;
+using System.Drawing;
+using System.Windows.Forms;
 using Xunit;
 
 namespace OpenLogicool.Capture.Tests;
@@ -29,5 +31,58 @@ public sealed class WgcFrameSourceTests
         Assert.Equal(FrameRotation.None, captured.Rotation);
         Assert.Equal(new FrameCrop(0, 0, 4, 2), captured.Crop);
         Assert.Equal(pixels, captured.Pixels);
+    }
+
+    [Fact]
+    [Trait("Category", "WindowsNative")]
+    public void Wgc_source_captures_a_repainted_window()
+    {
+        CapturedFrame? captured = null;
+        Exception? failure = null;
+        var worker = new Thread(() =>
+        {
+            try
+            {
+                using var window = new Form
+                {
+                    Text = "OpenLogicool WGC t01",
+                    ClientSize = new Size(160, 90),
+                    StartPosition = FormStartPosition.CenterScreen,
+                    BackColor = Color.Navy,
+                };
+                window.Show();
+                Application.DoEvents();
+
+                using var source = WgcFrameSource.CreateForWindow(window.Handle, "t01-wgc-window");
+                for (var attempt = 0; attempt < 20 && captured is null; attempt++)
+                {
+                    window.BackColor = attempt % 2 == 0 ? Color.Navy : Color.Teal;
+                    window.Invalidate();
+                    window.Update();
+                    Application.DoEvents();
+
+                    if (source.Pull() is FrameAvailable available)
+                    {
+                        captured = available.Frame;
+                        break;
+                    }
+
+                    Thread.Sleep(50);
+                }
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+        });
+        worker.SetApartmentState(ApartmentState.STA);
+        worker.Start();
+        worker.Join();
+
+        Assert.Null(failure);
+        Assert.NotNull(captured);
+        Assert.Equal(CaptureBackend.WindowsGraphicsCapture, captured!.Backend);
+        Assert.True(captured.Pixels!.Bgra8.Length > 0);
+        Assert.True(captured.Pixels.Stride >= captured.Width * 4);
     }
 }
