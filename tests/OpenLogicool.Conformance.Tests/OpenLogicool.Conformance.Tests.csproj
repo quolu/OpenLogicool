@@ -17,4 +17,7 @@
     <ProjectReference Include="..\..\tools\OpenLogicool.GameLab\OpenLogicool.GameLab.csproj" />
     <ProjectReference Include="..\..\src\OpenLogicool.Perception\OpenLogicool.Perception.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\fixtures\frames\gamelab-main-menu-20260815.png" Link="fixtures\frames\gamelab-main-menu-20260815.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
