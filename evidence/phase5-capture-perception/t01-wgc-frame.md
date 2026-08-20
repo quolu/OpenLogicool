@@ -16,7 +16,8 @@
 
 | コマンド | 結果 |
 | --- | --- |
-| `dotnet test tests/OpenLogicool.Capture.Tests/OpenLogicool.Capture.Tests.csproj` | 1/1 green |
+| `dotnet test tests/OpenLogicool.Capture.Tests/OpenLogicool.Capture.Tests.csproj` | 2/2 green |
+| `dotnet test tests/OpenLogicool.Capture.Tests/OpenLogicool.Capture.Tests.csproj --filter "Category=WindowsNative"` | 1/1 green（自前 window を再描画し、製品 `WgcFrameSource.Pull()` が BGRA8 frame を返すことを確認） |
 | `dotnet build src/OpenLogicool.Host/OpenLogicool.Host.csproj --no-restore` | green、警告 0／エラー 0 |
 | `dotnet test tests/OpenLogicool.Host.Tests/OpenLogicool.Host.Tests.csproj --filter "FullyQualifiedName!~HostWorkspaceEditorIntentsTests"` | 45/45 green |
 | `dotnet test tests/OpenLogicool.Conformance.Tests/OpenLogicool.Conformance.Tests.csproj` | 12/12 green |
@@ -26,4 +27,4 @@ Host test 全49件のうち `HostWorkspaceEditorIntentsTests` 4件は、Lattice 
 ## 根拠水準
 
 - Phase 0 の同一 Windows native probe で、WGC window の初回 frame と再描画時の後続 frame は確認済み（`docs/probes/wgc-frame-supply-2026-08-15.md`）。
-- 本 task の製品 `WgcFrameSource` は compile と metadata contract test で確認済み。製品コード経由の実 window capture は、この隔離 worktree では未実行である。
+- 本 task の製品 `WgcFrameSource` は、Windows native integration test で自前 window の再描画から `FrameAvailable` と BGRA8 buffer を確認済み。
