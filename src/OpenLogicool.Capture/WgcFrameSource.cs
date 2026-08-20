@@ -45,6 +45,7 @@ public sealed record WgcFrameMetadata(
 public sealed class WgcFrameSource : IFrameSource, IDisposable
 {
     private const int BufferCount = 2;
+    private const uint MonitorDefaultToNearest = 2;
 
     private readonly IntPtr window;
     private readonly string sourceId;
@@ -56,6 +57,9 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
     private readonly FrameTransformTracker transformTracker = new();
     private long sequence;
     private bool disposed;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
 
     private WgcFrameSource(IntPtr window, string sourceId)
     {
@@ -179,7 +183,8 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
                 new FramePixels(pixels, checked((int)mapped.RowPitch))).ToCapturedFrame(sourceId);
             return new FrameAvailable(transformTracker.Apply(
                 captured,
-                new FrameRect(0, 0, contentSize.Width, contentSize.Height)));
+                new FrameRect(0, 0, contentSize.Width, contentSize.Height),
+                MonitorForWindow()));
         }
         finally
         {
@@ -193,5 +198,16 @@ public sealed class WgcFrameSource : IFrameSource, IDisposable
         {
             throw new ObjectDisposedException(nameof(WgcFrameSource));
         }
+    }
+
+    private nint MonitorForWindow()
+    {
+        var monitor = MonitorFromWindow(window, MonitorDefaultToNearest);
+        if (monitor == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("capture window の monitor identity を取得できませんでした。");
+        }
+
+        return monitor;
     }
 }

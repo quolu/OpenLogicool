@@ -8,7 +8,7 @@ public sealed class FrameTransformTracker
     private FrameTransformSignature? current;
     private long revision;
 
-    public long Observe(CapturedFrame frame, FrameRect contentBounds)
+    public long Observe(CapturedFrame frame, FrameRect contentBounds, nint monitorHandle)
     {
         var next = new FrameTransformSignature(
             frame.Width,
@@ -16,7 +16,8 @@ public sealed class FrameTransformTracker
             frame.PixelFormat,
             frame.DpiX,
             frame.DpiY,
-            contentBounds);
+            contentBounds,
+            monitorHandle);
         if (next != current)
         {
             current = next;
@@ -26,8 +27,8 @@ public sealed class FrameTransformTracker
         return revision;
     }
 
-    public CapturedFrame Apply(CapturedFrame frame, FrameRect contentBounds) =>
-        frame with { TransformRevision = Observe(frame, contentBounds) };
+    public CapturedFrame Apply(CapturedFrame frame, FrameRect contentBounds, nint monitorHandle) =>
+        frame with { TransformRevision = Observe(frame, contentBounds, monitorHandle) };
 
     public bool IsCurrent(long locatorTransformRevision) =>
         revision > 0 && locatorTransformRevision == revision;

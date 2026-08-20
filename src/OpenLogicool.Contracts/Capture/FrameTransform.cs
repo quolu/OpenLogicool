@@ -79,4 +79,5 @@ public sealed record FrameTransformSignature(
     string PixelFormat,
     double DpiX,
     double DpiY,
-    FrameRect ContentBounds);
+    FrameRect ContentBounds,
+    nint MonitorHandle);

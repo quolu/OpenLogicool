@@ -13,15 +13,16 @@ public sealed class FrameTransformTrackerTests
         var frame = Frame();
         var full = new FrameRect(0, 0, 1920, 1080);
 
-        Assert.Equal(1, tracker.Observe(frame, full));
+        Assert.Equal(1, tracker.Observe(frame, full, monitorHandle: 1));
         Assert.True(tracker.IsCurrent(1));
-        Assert.Equal(1, tracker.Observe(frame, full));
-        Assert.Equal(2, tracker.Observe(frame with { Width = 2560 }, new FrameRect(0, 0, 2560, 1080)));
+        Assert.Equal(1, tracker.Observe(frame, full, monitorHandle: 1));
+        Assert.Equal(2, tracker.Observe(frame with { Width = 2560 }, new FrameRect(0, 0, 2560, 1080), monitorHandle: 1));
         Assert.False(tracker.IsCurrent(1));
         Assert.True(tracker.IsCurrent(2));
-        Assert.Equal(3, tracker.Observe(frame with { DpiX = 144, DpiY = 144 }, full));
-        Assert.Equal(4, tracker.Observe(frame with { PixelFormat = "R16G16B16A16_Float" }, full));
-        Assert.Equal(5, tracker.Observe(frame, new FrameRect(0, 120, 1920, 840)));
+        Assert.Equal(3, tracker.Observe(frame with { DpiX = 144, DpiY = 144 }, full, monitorHandle: 1));
+        Assert.Equal(4, tracker.Observe(frame with { PixelFormat = "R16G16B16A16_Float" }, full, monitorHandle: 1));
+        Assert.Equal(5, tracker.Observe(frame, new FrameRect(0, 120, 1920, 840), monitorHandle: 1));
+        Assert.Equal(6, tracker.Observe(frame, full, monitorHandle: 2));
     }
 
     [Fact]
