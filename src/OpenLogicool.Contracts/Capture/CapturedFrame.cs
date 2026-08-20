@@ -7,6 +7,23 @@ public enum CaptureBackend
     WindowsGraphicsCapture,
 }
 
+public enum FrameColorSpace
+{
+    Unknown,
+}
+
+public enum FrameRotation
+{
+    None,
+    Clockwise90,
+    Clockwise180,
+    Clockwise270,
+}
+
+public sealed record FrameCrop(int X, int Y, int Width, int Height);
+
+public sealed record FramePixels(ReadOnlyMemory<byte> Bgra8, int Stride);
+
 public sealed record CapturedFrame(
     string SchemaVersion,
     string SourceId,
@@ -21,7 +38,11 @@ public sealed record CapturedFrame(
     double DpiY,
     long TransformRevision,
     long FreshnessMs,
-    long LastChangeMs);
+    long LastChangeMs,
+    FrameColorSpace ColorSpace = FrameColorSpace.Unknown,
+    FrameRotation Rotation = FrameRotation.None,
+    FrameCrop? Crop = null,
+    FramePixels? Pixels = null);
 
 public abstract record FrameReadResult;
 
