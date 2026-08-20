@@ -36,13 +36,13 @@ public sealed class WgcFrameSourceTests
     }
 
     [Fact]
-    public void Wgc_freshness_tracks_time_since_last_pixel_change()
+    public void Wgc_freshness_tracks_frame_age_and_content_stability_separately()
     {
         var tracker = new FrameFreshnessTracker();
 
-        Assert.Equal(new FrameFreshness(0, 100), tracker.Observe(100, [1, 2, 3]));
-        Assert.Equal(new FrameFreshness(25, 100), tracker.Observe(125, [1, 2, 3]));
-        Assert.Equal(new FrameFreshness(0, 150), tracker.Observe(150, [3, 2, 1]));
+        Assert.Equal(new FrameFreshness(0, 0), tracker.Observe(100, 100, [1, 2, 3]));
+        Assert.Equal(new FrameFreshness(25, 25), tracker.Observe(125, 150, [1, 2, 3]));
+        Assert.Equal(new FrameFreshness(30, 0), tracker.Observe(150, 180, [3, 2, 1]));
     }
 
     [Fact]
