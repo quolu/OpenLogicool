@@ -5,7 +5,7 @@
 最終確認:
 
 - `dotnet test tests/OpenLogicool.Conformance.Tests/OpenLogicool.Conformance.Tests.csproj --filter "FullyQualifiedName~FrozenMetricRunnerTests"` — 2/2 green。acceptance fixture 2件の実測は Known誤判定0、Unknown→Known0、success false-positive0。
-- `dotnet test tests/OpenLogicool.Conformance.Tests/OpenLogicool.Conformance.Tests.csproj` — 24/24 green。
+- `dotnet test tests/OpenLogicool.Conformance.Tests/OpenLogicool.Conformance.Tests.csproj` — 23/23 green。
 - `git diff --check` — 空白エラーなし。
 
 実 game frame の収集・評価は未実施。fixture／acceptance corpus の固定評価だけが本 ToDo の範囲である。
