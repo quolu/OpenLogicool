@@ -1,6 +1,6 @@
 # Phase 8A campaign — Input Studio Parity／Distribution
 
-- status: **active**
+- status: **closed（Exit 2026-08-21）**
 - 起票: 2026-08-21（工程表どおり。Phase 7 Exit 後。判断をオーナーへ戻さない）
 - 統括: ベル（Grok 4.6）。実装 Terra×high（Codex）／監査 Grok 4.6×medium
 - 実行 TODO の正本: **Lattice plan `phase8a-input-studio-dist`**
