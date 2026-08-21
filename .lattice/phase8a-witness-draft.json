@@ -4,61 +4,6 @@
   "plan_key": "phase8a-input-studio-dist",
   "capacity": { "executors": 2 },
   "tasks": {
-    "t03-timed-macro": {
-      "owns": [
-        { "path": "src/OpenLogicool.Input/TimedMacro.cs", "creates": true },
-        { "path": "tests/OpenLogicool.Input.Tests/TimedMacroTests.cs", "creates": true },
-        { "path": "docs/contracts/timed-macro.md", "creates": true },
-        { "path": "evidence/phase8a-input-studio-dist/t03-timed-macro.md", "creates": true }
-      ],
-      "reads": [
-        "docs/phase8a-campaign-plan.md",
-        "src/OpenLogicool.Input/OutputTokens.cs",
-        "src/OpenLogicool.Domain/MappingProfile.cs"
-      ]
-    },
-    "t04-lgs-restore-rollback": {
-      "owns": [
-        { "path": "src/OpenLogicool.Host/MigrationRollback.cs", "creates": true },
-        { "path": "tests/OpenLogicool.Host.Tests/MigrationRollbackTests.cs", "creates": true },
-        { "path": "docs/contracts/lgs-restore-rollback.md", "creates": true },
-        { "path": "evidence/phase8a-input-studio-dist/t04-lgs-restore-rollback.md", "creates": true }
-      ],
-      "reads": [
-        "docs/phase8a-campaign-plan.md",
-        "docs/g600-leftover-operation.md",
-        "src/OpenLogicool.Devices.G600/G600LeftoverSession.cs",
-        "src/OpenLogicool.Host/G600LeftoverHostSupport.cs",
-        "src/OpenLogicool.Profiles/LgsXmlDryRun.cs"
-      ]
-    },
-    "t05-diagnostic-bundle": {
-      "owns": [
-        { "path": "src/OpenLogicool.Host/DiagnosticBundle.cs", "creates": true },
-        { "path": "tests/OpenLogicool.Host.Tests/DiagnosticBundleTests.cs", "creates": true },
-        { "path": "docs/contracts/diagnostic-bundle.md", "creates": true },
-        { "path": "evidence/phase8a-input-studio-dist/t05-diagnostic-bundle.md", "creates": true }
-      ],
-      "reads": [
-        "docs/phase8a-campaign-plan.md",
-        "src/OpenLogicool.Desktop/DiagnosticsWindow.cs",
-        "src/OpenLogicool.Host/OnboardingReport.cs"
-      ]
-    },
-    "t06-packaging-identity": {
-      "owns": [
-        { "path": "src/OpenLogicool.Packaging/OpenLogicool.Packaging.csproj", "creates": true },
-        { "path": "src/OpenLogicool.Packaging/PackageIdentity.cs", "creates": true },
-        { "path": "tests/OpenLogicool.Packaging.Tests/OpenLogicool.Packaging.Tests.csproj", "creates": true },
-        { "path": "tests/OpenLogicool.Packaging.Tests/PackageIdentityTests.cs", "creates": true },
-        { "path": "docs/contracts/packaging-identity.md", "creates": true },
-        { "path": "evidence/phase8a-input-studio-dist/t06-packaging-identity.md", "creates": true }
-      ],
-      "reads": [
-        "docs/phase8a-campaign-plan.md",
-        "docs/development-plan.md"
-      ]
-    },
     "t07-sbom-notices": {
       "owns": [
         { "path": "src/OpenLogicool.Packaging/SbomNotices.cs", "creates": true },
@@ -83,6 +28,16 @@
         "docs/phase8a-campaign-plan.md",
         "src/OpenLogicool.Packaging/PackageIdentity.cs",
         "docs/g600-leftover-operation.md"
+      ]
+    },
+    "t09-authenticode": {
+      "owns": [
+        { "path": "docs/contracts/authenticode.md", "creates": true },
+        { "path": "evidence/phase8a-input-studio-dist/t09-authenticode.md", "creates": true }
+      ],
+      "reads": [
+        "docs/phase8a-campaign-plan.md",
+        "src/OpenLogicool.Packaging/PackageIdentity.cs"
       ]
     }
   }
