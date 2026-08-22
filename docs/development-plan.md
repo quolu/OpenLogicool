@@ -1104,6 +1104,10 @@ Exit:
 - output ownershipをreconcileするまで再起動後のdispatchを禁止する。
 - Input Studioの既存機能と設定をAI／network障害で損なわない。
 
+### Post-8B capability campaign
+
+- G13／G600の既存fast pathを共通の物理USB HID出力へ接続するSerial HID bridgeは、Phase番号を追加せず独立campaignとして扱う。設計、非目標、Task、実機受入の正本は[Serial HID Output campaign](serial-hid-output-campaign-plan.md)。実行状態はLattice storeだけに置く。
+
 ## 9. Blockerを潰すfocused experiment
 
 | ID | 実験 | 成功条件 | 失敗時の分岐 |
