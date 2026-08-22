@@ -1,0 +1,59 @@
+{
+  "schema": "openlogicool.serial-hid.protocol-v1-golden-vectors.v1",
+  "crc": {
+    "algorithm": "CRC-16/CCITT-FALSE",
+    "checkAscii": "123456789",
+    "check": "29B1"
+  },
+  "vectors": [
+    {
+      "name": "hello-all-capabilities",
+      "kind": "Hello",
+      "sequence": 4660,
+      "payloadHex": "01 00 00 07 00",
+      "frameHex": "4F 4C 01 01 34 12 05 00 01 00 00 07 00 20 5F"
+    },
+    {
+      "name": "ready-v1-lease-150ms",
+      "kind": "Ready",
+      "sequence": 4660,
+      "payloadHex": "01 00 00 01 07 00 06 96 00",
+      "frameHex": "4F 4C 01 02 34 12 09 00 01 00 00 01 07 00 06 96 00 A1 B3"
+    },
+    {
+      "name": "set-state-chord-and-mouse",
+      "kind": "SetState",
+      "sequence": 4661,
+      "payloadHex": "01 04 06 00 00 00 00 05",
+      "frameHex": "4F 4C 01 03 35 12 08 00 01 04 06 00 00 00 00 05 C7 0E"
+    },
+    {
+      "name": "all-up",
+      "kind": "AllUp",
+      "sequence": 4662,
+      "payloadHex": "",
+      "frameHex": "4F 4C 01 04 36 12 00 00 7E 7B"
+    },
+    {
+      "name": "heartbeat",
+      "kind": "Heartbeat",
+      "sequence": 4663,
+      "payloadHex": "",
+      "frameHex": "4F 4C 01 05 37 12 00 00 9B A7"
+    },
+    {
+      "name": "ack-set-state",
+      "kind": "Ack",
+      "sequence": 4661,
+      "payloadHex": "",
+      "frameHex": "4F 4C 01 06 35 12 00 00 21 A4"
+    },
+    {
+      "name": "fault-checksum",
+      "kind": "Fault",
+      "sequence": 4662,
+      "payloadHex": "03 03",
+      "frameHex": "4F 4C 01 07 36 12 02 00 03 03 20 1B"
+    }
+  ]
+}

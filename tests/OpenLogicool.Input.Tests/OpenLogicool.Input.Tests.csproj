@@ -15,4 +15,9 @@
     <ProjectReference Include="..\..\src\OpenLogicool.Input\OpenLogicool.Input.csproj" />
     <ProjectReference Include="..\OpenLogicool.Fakes\OpenLogicool.Fakes.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\firmware\OpenLogicool.SerialHid\protocol-v1-golden-vectors.json"
+          Link="protocol-v1-golden-vectors.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

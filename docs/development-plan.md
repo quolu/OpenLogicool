@@ -146,6 +146,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | DEV-009 | R1 Gate | hard crash時のoutput残留を実測し、残留しない証拠または期限内にreleaseするwatchdogをSupported pathの条件にする |
 | DEV-010 | R5 | G600 device write（154-byte profile書換等の永続write一般）は完全backup、byte diff、readback、power cycle、restoreが通ったcapabilityだけ有効化する |
 | DEV-013 | R2 | 方式A採用時のF0 active slot切替writeは、DEV-010の一般write gateと分離し、EXP-G600-03（backup・readback・restore付き）の受入だけでR2から有効化できる。app-first切替（APP-006）のG600側実装はこの切替だけを使い、154-byte profile writeを使わない |
+| DEV-014 | R1拡張 | G13／G600共通の選択可能な出力経路として、versioned binary protocolとACK／FAULTを持つ外付けUSB keyboard／mouse bridgeを提供する。完全HID state snapshot、重複output参照数、6KRO超過の送出前拒否、firmware leaseによるhard-crash release、SendInputへのfallback禁止を成立条件にする |
 | DEV-011 | R5 | G13 RGB／M LED／LCDは標準入力を壊さない独立実験後だけ有効化する |
 | DEV-012 | R1 Decision／R5 Delivery | device単位の元入力抑止が必要と実証された時点でfilter driver／virtual HID計画へ分岐し、driverなしのclaimを制限する |
 
@@ -249,7 +250,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | ID | 指標 | 初期target |
 |---|---|---|
 | NFR-001 | Raw Input handler占有 | p99 1 ms以下。HID I/O、DB、UI、AIをhandler上で実行しない |
-| NFR-002 | input dispatch遅延 | WM_INPUT取得からSendInput返却までp99 10 ms以下、最大値も記録 |
+| NFR-002 | input dispatch遅延 | WM_INPUT取得から選択Emitterの成立確認（SendInput返却またはSerial HID matching ACK）までp99 10 ms以下、最大値も記録 |
 | NFR-003 | profile切替 | foreground eventから新generation確定までp99 100 ms以下 |
 | NFR-004 | macro timing | 10 ms以上のintervalでjitter p99 5 ms以下を目標とする |
 | NFR-005 | parser | 1,000,000 recorded report replayでedge欠落、重複、順序逆転0 |
