@@ -10,3 +10,4 @@
 - G600 raw report 0x80 全control対応: [docs/probes/g600-input-map-2026-08-15.md](../docs/probes/g600-input-map-2026-08-15.md)（確認済み）
 - WGC/DXGI/GDI capture backend成立と WinRT interop の罠: [docs/probes/capture-backend-matrix-2026-08-15.md](../docs/probes/capture-backend-matrix-2026-08-15.md)（確認済み）
 - LGS 9.04.49 profile XML スキーマ（Cassandra namespace・shiftstate 6層・task語彙17種）: [docs/lgs-parity-inventory-2026-08-15.md](../docs/lgs-parity-inventory-2026-08-15.md)（確認済み）
+- [NIKKE は SendInput 合成入力を受理しない](openlogicool/nikke-sendinput-rejection-2026-08-22.md) — fast path 送出成立＋ゲーム内反映なしの実測で確定。anti-cheat の注入入力フィルタと判定、方式A（onboard 直書き）が対応経路。取得日: 2026-08-22、確度: 確認済み（実機）
