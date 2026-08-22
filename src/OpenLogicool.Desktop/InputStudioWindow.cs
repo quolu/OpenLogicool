@@ -210,9 +210,21 @@ public sealed class InputStudioWindow : Window
 
     private void OnRecordKeyClicked()
     {
+        // 操作未選択でも録画から始められる導線にする（実利用の指摘 2026-08-22:
+        // 一覧が空の状態で「録る…」が黙って何もしないのは導線が壊れている）。
+        // その場で操作を作って録画に入り、取り消されたら空の操作を残さない。
+        var createdForRecording = false;
         if (_selectedActionId is null)
         {
-            return;
+            var newActionId = GenerateActionId("action");
+            if (!TryMutateDocument(document => WorkspaceDocumentEditor.AddAction(document, newActionId, GenerateActionName(), [])))
+            {
+                return;
+            }
+
+            _selectedActionId = newActionId;
+            createdForRecording = true;
+            Render();
         }
 
         var actionId = _selectedActionId;
@@ -227,6 +239,14 @@ public sealed class InputStudioWindow : Window
         if (dialog.ShowDialog() == true && dialog.Result is { } token)
         {
             if (TryMutateDocument(document => SetOutputsWithAutoName(document, actionId, WorkspaceEditorProjection.ParseOutputs(token))))
+            {
+                Render();
+            }
+        }
+        else if (createdForRecording)
+        {
+            _selectedActionId = null;
+            if (TryMutateDocument(document => WorkspaceDocumentEditor.DeleteAction(document, actionId)))
             {
                 Render();
             }
