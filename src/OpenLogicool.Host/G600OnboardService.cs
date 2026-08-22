@@ -108,7 +108,11 @@ public sealed class G600OnboardService
         }
 
         _mode.Save(new G600OnboardModeState(workspaceId, g600Document.ProfileId, DateTimeOffset.UtcNow));
-        return new(true, $"G600 本体へ書き込みました（attempt {write.Attempts}・byte 一致・再確認済み）。");
+        return new(
+            true,
+            $"G600 本体へ書き込みました（attempt {write.Attempts}・byte 一致・再確認済み）。\n"
+            + "ボタンを押しても反映されていない場合は、G600 の USB を挿し直してください"
+            + "（LGS 使用後は本体が割当を実行しない状態のことがあり、挿し直しで復帰します・実測 2026-08-22）。");
     }
 
     public G600OnboardOperationResult Restore()

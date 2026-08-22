@@ -47,17 +47,36 @@ public sealed class G600OnboardPlannerTests
     }
 
     [Fact]
-    public void Unbound_buttons_and_layers_become_explicit_empty_cells()
+    public void Unbound_mouse_buttons_preserve_baseline_and_other_buttons_become_empty_cells()
     {
         var plan = G600OnboardPlanner.Build(Document(
             [new MappingBindingEntry("G11", "base", ["Key:A"])]));
 
-        // G1（左クリック固定）と G6（selector）を除く 18 button × 2層が全て明示 cell
-        Assert.Equal(36, plan.Cells.Count);
+        // G1（左クリック固定）・G6（selector）・未割当の G2〜G5（baseline 保持）を除く
+        // 14 button × 2層が明示 cell
+        Assert.Equal(28, plan.Cells.Count);
+        Assert.DoesNotContain(plan.Cells, cell => cell.Button is >= 2 and <= 5); // マウス基本ボタンは出荷のまま
         Assert.Equal((0x00, 0x00, 0x00),
             (CellFor(plan, 15, false).MouseCode, CellFor(plan, 15, false).Modifiers, CellFor(plan, 15, false).HidKey));
         // shift 層の未割当は base を写さず無動作（software runtime と同じ）
         Assert.Equal((byte)0x00, CellFor(plan, 11, shift: true).HidKey);
+    }
+
+    [Fact]
+    public void Explicit_mouse_button_bindings_override_only_the_assigned_layers()
+    {
+        var plan = G600OnboardPlanner.Build(Document(
+        [
+            new MappingBindingEntry("G2", "base", ["Mouse:Right"]),
+            new MappingBindingEntry("G5", "shift", ["Mouse:Middle"]),
+        ]));
+
+        Assert.True(plan.CanApply);
+        Assert.Equal((byte)0x02, CellFor(plan, 2, shift: false).MouseCode);
+        Assert.Equal((byte)0x03, CellFor(plan, 5, shift: true).MouseCode);
+        Assert.DoesNotContain(plan.Cells, cell => cell.Button == 2 && cell.ShiftLayer);
+        Assert.DoesNotContain(plan.Cells, cell => cell.Button == 5 && !cell.ShiftLayer);
+        Assert.DoesNotContain(plan.Cells, cell => cell.Button is 3 or 4);
     }
 
     [Fact]
@@ -102,6 +121,10 @@ public sealed class G600OnboardPlannerTests
         Assert.True(plan.CanApply);
         Assert.Null(plan.ShiftSelectorButton);
         Assert.Equal((byte)0x05, CellFor(plan, 6, shift: false).HidKey);
-        Assert.Equal(38, plan.Cells.Count); // G1 だけ除外＝19 button × 2層
+        Assert.Equal((0x00, 0x00, 0x00),
+            (CellFor(plan, 6, shift: true).MouseCode,
+             CellFor(plan, 6, shift: true).Modifiers,
+             CellFor(plan, 6, shift: true).HidKey));
+        Assert.Equal(30, plan.Cells.Count); // G1 と未割当 G2〜G5 を除外＝15 button × 2層
     }
 }

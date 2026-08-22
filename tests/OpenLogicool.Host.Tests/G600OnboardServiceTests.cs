@@ -37,6 +37,15 @@ public sealed class G600OnboardServiceTests : IDisposable
             [new LayerSelectorEntry("G6", "shift")],
             [new MappingBindingEntry("G11", "base", ["Key:A"])]);
 
+    private static byte[] Cell(byte[] report, int button, bool shift)
+    {
+        var layerBase = shift
+            ? G600SideRemap.ShiftLayerBaseOffset
+            : G600SideRemap.NormalLayerBaseOffset;
+        var offset = layerBase + (button - 1) * G600SideRemap.BytesPerButton;
+        return report.AsSpan(offset, G600SideRemap.BytesPerButton).ToArray();
+    }
+
     private sealed class FakeDeviceAccess(byte[] initialF3, int initialSlot = 0) : IG600FeatureAccess
     {
         public byte[] StoredF3 = initialF3;
@@ -102,10 +111,33 @@ public sealed class G600OnboardServiceTests : IDisposable
         Assert.Equal(clean, baseline.LoadF3());
         Assert.NotNull(mode.Load());
         Assert.Equal("ws", mode.Load()!.WorkspaceId);
-        // G11 base = A（usage 0x04）・G1 = 左クリック・G6 = G-Shift
-        Assert.Equal(0x04, device.StoredF3[G600SideRemap.NormalLayerBaseOffset + 10 * 3 + 2]);
-        Assert.Equal(0x01, device.StoredF3[G600SideRemap.NormalLayerBaseOffset]);
-        Assert.Equal(0x17, device.StoredF3[G600SideRemap.NormalLayerBaseOffset + 5 * 3]);
+        Assert.Contains("USB", result.Message);
+        Assert.Contains("挿し直", result.Message);
+
+        // 未割当 G2〜G5 は baseline の右・中クリック等を両層とも保持する。
+        foreach (var button in Enumerable.Range(2, 4))
+        {
+            Assert.Equal(Cell(clean, button, shift: false), Cell(device.StoredF3, button, shift: false));
+            Assert.Equal(Cell(clean, button, shift: true), Cell(device.StoredF3, button, shift: true));
+        }
+
+        // G1 は左クリック、G6 は G-Shift に固定する。
+        Assert.Equal([0x01, 0x00, 0x00], Cell(device.StoredF3, 1, shift: false));
+        Assert.Equal([0x01, 0x00, 0x00], Cell(device.StoredF3, 1, shift: true));
+        Assert.Equal([0x17, 0x00, 0x00], Cell(device.StoredF3, 6, shift: false));
+        Assert.Equal([0x17, 0x00, 0x00], Cell(device.StoredF3, 6, shift: true));
+
+        // G11 base だけは A（usage 0x04）。それ以外の G6〜G20 未割当層は無動作にする。
+        Assert.Equal([0x00, 0x00, 0x04], Cell(device.StoredF3, 11, shift: false));
+        foreach (var button in Enumerable.Range(7, 14))
+        {
+            if (button != 11)
+            {
+                Assert.Equal([0x00, 0x00, 0x00], Cell(device.StoredF3, button, shift: false));
+            }
+
+            Assert.Equal([0x00, 0x00, 0x00], Cell(device.StoredF3, button, shift: true));
+        }
     }
 
     [Fact]

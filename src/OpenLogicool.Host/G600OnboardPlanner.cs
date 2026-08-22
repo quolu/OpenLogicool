@@ -4,7 +4,10 @@ using OpenLogicool.Input;
 
 namespace OpenLogicool.Host;
 
-/// <summary>onboard 変換計画: 全 button×両層の cell（未割当は 00 00 00）と変換不能の全列挙。</summary>
+/// <summary>
+/// onboard 変換計画: 明示割当と、G6〜G20 の未割当を無動作化する cell、変換不能の全列挙。
+/// 未割当 G2〜G5 は baseline のマウス基本操作を保持するため cell を作らない。
+/// </summary>
 public sealed record G600OnboardPlan(
     IReadOnlyList<G600OnboardCell> Cells,
     int? ShiftSelectorButton,
@@ -18,7 +21,7 @@ public sealed record G600OnboardPlan(
 /// onboard cell（mouseCode/modifiers/hidKey）で表現できない binding は黙って落とさず全列挙して拒否する:
 /// `Tap:` sequence・modifier＋単キー以外の chord・HID 変換表にない virtual key・マウスとキーの混在。
 /// 層は base（DefaultLayerId）と G-Shift（hold selector の対象 layer・最大1つ）だけを対象とし、
-/// shift 層の未割当は software runtime と同じく無動作（00 00 00）にする。
+/// G6〜G20 の未割当層は software runtime と同じく無動作（00 00 00）にする。
 /// G1（左クリック）と selector control への binding は G600OnboardImage の固定と衝突するため拒否する。
 /// </summary>
 public static class G600OnboardPlanner
@@ -111,7 +114,10 @@ public static class G600OnboardPlanner
             return new G600OnboardPlan([], shiftSelectorButton, errors);
         }
 
-        // 全 button×両層を明示 cell 化する（未割当 00 00 00 ＝出荷割当の legacy 配送を残さない）。
+        // G6〜G20 は全 button×両層を明示 cell 化する（未割当 00 00 00 ＝出荷割当の legacy 配送と
+        // G8 の面切替を残さない）。G2〜G5（マウス基本ボタン）の未割当だけは cell を書かず
+        // baseline（出荷の右/中クリック等）を保持する——00 で潰すと実機のマウス操作が死ぬ（実測 2026-08-22）。
+        const int lastMouseButton = 5;
         var cells = new List<G600OnboardCell>();
         for (var button = G600OnboardImage.FirstButton; button <= G600OnboardImage.LastButton; button++)
         {
@@ -122,9 +128,14 @@ public static class G600OnboardPlanner
 
             foreach (var shift in new[] { false, true })
             {
-                cells.Add(cellByKey.TryGetValue((button, shift), out var cell)
-                    ? cell
-                    : new G600OnboardCell(button, shift, 0x00, 0x00, 0x00));
+                if (cellByKey.TryGetValue((button, shift), out var cell))
+                {
+                    cells.Add(cell);
+                }
+                else if (button > lastMouseButton)
+                {
+                    cells.Add(new G600OnboardCell(button, shift, 0x00, 0x00, 0x00));
+                }
             }
         }
 
