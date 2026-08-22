@@ -195,11 +195,27 @@ public sealed class InputStudioWindow : Window
         var dialog = new KeyCaptureDialog(action.Name, currentLabel) { Owner = this };
         if (dialog.ShowDialog() == true && dialog.Result is { } token)
         {
-            if (TryMutateDocument(document => WorkspaceDocumentEditor.SetActionOutputs(document, actionId, WorkspaceEditorProjection.ParseOutputs(token))))
+            if (TryMutateDocument(document => SetOutputsWithAutoName(document, actionId, WorkspaceEditorProjection.ParseOutputs(token))))
             {
                 Render();
             }
         }
+    }
+
+    /// <summary>
+    /// outputs を差し替え、名前がまだ自動生成の既定名なら割り当てたキーの表示名へ改名する
+    /// （オーナー要望 2026-08-22: 名前を付けずに保存した操作が「新しい操作」のまま残らないように）。
+    /// </summary>
+    private static WorkspaceDocument SetOutputsWithAutoName(WorkspaceDocument document, string actionId, IReadOnlyList<string> outputs)
+    {
+        var updated = WorkspaceDocumentEditor.SetActionOutputs(document, actionId, outputs);
+        var action = updated.Actions.FirstOrDefault(candidate => candidate.ActionId == actionId);
+        if (action is not null && outputs.Count > 0 && WorkspaceEditorProjection.IsDefaultActionName(action.Name))
+        {
+            updated = WorkspaceDocumentEditor.RenameAction(updated, actionId, WorkspaceEditorProjection.OutputsDisplayName(outputs));
+        }
+
+        return updated;
     }
 
     private void OpenDiagnostics()
@@ -640,7 +656,7 @@ public sealed class InputStudioWindow : Window
 
         var actionId = _selectedActionId;
         var outputs = WorkspaceEditorProjection.ParseOutputs(_outputsBox.Text);
-        if (TryMutateDocument(document => WorkspaceDocumentEditor.SetActionOutputs(document, actionId, outputs)))
+        if (TryMutateDocument(document => SetOutputsWithAutoName(document, actionId, outputs)))
         {
             Render();
         }

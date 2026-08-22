@@ -106,6 +106,40 @@ public static class WorkspaceEditorProjection
     public static IReadOnlyList<string> ParseOutputs(string text) =>
         text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
+    /// <summary>自動生成の既定名（「新しい操作」「新しい操作 N」）かどうか。利用者が付けた名前は対象外。</summary>
+    public static bool IsDefaultActionName(string name)
+    {
+        const string baseName = "新しい操作";
+        if (name == baseName)
+        {
+            return true;
+        }
+
+        return name.StartsWith(baseName + " ", StringComparison.Ordinal)
+               && name[(baseName.Length + 1)..].All(char.IsAsciiDigit)
+               && name.Length > baseName.Length + 1;
+    }
+
+    /// <summary>
+    /// outputs 列から操作名の候補を作る（「Key:Esc」→「Esc」）。既定名のまま出力だけ決めた操作の
+    /// 自動命名に使う。未知の書式は隠さず token のまま出す。
+    /// </summary>
+    public static string OutputsDisplayName(IReadOnlyList<string> outputs) =>
+        string.Join(" + ", outputs.Select(TokenDisplayName));
+
+    private static string TokenDisplayName(string token) => token switch
+    {
+        _ when token.StartsWith("Key:", StringComparison.Ordinal) => token["Key:".Length..],
+        "Mouse:Left" => "マウス左",
+        "Mouse:Right" => "マウス右",
+        "Mouse:Middle" => "マウス中央",
+        "Mouse:X1" => "マウス戻る",
+        "Mouse:X2" => "マウス進む",
+        _ when token.StartsWith("Tap:", StringComparison.Ordinal) =>
+            string.Join("＋", token["Tap:".Length..].Split('+').Select(TokenDisplayName)),
+        _ => token,
+    };
+
     private static string FormatAssignment(WorkspaceDeviceLayout? layout, IEnumerable<WorkspaceActionBinding> bindings)
     {
         var parts = bindings

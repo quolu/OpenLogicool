@@ -86,4 +86,26 @@ public sealed class WorkspaceEditorProjectionTests
         Assert.Equal(["Key:LCtrl", "Key:C"], WorkspaceEditorProjection.ParseOutputs("  Key:LCtrl   Key:C "));
         Assert.Empty(WorkspaceEditorProjection.ParseOutputs("   "));
     }
+
+    [Theory]
+    [InlineData("新しい操作", true)]
+    [InlineData("新しい操作 2", true)]
+    [InlineData("新しい操作 12", true)]
+    [InlineData("回避", false)]
+    [InlineData("新しい操作の亜種", false)]
+    [InlineData("新しい操作 ", false)]
+    public void IsDefaultActionName_only_matches_generated_names(string name, bool expected)
+    {
+        Assert.Equal(expected, WorkspaceEditorProjection.IsDefaultActionName(name));
+    }
+
+    [Fact]
+    public void OutputsDisplayName_maps_tokens_to_short_names()
+    {
+        Assert.Equal("Esc", WorkspaceEditorProjection.OutputsDisplayName(["Key:Esc"]));
+        Assert.Equal("LCtrl + C", WorkspaceEditorProjection.OutputsDisplayName(["Key:LCtrl", "Key:C"]));
+        Assert.Equal("マウス左", WorkspaceEditorProjection.OutputsDisplayName(["Mouse:Left"]));
+        Assert.Equal("LCtrl＋C", WorkspaceEditorProjection.OutputsDisplayName(["Tap:Key:LCtrl+Key:C"]));
+        Assert.Equal("Vk:0x1B", WorkspaceEditorProjection.OutputsDisplayName(["Vk:0x1B"]));
+    }
 }
