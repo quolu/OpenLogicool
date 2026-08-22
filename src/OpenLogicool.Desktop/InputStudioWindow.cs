@@ -1217,6 +1217,14 @@ public sealed class InputStudioWindow : Window
             AutomationProperties.SetName(_inspectorTitleButton, $"操作名: {inspector.Name}（クリックで変更）");
         }
 
+        // 片方の device だけで使う操作は普通のため、警告は「どのボタンにも割り当てていない時だけ」1回にする
+        // （device ごとに出すと割当済みでも片側の警告が残り続ける——実利用の指摘 2026-08-22）。
+        if (inspector.Bindings.Count == 0)
+        {
+            _actionNotesPanel.Children.Add(NoteBlock(
+                $"『{inspector.Name}』はまだどのボタンにも割り当てられていません（未割当でも保存できます）", Theme.Warn));
+        }
+
         foreach (var deviceOptions in inspector.DeviceOptions)
         {
             var panel = deviceOptions.DeviceKind == "G13" ? _g13BindingsPanel : _g600BindingsPanel;
@@ -1225,8 +1233,6 @@ public sealed class InputStudioWindow : Window
             if (deviceBindings.Length == 0)
             {
                 panel.Children.Add(new TextBlock { Text = "（未割当）", Foreground = Theme.Muted, Margin = new Thickness(0, 4, 0, 4) });
-                _actionNotesPanel.Children.Add(NoteBlock(
-                    $"『{inspector.Name}』は{deviceOptions.DeviceKind}にまだ割り当てられていません（未割当でも保存できます）", Theme.Warn));
             }
 
             foreach (var binding in deviceBindings)
