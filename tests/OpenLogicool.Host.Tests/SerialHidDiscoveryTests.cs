@@ -91,6 +91,61 @@ public sealed class SerialHidDiscoveryTests
     }
 
     [Fact]
+    public void Response_frame_assembler_handles_partial_chunks_and_magic_resynchronization()
+    {
+        var frame = SerialHidProtocolV1.Encode(SerialHidMessageKind.Ack, 42, []);
+        var assembler = new SerialHidResponseFrameAssembler();
+        byte[]? completed = null;
+
+        foreach (var chunk in new byte[][]
+                 {
+                     [0x00, 0x4F, 0x4F],
+                     [0x4C, frame[2], frame[3]],
+                     frame[4..7],
+                     frame[7..],
+                 })
+        {
+            foreach (var value in chunk)
+            {
+                completed = assembler.Accept(value) ?? completed;
+            }
+        }
+
+        Assert.Equal(frame, completed);
+        Assert.Equal(SerialHidMessageKind.Ack, SerialHidProtocolV1.Decode(completed!).Kind);
+    }
+
+    [Fact]
+    public void Response_frame_assembler_rejects_oversized_declared_payload_before_body()
+    {
+        var assembler = new SerialHidResponseFrameAssembler();
+        var header = new byte[] { 0x4F, 0x4C, 1, 6, 9, 0, 33, 0 };
+
+        var error = Assert.Throws<SerialHidProtocolException>(() =>
+        {
+            foreach (var value in header)
+            {
+                assembler.Accept(value);
+            }
+        });
+
+        Assert.Equal(SerialHidFaultCode.LengthMismatch, error.FaultCode);
+        Assert.Equal((ushort)9, error.Sequence);
+    }
+
+    [Fact]
+    public void Serial_route_discovery_failure_is_terminal_without_sendinput_fallback()
+    {
+        var settings = new SerialHidOutputSettings(
+            SerialHidOutputSettings.CurrentSchemaVersion,
+            ResidentOutputRoute.SerialHid,
+            CandidateA.DeviceInstanceId);
+        var factory = ResidentOutputSessionFactory.Create(settings, "unused-watchdog.exe", Service([]));
+
+        Assert.Throws<SerialHidDiscoveryException>(() => factory());
+    }
+
+    [Fact]
     public void Settings_store_roundtrips_pnp_identity_and_rejects_com_identity()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"openlogicool-serial-settings-{Guid.NewGuid():N}");
@@ -151,6 +206,43 @@ public sealed class SerialHidDiscoveryTests
                 Directory.Delete(directory, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public void Failed_serial_connection_test_does_not_replace_saved_sendinput_route()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"openlogicool-serial-failed-save-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new SerialHidOutputSettingsStore(directory);
+            var intent = new HostSerialHidSettingsIntent(store, Service([]), () => null);
+
+            var result = intent.SaveAndTest(OutputRouteChoice.SerialHid, CandidateA.DeviceInstanceId);
+
+            Assert.False(result.Success);
+            Assert.Equal(ResidentOutputRoute.SendInput, store.Load().RequestedRoute);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void Next_factory_creation_uses_saved_serial_route()
+    {
+        var settings = new SerialHidOutputSettings(
+            SerialHidOutputSettings.CurrentSchemaVersion,
+            ResidentOutputRoute.SerialHid,
+            CandidateA.DeviceInstanceId);
+        var factory = ResidentOutputSessionFactory.Create(settings, "unused-watchdog.exe", Service([CandidateA]));
+
+        using var session = factory();
+
+        Assert.Equal(ResidentOutputRoute.SerialHid, session.Route);
     }
 
     private static SerialHidDiscoveryService Service(IReadOnlyList<SerialHidCandidate> candidates) =>

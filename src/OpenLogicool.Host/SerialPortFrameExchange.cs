@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
@@ -93,62 +92,14 @@ public sealed class SerialPortFrameExchange : ISerialHidFrameExchange
     private byte[] ReadFrame(TimeSpan timeout)
     {
         var clock = Stopwatch.StartNew();
-        var magic0Seen = false;
+        var assembler = new SerialHidResponseFrameAssembler();
         while (true)
         {
             var value = ReadByte(clock, timeout);
-            if (!magic0Seen)
+            if (assembler.Accept(value) is { } frame)
             {
-                magic0Seen = value == SerialHidProtocolV1.Magic0;
-                continue;
+                return frame;
             }
-
-            if (value != SerialHidProtocolV1.Magic1)
-            {
-                magic0Seen = value == SerialHidProtocolV1.Magic0;
-                continue;
-            }
-
-            var header = new byte[SerialHidProtocolV1.HeaderLength];
-            header[0] = SerialHidProtocolV1.Magic0;
-            header[1] = SerialHidProtocolV1.Magic1;
-            ReadExact(header, 2, header.Length - 2, clock, timeout);
-            var payloadLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(6, 2));
-            if (payloadLength > SerialHidProtocolV1.MaximumPayloadLength)
-            {
-                var sequence = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(4, 2));
-                throw new SerialHidProtocolException(
-                    SerialHidFaultCode.LengthMismatch,
-                    sequence,
-                    header[3],
-                    $"response payload length {payloadLength} は上限 {SerialHidProtocolV1.MaximumPayloadLength} を超えます。");
-            }
-
-            var frame = new byte[SerialHidProtocolV1.HeaderLength + payloadLength + SerialHidProtocolV1.CrcLength];
-            header.CopyTo(frame, 0);
-            ReadExact(
-                frame,
-                SerialHidProtocolV1.HeaderLength,
-                payloadLength + SerialHidProtocolV1.CrcLength,
-                clock,
-                timeout);
-            return frame;
-        }
-    }
-
-    private void ReadExact(byte[] buffer, int offset, int count, Stopwatch clock, TimeSpan timeout)
-    {
-        var read = 0;
-        while (read < count)
-        {
-            SetRemainingReadTimeout(clock, timeout);
-            var current = _port.Read(buffer, offset + read, count - read);
-            if (current == 0)
-            {
-                continue;
-            }
-
-            read += current;
         }
     }
 

@@ -2,9 +2,11 @@
 #include <HID.h>
 
 #include "OpenLogicoolHid.h"
+#include "FirmwareLease.h"
 #include "ProtocolV1.h"
 
 using openlogicool::OpenLogicoolHid;
+using openlogicool::FirmwareLease;
 using namespace openlogicool::protocol_v1;
 
 namespace {
@@ -17,11 +19,10 @@ uint8_t inputFrame[kMaxFrameLength];
 uint16_t inputLength = 0;
 uint16_t expectedFrameLength = 0;
 bool protocolReady = false;
-bool leaseArmed = false;
 bool releasePending = false;
 bool usbWasConfigured = false;
 uint16_t lastAcceptedSequence = 0;
-uint32_t lastValidFrameAt = 0;
+FirmwareLease lease;
 
 void ResetReader() {
   inputLength = 0;
@@ -30,7 +31,7 @@ void ResetReader() {
 
 void ResetProtocolState() {
   protocolReady = false;
-  leaseArmed = false;
+  lease.Reset();
   lastAcceptedSequence = 0;
   ResetReader();
 }
@@ -62,8 +63,7 @@ void SendFault(FaultCode code, uint16_t sequence, uint8_t offendingKind) {
 }
 
 void ArmLease() {
-  lastValidFrameAt = millis();
-  leaseArmed = true;
+  lease.Arm(millis());
 }
 
 bool HasExpectedSequence(uint16_t sequence) {
@@ -243,7 +243,7 @@ void RetryPendingRelease() {
 }
 
 void ExpireLeaseIfNeeded() {
-  if (!leaseArmed || static_cast<uint32_t>(millis() - lastValidFrameAt) < kLeaseMilliseconds) {
+  if (!lease.IsExpired(millis())) {
     return;
   }
   EnterFailClosedRelease();
