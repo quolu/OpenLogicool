@@ -154,6 +154,31 @@ public static class ForegroundAppTracker
         }
     }
 
+    /// <summary>
+    /// 前面 window のタイトル（取得不能・空・自 process の window は null）。ヘッダ表示の追従用で、
+    /// 自 process を除くのは「いまゲームに届いている割当」が編集画面自身を指しても意味がないため。
+    /// </summary>
+    public static string? GetForegroundWindowTitle()
+    {
+        var windowHandle = GetForegroundWindow();
+        if (windowHandle == IntPtr.Zero)
+        {
+            return null;
+        }
+
+        GetWindowThreadProcessId(windowHandle, out var processId);
+        if (processId == (uint)Environment.ProcessId)
+        {
+            return null;
+        }
+
+        var buffer = new StringBuilder(512);
+        return GetWindowText(windowHandle, buffer, buffer.Capacity) > 0 ? buffer.ToString() : null;
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int maxLength);
+
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
 

@@ -12,6 +12,9 @@ public interface IResidentApplyIntent
     /// <summary>document を compile し、常駐中の対象 device へ新 profile を即時反映する。</summary>
     void ApplyIfResident(WorkspaceDocument document);
 
+    /// <summary>いま前面にある window のタイトル（取得不能なら null）。「いまゲームに届いている割当」表示の追従用。</summary>
+    string? CurrentForegroundWindowTitle();
+
     /// <summary>fast path が処理した直近の input（動作チェック表示行＋実機ボタンでの割当指定用）を取り出す（無ければ空）。</summary>
     IReadOnlyList<ResidentTraceEvent> DrainTraceEvents();
 }

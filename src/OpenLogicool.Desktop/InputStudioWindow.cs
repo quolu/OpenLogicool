@@ -224,6 +224,18 @@ public sealed class InputStudioWindow : Window
         {
             _testFieldHint.Text = lastLine;
         }
+
+        // 「いまゲームに届いている割当」を前面 window に追従させる（配送の切替本体は常駐 fast path が
+        // 行っており、ここは表示だけを最新化する。文言は WorkspaceScreenProjection と同じ規則）。
+        // null は「取得不能または自画面が前面」= 直前のゲーム名を保持する
+        var foregroundTitle = _residentApply!.CurrentForegroundWindowTitle();
+        if (foregroundTitle is not null && foregroundTitle != _snapshot.ForegroundWindowTitle)
+        {
+            _snapshot = _snapshot with { ForegroundWindowTitle = foregroundTitle };
+            var label = $"{foregroundTitle} 用";
+            _liveAssignmentValueText.Text = label;
+            _liveAssignmentValueText.ToolTip = label;
+        }
     }
 
     /// <summary>「録って追加」: 新しい操作を作って録画に入る。取り消されたら空の操作を残さない。</summary>

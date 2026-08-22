@@ -33,6 +33,8 @@ public sealed class HostResidentApplyIntent(
         }
     }
 
+    public string? CurrentForegroundWindowTitle() => ForegroundAppTracker.GetForegroundWindowTitle();
+
     public IReadOnlyList<ResidentTraceEvent> DrainTraceEvents()
     {
         var kindByInstanceId = deviceInstanceIdsByKind
