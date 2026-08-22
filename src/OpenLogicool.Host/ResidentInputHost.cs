@@ -22,28 +22,29 @@ public sealed record ResidentHostStatus(
 /// <summary>
 /// Input Studio の resident 実行体（計画 §6.2 の初期 process model）。
 /// SQLite から mapping profile を復元し、実機 G13/G600 を列挙して fast path
-/// （Device Input → Mapping Runtime → GuardedOutputEmitter＋watchdog）を起動する。
+/// （Device Input → Mapping Runtime → resident output session）を起動する。
 /// UI・AI・capture は含まない。profile が無い device 種別は配線しない（黙って既定値を作らない）。
 /// G600 が配線されるとき、fast path の外で B変種残置を apply し、停止時に restore する。
 /// </summary>
 public sealed class ResidentInputHost : IDisposable
 {
     private readonly string _databasePath;
-    private readonly string _watchdogExePath;
     private readonly bool _enableTrace;
     private readonly G600LeftoverSession? _leftover;
     private readonly G600OnboardModeStore? _onboardMode;
+    private readonly Func<IResidentOutputSession> _outputSessionFactory;
     private volatile bool _g600OnboardSuppressed;
     private SqliteConnection? _connection;
     private G13RawInputSource? _g13Source;
     private G600RawInputSource? _g600Source;
-    private WatchdogChannel? _watchdog;
+    private IResidentOutputSession? _outputSession;
     private FastPathPump? _pump;
     private Thread? _foregroundPollThread;
     private volatile bool _foregroundPollStop;
     private volatile AppFirstData? _appFirstData;
     private IReadOnlyDictionary<string, IReadOnlyList<string>>? _instancesByKind;
     private bool _stopped;
+    private Exception? _stopFailure;
     private readonly ProfileSwitchDecisionRing _decisionRing = new();
     private long _decisionSequence;
     private ForegroundState? _currentForegroundState;
@@ -53,17 +54,25 @@ public sealed class ResidentInputHost : IDisposable
         string watchdogExePath,
         bool enableTrace = false,
         G600LeftoverSession? leftover = null,
-        G600OnboardModeStore? onboardMode = null)
+        G600OnboardModeStore? onboardMode = null,
+        Func<IResidentOutputSession>? outputSessionFactory = null)
     {
         _databasePath = databasePath;
-        _watchdogExePath = watchdogExePath;
         _enableTrace = enableTrace;
         _leftover = leftover;
         _onboardMode = onboardMode;
+        _outputSessionFactory = outputSessionFactory
+            ?? (() => new SendInputResidentOutputSession(watchdogExePath));
     }
 
     /// <summary>onboard 書込み中で G600 の SendInput 送出を抑止しているか（二重入力防止）。</summary>
     public bool IsG600OnboardSuppressed => _g600OnboardSuppressed;
+
+    public ResidentOutputRoute OutputRoute =>
+        _outputSession?.Route ?? throw new InvalidOperationException("resident host は未起動です。");
+
+    /// <summary>fast pathまたはoutput sessionのresident停止原因（nullなら正常）。</summary>
+    public Exception? Failure => _pump?.Failure ?? _outputSession?.BackgroundFailure ?? _stopFailure;
 
     public FastPathPump Pump =>
         _pump ?? throw new InvalidOperationException("resident host は未起動です。");
@@ -93,6 +102,11 @@ public sealed class ResidentInputHost : IDisposable
         var associations = new SqliteAppAssociationStore(_connection).ListAll();
         var resolver = AppProfileResolver.Build(documents, associations);
 
+        _outputSession = _outputSessionFactory()
+            ?? throw new InvalidOperationException("output session factoryがnullを返しました。");
+        _g600OnboardSuppressed = _onboardMode?.Load() is not null;
+        ResidentOutputPolicy.EnsureStartAllowed(_outputSession.Route, _g600OnboardSuppressed);
+
         // 全 profile を起動時に materialize する（不正 profile は最初の切替時ではなく起動でエラーになる）
         var profilesById = documents.ToDictionary(
             document => document.ProfileId,
@@ -106,7 +120,6 @@ public sealed class ResidentInputHost : IDisposable
 
         // onboard 書込み中は本体がハードウェアとして送るため、常駐側の G600 送出を抑止し
         // （空 profile を配線）、残置（leftover）の apply も行わない（焼いた内容を上書きしない）。
-        _g600OnboardSuppressed = _onboardMode?.Load() is not null;
         var leftoverApply = _g600OnboardSuppressed ? null : ApplyLeftoverIfManaged(resolver, g600Devices.Count);
         if (_g600OnboardSuppressed)
         {
@@ -133,8 +146,8 @@ public sealed class ResidentInputHost : IDisposable
             instancesByKind[kind] = devices.Select(device => device.DeviceInstanceId).ToArray();
         }
 
-        _watchdog = WatchdogChannel.Start(_watchdogExePath);
-        var emitter = new GuardedOutputEmitter(new SendInputEmitter(), _watchdog);
+        _outputSession.Start();
+        var emitter = _outputSession.Emitter;
 
         _pump = new FastPathPump(
             [
@@ -304,7 +317,10 @@ public sealed class ResidentInputHost : IDisposable
             _ => "既定",
         };
 
-    /// <summary>handled shutdown（DEV-008）: pump 停止と所有 output release、watchdog graceful 終了、残置解除。</summary>
+    /// <summary>
+    /// handled shutdown（DEV-008）: pump停止と所有output release後にoutput sessionを閉じ、残置を解除する。
+    /// Serial HIDはoutput session内でALL_UP ACK後にserialをcloseする。
+    /// </summary>
     public void Stop()
     {
         if (_stopped)
@@ -315,11 +331,33 @@ public sealed class ResidentInputHost : IDisposable
         _stopped = true;
         _foregroundPollStop = true;
         _foregroundPollThread?.Join(2000);
-        _pump?.Stop();
-        _watchdog?.Shutdown();
+        var failureBeforeStop = Failure;
+        try
+        {
+            _pump?.Stop();
+        }
+        catch (Exception exception)
+        {
+            _stopFailure ??= exception;
+        }
+
+        try
+        {
+            _outputSession?.Stop();
+        }
+        catch (Exception exception)
+        {
+            _stopFailure ??= exception;
+        }
+
         if (!_g600OnboardSuppressed)
         {
             RestoreLeftover();
+        }
+
+        if (failureBeforeStop is null && _stopFailure is not null)
+        {
+            throw _stopFailure;
         }
     }
 
@@ -375,7 +413,7 @@ public sealed class ResidentInputHost : IDisposable
     {
         Stop();
         _pump?.Dispose();
-        _watchdog?.Dispose();
+        _outputSession?.Dispose();
         _g13Source?.Dispose();
         _g600Source?.Dispose();
         _connection?.Dispose();

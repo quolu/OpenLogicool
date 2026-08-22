@@ -255,5 +255,9 @@ public sealed class SerialHidEmitterTests
             Assert.NotEmpty(_responses);
             return _responses.Dequeue()(request);
         }
+
+        public void Dispose()
+        {
+        }
     }
 }

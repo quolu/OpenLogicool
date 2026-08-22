@@ -271,7 +271,7 @@ static int Run(string[] arguments)
     };
 
     var deadline = durationMs is null ? DateTime.MaxValue : DateTime.UtcNow.AddMilliseconds(durationMs.Value);
-    while (!stopRequested.IsSet && DateTime.UtcNow < deadline && host.Pump.Failure is null)
+    while (!stopRequested.IsSet && DateTime.UtcNow < deadline && host.Failure is null)
     {
         if (traceEnabled)
         {
@@ -289,9 +289,9 @@ static int Run(string[] arguments)
         Thread.Sleep(100);
     }
 
-    if (host.Pump.Failure is not null)
+    if (host.Failure is not null)
     {
-        Console.Error.WriteLine($"fast path fault: {host.Pump.Failure}");
+        Console.Error.WriteLine($"resident fault: {host.Failure}");
         host.Stop();
         return 2;
     }
@@ -446,6 +446,27 @@ static int Ui(string[] arguments)
     {
         var application = new System.Windows.Application();
         var window = new InputStudioWindow(snapshot, report, AppProfileResolver.DefaultMarker, editorIntents, residentApply, onboardIntent);
+        System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
+        if (residentHost is not null)
+        {
+            residentFailureTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(100),
+            };
+            residentFailureTimer.Tick += (_, _) =>
+            {
+                if (residentHost.Failure is null)
+                {
+                    return;
+                }
+
+                Console.Error.WriteLine($"resident fault: {residentHost.Failure}");
+                exitCode = 2;
+                window.Close();
+            };
+            residentFailureTimer.Start();
+        }
+
         if (durationMs is not null)
         {
             var timer = new System.Windows.Threading.DispatcherTimer
@@ -456,7 +477,12 @@ static int Ui(string[] arguments)
             timer.Start();
         }
 
-        exitCode = application.Run(window);
+        var applicationExitCode = application.Run(window);
+        if (exitCode == 0)
+        {
+            exitCode = applicationExitCode;
+        }
+        residentFailureTimer?.Stop();
     });
     thread.SetApartmentState(ApartmentState.STA);
     thread.Start();

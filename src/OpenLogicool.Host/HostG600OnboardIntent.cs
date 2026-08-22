@@ -26,6 +26,11 @@ public sealed class HostG600OnboardIntent(
 
     public G600OnboardUiResult Apply(WorkspaceDocument document)
     {
+        if (residentHost?.OutputRoute == ResidentOutputRoute.SerialHid)
+        {
+            return new(false, "Serial HID出力中はG600本体書き込みを同時に使えません。Serial HIDを停止してから実行してください。");
+        }
+
         if (residentHost is null && OtherResidentRunning())
         {
             return new(false, "別の常駐が動作中のため書き込めません。常駐を終了してから実行してください。");

@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 namespace OpenLogicool.Input;
 
 /// <summary>Serial HID frameを1回だけ送信し、同じrequestへの応答frameを返すtransport境界。</summary>
-public interface ISerialHidFrameExchange
+public interface ISerialHidFrameExchange : IDisposable
 {
     byte[] Exchange(ReadOnlyMemory<byte> requestFrame, TimeSpan timeout);
 }
