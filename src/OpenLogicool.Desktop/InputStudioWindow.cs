@@ -313,6 +313,14 @@ public sealed class InputStudioWindow : Window
             return;
         }
 
+        // マウスの左右クリックはこの画面の操作にも使われるため、押下では割り当てない
+        // （待機中に UI をクリックしただけで G1 が割り当たる事故の根治。左右は絵のクリックで割当可能）。
+        if (deviceKind == "G600" && controlId is "G1" or "G2")
+        {
+            _assignHint.Text = "左/右クリックは画面操作と区別できないため、絵の G1/G2 をクリックして割り当ててください";
+            return;
+        }
+
         var layout = _document.Devices.FirstOrDefault(device => device.DeviceKind == deviceKind);
         if (layout is not null &&
             layout.LatchSelectors.Concat(layout.HoldSelectors).Any(selector => selector.ControlId == controlId))
@@ -1170,7 +1178,8 @@ public sealed class InputStudioWindow : Window
         _recordUpdateButton.IsEnabled = inspector is not null;
         if (_pendingAssign && inspector is not null)
         {
-            if (_assignHint.Text.Length == 0 || !_assignHint.Text.Contains("層切替"))
+            // 待機中の注意文（層切替キー・左右クリック等）は Render で上書きしない
+            if (_assignHint.Text.Length == 0)
             {
                 _assignHint.Text = $"デバイスのボタンを押すと『{inspector.Name}』をそのボタンへ割り当てます（絵のボタンをクリックでも可）";
             }
