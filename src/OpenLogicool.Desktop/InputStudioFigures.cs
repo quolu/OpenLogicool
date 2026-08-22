@@ -193,7 +193,7 @@ public static class InputStudioFigures
         bodyRow.Children.Add(palm);
         if (shiftIsButton)
         {
-            var g6 = Key("G6\nG-Shift", "G6", bindings, false, () => onAssign("G6"), width: 60, height: 36);
+            var g6 = Key("G6 G-Shift", "G6", bindings, false, () => onAssign("G6"), width: 72, height: 44);
             g6.HorizontalAlignment = HorizontalAlignment.Right;
             g6.VerticalAlignment = VerticalAlignment.Bottom;
             bodyRow.Children.Add(g6);

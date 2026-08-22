@@ -793,6 +793,8 @@ public sealed class InputStudioWindow : Window
                 Tag = row.ApplicationFullPath,
                 IsSelected = row.IsSelected,
                 Padding = new Thickness(10, 6, 10, 6),
+                // 非アクティブ選択時に OS 既定の黒へ落ちないよう明示する（操作一覧と同じ欠陥）。
+                Foreground = Theme.Text,
             };
             AutomationProperties.SetName(item, row.DisplayName);
             _appPickerList.Items.Add(item);
@@ -848,7 +850,9 @@ public sealed class InputStudioWindow : Window
             grid.Children.Add(bar);
 
             var labels = new StackPanel();
-            labels.Children.Add(new TextBlock { Text = row.Name, FontWeight = FontWeights.SemiBold, FontSize = 13 });
+            // Foreground を明示しないと、一覧がフォーカスを失った時に選択行が
+            // OS 既定の非アクティブ選択色（黒）へ落ちて暗背景で読めなくなる。
+            labels.Children.Add(new TextBlock { Text = row.Name, FontWeight = FontWeights.SemiBold, FontSize = 13, Foreground = Theme.Text });
             labels.Children.Add(new TextBlock
             {
                 Text = row.OutputsLabel.Length == 0 ? "（送るキー未設定）" : $"{row.OutputsLabel} を送る",
