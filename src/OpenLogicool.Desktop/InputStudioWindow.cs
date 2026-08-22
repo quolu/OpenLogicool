@@ -48,7 +48,14 @@ public sealed class InputStudioWindow : Window
         MaxWidth = 220,
         TextTrimming = TextTrimming.CharacterEllipsis,
     };
-    private readonly ListBox _appPickerList = new();
+    // Background を明示しないと ListBox は OS 既定の白下地になり、白文字の項目が読めなくなる
+    // （popup の中は Window の配色を継がない前提で全部明示する）。
+    private readonly ListBox _appPickerList = new()
+    {
+        Background = Theme.Raised,
+        Foreground = Theme.Text,
+        BorderThickness = new Thickness(0),
+    };
     private readonly Popup _appPickerPopup = new() { StaysOpen = false, Placement = PlacementMode.Bottom };
     private readonly TextBlock _liveAssignmentValueText = new()
     {
