@@ -109,4 +109,51 @@ public sealed class WorkspaceDocumentEditorTests
         var retokened = WorkspaceDocumentEditor.SetActionOutputs(draft, "dodge", ["Key:LCtrl", "Key:C"]);
         Assert.Equal(["Key:LCtrl", "Key:C"], retokened.Actions.Single(action => action.ActionId == "dodge").Outputs);
     }
+
+    [Fact]
+    public void SetG600ShiftAsButton_removes_shift_layer_and_hold_selector()
+    {
+        var draft = WorkspaceDocumentEditor.CreateDraft("ws");
+
+        var converted = WorkspaceDocumentEditor.SetG600ShiftAsButton(draft);
+
+        var layout = converted.Devices.Single(device => device.DeviceKind == "G600");
+        Assert.Equal(["base"], layout.LayerIds);
+        Assert.Empty(layout.HoldSelectors);
+    }
+
+    [Fact]
+    public void SetG600ShiftAsButton_refuses_while_shift_layer_bindings_remain()
+    {
+        var draft = WorkspaceDocumentEditor.AddAction(WorkspaceDocumentEditor.CreateDraft("ws"), "dodge", "回避", ["Key:Space"]);
+        draft = WorkspaceDocumentEditor.SetBinding(draft, "dodge", "G600", "G9", "shift");
+
+        var error = Assert.Throws<ArgumentException>(() => WorkspaceDocumentEditor.SetG600ShiftAsButton(draft));
+        Assert.Contains("残っています", error.Message);
+    }
+
+    [Fact]
+    public void SetG600ShiftAsSelector_restores_shift_layer_and_makes_g6_a_selector_again()
+    {
+        var draft = WorkspaceDocumentEditor.SetG600ShiftAsButton(WorkspaceDocumentEditor.CreateDraft("ws"));
+
+        var restored = WorkspaceDocumentEditor.SetG600ShiftAsSelector(draft);
+
+        var layout = restored.Devices.Single(device => device.DeviceKind == "G600");
+        Assert.Equal(["base", "shift"], layout.LayerIds);
+        var selector = Assert.Single(layout.HoldSelectors);
+        Assert.Equal("G6", selector.ControlId);
+        Assert.Equal("shift", selector.LayerId);
+    }
+
+    [Fact]
+    public void SetG600ShiftAsSelector_refuses_while_g6_bindings_remain()
+    {
+        var draft = WorkspaceDocumentEditor.SetG600ShiftAsButton(WorkspaceDocumentEditor.CreateDraft("ws"));
+        draft = WorkspaceDocumentEditor.AddAction(draft, "dodge", "回避", ["Key:Space"]);
+        draft = WorkspaceDocumentEditor.SetBinding(draft, "dodge", "G600", "G6", "base");
+
+        var error = Assert.Throws<ArgumentException>(() => WorkspaceDocumentEditor.SetG600ShiftAsSelector(draft));
+        Assert.Contains("G6", error.Message);
+    }
 }

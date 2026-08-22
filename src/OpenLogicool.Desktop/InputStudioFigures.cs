@@ -105,7 +105,7 @@ public static class InputStudioFigures
         return shell;
     }
 
-    public static UIElement BuildG600(IReadOnlyDictionary<string, FigureBinding> bindings, Action<string> onAssign)
+    public static UIElement BuildG600(IReadOnlyDictionary<string, FigureBinding> bindings, Action<string> onAssign, bool shiftIsButton)
     {
         var board = new StackPanel { Orientation = Orientation.Horizontal };
 
@@ -164,19 +164,15 @@ public static class InputStudioFigures
         });
 
         var topRow = new StackPanel { Orientation = Orientation.Horizontal };
-        topRow.Children.Add(Key("左クリック", "G1", bindings, false, () => onAssign("G1"), width: 62, height: 72));
-        topRow.Children.Add(Key("ホイール\n押込み", "G3", bindings, false, () => onAssign("G3"), width: 56, height: 72));
-        topRow.Children.Add(Key("右クリック", "G2", bindings, false, () => onAssign("G2"), width: 62, height: 72));
+        topRow.Children.Add(Key("G1\n左クリック", "G1", bindings, false, () => onAssign("G1"), width: 62, height: 72));
+        topRow.Children.Add(Key("G3\nホイール\n押込み", "G3", bindings, false, () => onAssign("G3"), width: 56, height: 72));
+        topRow.Children.Add(Key("G2\n右クリック", "G2", bindings, false, () => onAssign("G2"), width: 62, height: 72));
         mouseStack.Children.Add(topRow);
 
-        mouseStack.Children.Add(new TextBlock
-        {
-            Text = "←左チルト（G4） ／ 右チルト（G5）→",
-            Foreground = Theme.Muted,
-            FontSize = 9,
-            Margin = new Thickness(0, 2, 0, 6),
-            HorizontalAlignment = HorizontalAlignment.Center,
-        });
+        var tiltRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 4) };
+        tiltRow.Children.Add(Key("G4 ←左チルト", "G4", bindings, false, () => onAssign("G4"), width: 88, height: 30));
+        tiltRow.Children.Add(Key("G5 右チルト→", "G5", bindings, false, () => onAssign("G5"), width: 88, height: 30));
+        mouseStack.Children.Add(tiltRow);
 
         var g78 = new StackPanel { Width = 56 };
         g78.Children.Add(Key("G7", "G7", bindings, false, () => onAssign("G7"), width: 56, height: 22));
@@ -195,7 +191,18 @@ public static class InputStudioFigures
             HorizontalAlignment = HorizontalAlignment.Center,
         };
         bodyRow.Children.Add(palm);
-        bodyRow.Children.Add(ModeKey("G-Shift", "層切替（G-Shift を押している間）", wide: true));
+        if (shiftIsButton)
+        {
+            var g6 = Key("G6\nG-Shift", "G6", bindings, false, () => onAssign("G6"), width: 60, height: 36);
+            g6.HorizontalAlignment = HorizontalAlignment.Right;
+            g6.VerticalAlignment = VerticalAlignment.Bottom;
+            bodyRow.Children.Add(g6);
+        }
+        else
+        {
+            bodyRow.Children.Add(ModeKey("G-Shift", "層切替（G-Shift を押している間）。ボタンとして使う切替は上の配置チップの右", wide: true));
+        }
+
         mouseStack.Children.Add(bodyRow);
 
         mouse.Child = mouseStack;

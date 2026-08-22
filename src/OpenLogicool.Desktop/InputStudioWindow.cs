@@ -912,6 +912,13 @@ public sealed class InputStudioWindow : Window
         if (layout is not null)
         {
             var currentLayerId = _figureLayerByDevice.TryGetValue(_selectedFigureDeviceKind, out var layer) ? layer : layout.DefaultLayerId;
+            if (!layout.LayerIds.Contains(currentLayerId))
+            {
+                // G-Shift をボタン化した直後など、見ていた配置が layout から消えた場合は既定へ戻す。
+                currentLayerId = layout.DefaultLayerId;
+                _figureLayerByDevice[_selectedFigureDeviceKind] = currentLayerId;
+            }
+
             foreach (var layerId in layout.LayerIds)
             {
                 var isOn = layerId == currentLayerId;
@@ -937,11 +944,44 @@ public sealed class InputStudioWindow : Window
                 _layerChipRow.Children.Add(chip);
             }
 
-            var lookupLayerId = _figureLayerByDevice.TryGetValue(_selectedFigureDeviceKind, out var lookupLayer) ? lookupLayer : layout.DefaultLayerId;
-            var bindings = BuildFigureBindingLookup(_selectedFigureDeviceKind, lookupLayerId);
+            var shiftIsButton = !isG13 && layout.HoldSelectors.Count == 0;
+            if (!isG13)
+            {
+                var toggle = new Border
+                {
+                    BorderBrush = Theme.Line,
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(3),
+                    Padding = new Thickness(10, 3, 10, 3),
+                    Margin = new Thickness(12, 0, 0, 0),
+                    Background = Brushes.Transparent,
+                    Child = new TextBlock
+                    {
+                        Text = shiftIsButton ? "G-Shift を層切替に戻す" : "G-Shift をボタンにする",
+                        Foreground = Theme.Muted,
+                        FontSize = 12,
+                    },
+                    Cursor = Cursors.Hand,
+                    ToolTip = shiftIsButton
+                        ? "G6 を層切替に戻します（G6 の割当が残っている間は戻せません）"
+                        : "G6 を通常のボタンとして割当可能にします（「G-Shift を押している間」の配置は無くなります。割当が残っている間は変えられません）",
+                };
+                toggle.MouseLeftButtonUp += (_, _) =>
+                {
+                    if (TryMutateDocument(shiftIsButton
+                            ? WorkspaceDocumentEditor.SetG600ShiftAsSelector
+                            : WorkspaceDocumentEditor.SetG600ShiftAsButton))
+                    {
+                        Render();
+                    }
+                };
+                _layerChipRow.Children.Add(toggle);
+            }
+
+            var bindings = BuildFigureBindingLookup(_selectedFigureDeviceKind, currentLayerId);
             _figureHost.Child = isG13
                 ? InputStudioFigures.BuildG13(bindings, controlId => OnFigureKeyClicked("G13", controlId))
-                : InputStudioFigures.BuildG600(bindings, controlId => OnFigureKeyClicked("G600", controlId));
+                : InputStudioFigures.BuildG600(bindings, controlId => OnFigureKeyClicked("G600", controlId), shiftIsButton);
         }
 
         _figureNoteText.Text = isG13
@@ -1062,7 +1102,7 @@ public sealed class InputStudioWindow : Window
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
                 var slot = new StackPanel();
-                slot.Children.Add(new TextBlock { Text = binding.ControlId, FontWeight = FontWeights.Bold, FontSize = 13 });
+                slot.Children.Add(new TextBlock { Text = ControlLabel(deviceOptions.DeviceKind, binding.ControlId), FontWeight = FontWeights.Bold, FontSize = 13 });
                 slot.Children.Add(new TextBlock { Text = LayerLabel(deviceOptions.DeviceKind, binding.LayerId), Foreground = Theme.Muted, FontSize = 11 });
                 row.Children.Add(slot);
 
@@ -1103,7 +1143,8 @@ public sealed class InputStudioWindow : Window
         var controlCombo = new ComboBox { Margin = new Thickness(0, 4, 4, 0), MinWidth = 90 };
         foreach (var control in deviceOptions.Controls)
         {
-            controlCombo.Items.Add(new ComboBoxItem { Content = control.IsConfirmed ? control.ControlId : $"{control.ControlId}（強い推定）", Tag = control.ControlId });
+            var controlLabel = ControlLabel(deviceOptions.DeviceKind, control.ControlId);
+            controlCombo.Items.Add(new ComboBoxItem { Content = control.IsConfirmed ? controlLabel : $"{controlLabel}（強い推定）", Tag = control.ControlId });
         }
 
         if (controlCombo.Items.Count > 0)
@@ -1144,6 +1185,30 @@ public sealed class InputStudioWindow : Window
         TextWrapping = TextWrapping.Wrap,
         Margin = new Thickness(0, 0, 0, 8),
     };
+
+    /// <summary>control ID の表示名。絵と同じ場所を指せるよう、G番号に物理位置の呼び名を併記する。
+    /// 呼び名を持たない control は G番号のまま表示する（fallback を隠さない）。</summary>
+    private static string ControlLabel(string deviceKind, string controlId)
+    {
+        var physicalName = (deviceKind, controlId) switch
+        {
+            ("G600", "G1") => "左クリック",
+            ("G600", "G2") => "右クリック",
+            ("G600", "G3") => "ホイール押込み",
+            ("G600", "G4") => "左チルト",
+            ("G600", "G5") => "右チルト",
+            ("G600", "G6") => "G-Shift",
+            ("G600", "G7") => "上面ボタン上",
+            ("G600", "G8") => "上面ボタン下",
+            _ => null,
+        };
+        if (deviceKind == "G13" && controlId == "STICK_PRESS")
+        {
+            return "スティック押込み";
+        }
+
+        return physicalName is null ? controlId : $"{controlId}（{physicalName}）";
+    }
 
     /// <summary>層 ID の表示名。既定 layer 構成（<see cref="WorkspaceDocumentEditor.CreateDraft"/>）に対応する固定表記で、
     /// 未知の layer ID はそのまま表示する（fallback を隠さない）。</summary>

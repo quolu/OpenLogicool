@@ -120,14 +120,6 @@ public sealed class KeyCaptureDialog : Window
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
         var key = ResolveKey(e);
-        if (key == Key.Escape)
-        {
-            Result = null;
-            DialogResult = false;
-            e.Handled = true;
-            return;
-        }
-
         if (_currentlyHeld.Count == 0)
         {
             // 前回の chord が全て離されたあとの、新規押下——録り直し。

@@ -108,4 +108,69 @@ public static class WorkspaceDocumentEditor
                 .Where(binding => !(binding.ActionId == actionId && binding.DeviceKind == deviceKind && binding.LayerId == layerId))
                 .ToArray(),
         };
+
+    /// <summary>
+    /// G600 の G-Shift（G6）を層切替から通常ボタンへ変える——hold selector と shift 層を layout から外し、
+    /// G6 を割当可能にする。shift 層に割当が残っている場合は黙って消さず拒否する。
+    /// </summary>
+    public static WorkspaceDocument SetG600ShiftAsButton(WorkspaceDocument document)
+    {
+        var layout = G600Layout(document);
+        if (layout.HoldSelectors.Count == 0)
+        {
+            return document;
+        }
+
+        var shiftLayerIds = layout.HoldSelectors.Select(selector => selector.LayerId).ToHashSet(StringComparer.Ordinal);
+        var remainingCount = document.Bindings.Count(binding => binding.DeviceKind == "G600" && shiftLayerIds.Contains(binding.LayerId));
+        if (remainingCount > 0)
+        {
+            throw new ArgumentException(
+                $"「G-Shift を押している間」の配置に割当が {remainingCount} 件残っています。先に外してからボタンにしてください。", nameof(document));
+        }
+
+        return ReplaceG600Layout(document, layout with
+        {
+            LayerIds = layout.LayerIds.Where(layerId => !shiftLayerIds.Contains(layerId)).ToArray(),
+            HoldSelectors = [],
+        });
+    }
+
+    /// <summary>
+    /// G600 の G-Shift（G6）を通常ボタンから層切替へ戻す——shift 層と hold selector を layout へ復元する。
+    /// G6 に割当が残っている場合は黙って消さず拒否する。
+    /// </summary>
+    public static WorkspaceDocument SetG600ShiftAsSelector(WorkspaceDocument document)
+    {
+        var layout = G600Layout(document);
+        if (layout.HoldSelectors.Count > 0)
+        {
+            return document;
+        }
+
+        var g6Count = document.Bindings.Count(binding => binding.DeviceKind == "G600" && binding.ControlId == "G6");
+        if (g6Count > 0)
+        {
+            throw new ArgumentException(
+                $"G-Shift（G6）に割当が {g6Count} 件残っています。先に外してから層切替に戻してください。", nameof(document));
+        }
+
+        return ReplaceG600Layout(document, layout with
+        {
+            LayerIds = layout.LayerIds.Contains("shift") ? layout.LayerIds : [.. layout.LayerIds, "shift"],
+            HoldSelectors = [new LayerSelectorEntry("G6", "shift")],
+        });
+    }
+
+    private static WorkspaceDeviceLayout G600Layout(WorkspaceDocument document) =>
+        document.Devices.FirstOrDefault(device => device.DeviceKind == "G600")
+        ?? throw new ArgumentException("G600 の layout がありません。", nameof(document));
+
+    private static WorkspaceDocument ReplaceG600Layout(WorkspaceDocument document, WorkspaceDeviceLayout layout) =>
+        document with
+        {
+            Devices = document.Devices
+                .Select(device => device.DeviceKind == "G600" ? layout : device)
+                .ToArray(),
+        };
 }
