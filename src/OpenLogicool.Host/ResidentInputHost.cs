@@ -32,6 +32,8 @@ public sealed class ResidentInputHost : IDisposable
     private readonly string _watchdogExePath;
     private readonly bool _enableTrace;
     private readonly G600LeftoverSession? _leftover;
+    private readonly G600OnboardModeStore? _onboardMode;
+    private volatile bool _g600OnboardSuppressed;
     private SqliteConnection? _connection;
     private G13RawInputSource? _g13Source;
     private G600RawInputSource? _g600Source;
@@ -50,13 +52,18 @@ public sealed class ResidentInputHost : IDisposable
         string databasePath,
         string watchdogExePath,
         bool enableTrace = false,
-        G600LeftoverSession? leftover = null)
+        G600LeftoverSession? leftover = null,
+        G600OnboardModeStore? onboardMode = null)
     {
         _databasePath = databasePath;
         _watchdogExePath = watchdogExePath;
         _enableTrace = enableTrace;
         _leftover = leftover;
+        _onboardMode = onboardMode;
     }
+
+    /// <summary>onboard 書込み中で G600 の SendInput 送出を抑止しているか（二重入力防止）。</summary>
+    public bool IsG600OnboardSuppressed => _g600OnboardSuppressed;
 
     public FastPathPump Pump =>
         _pump ?? throw new InvalidOperationException("resident host は未起動です。");
@@ -97,7 +104,14 @@ public sealed class ResidentInputHost : IDisposable
         var g13Devices = _g13Source.EnumerateDevices();
         var g600Devices = _g600Source.EnumerateDevices();
 
-        var leftoverApply = ApplyLeftoverIfManaged(resolver, g600Devices.Count);
+        // onboard 書込み中は本体がハードウェアとして送るため、常駐側の G600 送出を抑止し
+        // （空 profile を配線）、残置（leftover）の apply も行わない（焼いた内容を上書きしない）。
+        _g600OnboardSuppressed = _onboardMode?.Load() is not null;
+        var leftoverApply = _g600OnboardSuppressed ? null : ApplyLeftoverIfManaged(resolver, g600Devices.Count);
+        if (_g600OnboardSuppressed)
+        {
+            Console.WriteLine("g600 onboard: 本体書込み中のため G600 の送出を抑止（残置の適用もしない）");
+        }
 
         var runtimes = new Dictionary<string, DeviceMappingRuntime>(StringComparer.Ordinal);
         var instancesByKind = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
@@ -108,7 +122,9 @@ public sealed class ResidentInputHost : IDisposable
                 continue;
             }
 
-            var profile = profilesById[document.ProfileId];
+            var profile = _g600OnboardSuppressed && kind == "G600"
+                ? EmptyProfile(profilesById[document.ProfileId])
+                : profilesById[document.ProfileId];
             foreach (var device in devices)
             {
                 runtimes[device.DeviceInstanceId] = new DeviceMappingRuntime(device.DeviceInstanceId, profile);
@@ -243,6 +259,12 @@ public sealed class ResidentInputHost : IDisposable
 
                     foreach (var outcome in decision.Outcomes)
                     {
+                        // onboard 書込み中の G600 は前面切替でも送出プロファイルを復活させない（二重入力防止）
+                        if (_g600OnboardSuppressed && outcome.DeviceKind == "G600")
+                        {
+                            continue;
+                        }
+
                         if (!outcome.Changed)
                         {
                             continue;
@@ -295,8 +317,59 @@ public sealed class ResidentInputHost : IDisposable
         _foregroundPollThread?.Join(2000);
         _pump?.Stop();
         _watchdog?.Shutdown();
-        RestoreLeftover();
+        if (!_g600OnboardSuppressed)
+        {
+            RestoreLeftover();
+        }
     }
+
+    /// <summary>
+    /// onboard 書込み直後の live 切替: G600 の送出を空 profile へ差し替えて抑止する（再起動不要）。
+    /// device write はここでは行わない（書込み本体は G600OnboardService）。
+    /// </summary>
+    public void EnterG600OnboardSuppression()
+    {
+        _g600OnboardSuppressed = true;
+        PushG600Profile(document => EmptyProfile(MappingProfileMaterializer.ToProfile(document)));
+    }
+
+    /// <summary>onboard 解除後の live 切替: G600 の送出を既定 profile へ戻す（app 別は次の前面切替から）。</summary>
+    public void ExitG600OnboardSuppression()
+    {
+        _g600OnboardSuppressed = false;
+        PushG600Profile(MappingProfileMaterializer.ToProfile);
+    }
+
+    private void PushG600Profile(Func<MappingProfileDocument, MappingProfile> materialize)
+    {
+        if (_pump is null || _instancesByKind is null || _appFirstData is null)
+        {
+            return;
+        }
+
+        if (!_appFirstData.Resolver.DefaultByKind.TryGetValue("G600", out var document)
+            || !_instancesByKind.TryGetValue("G600", out var instanceIds))
+        {
+            return;
+        }
+
+        var profile = materialize(document);
+        foreach (var instanceId in instanceIds)
+        {
+            _pump.RequestProfileChange(instanceId, profile);
+        }
+    }
+
+    /// <summary>binding を持たない profile（onboard 抑止中の配線用・layer 構成だけ元 profile を写す）。</summary>
+    private static MappingProfile EmptyProfile(MappingProfile source) =>
+        new(
+            source.ProfileRevision,
+            source.MappingRevision,
+            source.DefaultLayerId,
+            source.LayerIds,
+            new Dictionary<string, string>(StringComparer.Ordinal),
+            new Dictionary<string, string>(StringComparer.Ordinal),
+            []);
 
     public void Dispose()
     {

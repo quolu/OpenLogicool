@@ -69,6 +69,31 @@ public sealed class InputStudioWindow : Window
     private readonly Button _saveButton = new() { Content = "保存", Padding = new Thickness(14, 6, 14, 6) };
     private readonly Button _revertButton = new() { Content = "元に戻す", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(8, 0, 0, 0) };
 
+    // G600 本体書き込み（方式A）: 合成入力を受け付けないゲームでも割当を効かせる
+    private readonly IG600OnboardIntent? _onboardIntent;
+    private readonly Button _onboardWriteButton = new()
+    {
+        Content = "G600本体に書き込む",
+        Padding = new Thickness(12, 6, 12, 6),
+        Margin = new Thickness(16, 0, 0, 0),
+        ToolTip = "この設定の G600 割当を G600 本体のメモリに書き込みます。ハードウェアのキー入力として"
+            + "送信されるため、割当が効かないゲームでも動作します（G600 のみ・書き込み前の状態は記録されいつでも解除できます）。",
+    };
+    private readonly Button _onboardRestoreButton = new()
+    {
+        Content = "本体の書き込みを解除",
+        Padding = new Thickness(12, 6, 12, 6),
+        Margin = new Thickness(8, 0, 0, 0),
+    };
+    private readonly TextBlock _onboardStatusText = new()
+    {
+        Foreground = Theme.Muted,
+        FontSize = 11,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(8, 0, 0, 0),
+    };
+    private bool _onboardBusy;
+
     // 左ペイン: 操作一覧
     private readonly ListBox _actionList = new();
 
@@ -132,11 +157,13 @@ public sealed class InputStudioWindow : Window
         InputStudioReport ledgerReport,
         string initialSelectedApplicationFullPath,
         IWorkspaceEditorIntents intents,
-        IResidentApplyIntent? residentApply = null)
+        IResidentApplyIntent? residentApply = null,
+        IG600OnboardIntent? onboardIntent = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
         _residentApply = residentApply;
+        _onboardIntent = onboardIntent;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
 
@@ -193,6 +220,7 @@ public sealed class InputStudioWindow : Window
         WireEvents();
         LoadSelectedWorkspace();
         Render();
+        RefreshOnboardState();
 
         if (_residentApply is not null)
         {
@@ -441,8 +469,79 @@ public sealed class InputStudioWindow : Window
 
         _saveButton.Click += (_, _) => SaveCurrentDocument();
         _revertButton.Click += (_, _) => DiscardUnsavedChanges();
+        _onboardWriteButton.Click += (_, _) => RunOnboardOperation(isApply: true);
+        _onboardRestoreButton.Click += (_, _) => RunOnboardOperation(isApply: false);
 
         PreviewKeyDown += OnWindowPreviewKeyDown;
+    }
+
+    /// <summary>
+    /// G600 本体書き込み／解除。device write は数秒かかる（settle 待ちを含む）ため UI thread の外で
+    /// 実行し、完了時に状態と結果を表示する。実行中は再操作を受け付けない。
+    /// </summary>
+    private void RunOnboardOperation(bool isApply)
+    {
+        if (_onboardIntent is null || _onboardBusy)
+        {
+            return;
+        }
+
+        if (isApply)
+        {
+            var confirmed = MessageBox.Show(
+                this,
+                "この設定の G600 割当を G600 本体のメモリに書き込みます。\n"
+                + "書き込み前の状態は記録され、「本体の書き込みを解除」でいつでも戻せます。\n\n続けますか？",
+                "G600 本体に書き込む",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Question);
+            if (confirmed != MessageBoxResult.OK)
+            {
+                return;
+            }
+        }
+
+        _onboardBusy = true;
+        _onboardStatusText.Text = isApply ? "G600 本体: 書き込み中…" : "G600 本体: 解除中…";
+        UpdateOnboardButtons();
+
+        var intent = _onboardIntent;
+        var document = _document;
+        System.Threading.Tasks.Task.Run(() => isApply ? intent.Apply(document) : intent.Restore())
+            .ContinueWith(task => Dispatcher.Invoke(() =>
+            {
+                _onboardBusy = false;
+                var result = task.IsFaulted
+                    ? new G600OnboardUiResult(false, task.Exception!.GetBaseException().Message)
+                    : task.Result;
+                RefreshOnboardState();
+                MessageBox.Show(
+                    this,
+                    result.Message,
+                    result.Success ? "G600 本体" : "書き込めませんでした",
+                    MessageBoxButton.OK,
+                    result.Success ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            }));
+    }
+
+    private void RefreshOnboardState()
+    {
+        if (_onboardIntent is null)
+        {
+            return;
+        }
+
+        var state = _onboardIntent.QueryState();
+        _onboardStatusText.Text = state.StatusLine;
+        _onboardRestoreButton.Visibility = state.Active ? Visibility.Visible : Visibility.Collapsed;
+        UpdateOnboardButtons();
+    }
+
+    private void UpdateOnboardButtons()
+    {
+        // 保存済みの内容だけを本体へ書く（未保存の編集と本体がずれた状態を作らない）
+        _onboardWriteButton.IsEnabled = !_onboardBusy && _compileOutcome.IsValid && !_hasUnsavedChanges;
+        _onboardRestoreButton.IsEnabled = !_onboardBusy;
     }
 
     private void OnWindowPreviewKeyDown(object? sender, KeyEventArgs e)
@@ -520,6 +619,13 @@ public sealed class InputStudioWindow : Window
         _saveButton.Foreground = Brushes.White;
         right.Children.Add(_saveButton);
         right.Children.Add(_revertButton);
+        if (_onboardIntent is not null)
+        {
+            right.Children.Add(_onboardWriteButton);
+            right.Children.Add(_onboardRestoreButton);
+            right.Children.Add(_onboardStatusText);
+        }
+
         Grid.SetColumn(right, 1);
         grid.Children.Add(right);
 
@@ -961,6 +1067,7 @@ public sealed class InputStudioWindow : Window
         }
 
         _saveButton.IsEnabled = _compileOutcome.IsValid && _hasUnsavedChanges;
+        UpdateOnboardButtons();
         _revertButton.IsEnabled = _hasUnsavedChanges;
         // 無効時の見た目は共通 flat style の不透明度 trigger が担う（Opacity の手動設定は trigger を
         // 打ち消すためここでは触らない）。

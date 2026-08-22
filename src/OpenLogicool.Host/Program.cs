@@ -58,6 +58,13 @@ using OpenLogicool.Playbooks;
 //       restore は残置前 baseline へ戻す。status は現在の F3 / baseline / 共存ソフトを表示する。
 //       run / ui --resident は配線時に apply、handled shutdown で restore する。
 //       LGS / G HUB / Options+ 実行中は書かない。foreground 切替では書かない（MAP-010）。
+//   onboard <apply <workspaceId>|restore|status> [--db <path>]
+//       方式A（NIKKE 実測 2026-08-22 で採用確定・SendInput は anti-cheat に届かない）:
+//       workspace の G600 割当を G600 本体の onboard F3 へ書く。ハードウェアとして送信されるため
+//       合成入力を拒否するゲームでも効く。apply 前に書込み前 F3 を baseline として保存し、
+//       restore で戻す。書込み中フラグが立っている間、常駐は G600 の SendInput 送出を抑止し
+//       残置（leftover）の apply/restore もしない。LGS / G HUB / Options+ 実行中は書かない。
+//       常駐実行中の CLI apply/restore は拒否する（アプリ内の「本体に書き込む」を使う）。
 //   ui-test-scenario [--out <path>]
 //       t10（Phase 3 Exit 条件5）: UI test scenario（アプリ選択→操作作成→両 device binding→保存→
 //       適用状態表示）を fake（in-memory）と real（新規 temp SQLite・実 device 列挙）の両方の
@@ -85,9 +92,10 @@ return command switch
     "diagnostics" => Diagnostics(args[1..]),
     "onboarding" => Onboarding(args[1..]),
     "leftover" when args.Length >= 2 => Leftover(args[1], args[2..]),
+    "onboard" when args.Length >= 2 => Onboard(args[1], args[2..]),
     "ui-test-scenario" => UiTestScenarioCommand(args[1..]),
     "capture-dispatch" when args.Length >= 2 => CaptureDispatch(args[1], args[2..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | ui-test-scenario [--out <path>] | capture-dispatch <continuity|resume> [--capture available|stale|unavailable] [--recalibrate]]"),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>] | capture-dispatch <continuity|resume> [--capture available|stale|unavailable] [--recalibrate]]"),
 };
 
 static int CaptureDispatch(string mode, string[] arguments)
@@ -231,7 +239,8 @@ static int Run(string[] arguments)
         databasePath,
         watchdogPath,
         traceEnabled,
-        G600LeftoverHostSupport.CreateSession(databasePath));
+        G600LeftoverHostSupport.CreateSession(databasePath),
+        G600OnboardModeStore.ForDatabase(databasePath));
     var status = host.Start();
 
     Console.WriteLine($"db: {databasePath}");
@@ -334,7 +343,8 @@ static int Ui(string[] arguments)
             databasePath,
             watchdogPath,
             enableTrace: true,
-            G600LeftoverHostSupport.CreateSession(databasePath));
+            G600LeftoverHostSupport.CreateSession(databasePath),
+            G600OnboardModeStore.ForDatabase(databasePath));
         residentStatus = residentHost.Start();
     }
 
@@ -426,11 +436,16 @@ static int Ui(string[] arguments)
         residentApply = new HostResidentApplyIntent(residentHost, instanceIdsByKind);
     }
 
+    var onboardIntent = new HostG600OnboardIntent(
+        G600OnboardService.CreateDefault(databasePath),
+        residentHost,
+        residentHost is not null ? G600LeftoverHostSupport.CreateSession(databasePath) : null);
+
     var exitCode = 0;
     var thread = new Thread(() =>
     {
         var application = new System.Windows.Application();
-        var window = new InputStudioWindow(snapshot, report, AppProfileResolver.DefaultMarker, editorIntents, residentApply);
+        var window = new InputStudioWindow(snapshot, report, AppProfileResolver.DefaultMarker, editorIntents, residentApply, onboardIntent);
         if (durationMs is not null)
         {
             var timer = new System.Windows.Threading.DispatcherTimer
@@ -1073,6 +1088,88 @@ static int Leftover(string action, string[] arguments)
         }
         default:
             return Fail("usage: leftover <apply|restore|status> [--db <path>]");
+    }
+}
+
+// 方式A: workspace の G600 割当を onboard F3 へ焼く／戻す／状態表示。
+// 常駐実行中は apply/restore を拒否する（常駐側の送出抑止と同期できないため。UI のボタンが常駐内経路）。
+static int Onboard(string action, string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    string? workspaceId = null;
+    for (var i = 0; i < arguments.Length; i++)
+    {
+        switch (arguments[i])
+        {
+            case "--db" when i + 1 < arguments.Length:
+                databasePath = Path.GetFullPath(arguments[++i]);
+                break;
+            default:
+                if (workspaceId is null && !arguments[i].StartsWith("--", StringComparison.Ordinal))
+                {
+                    workspaceId = arguments[i];
+                    break;
+                }
+
+                return Fail($"unknown onboard option: {arguments[i]}");
+        }
+    }
+
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    var service = G600OnboardService.CreateDefault(databasePath);
+
+    if (action is "apply" or "restore" && Mutex.TryOpenExisting(SingleInstanceGuard.DefaultName, out var residentMutex))
+    {
+        residentMutex.Dispose();
+        return Fail("常駐（Input Studio）実行中は onboard を CLI から書けません。アプリ内の「本体に書き込む」を使うか、終了してから実行してください。");
+    }
+
+    switch (action)
+    {
+        case "apply" when workspaceId is not null:
+        {
+            using var connection = new SqliteConnection($"Data Source={databasePath}");
+            connection.Open();
+            new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+            var profileId = $"{workspaceId}-G600";
+            var document = new SqliteMappingProfileStore(connection).ListAll()
+                .FirstOrDefault(candidate => candidate.ProfileId == profileId);
+            if (document is null)
+            {
+                return Fail($"workspace '{workspaceId}' の G600 割当（{profileId}）が見つかりません。");
+            }
+
+            var result = service.Apply(workspaceId, document);
+            Console.WriteLine(result.Message);
+            return result.Success ? 0 : 2;
+        }
+        case "restore":
+        {
+            var result = service.Restore();
+            Console.WriteLine(result.Message);
+            return result.Success ? 0 : 2;
+        }
+        case "status":
+        {
+            var mode = service.CurrentMode();
+            Console.WriteLine(mode is null
+                ? "onboard: 書込みなし"
+                : $"onboard: 書込み中（workspace '{mode.WorkspaceId}'・{mode.AppliedAtUtc:yyyy-MM-dd HH:mm:ss} UTC）");
+            Console.WriteLine($"共存ソフト: {(G600LeftoverHostSupport.IsCoexistenceRunning() ? "検出" : "非検出")}");
+            var directory = Path.GetDirectoryName(Path.GetFullPath(databasePath))!;
+            var baseline = new FileG600OnboardBaselineStore(directory).LoadF3();
+            Console.WriteLine(baseline is null ? "復元元: なし" : "復元元: あり（書込み前の F3）");
+            var current = G600EvidenceWrite.TryRead(
+                new G600FeatureHidAccess(), G600EvidenceWrite.ProfileReportIdF3, Thread.Sleep, settleMs: 0);
+            Console.WriteLine(current is null
+                ? "F3: 読めない（未接続または feature collection を開けない）"
+                : baseline is not null && current.SequenceEqual(baseline)
+                    ? "F3: 復元元と一致（素の状態）"
+                    : "F3: 復元元と不一致（書込み済みまたは残置済み）");
+            return 0;
+        }
+        default:
+            return Fail("usage: onboard <apply <workspaceId>|restore|status> [--db <path>]");
     }
 }
 
