@@ -1,4 +1,5 @@
 using OpenLogicool.Host;
+using Xunit;
 
 namespace OpenLogicool.Host.Tests;
 
