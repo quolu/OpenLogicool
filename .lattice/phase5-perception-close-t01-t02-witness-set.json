@@ -1,0 +1,51 @@
+{
+  "schema": "lattice.todo_witness_set.v5",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase5-perception-close",
+  "capacity": { "executors": 2 },
+  "sensor_query_set": { "queries": [{ "id": "status", "operation": "status" }] },
+  "manual_witness": {
+    "t01-recorded-live-conformance": {
+      "owns": [
+        { "kind": "path", "target": "docs/contracts/recorded-live-conformance.md" },
+        { "kind": "path", "target": "tests/OpenLogicool.Capture.Tests/RecordedLiveConformanceTests.cs" },
+        { "kind": "path", "target": "tests/OpenLogicool.Capture.Tests/OpenLogicool.Capture.Tests.csproj" },
+        { "kind": "path", "target": "evidence/phase5-perception-close/t01-recorded-live-conformance.md" }
+      ],
+      "reads": [
+        "src/OpenLogicool.Perception/FixtureFrameRecognizer.cs",
+        "src/OpenLogicool.Perception/LiveObservationSource.cs",
+        "src/OpenLogicool.Capture/CapturedFrame.cs"
+      ],
+      "writes": [
+        "docs/contracts/recorded-live-conformance.md",
+        "tests/OpenLogicool.Capture.Tests/RecordedLiveConformanceTests.cs",
+        "tests/OpenLogicool.Capture.Tests/OpenLogicool.Capture.Tests.csproj",
+        "evidence/phase5-perception-close/t01-recorded-live-conformance.md"
+      ],
+      "resources": [], "state_effects": [], "sensor_provenance": { "queries": [] },
+      "affected_tests": ["tests/OpenLogicool.Capture.Tests/RecordedLiveConformanceTests.cs"], "unknowns": []
+    },
+    "t02-frozen-metrics": {
+      "owns": [
+        { "kind": "path", "target": "src/OpenLogicool.Perception/FrozenMetricRunner.cs" },
+        { "kind": "path", "target": "tests/OpenLogicool.Conformance.Tests/FrozenMetricRunnerTests.cs" },
+        { "kind": "path", "target": "docs/contracts/frozen-metrics.md" },
+        { "kind": "path", "target": "evidence/phase5-perception-close/t02-frozen-metrics.md" }
+      ],
+      "reads": [
+        "src/OpenLogicool.Perception/CorpusPartition.cs",
+        "src/OpenLogicool.Perception/FixtureFrameRecognizer.cs",
+        "src/OpenLogicool.Perception/LiveObservationSource.cs"
+      ],
+      "writes": [
+        "src/OpenLogicool.Perception/FrozenMetricRunner.cs",
+        "tests/OpenLogicool.Conformance.Tests/FrozenMetricRunnerTests.cs",
+        "docs/contracts/frozen-metrics.md",
+        "evidence/phase5-perception-close/t02-frozen-metrics.md"
+      ],
+      "resources": [], "state_effects": [], "sensor_provenance": { "queries": [] },
+      "affected_tests": ["tests/OpenLogicool.Conformance.Tests/FrozenMetricRunnerTests.cs"], "unknowns": []
+    }
+  }
+}

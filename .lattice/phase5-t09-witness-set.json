@@ -1,0 +1,72 @@
+{
+  "schema": "lattice.todo_witness_set.v5",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase5-capture-perception",
+  "capacity": {
+    "executors": 2
+  },
+  "sensor_query_set": {
+    "queries": [
+      {
+        "id": "status",
+        "operation": "status"
+      }
+    ]
+  },
+  "manual_witness": {
+    "t03-alt-backends": {
+      "owns": [
+        { "kind": "path", "target": "docs/contracts/capture-alt-backends.md" },
+        { "kind": "path", "target": "docs/development-plan.md" },
+        { "kind": "path", "target": "docs/phase5-campaign-plan.md" },
+        { "kind": "path", "target": "docs/probes/capture-backend-matrix-2026-08-15.md" },
+        { "kind": "path", "target": "evidence/phase5-capture-perception/t03-alt-backends.md" }
+      ],
+      "reads": [
+        "docs/contracts/capture-support-matrix.md",
+        "src/OpenLogicool.Contracts/Capture/CaptureCapabilities.cs"
+      ],
+      "writes": [
+        "docs/contracts/capture-alt-backends.md",
+        "docs/development-plan.md",
+        "docs/phase5-campaign-plan.md",
+        "docs/probes/capture-backend-matrix-2026-08-15.md",
+        "evidence/phase5-capture-perception/t03-alt-backends.md"
+      ],
+      "resources": [],
+      "state_effects": [],
+      "sensor_provenance": { "queries": [] },
+      "affected_tests": [],
+      "unknowns": []
+    },
+    "t09-unique-resume": {
+      "owns": [
+        { "kind": "path", "target": "docs/contracts/live-resume.md" },
+        { "kind": "path", "target": "evidence/phase5-capture-perception/t09-unique-resume.md" },
+        { "kind": "path", "target": "src/OpenLogicool.Playbooks/LiveResumeGate.cs" },
+        { "kind": "path", "target": "tests/OpenLogicool.Playbooks.Tests/LiveResumeGateTests.cs" }
+      ],
+      "reads": [
+        "docs/contracts/observation-result.md",
+        "docs/contracts/run-event.md",
+        "src/OpenLogicool.Domain/ResumeGate.cs",
+        "src/OpenLogicool.Playbooks/ResumeReadiness.cs",
+        "src/OpenLogicool.Perception/LiveObservationSource.cs",
+        "tests/OpenLogicool.Domain.Tests/ResumeGateTests.cs"
+      ],
+      "writes": [
+        "docs/contracts/live-resume.md",
+        "evidence/phase5-capture-perception/t09-unique-resume.md",
+        "src/OpenLogicool.Playbooks/LiveResumeGate.cs",
+        "tests/OpenLogicool.Playbooks.Tests/LiveResumeGateTests.cs"
+      ],
+      "resources": [],
+      "state_effects": [],
+      "sensor_provenance": { "queries": [] },
+      "affected_tests": [
+        "tests/OpenLogicool.Playbooks.Tests/LiveResumeGateTests.cs"
+      ],
+      "unknowns": []
+    }
+  }
+}

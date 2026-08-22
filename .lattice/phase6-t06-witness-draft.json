@@ -1,0 +1,20 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase6-ai-teach",
+  "capacity": { "executors": 2 },
+  "tasks": {
+    "t06-teach-supervised": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/TeachSupervised.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/TeachSupervisedTests.cs", "creates": true },
+        { "path": "docs/contracts/teach-supervised.md", "creates": true },
+        { "path": "evidence/phase6-ai-teach/t06-teach-supervised.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Contracts/AI/NextActionProposal.cs",
+        "docs/phase6-campaign-plan.md"
+      ]
+    }
+  }
+}

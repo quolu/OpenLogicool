@@ -1,0 +1,113 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase8b-game-operator-dist",
+  "capacity": { "executors": 2 },
+  "tasks": {
+    "t01-go-support-matrix": {
+      "owns": [
+        { "path": "src/OpenLogicool.Desktop/GameOperatorSupportMatrix.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Desktop.Tests/GameOperatorSupportMatrixTests.cs", "creates": true },
+        { "path": "docs/contracts/game-operator-support-matrix.md", "creates": true },
+        { "path": "evidence/phase8b-game-operator-dist/t01-go-support-matrix.md", "creates": true }
+      ],
+      "reads": [
+        "docs/phase8b-campaign-plan.md",
+        "docs/development-plan.md",
+        "src/OpenLogicool.Desktop/InputStudioSupportMatrix.cs"
+      ]
+    },
+    "t02-schema-rollback": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/SchemaRollback.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/SchemaRollbackTests.cs", "creates": true },
+        { "path": "docs/contracts/playbook-schema-rollback.md", "creates": true },
+        { "path": "evidence/phase8b-game-operator-dist/t02-schema-rollback.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Contracts/Shared/ContractSchemaVersions.cs",
+        "src/OpenLogicool.Contracts/Playbooks/PlaybookContracts.cs",
+        "src/OpenLogicool.Contracts/Playbooks/RunJournalContracts.cs",
+        "src/OpenLogicool.Perception/KnowledgePackValidator.cs",
+        "docs/phase8b-campaign-plan.md"
+      ]
+    },
+    "t03-active-run-update-hold": {
+      "owns": [
+        { "path": "src/OpenLogicool.Packaging/ActiveRunUpdateHold.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Packaging.Tests/ActiveRunUpdateHoldTests.cs", "creates": true },
+        { "path": "docs/contracts/active-run-update-hold.md", "creates": true },
+        { "path": "evidence/phase8b-game-operator-dist/t03-active-run-update-hold.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Packaging/InstallLifecycle.cs",
+        "docs/phase8b-campaign-plan.md"
+      ]
+    },
+    "t04-capability-release-gates": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/CapabilityRelease.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/CapabilityReleaseTests.cs", "creates": true },
+        { "path": "docs/contracts/capability-release.md", "creates": true },
+        { "path": "evidence/phase8b-game-operator-dist/t04-capability-release-gates.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Playbooks/ObserveOnly.cs",
+        "src/OpenLogicool.Playbooks/TeachSupervised.cs",
+        "src/OpenLogicool.Playbooks/GamePolicyGate.cs",
+        "src/OpenLogicool.Playbooks/VerifiedEnvScope.cs",
+        "docs/phase8b-campaign-plan.md"
+      ]
+    },
+    "t05-restart-ownership-reconcile": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/RestartOwnership.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/RestartOwnershipTests.cs", "creates": true },
+        { "path": "docs/contracts/restart-ownership.md", "creates": true },
+        { "path": "evidence/phase8b-game-operator-dist/t05-restart-ownership-reconcile.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Playbooks/AttemptDispatchGate.cs",
+        "src/OpenLogicool.Input/WatchdogChannel.cs",
+        "docs/phase8b-campaign-plan.md"
+      ]
+    },
+    "t06-input-studio-isolation": {
+      "owns": [
+        { "path": "src/OpenLogicool.Host/InputStudioIsolation.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Host.Tests/InputStudioIsolationTests.cs", "creates": true },
+        { "path": "docs/contracts/input-studio-isolation.md", "creates": true },
+        { "path": "evidence/phase8b-game-operator-dist/t06-input-studio-isolation.md", "creates": true }
+      ],
+      "reads": [
+        "tests/OpenLogicool.Architecture.Tests/ProjectReferenceDirectionTests.cs",
+        "src/OpenLogicool.Input/FastPathPump.cs",
+        "docs/phase8b-campaign-plan.md"
+      ]
+    },
+    "t07-data-flow-controls": {
+      "owns": [
+        { "path": "src/OpenLogicool.Host/GameOperatorDataControls.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Host.Tests/GameOperatorDataControlsTests.cs", "creates": true },
+        { "path": "docs/contracts/game-operator-data-controls.md", "creates": true },
+        { "path": "evidence/phase8b-game-operator-dist/t07-data-flow-controls.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Host/DiagnosticBundle.cs",
+        "docs/phase8b-campaign-plan.md"
+      ]
+    },
+    "t08-eval-threshold-record": {
+      "owns": [
+        { "path": "src/OpenLogicool.AI/EvalThresholdRecord.cs", "creates": true },
+        { "path": "tests/OpenLogicool.AI.Tests/EvalThresholdRecordTests.cs", "creates": true },
+        { "path": "docs/contracts/eval-threshold-record.md", "creates": true },
+        { "path": "evidence/phase8b-game-operator-dist/t08-eval-threshold-record.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.AI/EvalHarness.cs",
+        "docs/phase8b-campaign-plan.md"
+      ]
+    }
+  }
+}

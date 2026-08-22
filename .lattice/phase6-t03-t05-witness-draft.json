@@ -1,0 +1,45 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase6-ai-teach",
+  "capacity": { "executors": 2 },
+  "tasks": {
+    "t03-proposal-reject": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/ProposalReject.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/ProposalRejectTests.cs", "creates": true },
+        { "path": "docs/contracts/proposal-reject.md", "creates": true },
+        { "path": "evidence/phase6-ai-teach/t03-proposal-reject.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Contracts/AI/NextActionProposal.cs",
+        "docs/phase6-campaign-plan.md"
+      ]
+    },
+    "t04-exp-ai-01-harness": {
+      "owns": [
+        { "path": "src/OpenLogicool.AI/EvalHarness.cs", "creates": true },
+        { "path": "tests/OpenLogicool.AI.Tests/OpenLogicool.AI.Tests.csproj", "creates": true },
+        { "path": "tests/OpenLogicool.AI.Tests/EvalHarnessTests.cs", "creates": true },
+        { "path": "docs/contracts/exp-ai-01.md", "creates": true },
+        { "path": "evidence/phase6-ai-teach/t04-exp-ai-01-harness.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.AI/OpenLogicool.AI.csproj",
+        "src/OpenLogicool.Contracts/AI/NextActionProposal.cs",
+        "docs/phase6-campaign-plan.md"
+      ]
+    },
+    "t05-observe-only": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/ObserveOnly.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/ObserveOnlyTests.cs", "creates": true },
+        { "path": "docs/contracts/observe-only.md", "creates": true },
+        { "path": "evidence/phase6-ai-teach/t05-observe-only.md", "creates": true }
+      ],
+      "reads": [
+        "docs/phase6-campaign-plan.md"
+      ]
+    }
+  }
+}

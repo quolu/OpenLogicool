@@ -1,0 +1,27 @@
+{
+  "schema": "lattice.phase_accept_input.v1",
+  "review_event_digest": "4cef09ea46276c5d387519c394145eb2931650f8dad6bd7c1ccb967f02f6d788",
+  "decision_evidence": {
+    "anchor_digest": null,
+    "content_digest": "8c3f9ebb50bc43a5c47d342aeac2e8b789d5c0e5bd64323b74dd6eb317ff885d",
+    "evidence_id": "ev-phase6-ai-teach-t08-phase6-exit",
+    "git_blob_oid": "9b97c098625a356c8de01445ed2d3747ed57c108",
+    "media_type": "text/markdown",
+    "path": "evidence/phase6-ai-teach/terminal-audit.md",
+    "repo_id": "self"
+  },
+  "evidence_slots": [
+    {
+      "slot_id": "terminal-audit",
+      "evidence": {
+        "anchor_digest": null,
+        "content_digest": "8c3f9ebb50bc43a5c47d342aeac2e8b789d5c0e5bd64323b74dd6eb317ff885d",
+        "evidence_id": "ev-phase6-ai-teach-t08-phase6-exit",
+        "git_blob_oid": "9b97c098625a356c8de01445ed2d3747ed57c108",
+        "media_type": "text/markdown",
+        "path": "evidence/phase6-ai-teach/terminal-audit.md",
+        "repo_id": "self"
+      }
+    }
+  ]
+}

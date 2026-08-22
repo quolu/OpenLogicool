@@ -1,0 +1,20 @@
+{
+  "Probe": "sleep-smoke",
+  "CapturedAtUtc": "2026-08-16T03:36:32.4084838Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "DeviceKind": "g600",
+  "Devices": [
+    "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+  ],
+  "BaselineWorks": false,
+  "SleepDetected": false,
+  "MaxPollGapSeconds": 0,
+  "PostResumeWorks": false,
+  "DeviceChangesObserved": [],
+  "ProcessedInputCount": 18,
+  "DroppedInputCount": 0,
+  "WrongReleaseCount": 0,
+  "LiveDownCountAtEnd": 0,
+  "EmittedEdges": []
+}

@@ -1,0 +1,84 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase5-unverified",
+  "capacity": { "executors": 2 },
+  "tasks": {
+    "t01-resident-dispatch-loop": {
+      "owns": [
+        "src/OpenLogicool.Host/Program.cs",
+        "src/OpenLogicool.Host/CaptureContinuityDispatch.cs",
+        "tests/OpenLogicool.Host.Tests/CaptureContinuityDispatchTests.cs",
+        "tests/OpenLogicool.Host.Tests/LiveResumeDispatchTests.cs",
+        "docs/contracts/capture-continuity-dispatch.md",
+        "evidence/phase5-unverified/t01-resident-dispatch-loop.md"
+      ],
+      "reads": [
+        "src/OpenLogicool.Host/ResidentInputHost.cs",
+        "src/OpenLogicool.Capture/CaptureContinuityGate.cs",
+        "src/OpenLogicool.Playbooks/RunControls.cs",
+        "docs/contracts/live-resume-dispatch.md"
+      ]
+    },
+    "t02-png-corpus-metrics": {
+      "owns": [
+        "src/OpenLogicool.Perception/FrozenMetricRunner.cs",
+        "tests/OpenLogicool.Conformance.Tests/OpenLogicool.Conformance.Tests.csproj",
+        "tests/OpenLogicool.Conformance.Tests/FrozenMetricRunnerTests.cs",
+        "docs/contracts/frozen-metrics.md",
+        "evidence/phase5-unverified/t02-png-corpus-metrics.md"
+      ],
+      "reads": [
+        "src/OpenLogicool.Perception/CorpusPartition.cs",
+        "src/OpenLogicool.Perception/FixtureFrameRecognizer.cs",
+        "src/OpenLogicool.Perception/LiveObservationSource.cs",
+        "fixtures/frames/gamelab-main-menu-20260815.png",
+        "fixtures/frames/gamelab-main-menu-20260815.metadata.json"
+      ]
+    },
+    "t03-catalog-live-match": {
+      "owns": [
+        "src/OpenLogicool.Perception/FixtureFrameRecognizer.cs",
+        "tests/OpenLogicool.Perception.Tests/FixtureFrameRecognizerTests.cs",
+        "tests/OpenLogicool.Capture.Tests/RecordedLiveConformanceTests.cs",
+        "docs/contracts/fixture-frame-recognizer.md",
+        "evidence/phase5-unverified/t03-catalog-live-match.md"
+      ],
+      "reads": [
+        "src/OpenLogicool.Perception/LiveObservationSource.cs",
+        "src/OpenLogicool.Capture/WgcFrameSource.cs",
+        "src/OpenLogicool.Contracts/Perception/PerceptionContracts.cs",
+        "tests/OpenLogicool.Host.Tests/LiveResumeDispatchTests.cs"
+      ]
+    },
+    "t04-nikke-live-unique": {
+      "owns": [
+        "evidence/phase5-unverified/t04-nikke-live-unique.md"
+      ],
+      "reads": [
+        "docs/contracts/live-resume-dispatch.md",
+        "docs/phase5-exit-assessment.md"
+      ]
+    },
+    "t05-support-matrix-live": {
+      "owns": [
+        "docs/contracts/capture-faults.md",
+        "evidence/phase5-unverified/t05-support-matrix-live.md"
+      ],
+      "reads": [
+        "docs/probes/capture-backend-matrix-2026-08-15.md",
+        "docs/phase5-exit-assessment.md"
+      ]
+    },
+    "t06-unverified-assessment": {
+      "owns": [
+        { "path": "docs/phase5-unverified-assessment.md", "creates": true },
+        "evidence/phase5-unverified/t06-unverified-assessment.md"
+      ],
+      "reads": [
+        "docs/phase5-unverified-campaign-plan.md",
+        "docs/phase5-exit-assessment.md"
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase5-capture-perception",
+  "capacity": {
+    "executors": 1
+  },
+  "tasks": {
+    "t07-knowledge-pack": {
+      "owns": [
+        "docs/contracts/knowledge-pack-manifest.md",
+        "fixtures/contracts/knowledge-pack-manifest.sample.json",
+        "src/OpenLogicool.Contracts/Perception/PerceptionContracts.cs",
+        "src/OpenLogicool.Perception/OpenLogicool.Perception.csproj",
+        {
+          "path": "src/OpenLogicool.Perception/KnowledgePackValidator.cs",
+          "creates": true
+        },
+        "tests/OpenLogicool.Conformance.Tests/OpenLogicool.Conformance.Tests.csproj",
+        {
+          "path": "tests/OpenLogicool.Conformance.Tests/KnowledgePackConformanceTests.cs",
+          "creates": true
+        },
+        {
+          "path": "evidence/phase5-capture-perception/t07-knowledge-pack.md",
+          "creates": true
+        }
+      ],
+      "reads": [
+        "docs/development-plan.md",
+        "docs/contracts/observation-result.md"
+      ]
+    }
+  }
+}

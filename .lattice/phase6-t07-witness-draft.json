@@ -1,0 +1,20 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase6-ai-teach",
+  "capacity": { "executors": 2 },
+  "tasks": {
+    "t07-verified-env-scope": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/VerifiedEnvScope.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/VerifiedEnvScopeTests.cs", "creates": true },
+        { "path": "docs/contracts/verified-env-scope.md", "creates": true },
+        { "path": "evidence/phase6-ai-teach/t07-verified-env-scope.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Contracts/Perception/PerceptionContracts.cs",
+        "docs/phase6-campaign-plan.md"
+      ]
+    }
+  }
+}

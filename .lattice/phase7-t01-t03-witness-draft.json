@@ -1,0 +1,44 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase7-daily-pilot",
+  "capacity": { "executors": 2 },
+  "tasks": {
+    "t01-two-cycle-not-verified": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/DailyTwoCycle.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/DailyTwoCycleTests.cs", "creates": true },
+        { "path": "docs/contracts/daily-two-cycle.md", "creates": true },
+        { "path": "evidence/phase7-daily-pilot/t01-two-cycle-not-verified.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Playbooks/VerifiedEnvScope.cs",
+        "docs/phase7-campaign-plan.md"
+      ]
+    },
+    "t02-unknown-branch-append": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/UnknownBranchAppend.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/UnknownBranchAppendTests.cs", "creates": true },
+        { "path": "docs/contracts/unknown-branch-append.md", "creates": true },
+        { "path": "evidence/phase7-daily-pilot/t02-unknown-branch-append.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Playbooks/PlaybookCorrection.cs",
+        "docs/phase7-campaign-plan.md"
+      ]
+    },
+    "t03-game-policy-gate": {
+      "owns": [
+        { "path": "src/OpenLogicool.Contracts/Playbooks/GamePolicyRecord.cs", "creates": true },
+        { "path": "src/OpenLogicool.Playbooks/GamePolicyGate.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/GamePolicyGateTests.cs", "creates": true },
+        { "path": "docs/contracts/game-policy-gate.md", "creates": true },
+        { "path": "evidence/phase7-daily-pilot/t03-game-policy-gate.md", "creates": true }
+      ],
+      "reads": [
+        "docs/phase7-campaign-plan.md"
+      ]
+    }
+  }
+}

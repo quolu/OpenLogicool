@@ -1,0 +1,45 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase7-daily-pilot",
+  "capacity": { "executors": 2 },
+  "tasks": {
+    "t03-game-policy-gate": {
+      "owns": [
+        { "path": "src/OpenLogicool.Contracts/Playbooks/GamePolicyRecord.cs", "creates": true },
+        { "path": "src/OpenLogicool.Playbooks/GamePolicyGate.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/GamePolicyGateTests.cs", "creates": true },
+        { "path": "docs/contracts/game-policy-gate.md", "creates": true },
+        { "path": "evidence/phase7-daily-pilot/t03-game-policy-gate.md", "creates": true }
+      ],
+      "reads": [
+        "docs/phase7-campaign-plan.md"
+      ]
+    },
+    "t04-shadow-compare": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/ShadowCompare.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/ShadowCompareTests.cs", "creates": true },
+        { "path": "docs/contracts/shadow-compare.md", "creates": true },
+        { "path": "evidence/phase7-daily-pilot/t04-shadow-compare.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Contracts/AI/NextActionProposal.cs",
+        "src/OpenLogicool.Playbooks/TeachSupervised.cs",
+        "docs/phase7-campaign-plan.md"
+      ]
+    },
+    "t05-daily-recovery": {
+      "owns": [
+        { "path": "src/OpenLogicool.Playbooks/DailyRecovery.cs", "creates": true },
+        { "path": "tests/OpenLogicool.Playbooks.Tests/DailyRecoveryTests.cs", "creates": true },
+        { "path": "docs/contracts/daily-recovery.md", "creates": true },
+        { "path": "evidence/phase7-daily-pilot/t05-daily-recovery.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Playbooks/DailyTwoCycle.cs",
+        "docs/phase7-campaign-plan.md"
+      ]
+    }
+  }
+}

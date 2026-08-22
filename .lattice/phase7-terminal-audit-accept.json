@@ -1,0 +1,27 @@
+{
+  "schema": "lattice.phase_accept_input.v1",
+  "review_event_digest": "67caa00079762f77f79d014bb5a7dea02eca26f88cd6401c57720513fdde07f1",
+  "decision_evidence": {
+    "anchor_digest": null,
+    "content_digest": "aea83e4b26c892cf1ef6a22d0d1dc8dd76c81d61385aeb2fe8c97c909fcee2e8",
+    "evidence_id": "ev-phase7-daily-pilot-t07-phase7-exit",
+    "git_blob_oid": "0e25dfba93390768db5addaacfaa249bca30a212",
+    "media_type": "text/markdown",
+    "path": "evidence/phase7-daily-pilot/terminal-audit.md",
+    "repo_id": "self"
+  },
+  "evidence_slots": [
+    {
+      "slot_id": "terminal-audit",
+      "evidence": {
+        "anchor_digest": null,
+        "content_digest": "aea83e4b26c892cf1ef6a22d0d1dc8dd76c81d61385aeb2fe8c97c909fcee2e8",
+        "evidence_id": "ev-phase7-daily-pilot-t07-phase7-exit",
+        "git_blob_oid": "0e25dfba93390768db5addaacfaa249bca30a212",
+        "media_type": "text/markdown",
+        "path": "evidence/phase7-daily-pilot/terminal-audit.md",
+        "repo_id": "self"
+      }
+    }
+  ]
+}

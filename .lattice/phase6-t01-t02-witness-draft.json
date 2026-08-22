@@ -1,0 +1,33 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase6-ai-teach",
+  "capacity": { "executors": 2 },
+  "tasks": {
+    "t01-planner-proposal-schema": {
+      "owns": [
+        "src/OpenLogicool.Contracts/AI/NextActionProposal.cs",
+        "src/OpenLogicool.Contracts/Playbooks/PlaybookContracts.cs",
+        { "path": "tests/OpenLogicool.Conformance.Tests/PlannerProposalSchemaTests.cs", "creates": true },
+        { "path": "docs/contracts/planner-proposal.md", "creates": true },
+        { "path": "evidence/phase6-ai-teach/t01-planner-proposal-schema.md", "creates": true }
+      ],
+      "reads": [
+        "src/OpenLogicool.Contracts/Shared/ContractSchemaVersions.cs",
+        "tests/OpenLogicool.Conformance.Tests/ContractConformanceSuite.cs",
+        "docs/phase6-campaign-plan.md"
+      ]
+    },
+    "t02-ai-isolation": {
+      "owns": [
+        "src/OpenLogicool.AI/OpenLogicool.AI.csproj",
+        "tests/OpenLogicool.Architecture.Tests/ProjectReferenceDirectionTests.cs",
+        { "path": "tests/OpenLogicool.Architecture.Tests/AiIsolationTests.cs", "creates": true },
+        { "path": "evidence/phase6-ai-teach/t02-ai-isolation.md", "creates": true }
+      ],
+      "reads": [
+        "docs/phase6-campaign-plan.md"
+      ]
+    }
+  }
+}

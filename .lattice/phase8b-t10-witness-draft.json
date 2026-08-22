@@ -1,0 +1,20 @@
+{
+  "schema": "lattice.todo_witness_draft.v2",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase8b-game-operator-dist",
+  "capacity": { "executors": 1 },
+  "tasks": {
+    "t10-phase8b-exit": {
+      "owns": [
+        { "path": "docs/phase8b-exit-assessment.md", "creates": true },
+        { "path": "evidence/phase8b-game-operator-dist/t10-phase8b-exit.md", "creates": true }
+      ],
+      "reads": [
+        "docs/phase8b-campaign-plan.md",
+        "docs/development-plan.md",
+        "docs/phase8a-exit-assessment.md",
+        "src/OpenLogicool.Desktop/GameOperatorSupportMatrix.cs"
+      ]
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "schema": "lattice.todo_witness_set.v5",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase5-perception-close",
+  "capacity": { "executors": 2 },
+  "sensor_query_set": { "queries": [{ "id": "status", "operation": "status" }] },
+  "manual_witness": {
+    "t03-fixture-recognizer": {
+      "owns": [
+        { "kind": "path", "target": "src/OpenLogicool.Perception/FixtureFrameRecognizer.cs" },
+        { "kind": "path", "target": "tests/OpenLogicool.Perception.Tests/FixtureFrameRecognizerTests.cs" },
+        { "kind": "path", "target": "docs/contracts/fixture-frame-recognizer.md" },
+        { "kind": "path", "target": "evidence/phase5-perception-close/t03-fixture-recognizer.md" }
+      ],
+      "reads": [
+        "src/OpenLogicool.Perception/LiveObservationSource.cs",
+        "src/OpenLogicool.Contracts/Perception/PerceptionContracts.cs"
+      ],
+      "writes": [
+        "src/OpenLogicool.Perception/FixtureFrameRecognizer.cs",
+        "tests/OpenLogicool.Perception.Tests/FixtureFrameRecognizerTests.cs",
+        "docs/contracts/fixture-frame-recognizer.md",
+        "evidence/phase5-perception-close/t03-fixture-recognizer.md"
+      ],
+      "resources": [], "state_effects": [], "sensor_provenance": { "queries": [] },
+      "affected_tests": ["tests/OpenLogicool.Perception.Tests/FixtureFrameRecognizerTests.cs"], "unknowns": []
+    },
+    "t04-continuity-dispatch": {
+      "owns": [
+        { "kind": "path", "target": "src/OpenLogicool.Host/CaptureContinuityDispatch.cs" },
+        { "kind": "path", "target": "tests/OpenLogicool.Host.Tests/CaptureContinuityDispatchTests.cs" },
+        { "kind": "path", "target": "docs/contracts/capture-continuity-dispatch.md" },
+        { "kind": "path", "target": "evidence/phase5-perception-close/t04-continuity-dispatch.md" }
+      ],
+      "reads": [
+        "src/OpenLogicool.Capture/CaptureContinuityGate.cs",
+        "src/OpenLogicool.Playbooks/AttemptDispatchGate.cs",
+        "src/OpenLogicool.Playbooks/RunControls.cs"
+      ],
+      "writes": [
+        "src/OpenLogicool.Host/CaptureContinuityDispatch.cs",
+        "tests/OpenLogicool.Host.Tests/CaptureContinuityDispatchTests.cs",
+        "docs/contracts/capture-continuity-dispatch.md",
+        "evidence/phase5-perception-close/t04-continuity-dispatch.md"
+      ],
+      "resources": [], "state_effects": [], "sensor_provenance": { "queries": [] },
+      "affected_tests": ["tests/OpenLogicool.Host.Tests/CaptureContinuityDispatchTests.cs"], "unknowns": []
+    }
+  }
+}
