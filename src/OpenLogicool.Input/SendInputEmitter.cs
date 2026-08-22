@@ -45,21 +45,14 @@ public sealed class SendInputEmitter : IOutputEmitter
     {
         if (output.Kind == ResolvedOutputKind.Key)
         {
-            var flags = 0u;
-            if (edge == PhysicalInputEdge.Up)
-            {
-                flags |= 0x0002; // KEYEVENTF_KEYUP
-            }
-
-            if (output.IsExtendedKey)
-            {
-                flags |= 0x0001; // KEYEVENTF_EXTENDEDKEY
-            }
-
+            var plan = BuildKeyboardPlan(output, edge);
             return new INPUT
             {
                 type = 1, // INPUT_KEYBOARD
-                U = new InputUnion { ki = new KEYBDINPUT { wVk = output.VirtualKey, dwFlags = flags } },
+                U = new InputUnion
+                {
+                    ki = new KEYBDINPUT { wVk = plan.VirtualKey, wScan = plan.ScanCode, dwFlags = plan.Flags },
+                },
             };
         }
 
@@ -86,6 +79,43 @@ public sealed class SendInputEmitter : IOutputEmitter
             },
         };
     }
+
+    /// <summary>keyboard 入力1件として SendInput へ渡す内容（virtual key・scancode・flags）。</summary>
+    public readonly record struct KeyboardInputPlan(ushort VirtualKey, ushort ScanCode, uint Flags);
+
+    /// <summary>
+    /// keyboard 入力の SendInput 内容を組み立てる。scancode を MapVirtualKeyW（VK→VSC）で解決して併記し
+    /// KEYEVENTF_SCANCODE を立てる——Raw Input／DirectInput 系の読み手は scancode を読むため、
+    /// virtual key のみの合成入力はそれらに届かない（NIKKE 実測 2026-08-22 が契機）。
+    /// MapVirtualKeyW が 0 を返す virtual key は scancode が定義されない key であり、
+    /// その場合だけ KEYEVENTF_SCANCODE を立てず virtual key のみで送る。
+    /// </summary>
+    public static KeyboardInputPlan BuildKeyboardPlan(ResolvedOutput output, PhysicalInputEdge edge)
+    {
+        var flags = 0u;
+        if (edge == PhysicalInputEdge.Up)
+        {
+            flags |= 0x0002; // KEYEVENTF_KEYUP
+        }
+
+        if (output.IsExtendedKey)
+        {
+            flags |= 0x0001; // KEYEVENTF_EXTENDEDKEY
+        }
+
+        var scan = (ushort)MapVirtualKeyW(output.VirtualKey, MAPVK_VK_TO_VSC);
+        if (scan != 0)
+        {
+            flags |= 0x0008; // KEYEVENTF_SCANCODE
+        }
+
+        return new KeyboardInputPlan(output.VirtualKey, scan, flags);
+    }
+
+    private const uint MAPVK_VK_TO_VSC = 0;
+
+    [DllImport("user32.dll")]
+    private static extern uint MapVirtualKeyW(uint uCode, uint uMapType);
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);

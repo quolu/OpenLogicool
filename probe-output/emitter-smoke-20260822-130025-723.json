@@ -1,0 +1,70 @@
+{
+  "Probe": "emitter-smoke",
+  "CapturedAtUtc": "2026-08-22T13:00:25.7225564Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "Roundtrip": {
+    "Checks": [
+      {
+        "Name": "single-down-F13",
+        "Passed": true
+      },
+      {
+        "Name": "single-up-F13",
+        "Passed": true
+      },
+      {
+        "Name": "chord-down-F13",
+        "Passed": true
+      },
+      {
+        "Name": "chord-down-F14",
+        "Passed": true
+      },
+      {
+        "Name": "chord-up-F13",
+        "Passed": true
+      },
+      {
+        "Name": "chord-up-F14",
+        "Passed": true
+      },
+      {
+        "Name": "sequence-exact-order",
+        "Passed": true
+      },
+      {
+        "Name": "sequence-no-residue-F13",
+        "Passed": true
+      },
+      {
+        "Name": "sequence-no-residue-F14",
+        "Passed": true
+      },
+      {
+        "Name": "sequence-no-residue-F15",
+        "Passed": true
+      },
+      {
+        "Name": "sequence-up-emits-nothing",
+        "Passed": true
+      },
+      {
+        "Name": "stop-releases-F13",
+        "Passed": true
+      },
+      {
+        "Name": "watchdog-graceful-exit",
+        "Passed": true
+      }
+    ],
+    "StopReleaseEmitMs": 4,
+    "AllPassed": true
+  },
+  "WatchdogCrash": {
+    "DownConfirmedWhileChildAlive": true,
+    "ReleasedByWatchdog": true,
+    "ReleaseLatencyMsAfterKill": 38,
+    "MeetsNfr008Budget": true
+  }
+}
