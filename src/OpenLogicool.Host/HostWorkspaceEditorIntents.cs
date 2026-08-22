@@ -70,7 +70,7 @@ public sealed class HostWorkspaceEditorIntents(SqliteConnection connection) : IW
         return new WorkspaceCompileOutcome(true, compilation.Profiles.Count, compilation.Warnings, ErrorMessage: null);
     }
 
-    public WorkspaceSaveOutcome Save(WorkspaceDocument document)
+    public WorkspaceSaveOutcome Save(WorkspaceDocument document, string applicationFullPath)
     {
         WorkspaceEditorIntentsSupport.ValidateOutputTokens(document);
         var compilation = WorkspaceCompiler.Compile(document);
@@ -78,7 +78,7 @@ public sealed class HostWorkspaceEditorIntents(SqliteConnection connection) : IW
         long revisionNumber;
         try
         {
-            revisionNumber = WorkspaceRevisionSaver.SaveCompilation(connection, document, compilation);
+            revisionNumber = WorkspaceRevisionSaver.SaveCompilation(connection, document, compilation, applicationFullPath);
         }
         catch (InvalidOperationException error)
         {

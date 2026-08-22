@@ -30,8 +30,11 @@ public interface IWorkspaceEditorIntents
     /// <summary>document を compile する（副作用なし）。</summary>
     WorkspaceCompileOutcome Compile(WorkspaceDocument document);
 
-    /// <summary>document を新 revision として保存する（呼び出し前に Compile が成立している前提。失敗時は例外）。</summary>
-    WorkspaceSaveOutcome Save(WorkspaceDocument document);
+    /// <summary>
+    /// document を新 revision として保存し、編集対象（applicationFullPath。共通設定は "*"）との
+    /// 関連付けも同時に確定する（呼び出し前に Compile が成立している前提。失敗時は例外）。
+    /// </summary>
+    WorkspaceSaveOutcome Save(WorkspaceDocument document, string applicationFullPath);
 
     /// <summary>過去 revision（revisionNumber が null なら最新の一つ前）を新 revision として再適用する。</summary>
     WorkspaceUndoOutcome Undo(string workspaceId, long? revisionNumber);

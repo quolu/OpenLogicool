@@ -68,7 +68,7 @@ public static class UiTestScenario
         var compileOutcome = intents.Compile(document);
 
         // 段階4: 保存する（SaveCurrentDocument と同じ intents.Save）。
-        var saveOutcome = intents.Save(document);
+        var saveOutcome = intents.Save(document, TargetApplicationFullPath);
         var afterSaveSnapshot = afterSelectSnapshot with
         {
             SelectedWorkspaceRevisionNumber = saveOutcome.RevisionNumber,

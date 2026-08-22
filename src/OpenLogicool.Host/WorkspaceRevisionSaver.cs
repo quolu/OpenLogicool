@@ -17,7 +17,11 @@ internal static class WorkspaceRevisionSaver
     /// revision 追記と profile upsert を単一 transaction で行う。
     /// 保存後の全体が解決可能かも transaction 前に検証する（部分保存に伴う不整合を作らない）。
     /// </summary>
-    public static long SaveCompilation(SqliteConnection connection, WorkspaceDocument document, WorkspaceCompilation compilation)
+    public static long SaveCompilation(
+        SqliteConnection connection,
+        WorkspaceDocument document,
+        WorkspaceCompilation compilation,
+        string? applicationFullPath = null)
     {
         var store = new SqliteMappingProfileStore(connection);
         var associationStore = new SqliteAppAssociationStore(connection);
@@ -27,7 +31,12 @@ internal static class WorkspaceRevisionSaver
             .Where(existing => !compiledIds.Contains(existing.ProfileId))
             .Concat(compilation.Profiles)
             .ToList();
-        AppProfileResolver.Build(prospective, associationStore.ListAll());
+        var existingAssociations = associationStore.ListAll();
+        var associationUpserts = WorkspaceEditorIntentsSupport.BuildAssociationUpserts(
+            existingAssociations, prospective, compilation, applicationFullPath);
+        AppProfileResolver.Build(
+            prospective,
+            WorkspaceEditorIntentsSupport.MergeAssociations(existingAssociations, associationUpserts));
 
         ExecuteSql(connection, "BEGIN IMMEDIATE;");
         try
@@ -37,6 +46,11 @@ internal static class WorkspaceRevisionSaver
             foreach (var profile in compilation.Profiles)
             {
                 store.Upsert(profile);
+            }
+
+            foreach (var association in associationUpserts)
+            {
+                associationStore.Upsert(association);
             }
 
             ExecuteSql(connection, "COMMIT;");

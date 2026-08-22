@@ -14,6 +14,76 @@ namespace OpenLogicool.Host;
 /// </summary>
 internal static class WorkspaceEditorIntentsSupport
 {
+    /// <summary>
+    /// 保存1回分で書くべき関連付け（editor の編集対象→保存 profile）を組み立てる。
+    /// applicationFullPath が null（undo の再適用）なら編集対象の関連付けは書かない。
+    /// 併せて「これまで種別に profile が1つだけ→自動で既定」で解決していた種別へ2つ目の
+    /// profile が加わる場合、従来どおり解決されるよう既存 profile を明示の既定として書き残す
+    /// （保存が既存の適用先を黙って変えない）。既に既定があれば何もしない。
+    /// </summary>
+    public static IReadOnlyList<AppProfileAssociation> BuildAssociationUpserts(
+        IReadOnlyList<AppProfileAssociation> existingAssociations,
+        IReadOnlyList<MappingProfileDocument> prospectiveDocuments,
+        WorkspaceCompilation compilation,
+        string? applicationFullPath)
+    {
+        var upserts = new List<AppProfileAssociation>();
+        if (applicationFullPath is not null)
+        {
+            var path = applicationFullPath == AppProfileResolver.DefaultMarker
+                ? AppProfileResolver.DefaultMarker
+                : AppProfileResolver.NormalizePath(applicationFullPath);
+            foreach (var profile in compilation.Profiles)
+            {
+                upserts.Add(new AppProfileAssociation(
+                    OpenLogicool.Contracts.Shared.ContractSchemaVersions.Revision01, path, profile.DeviceKind, profile.ProfileId));
+            }
+        }
+
+        var compiledIds = compilation.Profiles.Select(profile => profile.ProfileId).ToHashSet(StringComparer.Ordinal);
+        var known = existingAssociations.Concat(upserts).ToList();
+        foreach (var kindGroup in prospectiveDocuments.GroupBy(document => document.DeviceKind, StringComparer.Ordinal))
+        {
+            if (known.Any(association =>
+                    association.ApplicationFullPath == AppProfileResolver.DefaultMarker
+                    && association.DeviceKind == kindGroup.Key))
+            {
+                continue;
+            }
+
+            var documents = kindGroup.ToArray();
+            if (documents.Length < 2)
+            {
+                continue;
+            }
+
+            var preExisting = documents.Where(document => !compiledIds.Contains(document.ProfileId)).ToArray();
+            if (preExisting.Length == 1)
+            {
+                upserts.Add(new AppProfileAssociation(
+                    OpenLogicool.Contracts.Shared.ContractSchemaVersions.Revision01,
+                    AppProfileResolver.DefaultMarker, kindGroup.Key, preExisting[0].ProfileId));
+            }
+        }
+
+        return upserts;
+    }
+
+    /// <summary>既存の関連付けへ upserts を (path, kind) 単位で適用した結果（resolver 検証用）。</summary>
+    public static IReadOnlyList<AppProfileAssociation> MergeAssociations(
+        IReadOnlyList<AppProfileAssociation> existingAssociations,
+        IReadOnlyList<AppProfileAssociation> upserts)
+    {
+        var byKey = existingAssociations.ToDictionary(
+            association => (association.ApplicationFullPath, association.DeviceKind));
+        foreach (var association in upserts)
+        {
+            byKey[(association.ApplicationFullPath, association.DeviceKind)] = association;
+        }
+
+        return byKey.Values.ToArray();
+    }
+
     /// <summary>段階4セルの語彙を WorkspaceApplyReport（Profiles）から Desktop の型へ写す。</summary>
     public static IReadOnlyList<WorkspaceStageCell> BuildStages(long? savedRevisionNumber, bool hostResident) =>
         WorkspaceApplyReport.Build(savedRevisionNumber, hostResident)

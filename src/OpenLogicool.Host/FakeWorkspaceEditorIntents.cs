@@ -66,12 +66,12 @@ public sealed class FakeWorkspaceEditorIntents : IWorkspaceEditorIntents
         return new WorkspaceCompileOutcome(true, compilation.Profiles.Count, compilation.Warnings, ErrorMessage: null);
     }
 
-    public WorkspaceSaveOutcome Save(WorkspaceDocument document)
+    public WorkspaceSaveOutcome Save(WorkspaceDocument document, string applicationFullPath)
     {
         WorkspaceEditorIntentsSupport.ValidateOutputTokens(document);
         var compilation = WorkspaceCompiler.Compile(document);
 
-        var revisionNumber = AppendRevisionAfterResolveCheck(document, compilation);
+        var revisionNumber = AppendRevisionAfterResolveCheck(document, compilation, applicationFullPath);
         return new WorkspaceSaveOutcome(revisionNumber, BuildStages(revisionNumber));
     }
 
@@ -90,16 +90,19 @@ public sealed class FakeWorkspaceEditorIntents : IWorkspaceEditorIntents
     /// （real 側の WorkspaceRevisionSaver.SaveCompilation と同じ規則——単一 SQLite transaction の
     /// 代わりに in-memory dictionary への書き込みなので、fake には巻き戻し対象の途中失敗は起きない）。
     /// </summary>
-    private long AppendRevisionAfterResolveCheck(WorkspaceDocument document, WorkspaceCompilation compilation)
+    private long AppendRevisionAfterResolveCheck(WorkspaceDocument document, WorkspaceCompilation compilation, string? applicationFullPath = null)
     {
         var compiledIds = compilation.Profiles.Select(profile => profile.ProfileId).ToHashSet(StringComparer.Ordinal);
         var prospective = _profilesById.Values
             .Where(existing => !compiledIds.Contains(existing.ProfileId))
             .Concat(compilation.Profiles)
             .ToArray();
+        var associationUpserts = WorkspaceEditorIntentsSupport.BuildAssociationUpserts(
+            _associations, prospective, compilation, applicationFullPath);
+        var merged = WorkspaceEditorIntentsSupport.MergeAssociations(_associations, associationUpserts);
         try
         {
-            AppProfileResolver.Build(prospective, _associations);
+            AppProfileResolver.Build(prospective, merged);
         }
         catch (InvalidOperationException error)
         {
@@ -119,6 +122,9 @@ public sealed class FakeWorkspaceEditorIntents : IWorkspaceEditorIntents
         {
             _profilesById[profile.ProfileId] = profile;
         }
+
+        _associations.Clear();
+        _associations.AddRange(merged);
 
         return revisionNumber;
     }

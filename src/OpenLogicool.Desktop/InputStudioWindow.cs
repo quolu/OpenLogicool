@@ -758,7 +758,7 @@ public sealed class InputStudioWindow : Window
 
         try
         {
-            var outcome = _intents.Save(_document);
+            var outcome = _intents.Save(_document, _selectedApplicationFullPath);
             _residentApply?.ApplyIfResident(_document);
             _snapshot = _snapshot with { SelectedWorkspaceRevisionNumber = outcome.RevisionNumber, Stages = outcome.Stages };
             _hasUnsavedChanges = false;

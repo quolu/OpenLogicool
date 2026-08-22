@@ -79,7 +79,7 @@ public sealed class HostWorkspaceEditorIntentsTests : IDisposable
         var compileOutcome = _intents.Compile(draft);
         Assert.True(compileOutcome.IsValid);
 
-        var saveOutcome = _intents.Save(draft);
+        var saveOutcome = _intents.Save(draft, "*");
 
         Assert.Equal(1, saveOutcome.RevisionNumber);
         // APP-007: 保存成功を「適用完了」と表示しない——段階は「保存」成立と「runtime 適用」を別に持つ
@@ -106,10 +106,10 @@ public sealed class HostWorkspaceEditorIntentsTests : IDisposable
     {
         var v1 = WorkspaceDocumentEditor.CreateDraft("ws-undo");
         v1 = WorkspaceDocumentEditor.AddAction(v1, "dodge", "回避", ["Key:Space"]);
-        _intents.Save(v1);
+        _intents.Save(v1, "*");
 
         var v2 = WorkspaceDocumentEditor.AddAction(v1, "attack", "攻撃", ["Key:F"]);
-        _intents.Save(v2);
+        _intents.Save(v2, "*");
 
         var undoOutcome = _intents.Undo("ws-undo", revisionNumber: null);
 
@@ -118,5 +118,26 @@ public sealed class HostWorkspaceEditorIntentsTests : IDisposable
         Assert.Single(undoOutcome.Document.Actions);
         Assert.Equal("dodge", undoOutcome.Document.Actions[0].ActionId);
         Assert.Contains(undoOutcome.Stages, stage => stage.Stage == "保存（revision）" && stage.State == "成立");
+    }
+
+    [Fact]
+    public void Save_of_second_app_workspace_keeps_resolution_by_persisting_default_association()
+    {
+        // 共通設定（"*"）を先に保存 → その時点では種別ごとに profile が1つで自動既定
+        var defaultDraft = WorkspaceDocumentEditor.CreateDraft("default");
+        defaultDraft = WorkspaceDocumentEditor.AddAction(defaultDraft, "dodge", "回避", ["Key:Space"]);
+        _intents.Save(defaultDraft, "*");
+
+        // 2つ目（app 用）の保存が拒否されず、既定の関連付けが保全される
+        var appDraft = WorkspaceDocumentEditor.CreateDraft("ws-nikke");
+        appDraft = WorkspaceDocumentEditor.AddAction(appDraft, "burst", "バースト", ["Key:B"]);
+        appDraft = WorkspaceDocumentEditor.SetBinding(appDraft, "burst", "G600", "G9", "base");
+        var outcome = _intents.Save(appDraft, @"C:\NIKKE\NIKKE\game\nikke.exe");
+
+        Assert.Equal(1, outcome.RevisionNumber);
+
+        // 再読込で app workspace が関連付け経由で引けること（保存が袋小路を作らない）
+        var reloaded = _intents.LoadDocument(@"c:\nikke\nikke\game\nikke.exe");
+        Assert.Equal("ws-nikke", reloaded.Document.WorkspaceId);
     }
 }
