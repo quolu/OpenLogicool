@@ -188,6 +188,14 @@ public sealed class SerialHidProtocolSession
                 sequence,
                 innerException: exception));
         }
+        catch (SerialHidProtocolException exception)
+        {
+            throw Latch(new SerialHidSessionFaultException(
+                SerialHidSessionFaultKind.Protocol,
+                $"Serial HID {requestKind} sequence {sequence} の応答frameが破損または非互換です。自動再送しません。",
+                sequence,
+                innerException: exception));
+        }
 
         SerialHidFrame response;
         try

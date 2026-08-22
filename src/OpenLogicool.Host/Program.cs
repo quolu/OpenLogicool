@@ -240,7 +240,8 @@ static int Run(string[] arguments)
         watchdogPath,
         traceEnabled,
         G600LeftoverHostSupport.CreateSession(databasePath),
-        G600OnboardModeStore.ForDatabase(databasePath));
+        G600OnboardModeStore.ForDatabase(databasePath),
+        CreateOutputSessionFactory(databasePath, watchdogPath));
     var status = host.Start();
 
     Console.WriteLine($"db: {databasePath}");
@@ -249,6 +250,7 @@ static int Run(string[] arguments)
     Console.WriteLine($"g13 devices: {status.G13DeviceInstanceIds.Count}");
     Console.WriteLine($"g600 devices: {status.G600DeviceInstanceIds.Count}");
     Console.WriteLine($"wired devices: {status.WiredDeviceInstanceIds.Count}");
+    Console.WriteLine($"output: {host.OutputRoute}");
     foreach (var deviceInstanceId in status.WiredDeviceInstanceIds)
     {
         Console.WriteLine($"  wired: {deviceInstanceId}");
@@ -330,6 +332,8 @@ static int Ui(string[] arguments)
     SingleInstanceGuard? residentGuard = null;
     ResidentInputHost? residentHost = null;
     ResidentHostStatus? residentStatus = null;
+    var outputSettingsStore = SerialHidOutputSettingsStore.ForDatabase(databasePath);
+    var serialHidDiscovery = CreateSerialHidDiscovery();
     if (resident)
     {
         residentGuard = new SingleInstanceGuard(SingleInstanceGuard.DefaultName);
@@ -344,7 +348,8 @@ static int Ui(string[] arguments)
             watchdogPath,
             enableTrace: true,
             G600LeftoverHostSupport.CreateSession(databasePath),
-            G600OnboardModeStore.ForDatabase(databasePath));
+            G600OnboardModeStore.ForDatabase(databasePath),
+            ResidentOutputSessionFactory.Create(outputSettingsStore.Load(), watchdogPath, serialHidDiscovery));
         residentStatus = residentHost.Start();
     }
 
@@ -440,12 +445,23 @@ static int Ui(string[] arguments)
         G600OnboardService.CreateDefault(databasePath),
         residentHost,
         residentHost is not null ? G600LeftoverHostSupport.CreateSession(databasePath) : null);
+    var serialHidSettingsIntent = new HostSerialHidSettingsIntent(
+        outputSettingsStore,
+        serialHidDiscovery,
+        () => residentHost?.OutputRoute);
 
     var exitCode = 0;
     var thread = new Thread(() =>
     {
         var application = new System.Windows.Application();
-        var window = new InputStudioWindow(snapshot, report, AppProfileResolver.DefaultMarker, editorIntents, residentApply, onboardIntent);
+        var window = new InputStudioWindow(
+            snapshot,
+            report,
+            AppProfileResolver.DefaultMarker,
+            editorIntents,
+            residentApply,
+            onboardIntent,
+            serialHidSettingsIntent);
         System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
         if (residentHost is not null)
         {
@@ -489,6 +505,15 @@ static int Ui(string[] arguments)
     thread.Join();
     return exitCode;
 }
+
+static SerialHidDiscoveryService CreateSerialHidDiscovery() =>
+    new(new SetupApiSerialCandidateEnumerator(), new SerialPortExchangeFactory());
+
+static Func<IResidentOutputSession> CreateOutputSessionFactory(string databasePath, string watchdogPath) =>
+    ResidentOutputSessionFactory.Create(
+        SerialHidOutputSettingsStore.ForDatabase(databasePath).Load(),
+        watchdogPath,
+        CreateSerialHidDiscovery());
 
 // ApplicationRail の行を組み立てる（設計 §2.1: ApplicationWorkspaceCatalog の行＋実行中一覧）。
 // 関連付け済み path は既に workspaceRows に含まれるため、実行中一覧からは未関連付けの app だけを

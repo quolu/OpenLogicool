@@ -10,6 +10,9 @@
     <RestoreLockedMode>true</RestoreLockedMode>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.IO.Ports" Version="10.0.11" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\OpenLogicool.Contracts\OpenLogicool.Contracts.csproj" />
     <ProjectReference Include="..\OpenLogicool.Domain\OpenLogicool.Domain.csproj" />
     <ProjectReference Include="..\OpenLogicool.Devices.G13\OpenLogicool.Devices.G13.csproj" />

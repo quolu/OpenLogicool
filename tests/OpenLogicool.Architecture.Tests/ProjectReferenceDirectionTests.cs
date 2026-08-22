@@ -144,6 +144,23 @@ public sealed class ProjectReferenceDirectionTests
             useWpfProjects);
     }
 
+    [Fact]
+    public void Serial_hid_output_route_does_not_add_another_raw_input_source()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var program = File.ReadAllText(Path.Combine(repositoryRoot, "src", "OpenLogicool.Host", "Program.cs"));
+        var serialComposition = File.ReadAllText(Path.Combine(
+            repositoryRoot, "src", "OpenLogicool.Host", "SerialHidDiscoveryService.cs"));
+        var uiStart = program.IndexOf("static int Ui(string[] arguments)", StringComparison.Ordinal);
+        var uiEnd = program.IndexOf("// ApplicationRail", uiStart, StringComparison.Ordinal);
+        Assert.True(uiStart >= 0 && uiEnd > uiStart);
+        var uiComposition = program[uiStart..uiEnd];
+
+        Assert.Equal(1, Count(uiComposition, "new G13RawInputSource()"));
+        Assert.Equal(1, Count(uiComposition, "new G600RawInputSource()"));
+        Assert.DoesNotContain("RawInputSource", serialComposition, StringComparison.Ordinal);
+    }
+
     private static Dictionary<string, HashSet<string>> LoadReferences()
     {
         return EnumerateSliceOneProjects()
@@ -225,4 +242,7 @@ public sealed class ProjectReferenceDirectionTests
 
     private static IReadOnlySet<string> Set(params string[] projectNames) =>
         new HashSet<string>(projectNames, StringComparer.Ordinal);
+
+    private static int Count(string text, string value) =>
+        text.Split(value, StringSplitOptions.None).Length - 1;
 }

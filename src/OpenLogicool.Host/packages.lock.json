@@ -2,6 +2,15 @@
   "version": 1,
   "dependencies": {
     "net10.0-windows10.0.22621": {
+      "System.IO.Ports": {
+        "type": "Direct",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "92gu68qcsZXcHhSyGxNdoVoDKxn9nV240k3jdq5b/vAzTt0QsFFE+bCmLKQ5p1XhAgelE5v+VaQEaAFH/JvZSA==",
+        "dependencies": {
+          "runtime.native.System.IO.Ports": "10.0.11"
+        }
+      },
       "Microsoft.Data.Sqlite": {
         "type": "Transitive",
         "resolved": "10.0.10",
@@ -19,6 +28,109 @@
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.11"
         }
+      },
+      "runtime.android-arm.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "6V3MEIBgMbF/kwIkY1ibNZB/9E/PN5289IZGdVYJfgMvuQt43YLHFz4i4PBZZ8Jp0/Pii14cyUU88avLfEYLvw=="
+      },
+      "runtime.android-arm64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "mxz0iV8Vzq/ljCsphMngnoC4tue88i433b5meMihkVdFY8eytNBbubkZLNipCvhNgLFSq1FJ/5gn4VZ3uHOIBA=="
+      },
+      "runtime.android-x64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "cH7lMdDHZ2/oZC2vDZuCALZkpPz0iLcW0smMngk1fkT6f4yZf916xa0ajMefSFYwpbRVMZi2JK3SRU/jY+Wd6w=="
+      },
+      "runtime.android-x86.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "7WDZu2EC63A+/z+HCnRET/6vFjTg4UVWvX4BaTd7fdrVuTMZcpPf4SdNfsI3wbY+zSweJ+CbWkeC9yq2WXlQug=="
+      },
+      "runtime.linux-arm.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "sf18XX+0LXVZ4iS6YGOGVVFx8tUzXVLZGFcSjGvQWZNgVyQUwqJigNrULJ0mEn5mrF8FdPpvvsQoQ2oZ0GeNYw=="
+      },
+      "runtime.linux-arm64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "YPdZrWEiyI5B9WpWJpy/aFueieCn19956AebWnvY8qmVbmrddgdIag7MYk3jxlUqFfzDbPGD4Bwxn3nPNj1PMA=="
+      },
+      "runtime.linux-bionic-arm64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "BwIgA8GupgMtWmjKMTjSR91Mp+msWPJxHIXoKJdPD/+xcp3s0yJNmYeVgLd/6x25ipULyiBfpqsxYeKirOuTcA=="
+      },
+      "runtime.linux-bionic-x64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "gxMiB17KzKFH3jRGEeojEEJxbemEvkW9BruuLtF4DlEBgdDAvW+cUN0rIHLtj8yf5H4+vVvY6WiVb8EbTlDvWA=="
+      },
+      "runtime.linux-musl-arm.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "dqYz32Eb3HnDMgvv+OJz9GLi0d3qqEfkuQnEa43lg3aNmlYmXXWI9SvX0Tvqigd7GRaxWyKX7uEZfxvudO16Dg=="
+      },
+      "runtime.linux-musl-arm64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "ZiOHYuPdEd7WFICA7U+0KWJmRETWeT/nHg6D5NagHmS3Poe7stluLQ9W/M/Svzz/m7cyFlL7e/d66hpgnG82Ww=="
+      },
+      "runtime.linux-musl-x64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "qeTTy+SXea0z+hgXFkIiI9j9ikfVV8gxYDXKdmsl/X0S9tnk5gciAPQNxfoWfvzQYYrD7rl739JIt+I8z2pAxg=="
+      },
+      "runtime.linux-x64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "s1FFe7n+ff5XV8SnLcmvW6W/9GsKm/TKkdkSh5ZmCPlry87xyDvGULjv/gIxlcIY5fpUB86nXIQ6EJp4WnL71g=="
+      },
+      "runtime.maccatalyst-arm64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "7Mvev9kKh140KpgoZcmNxzk+1+TohKxLM1dyfjQcM8zUrJDAQenG5w0AGXa52z7Hk+5pS8c75s4s0GdU1Qv0lQ=="
+      },
+      "runtime.maccatalyst-x64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "8qiWZ3aI5ugu4MouuEDu/vtS8stQEvG/Mf/ImoFSa/TcF11Hz54Ij1931VJnlvgpUB8BV8WFc928xqYah2wglw=="
+      },
+      "runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "O7kVZRLIKBmkf+VRq/5tXgaeDQLuEiItxEdccCLtIW2eQFyH+uHAgW5Jet5idVr2FzIE4J9fj9s9DZSwnaqAhg==",
+        "dependencies": {
+          "runtime.android-arm.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.android-arm64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.android-x64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.android-x86.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.linux-arm.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.linux-arm64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.linux-bionic-arm64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.linux-bionic-x64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.linux-musl-arm.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.linux-musl-arm64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.linux-musl-x64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.linux-x64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.maccatalyst-arm64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.maccatalyst-x64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.osx-arm64.runtime.native.System.IO.Ports": "10.0.11",
+          "runtime.osx-x64.runtime.native.System.IO.Ports": "10.0.11"
+        }
+      },
+      "runtime.osx-arm64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "XI/fS9+og9UOwFhHnQFf10NQaM26yOlaNjTVBc0I6KG4xMfw0TR4/PUacSiKnn5agfAQ74zh7T7ZogdWmsOCSg=="
+      },
+      "runtime.osx-x64.runtime.native.System.IO.Ports": {
+        "type": "Transitive",
+        "resolved": "10.0.11",
+        "contentHash": "BCn5TG2WdJADWTdW6N/OluNWRb/kw63AnMU5wKV0rludx8uewlZQ9AHoEbxL6lQ2W9zNn1RX06A5ZoAZiq4Znw=="
       },
       "SharpGen.Runtime": {
         "type": "Transitive",

@@ -22,6 +22,7 @@ public sealed class InputStudioWindow : Window
     private readonly IWorkspaceEditorIntents _intents;
     private readonly InputStudioReport _report;
     private readonly IResidentApplyIntent? _residentApply;
+    private readonly ISerialHidSettingsIntent? _serialHidSettingsIntent;
     private DiagnosticsWindow? _diagnosticsWindow;
     private DispatcherTimer? _traceTimer;
 
@@ -68,6 +69,21 @@ public sealed class InputStudioWindow : Window
     private readonly TextBlock _saveChipText = new() { FontWeight = FontWeights.SemiBold, FontSize = 12 };
     private readonly Button _saveButton = new() { Content = "保存", Padding = new Thickness(14, 6, 14, 6) };
     private readonly Button _revertButton = new() { Content = "元に戻す", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(8, 0, 0, 0) };
+    private readonly Button _outputSettingsButton = new()
+    {
+        Content = "出力方式",
+        Padding = new Thickness(12, 6, 12, 6),
+        Margin = new Thickness(12, 0, 0, 0),
+    };
+    private readonly TextBlock _outputStatusText = new()
+    {
+        Foreground = Theme.Muted,
+        FontSize = 11,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(8, 0, 0, 0),
+        MaxWidth = 210,
+        TextTrimming = TextTrimming.CharacterEllipsis,
+    };
 
     // G600 本体書き込み（方式A）: 合成入力を受け付けないゲームでも割当を効かせる
     private readonly IG600OnboardIntent? _onboardIntent;
@@ -158,12 +174,14 @@ public sealed class InputStudioWindow : Window
         string initialSelectedApplicationFullPath,
         IWorkspaceEditorIntents intents,
         IResidentApplyIntent? residentApply = null,
-        IG600OnboardIntent? onboardIntent = null)
+        IG600OnboardIntent? onboardIntent = null,
+        ISerialHidSettingsIntent? serialHidSettingsIntent = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
         _residentApply = residentApply;
         _onboardIntent = onboardIntent;
+        _serialHidSettingsIntent = serialHidSettingsIntent;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
 
@@ -221,6 +239,7 @@ public sealed class InputStudioWindow : Window
         LoadSelectedWorkspace();
         Render();
         RefreshOnboardState();
+        RefreshOutputStatus();
 
         if (_residentApply is not null)
         {
@@ -471,6 +490,7 @@ public sealed class InputStudioWindow : Window
         _revertButton.Click += (_, _) => DiscardUnsavedChanges();
         _onboardWriteButton.Click += (_, _) => RunOnboardOperation(isApply: true);
         _onboardRestoreButton.Click += (_, _) => RunOnboardOperation(isApply: false);
+        _outputSettingsButton.Click += (_, _) => OpenOutputSettings();
 
         PreviewKeyDown += OnWindowPreviewKeyDown;
     }
@@ -535,6 +555,30 @@ public sealed class InputStudioWindow : Window
         _onboardStatusText.Text = state.StatusLine;
         _onboardRestoreButton.Visibility = state.Active ? Visibility.Visible : Visibility.Collapsed;
         UpdateOnboardButtons();
+    }
+
+    private void OpenOutputSettings()
+    {
+        if (_serialHidSettingsIntent is null)
+        {
+            return;
+        }
+
+        var window = new SerialHidSettingsWindow(_serialHidSettingsIntent) { Owner = this };
+        window.ShowDialog();
+        RefreshOutputStatus();
+    }
+
+    private void RefreshOutputStatus()
+    {
+        if (_serialHidSettingsIntent is null)
+        {
+            return;
+        }
+
+        var snapshot = _serialHidSettingsIntent.Load();
+        _outputStatusText.Text = snapshot.StatusLine;
+        _outputStatusText.ToolTip = snapshot.StatusLine;
     }
 
     private void UpdateOnboardButtons()
@@ -619,6 +663,11 @@ public sealed class InputStudioWindow : Window
         _saveButton.Foreground = Brushes.White;
         right.Children.Add(_saveButton);
         right.Children.Add(_revertButton);
+        if (_serialHidSettingsIntent is not null)
+        {
+            right.Children.Add(_outputSettingsButton);
+            right.Children.Add(_outputStatusText);
+        }
         if (_onboardIntent is not null)
         {
             right.Children.Add(_onboardWriteButton);

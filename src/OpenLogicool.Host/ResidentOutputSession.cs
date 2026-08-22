@@ -105,6 +105,7 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
     private SerialHidProtocolSession? _protocol;
     private SerialHidEmitter? _emitter;
     private Exception? _backgroundFailure;
+    private bool _started;
     private bool _stopped;
     private bool _disposed;
     private bool _exchangeDisposed;
@@ -135,6 +136,26 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
         _heartbeatInterval = interval;
     }
 
+    internal SerialHidResidentOutputSession(
+        ISerialHidFrameExchange exchange,
+        SerialHidProtocolSession connectedProtocol,
+        TimeSpan heartbeatInterval)
+    {
+        ArgumentNullException.ThrowIfNull(exchange);
+        ArgumentNullException.ThrowIfNull(connectedProtocol);
+        if (heartbeatInterval <= TimeSpan.Zero
+            || heartbeatInterval >= TimeSpan.FromMilliseconds(SerialHidProtocolV1.LeaseMilliseconds))
+        {
+            throw new ArgumentOutOfRangeException(nameof(heartbeatInterval));
+        }
+
+        _exchange = exchange;
+        _protocol = connectedProtocol;
+        _hostVersion = default;
+        _requestTimeout = default;
+        _heartbeatInterval = heartbeatInterval;
+    }
+
     public ResidentOutputRoute Route => ResidentOutputRoute.SerialHid;
 
     public IOutputEmitter Emitter =>
@@ -144,13 +165,14 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
 
     public void Start()
     {
-        if (_protocol is not null || _stopped || _disposed)
+        if (_started || _stopped || _disposed)
         {
             throw new InvalidOperationException("Serial HID output sessionは一度しか起動できません。");
         }
 
-        _protocol = SerialHidProtocolSession.Connect(_exchange, _hostVersion, _requestTimeout);
+        _protocol ??= SerialHidProtocolSession.Connect(_exchange, _hostVersion, _requestTimeout);
         _emitter = new SerialHidEmitter(_protocol);
+        _started = true;
         _heartbeatThread = new Thread(HeartbeatWorker)
         {
             IsBackground = true,
