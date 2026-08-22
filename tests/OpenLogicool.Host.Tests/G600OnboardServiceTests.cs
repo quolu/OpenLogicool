@@ -37,9 +37,10 @@ public sealed class G600OnboardServiceTests : IDisposable
             [new LayerSelectorEntry("G6", "shift")],
             [new MappingBindingEntry("G11", "base", ["Key:A"])]);
 
-    private sealed class FakeDeviceAccess(byte[] initialF3) : IG600FeatureAccess
+    private sealed class FakeDeviceAccess(byte[] initialF3, int initialSlot = 0) : IG600FeatureAccess
     {
         public byte[] StoredF3 = initialF3;
+        public int ActiveSlot = initialSlot;
 
         public bool TryOpen(out IG600FeatureHandle? handle)
         {
@@ -49,9 +50,29 @@ public sealed class G600OnboardServiceTests : IDisposable
 
         private sealed class FakeHandle(FakeDeviceAccess owner) : IG600FeatureHandle
         {
-            public void SetFeature(byte[] report) => owner.StoredF3 = report.ToArray();
+            public void SetFeature(byte[] report)
+            {
+                if (report[0] == G600ActiveSlot.ReportId)
+                {
+                    owner.ActiveSlot = G600ActiveSlot.ReadIndex(report[1]);
+                    return;
+                }
 
-            public byte[] GetFeature(byte reportId) => owner.StoredF3.ToArray();
+                owner.StoredF3 = report.ToArray();
+            }
+
+            public byte[] GetFeature(byte reportId)
+            {
+                if (reportId == G600ActiveSlot.ReportId)
+                {
+                    var f0 = new byte[G600SideRemap.ReportLength];
+                    f0[0] = G600ActiveSlot.ReportId;
+                    f0[1] = (byte)((owner.ActiveSlot << 4) | 0x0B); // 下位 nibble は状態 flags（揺れる）
+                    return f0;
+                }
+
+                return owner.StoredF3.ToArray();
+            }
 
             public void Dispose()
             {
@@ -60,9 +81,9 @@ public sealed class G600OnboardServiceTests : IDisposable
     }
 
     private (G600OnboardService Service, FakeDeviceAccess Device, G600OnboardModeStore Mode, FileG600OnboardBaselineStore Baseline)
-        CreateService(byte[] initialF3, bool coexistence = false)
+        CreateService(byte[] initialF3, bool coexistence = false, int initialSlot = 0)
     {
-        var device = new FakeDeviceAccess(initialF3);
+        var device = new FakeDeviceAccess(initialF3, initialSlot);
         var mode = new G600OnboardModeStore(_directory);
         var baseline = new FileG600OnboardBaselineStore(_directory);
         var service = new G600OnboardService(device, baseline, mode, () => coexistence, sleep: _ => { }, settleMs: 0);
@@ -101,6 +122,20 @@ public sealed class G600OnboardServiceTests : IDisposable
         // （G9 base cell は明示 00 00 00 になる——G9 未割当のため）
         Assert.Equal(0x00, device.StoredF3[G600SideRemap.NormalLayerBaseOffset + 8 * 3 + 2]);
         Assert.Equal(clean, baseline.LoadF3()); // baseline は出荷状態のまま
+    }
+
+    [Fact]
+    public void Apply_switches_active_slot_to_zero_before_writing()
+    {
+        var clean = CleanF3();
+        var (service, device, mode, _) = CreateService(clean, initialSlot: 2);
+
+        var result = service.Apply("ws", Document());
+
+        Assert.True(result.Success);
+        Assert.Equal(0, device.ActiveSlot); // F3（slot 0）が生きる状態にしてから書く
+        Assert.NotNull(mode.Load());
+        Assert.Equal(0x04, device.StoredF3[G600SideRemap.NormalLayerBaseOffset + 10 * 3 + 2]);
     }
 
     [Fact]

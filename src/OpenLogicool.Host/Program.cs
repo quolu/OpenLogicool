@@ -1156,6 +1156,10 @@ static int Onboard(string action, string[] arguments)
                 ? "onboard: 書込みなし"
                 : $"onboard: 書込み中（workspace '{mode.WorkspaceId}'・{mode.AppliedAtUtc:yyyy-MM-dd HH:mm:ss} UTC）");
             Console.WriteLine($"共存ソフト: {(G600LeftoverHostSupport.IsCoexistenceRunning() ? "検出" : "非検出")}");
+            var slot = service.ReadActiveSlot();
+            Console.WriteLine(slot is null
+                ? "使用面: 読めない"
+                : $"使用面: {slot}{(slot == 0 ? "（書込み対象）" : "（書込み対象は 0——apply が切り替える）")}");
             var directory = Path.GetDirectoryName(Path.GetFullPath(databasePath))!;
             var baseline = new FileG600OnboardBaselineStore(directory).LoadF3();
             Console.WriteLine(baseline is null ? "復元元: なし" : "復元元: あり（書込み前の F3）");
