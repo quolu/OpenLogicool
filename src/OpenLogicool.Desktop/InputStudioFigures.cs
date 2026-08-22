@@ -22,121 +22,100 @@ public static class InputStudioFigures
 
     public static UIElement BuildG13(IReadOnlyDictionary<string, FigureBinding> bindings, Action<string> onAssign)
     {
-        // 実機写真から生成した線画（548x850）。ボタンは写真上のキー位置へ透過で重ねる
-        // （キーの G 番号は線画自体に写っているため、ボタン面には割当名だけを出す）。
-        var canvas = new Canvas { Width = 548, Height = 850 };
-        Place(canvas, LineArtImage("g13-lineart.png", 548, 850), 0, 0);
+        // 線画（554x854・オーナー提供の生成画像を透過化）。ボタンは絵のキー位置へ透過で重ねる
+        // （キーの G 番号は線画に描かれているため、ボタン面には割当名だけを出す）。
+        var canvas = new Canvas { Width = 554, Height = 854 };
+        Place(canvas, LineArtImage("g13-lineart.png", 554, 854), 0, 0);
 
         // M 列（M1〜M3 は層切替・MR は割当可能）
-        Place(canvas, ModeKey("M1", "層切替（いつも）"), 136, 212);
-        Place(canvas, ModeKey("M2", "層切替（M2）"), 200, 212);
-        Place(canvas, ModeKey("M3", "層切替（M3）"), 264, 212);
-        Place(canvas, OverlayKey("MR", bindings, () => onAssign("MR"), width: 52, height: 24), 326, 212);
+        Place(canvas, ModeKey("M1", "層切替（いつも）"), 122, 219);
+        Place(canvas, ModeKey("M2", "層切替（M2）"), 200, 219);
+        Place(canvas, ModeKey("M3", "層切替（M3）"), 283, 219);
+        Place(canvas, OverlayKey("MR", bindings, () => onAssign("MR"), width: 62, height: 20), 362, 219);
 
-        // キー面 4 行（写真上の位置）
-        string[] row1 = ["G1", "G2", "G3", "G4", "G5", "G6", "G7"];
-        string[] row2 = ["G8", "G9", "G10", "G11", "G12", "G13", "G14"];
-        for (var i = 0; i < 7; i++)
+        (string ControlId, double X, double Y)[] keys =
+        [
+            ("G1", 97, 289), ("G2", 160, 289), ("G3", 220, 290), ("G4", 278, 291), ("G5", 335, 290), ("G6", 392, 289), ("G7", 458, 288),
+            ("G8", 97, 344), ("G9", 156, 345), ("G10", 216, 346), ("G11", 276, 347), ("G12", 335, 346), ("G13", 395, 345), ("G14", 456, 343),
+            ("G15", 146, 404), ("G16", 212, 405), ("G17", 276, 406), ("G18", 337, 405), ("G19", 407, 403),
+            ("G20", 200, 462), ("G21", 273, 463), ("G22", 350, 462),
+        ];
+        foreach (var (controlId, x, y) in keys)
         {
-            var c1 = row1[i];
-            var c2 = row2[i];
-            Place(canvas, OverlayKey(c1, bindings, () => onAssign(c1), width: 56, height: 40), 66 + i * 60, 265);
-            Place(canvas, OverlayKey(c2, bindings, () => onAssign(c2), width: 56, height: 40), 66 + i * 60, 317);
-        }
-
-        string[] row3 = ["G15", "G16", "G17", "G18", "G19"];
-        for (var i = 0; i < 5; i++)
-        {
-            var c3 = row3[i];
-            Place(canvas, OverlayKey(c3, bindings, () => onAssign(c3), width: 56, height: 40), 167 + i * 58, 380);
-        }
-
-        string[] row4 = ["G20", "G21", "G22"];
-        for (var i = 0; i < 3; i++)
-        {
-            var c4 = row4[i];
-            Place(canvas, OverlayKey(c4, bindings, () => onAssign(c4), width: 74, height: 40), 161 + i * 73, 439);
+            Place(canvas, OverlayKey(controlId, bindings, () => onAssign(controlId), width: 54, height: 40), x - 27, y - 20);
         }
 
         // スティック押込み（右のポッド）
-        var stick = OverlayKey("STICK_PRESS", bindings, () => onAssign("STICK_PRESS"), width: 74, height: 74, label: "スティック押込み");
-        stick.Style = Theme.CreateFlatButtonStyle(37);
-        Place(canvas, stick, 424, 516);
+        var stick = OverlayKey("STICK_PRESS", bindings, () => onAssign("STICK_PRESS"), width: 76, height: 76, label: "スティック押込み");
+        stick.Style = Theme.CreateFlatButtonStyle(38);
+        Place(canvas, stick, 442, 499);
 
         return WrapFigure(canvas, maxHeight: 470);
     }
 
-    // ─────────────────────────── G600（実機写真: 側面=親指 12 ボタンの傾き・上面=ホイール/G7/G8/G-Shift） ───────────────────────────
+    // ─────────────────────────── G600（側面=親指 12 ボタン・上面=ホイール/G7/G8/G-Shift） ───────────────────────────
 
     public static UIElement BuildG600(IReadOnlyDictionary<string, FigureBinding> bindings, Action<string> onAssign, bool shiftIsButton)
     {
         var board = new StackPanel { Orientation = Orientation.Horizontal };
 
-        // ── 側面（親指側）: 実機写真から生成した線画（719x315）に透過ボタンを重ねる ──
-        var side = new Canvas { Width = 719, Height = 315 };
-        Place(side, LineArtImage("g600-side-lineart.png", 719, 315), 0, 0);
+        // ── 側面（親指側）: 線画（727x262）に透過ボタンを重ねる ──
+        var side = new Canvas { Width = 727, Height = 292 };
+        Place(side, LineArtImage("g600-side-lineart.png", 727, 262), 0, 22);
         Place(side, new TextBlock
         {
             Text = "親指側（左＝手首側）",
             Foreground = Theme.Muted,
             FontSize = 11,
-        }, 20, 8);
+        }, 16, 0);
 
         (string ControlId, double X, double Y)[] sideKeys =
         [
-            ("G11", 305, 116), ("G14", 361, 108), ("G17", 418, 101), ("G20", 465, 96),
-            ("G10", 286, 169), ("G13", 341, 161), ("G16", 397, 152), ("G19", 450, 144),
-            ("G9", 266, 218), ("G12", 320, 211), ("G15", 376, 203), ("G18", 428, 195),
+            ("G11", 333, 97), ("G14", 382, 79), ("G17", 437, 73), ("G20", 492, 72),
+            ("G10", 333, 139), ("G13", 392, 131), ("G16", 445, 124), ("G19", 501, 119),
+            ("G9", 343, 186), ("G12", 400, 184), ("G15", 453, 180), ("G18", 508, 171),
         ];
         foreach (var (controlId, x, y) in sideKeys)
         {
             var nub = controlId is "G13" or "G16";
-            var key = OverlayKey(controlId, bindings, () => onAssign(controlId), width: 50, height: 44,
+            var key = OverlayKey(controlId, bindings, () => onAssign(controlId), width: 46, height: 40,
                 toolTipSuffix: nub ? "（親指のホーム位置）" : string.Empty);
-            key.RenderTransform = new RotateTransform(-10);
-            Place(side, key, x - 25, y - 22);
+            key.RenderTransform = new RotateTransform(-5);
+            Place(side, key, x - 23, y - 20 + 22);
         }
 
-        board.Children.Add(WrapFigure(side, maxHeight: 220));
+        board.Children.Add(WrapFigure(side, maxHeight: 196));
 
-        // ── 上面: 左右クリック・ホイール（押込み＋チルト）・G8/G7・G-Shift（右側面の細長ボタン） ──
-        var top = new Canvas { Width = 312, Height = 430 };
-        top.Children.Add(OutlinePath(
-            "M 140,14 C 82,14 52,54 48,140 C 46,240 66,350 100,392 C 120,412 160,412 180,392 C 214,350 234,240 232,140 C 228,54 198,14 140,14 Z",
-            Theme.Panel));
-        // 左右ボタンの割れ目
-        top.Children.Add(LinePath("M 140,12 L 140,120"));
-        // 右側面の G-Shift 溝（写真右側のスリット）
-        top.Children.Add(LinePath("M 232,120 C 246,180 244,240 226,300"));
+        // ── 上面: 線画（283x466）に左右クリック・ホイール・チルト・G8/G7・G-Shift を重ねる ──
+        var top = new Canvas { Width = 300, Height = 466 };
+        Place(top, LineArtImage("g600-top-lineart.png", 283, 466), 0, 0);
 
-        var g1 = Key("G1\n左クリック", "G1", bindings, false, () => onAssign("G1"), width: 72, height: 80);
-        Place(top, g1, 58, 34);
-        var g2 = Key("G2\n右クリック", "G2", bindings, false, () => onAssign("G2"), width: 72, height: 80);
-        Place(top, g2, 150, 34);
+        Place(top, OverlayKey("G1", bindings, () => onAssign("G1"), width: 64, height: 96, label: "G1（左クリック）"), 50, 62);
+        Place(top, OverlayKey("G2", bindings, () => onAssign("G2"), width: 64, height: 96, label: "G2（右クリック）"), 158, 62);
 
-        // ホイール＝G3 押込み・左右チルト＝G4/G5
-        Place(top, Key("G4\n←左チルト", "G4", bindings, false, () => onAssign("G4"), width: 46, height: 40), 60, 122);
-        var wheel = Key("G3\nホイール\n押込み", "G3", bindings, false, () => onAssign("G3"), width: 44, height: 66);
+        // ホイール＝G3 押込み・左右チルト＝G4/G5（絵の ‹ › の位置）
+        var wheel = OverlayKey("G3", bindings, () => onAssign("G3"), width: 40, height: 72, label: "G3（ホイール押込み）");
         wheel.Style = Theme.CreateFlatButtonStyle(18);
-        Place(top, wheel, 118, 110);
-        Place(top, Key("G5\n右チルト→", "G5", bindings, false, () => onAssign("G5"), width: 46, height: 40), 174, 122);
+        Place(top, wheel, 117, 92);
+        Place(top, OverlayKey("G4", bindings, () => onAssign("G4"), width: 24, height: 32, label: "G4（左チルト）"), 90, 112);
+        Place(top, OverlayKey("G5", bindings, () => onAssign("G5"), width: 24, height: 32, label: "G5（右チルト）"), 160, 112);
 
-        Place(top, Key("G8", "G8", bindings, false, () => onAssign("G8"), width: 44, height: 26), 118, 186);
-        Place(top, Key("G7", "G7", bindings, false, () => onAssign("G7"), width: 44, height: 26), 118, 218);
+        Place(top, OverlayKey("G8", bindings, () => onAssign("G8"), width: 40, height: 28, label: "G8"), 117, 175);
+        Place(top, OverlayKey("G7", bindings, () => onAssign("G7"), width: 40, height: 28, label: "G7"), 117, 205);
 
-        // G-Shift（G6）: 右側面の細長ボタン。層切替のままなら ModeKey、ボタン化済みなら割当可能
+        // G-Shift（G6）: 右側面の細長ボタン（絵の右端の溝）。層切替のままなら ModeKey、ボタン化済みなら割当可能
         if (shiftIsButton)
         {
-            var g6 = Key("G6 G-Shift", "G6", bindings, false, () => onAssign("G6"), width: 88, height: 44);
-            Place(top, g6, 206, 316);
+            var g6 = Key("G6 G-Shift", "G6", bindings, false, () => onAssign("G6"), width: 88, height: 40);
+            Place(top, g6, 205, 330);
         }
         else
         {
-            Place(top, ModeKey("G-Shift", "層切替（G-Shift を押している間）。ボタンとして使う切替は上の配置チップの右", wide: true), 216, 322);
+            Place(top, ModeKey("G-Shift", "層切替（G-Shift を押している間）。ボタンとして使う切替は上の配置チップの右", wide: true), 210, 336);
         }
 
-        // 溝と G6 ボタンをつなぐ引出線
-        top.Children.Add(LinePath("M 228,290 L 250,316"));
+        // 右端の溝と G6 をつなぐ引出線
+        top.Children.Add(LinePath("M 232,300 L 248,330"));
 
         board.Children.Add(WrapFigure(top, maxHeight: 300));
         return board;
