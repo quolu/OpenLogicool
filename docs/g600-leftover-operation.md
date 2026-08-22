@@ -23,7 +23,9 @@ F3 のみ。F4/F5・slot 切替中の他 slot は対象外。
 
 正: [rag/openlogicool/g600-write-protocol-2026-08-15.md](../rag/openlogicool/g600-write-protocol-2026-08-15.md)
 
-## 実機確認（オーナー手番）
+## 実機確認（オーナー手番）— 成立（2026-08-22）
+
+LGS 停止下で apply（attempt 1 で byte 一致・baseline 154-byte 保存）→ G9〜G12 押下でメモ帳に 1 文字も出ない（出荷割当の legacy 漏れなし）→ restore（attempt 1 で byte 一致・出荷割当へ復帰）を実機で確認した。
 
 LGS を止めてから:
 
