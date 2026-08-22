@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace OpenLogicool.Desktop;
 
@@ -93,6 +94,13 @@ public sealed class DeviceLedgerView : UserControl
             Foreground = Theme.Text,
             RowBackground = Theme.Panel,
             AlternatingRowBackground = Theme.Raised,
+            // DataGrid の列ヘッダとセルは既定スタイルが独自の配色（白地・黒文字）を持ち、
+            // DataGrid.Foreground を継がない——暗背景で読めなくなるため明示する（実機目視で確認）。
+            ColumnHeaderStyle = DarkColumnHeaderStyle(),
+            CellStyle = DarkCellStyle(),
+            GridLinesVisibility = DataGridGridLinesVisibility.Horizontal,
+            HorizontalGridLinesBrush = Theme.Line,
+            BorderBrush = Theme.Line,
             ItemsSource = device.ControlRows.Select(ToDisplayRow).ToArray(),
         };
         grid.Columns.Add(TextColumn("コントロール", nameof(ControlDisplayRow.ControlId), 90));
@@ -114,6 +122,28 @@ public sealed class DeviceLedgerView : UserControl
         TranslateForDisplay(row.Capability),
         TranslateForDisplay(row.Role),
         TranslateForDisplay(row.BindingSummary));
+
+    private static Style DarkColumnHeaderStyle()
+    {
+        var style = new Style(typeof(System.Windows.Controls.Primitives.DataGridColumnHeader));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, Theme.Chrome));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, Theme.Text));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, Theme.Line));
+        style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0, 0, 1, 1)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 6, 8, 6)));
+        style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
+        return style;
+    }
+
+    private static Style DarkCellStyle()
+    {
+        var style = new Style(typeof(DataGridCell));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, Theme.Text));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+        style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 3, 8, 3)));
+        return style;
+    }
 
     private static DataGridTextColumn TextColumn(string header, string propertyPath, double width) =>
         new()

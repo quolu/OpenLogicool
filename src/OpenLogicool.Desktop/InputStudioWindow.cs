@@ -89,7 +89,24 @@ public sealed class InputStudioWindow : Window
 
     // 右ペイン: 割当パネル（唯一の editor）
     private readonly Button _inspectorTitleButton = new() { HorizontalContentAlignment = HorizontalAlignment.Left, Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
-    private readonly TextBox _inspectorNameBox = new();
+    // 操作の削除入口。Delete キーだけでは見つけられない（実利用の指摘 2026-08-22）ため画面に置く。
+    private readonly Button _deleteActionButton = new()
+    {
+        Content = "この操作を削除",
+        Foreground = Theme.Danger,
+        Background = Brushes.Transparent,
+        BorderThickness = new Thickness(0),
+        Padding = new Thickness(6, 2, 6, 2),
+        VerticalAlignment = VerticalAlignment.Center,
+    };
+    private readonly TextBox _inspectorNameBox = new()
+    {
+        Background = Theme.Sunken,
+        Foreground = Theme.Text,
+        BorderBrush = Theme.Line,
+        CaretBrush = Theme.Text,
+        Padding = new Thickness(4, 3, 4, 3),
+    };
     private readonly TextBox _outputsBox = new();
     private readonly Button _recordKeyButton = new() { Content = "録る…", Margin = new Thickness(6, 0, 0, 12), Padding = new Thickness(8, 6, 8, 6) };
     private readonly StackPanel _conflictNotePanel = new();
@@ -117,6 +134,13 @@ public sealed class InputStudioWindow : Window
         Title = "OpenLogicool Input Studio";
         Background = Theme.Bg;
         Foreground = Theme.Text;
+        // OS 既定 Button テンプレートの無効時・ホバー時のライト塗り直しを全窓（modal 含む）で無効化する。
+        var flatButtonStyle = Theme.CreateFlatButtonStyle();
+        Resources[typeof(Button)] = flatButtonStyle;
+        if (Application.Current is { } application && !application.Resources.Contains(typeof(Button)))
+        {
+            application.Resources[typeof(Button)] = flatButtonStyle;
+        }
         MinWidth = 1100;
         MinHeight = 720;
         Width = 1360;
@@ -268,6 +292,20 @@ public sealed class InputStudioWindow : Window
             Render();
             _inspectorNameBox.Focus();
             _inspectorNameBox.SelectAll();
+        };
+        _deleteActionButton.Click += (_, _) =>
+        {
+            if (_selectedActionId is null)
+            {
+                return;
+            }
+
+            var actionId = _selectedActionId;
+            _selectedActionId = null;
+            if (TryMutateDocument(document => WorkspaceDocumentEditor.DeleteAction(document, actionId)))
+            {
+                Render();
+            }
         };
         _inspectorNameBox.LostFocus += (_, _) => OnInspectorNameCommitted();
         _inspectorNameBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) { OnInspectorNameCommitted(); e.Handled = true; } };
@@ -471,7 +509,13 @@ public sealed class InputStudioWindow : Window
         _inspectorTitleButton.FontSize = 16;
         _inspectorTitleButton.FontWeight = FontWeights.Bold;
         _inspectorNameBox.Margin = new Thickness(0, 0, 0, 10);
-        stack.Children.Add(_inspectorTitleButton);
+        var titleRow = new Grid();
+        titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        titleRow.Children.Add(_inspectorTitleButton);
+        Grid.SetColumn(_deleteActionButton, 1);
+        titleRow.Children.Add(_deleteActionButton);
+        stack.Children.Add(titleRow);
         stack.Children.Add(_inspectorNameBox);
 
         stack.Children.Add(_inspectorEmptyPanel);
@@ -484,6 +528,7 @@ public sealed class InputStudioWindow : Window
         _outputsBox.Background = Theme.Sunken;
         _outputsBox.BorderBrush = Theme.Line;
         _outputsBox.Foreground = Theme.Text;
+        _outputsBox.CaretBrush = Theme.Text;
         _outputsBox.Padding = new Thickness(8, 6, 8, 6);
         AutomationProperties.SetName(_outputsBox, "ゲームに送るキー");
         _outputsBox.ToolTip = "空白区切りで複数キーを送れます（例: Key:LCtrl Key:C）";
@@ -843,10 +888,8 @@ public sealed class InputStudioWindow : Window
 
         _saveButton.IsEnabled = _compileOutcome.IsValid && _hasUnsavedChanges;
         _revertButton.IsEnabled = _hasUnsavedChanges;
-        // 既定の disabled 描画は白抜きで沈んだ配色にならない（実機目視で確認済み）ため、
-        // ここで明示的に低コントラスト化する（mock states.html の `.btn[disabled] { opacity: .38; }` 相当）。
-        _saveButton.Opacity = _saveButton.IsEnabled ? 1.0 : 0.38;
-        _revertButton.Opacity = _revertButton.IsEnabled ? 1.0 : 0.38;
+        // 無効時の見た目は共通 flat style の不透明度 trigger が担う（Opacity の手動設定は trigger を
+        // 打ち消すためここでは触らない）。
     }
 
     private void RenderActionList(ActionBoardView boardView)
@@ -1069,6 +1112,7 @@ public sealed class InputStudioWindow : Window
         _g600BindingsPanel.Children.Clear();
         _actionNotesPanel.Children.Clear();
 
+        _deleteActionButton.Visibility = inspector is null ? Visibility.Collapsed : Visibility.Visible;
         if (inspector is null)
         {
             _inspectorTitleButton.Visibility = Visibility.Collapsed;
