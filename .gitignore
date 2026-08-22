@@ -6,3 +6,6 @@ obj/
 probe-output/**/*.png
 .codex-sidecar/
 .lattice/runs/
+
+# 実機写真（線画のトレース元・他社著作物のため再配布しない）
+docs/ui-assets/

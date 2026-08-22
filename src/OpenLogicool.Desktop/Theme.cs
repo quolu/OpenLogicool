@@ -64,13 +64,13 @@ public static class Theme
     /// 独自のライト配色で塗り直すため、暗背景では文字が消える（実被弾: 無効の保存ボタン）。
     /// 自前 template は各ボタンの Background／Foreground をそのまま使い、状態は不透明度だけで表す。
     /// </summary>
-    public static Style CreateFlatButtonStyle()
+    public static Style CreateFlatButtonStyle(double cornerRadius = 3)
     {
         var border = new FrameworkElementFactory(typeof(Border));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
         border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
-        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(cornerRadius));
 
         var content = new FrameworkElementFactory(typeof(ContentPresenter));
         content.SetValue(FrameworkElement.MarginProperty, new TemplateBindingExtension(Control.PaddingProperty));

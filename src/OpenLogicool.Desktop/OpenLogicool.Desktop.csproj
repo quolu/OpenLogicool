@@ -10,4 +10,7 @@
     <ProjectReference Include="..\OpenLogicool.Contracts\OpenLogicool.Contracts.csproj" />
     <ProjectReference Include="..\OpenLogicool.Domain\OpenLogicool.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\*.png" />
+  </ItemGroup>
 </Project>

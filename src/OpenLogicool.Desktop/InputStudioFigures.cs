@@ -1,226 +1,245 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace OpenLogicool.Desktop;
 
 /// <summary>
-/// G13／G600 の模式図（mock docs/ui-mocks/main.html の .g13-shell / .g600-board 相当）。
+/// G13／G600 の模式図。実機写真（オーナー提供・2026-08-22）を下敷きにした自前の線画で、
+/// 写真そのものは埋め込まない（公開 repo に他社製品写真を入れない）。
 /// キーは自前ヒットテストではなく実 <see cref="Button"/> で作る（Tab 到達可能・設計 §4）。
-/// selector control（G13 の M1/M2/M3・G600 の G6=G-Shift）は層切替を表すだけで、
+/// selector control（G13 の M1/M2/M3・G600 の G6=G-Shift 層切替時）は層切替を表すだけで、
 /// ここでは通常の割当対象にしない（クリックしても割当は変わらない）。
-/// LCD1〜4／LCD_AUX（G13）は mock 同様この図には描かない——右ペインの割当先ピッカーからは選べる。
 /// </summary>
 public static class InputStudioFigures
 {
     /// <summary>ある control に「いま見ている配置」で載っている割当（色は左の操作一覧と同じ index 由来）。</summary>
     public sealed record FigureBinding(string ActionName, Brush Color);
 
+    // ─────────────────────────── G13（実機写真: 上面・アーチ状 4 行＋右下スティックポッド） ───────────────────────────
+
     public static UIElement BuildG13(IReadOnlyDictionary<string, FigureBinding> bindings, Action<string> onAssign)
     {
-        var shell = new Border
+        // 実機写真から生成した線画（548x850）。ボタンは写真上のキー位置へ透過で重ねる
+        // （キーの G 番号は線画自体に写っているため、ボタン面には割当名だけを出す）。
+        var canvas = new Canvas { Width = 548, Height = 850 };
+        Place(canvas, LineArtImage("g13-lineart.png", 548, 850), 0, 0);
+
+        // M 列（M1〜M3 は層切替・MR は割当可能）
+        Place(canvas, ModeKey("M1", "層切替（いつも）"), 136, 212);
+        Place(canvas, ModeKey("M2", "層切替（M2）"), 200, 212);
+        Place(canvas, ModeKey("M3", "層切替（M3）"), 264, 212);
+        Place(canvas, OverlayKey("MR", bindings, () => onAssign("MR"), width: 52, height: 24), 326, 212);
+
+        // キー面 4 行（写真上の位置）
+        string[] row1 = ["G1", "G2", "G3", "G4", "G5", "G6", "G7"];
+        string[] row2 = ["G8", "G9", "G10", "G11", "G12", "G13", "G14"];
+        for (var i = 0; i < 7; i++)
         {
-            Background = Theme.Raised,
-            BorderBrush = Theme.Line2,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(14, 14, 30, 10),
-            Padding = new Thickness(14, 10, 14, 12),
-        };
+            var c1 = row1[i];
+            var c2 = row2[i];
+            Place(canvas, OverlayKey(c1, bindings, () => onAssign(c1), width: 56, height: 40), 66 + i * 60, 265);
+            Place(canvas, OverlayKey(c2, bindings, () => onAssign(c2), width: 56, height: 40), 66 + i * 60, 317);
+        }
 
-        var stack = new StackPanel();
-
-        var lcd = new Border
+        string[] row3 = ["G15", "G16", "G17", "G18", "G19"];
+        for (var i = 0; i < 5; i++)
         {
-            Background = Theme.Sunken,
-            BorderBrush = Theme.G13,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(3),
-            Width = 180,
-            Height = 36,
-            Margin = new Thickness(0, 0, 0, 8),
-            HorizontalAlignment = HorizontalAlignment.Center,
-        };
-        lcd.Child = new TextBlock
+            var c3 = row3[i];
+            Place(canvas, OverlayKey(c3, bindings, () => onAssign(c3), width: 56, height: 40), 167 + i * 58, 380);
+        }
+
+        string[] row4 = ["G20", "G21", "G22"];
+        for (var i = 0; i < 3; i++)
         {
-            Text = "画面：接続中",
-            Foreground = Theme.G13,
-            FontSize = 11,
-            FontWeight = FontWeights.SemiBold,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        stack.Children.Add(lcd);
+            var c4 = row4[i];
+            Place(canvas, OverlayKey(c4, bindings, () => onAssign(c4), width: 74, height: 40), 161 + i * 73, 439);
+        }
 
-        var modeRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 8) };
-        modeRow.Children.Add(ModeKey("M1", "層切替（いつも）"));
-        modeRow.Children.Add(ModeKey("M2", "層切替（M2）"));
-        modeRow.Children.Add(ModeKey("M3", "層切替（M3）"));
-        modeRow.Children.Add(Key("MR", "MR", bindings, dimple: false, () => onAssign("MR")));
-        stack.Children.Add(modeRow);
+        // スティック押込み（右のポッド）
+        var stick = OverlayKey("STICK_PRESS", bindings, () => onAssign("STICK_PRESS"), width: 74, height: 74, label: "スティック押込み");
+        stick.Style = Theme.CreateFlatButtonStyle(37);
+        Place(canvas, stick, 424, 516);
 
-        var well = new Border { Background = Theme.Sunken, CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 10, 8, 8) };
-        var wellStack = new StackPanel();
-
-        wellStack.Children.Add(Row(
-            Key("G1", "G1", bindings, false, () => onAssign("G1")),
-            Key("G2", "G2", bindings, false, () => onAssign("G2")),
-            Key("G3", "G3", bindings, false, () => onAssign("G3")),
-            Key("G4", "G4", bindings, true, () => onAssign("G4")),
-            Key("G5", "G5", bindings, false, () => onAssign("G5")),
-            Key("G6", "G6", bindings, false, () => onAssign("G6")),
-            Key("G7", "G7", bindings, false, () => onAssign("G7"))));
-
-        wellStack.Children.Add(Row(
-            Key("G8", "G8", bindings, false, () => onAssign("G8")),
-            Key("G9", "G9", bindings, false, () => onAssign("G9")),
-            Key("G10", "G10", bindings, true, () => onAssign("G10")),
-            Key("G11", "G11", bindings, true, () => onAssign("G11")),
-            Key("G12", "G12", bindings, true, () => onAssign("G12")),
-            Key("G13", "G13", bindings, false, () => onAssign("G13")),
-            Key("G14", "G14", bindings, false, () => onAssign("G14"))));
-
-        wellStack.Children.Add(Row(
-            Key("G15", "G15", bindings, false, () => onAssign("G15")),
-            Key("G16", "G16", bindings, false, () => onAssign("G16")),
-            Key("G17", "G17", bindings, false, () => onAssign("G17")),
-            Key("G18", "G18", bindings, false, () => onAssign("G18")),
-            Key("G19", "G19", bindings, false, () => onAssign("G19"))));
-
-        wellStack.Children.Add(Row(
-            Key("G20", "G20", bindings, false, () => onAssign("G20")),
-            Key("G21", "G21", bindings, false, () => onAssign("G21")),
-            Key("G22", "G22", bindings, false, () => onAssign("G22"))));
-
-        well.Child = wellStack;
-        stack.Children.Add(well);
-
-        var stick = Key("スティック\n押込み", "STICK_PRESS", bindings, false, () => onAssign("STICK_PRESS"), width: 60, height: 60);
-        stick.HorizontalAlignment = HorizontalAlignment.Right;
-        stick.Margin = new Thickness(0, 10, 4, 0);
-        stack.Children.Add(stick);
-
-        shell.Child = stack;
-        return shell;
+        return WrapFigure(canvas, maxHeight: 470);
     }
+
+    // ─────────────────────────── G600（実機写真: 側面=親指 12 ボタンの傾き・上面=ホイール/G7/G8/G-Shift） ───────────────────────────
 
     public static UIElement BuildG600(IReadOnlyDictionary<string, FigureBinding> bindings, Action<string> onAssign, bool shiftIsButton)
     {
         var board = new StackPanel { Orientation = Orientation.Horizontal };
 
-        var side = new Border
+        // ── 側面（親指側）: 実機写真から生成した線画（719x315）に透過ボタンを重ねる ──
+        var side = new Canvas { Width = 719, Height = 315 };
+        Place(side, LineArtImage("g600-side-lineart.png", 719, 315), 0, 0);
+        Place(side, new TextBlock
         {
-            Background = Theme.Raised,
-            BorderBrush = Theme.Line2,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(16, 8, 8, 24),
-            Padding = new Thickness(10, 8, 10, 10),
-            Margin = new Thickness(0, 0, 14, 0),
-        };
-        var sideStack = new StackPanel();
-        sideStack.Children.Add(new TextBlock
-        {
-            Text = "親指側 · 横 4 列 × 縦 3 段（手前＝手首側）",
+            Text = "親指側（左＝手首側）",
             Foreground = Theme.Muted,
-            FontSize = 10,
-            Margin = new Thickness(0, 0, 0, 6),
-            HorizontalAlignment = HorizontalAlignment.Center,
-        });
+            FontSize = 11,
+        }, 20, 8);
 
-        var grid = new UniformGrid { Columns = 4, Rows = 3 };
-        foreach (var controlId in new[]
-                 {
-                     "G11", "G14", "G17", "G20",
-                     "G10", "G13", "G16", "G19",
-                     "G9", "G12", "G15", "G18",
-                 })
+        (string ControlId, double X, double Y)[] sideKeys =
+        [
+            ("G11", 305, 116), ("G14", 361, 108), ("G17", 418, 101), ("G20", 465, 96),
+            ("G10", 286, 169), ("G13", 341, 161), ("G16", 397, 152), ("G19", 450, 144),
+            ("G9", 266, 218), ("G12", 320, 211), ("G15", 376, 203), ("G18", 428, 195),
+        ];
+        foreach (var (controlId, x, y) in sideKeys)
         {
             var nub = controlId is "G13" or "G16";
-            grid.Children.Add(SideKey(controlId, bindings, nub, () => onAssign(controlId)));
+            var key = OverlayKey(controlId, bindings, () => onAssign(controlId), width: 50, height: 44,
+                toolTipSuffix: nub ? "（親指のホーム位置）" : string.Empty);
+            key.RenderTransform = new RotateTransform(-10);
+            Place(side, key, x - 25, y - 22);
         }
 
-        sideStack.Children.Add(grid);
-        side.Child = sideStack;
-        board.Children.Add(side);
+        board.Children.Add(WrapFigure(side, maxHeight: 220));
 
-        var mouse = new Border
-        {
-            Background = Theme.Raised,
-            BorderBrush = Theme.Line2,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(48),
-            Padding = new Thickness(12, 12, 12, 16),
-            Width = 220,
-        };
-        var mouseStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
-        mouseStack.Children.Add(new TextBlock
-        {
-            Text = "上面",
-            Foreground = Theme.Muted,
-            FontSize = 10,
-            Margin = new Thickness(0, 0, 0, 8),
-            HorizontalAlignment = HorizontalAlignment.Center,
-        });
+        // ── 上面: 左右クリック・ホイール（押込み＋チルト）・G8/G7・G-Shift（右側面の細長ボタン） ──
+        var top = new Canvas { Width = 312, Height = 430 };
+        top.Children.Add(OutlinePath(
+            "M 140,14 C 82,14 52,54 48,140 C 46,240 66,350 100,392 C 120,412 160,412 180,392 C 214,350 234,240 232,140 C 228,54 198,14 140,14 Z",
+            Theme.Panel));
+        // 左右ボタンの割れ目
+        top.Children.Add(LinePath("M 140,12 L 140,120"));
+        // 右側面の G-Shift 溝（写真右側のスリット）
+        top.Children.Add(LinePath("M 232,120 C 246,180 244,240 226,300"));
 
-        var topRow = new StackPanel { Orientation = Orientation.Horizontal };
-        topRow.Children.Add(Key("G1\n左クリック", "G1", bindings, false, () => onAssign("G1"), width: 62, height: 72));
-        topRow.Children.Add(Key("G3\nホイール\n押込み", "G3", bindings, false, () => onAssign("G3"), width: 56, height: 72));
-        topRow.Children.Add(Key("G2\n右クリック", "G2", bindings, false, () => onAssign("G2"), width: 62, height: 72));
-        mouseStack.Children.Add(topRow);
+        var g1 = Key("G1\n左クリック", "G1", bindings, false, () => onAssign("G1"), width: 72, height: 80);
+        Place(top, g1, 58, 34);
+        var g2 = Key("G2\n右クリック", "G2", bindings, false, () => onAssign("G2"), width: 72, height: 80);
+        Place(top, g2, 150, 34);
 
-        var tiltRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 4) };
-        tiltRow.Children.Add(Key("G4 ←左チルト", "G4", bindings, false, () => onAssign("G4"), width: 88, height: 30));
-        tiltRow.Children.Add(Key("G5 右チルト→", "G5", bindings, false, () => onAssign("G5"), width: 88, height: 30));
-        mouseStack.Children.Add(tiltRow);
+        // ホイール＝G3 押込み・左右チルト＝G4/G5
+        Place(top, Key("G4\n←左チルト", "G4", bindings, false, () => onAssign("G4"), width: 46, height: 40), 60, 122);
+        var wheel = Key("G3\nホイール\n押込み", "G3", bindings, false, () => onAssign("G3"), width: 44, height: 66);
+        wheel.Style = Theme.CreateFlatButtonStyle(18);
+        Place(top, wheel, 118, 110);
+        Place(top, Key("G5\n右チルト→", "G5", bindings, false, () => onAssign("G5"), width: 46, height: 40), 174, 122);
 
-        var g78 = new StackPanel { Width = 56 };
-        g78.Children.Add(Key("G7", "G7", bindings, false, () => onAssign("G7"), width: 56, height: 22));
-        g78.Children.Add(Key("G8", "G8", bindings, false, () => onAssign("G8"), width: 56, height: 22));
-        mouseStack.Children.Add(g78);
+        Place(top, Key("G8", "G8", bindings, false, () => onAssign("G8"), width: 44, height: 26), 118, 186);
+        Place(top, Key("G7", "G7", bindings, false, () => onAssign("G7"), width: 44, height: 26), 118, 218);
 
-        var bodyRow = new Grid { Margin = new Thickness(0, 10, 0, 0) };
-        var palm = new Border
-        {
-            Width = 70,
-            Height = 36,
-            Background = Theme.Sunken,
-            BorderBrush = Theme.Line,
-            BorderThickness = new Thickness(1, 0, 1, 1),
-            CornerRadius = new CornerRadius(0, 0, 36, 36),
-            HorizontalAlignment = HorizontalAlignment.Center,
-        };
-        bodyRow.Children.Add(palm);
+        // G-Shift（G6）: 右側面の細長ボタン。層切替のままなら ModeKey、ボタン化済みなら割当可能
         if (shiftIsButton)
         {
-            var g6 = Key("G6 G-Shift", "G6", bindings, false, () => onAssign("G6"), width: 72, height: 44);
-            g6.HorizontalAlignment = HorizontalAlignment.Right;
-            g6.VerticalAlignment = VerticalAlignment.Bottom;
-            bodyRow.Children.Add(g6);
+            var g6 = Key("G6 G-Shift", "G6", bindings, false, () => onAssign("G6"), width: 88, height: 44);
+            Place(top, g6, 206, 316);
         }
         else
         {
-            bodyRow.Children.Add(ModeKey("G-Shift", "層切替（G-Shift を押している間）。ボタンとして使う切替は上の配置チップの右", wide: true));
+            Place(top, ModeKey("G-Shift", "層切替（G-Shift を押している間）。ボタンとして使う切替は上の配置チップの右", wide: true), 216, 322);
         }
 
-        mouseStack.Children.Add(bodyRow);
+        // 溝と G6 ボタンをつなぐ引出線
+        top.Children.Add(LinePath("M 228,290 L 250,316"));
 
-        mouse.Child = mouseStack;
-        board.Children.Add(mouse);
-
+        board.Children.Add(WrapFigure(top, maxHeight: 300));
         return board;
     }
 
-    private static StackPanel Row(params UIElement[] keys)
-    {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-        foreach (var key in keys)
-        {
-            row.Children.Add(key);
-        }
+    // ─────────────────────────── 線画部品 ───────────────────────────
 
-        return row;
+    private static Path OutlinePath(string data, Brush fill) => new()
+    {
+        Data = Geometry.Parse(data),
+        Stroke = Theme.Line2,
+        StrokeThickness = 2,
+        Fill = fill,
+    };
+
+    private static Path LinePath(string data) => new()
+    {
+        Data = Geometry.Parse(data),
+        Stroke = Theme.Line2,
+        StrokeThickness = 1.5,
+    };
+
+    private static Ellipse OutlineEllipse(double x, double y, double width, double height, Brush fill)
+    {
+        var ellipse = new Ellipse { Width = width, Height = height, Stroke = Theme.Line2, StrokeThickness = 2, Fill = fill };
+        Canvas.SetLeft(ellipse, x);
+        Canvas.SetTop(ellipse, y);
+        return ellipse;
     }
+
+    private static void Place(Canvas canvas, UIElement element, double x, double y)
+    {
+        Canvas.SetLeft(element, x);
+        Canvas.SetTop(element, y);
+        canvas.Children.Add(element);
+    }
+
+    /// <summary>写真から生成した線画 asset（埋め込み Resource）を読み込む。</summary>
+    private static Image LineArtImage(string assetName, double width, double height) => new()
+    {
+        Source = new System.Windows.Media.Imaging.BitmapImage(
+            new Uri($"pack://application:,,,/OpenLogicool.Desktop;component/Assets/{assetName}")),
+        Width = width,
+        Height = height,
+        Stretch = Stretch.Fill,
+    };
+
+    private static readonly Brush OverlayBorder = BuildOverlayBorderBrush();
+
+    private static Brush BuildOverlayBorderBrush()
+    {
+        var brush = new SolidColorBrush(Theme.Line2Color) { Opacity = 0.45 };
+        brush.Freeze();
+        return brush;
+    }
+
+    /// <summary>
+    /// 線画の上へ重ねる透過ボタン。キーの G 番号は線画に写っているため面には割当名だけを出す。
+    /// </summary>
+    private static Button OverlayKey(
+        string controlId, IReadOnlyDictionary<string, FigureBinding> bindings, Action onClick,
+        double width, double height, string? label = null, string toolTipSuffix = "")
+    {
+        var hasBinding = bindings.TryGetValue(controlId, out var binding);
+        var tipName = label ?? controlId;
+
+        var content = new TextBlock
+        {
+            Text = hasBinding ? binding!.ActionName : string.Empty,
+            Foreground = hasBinding ? binding!.Color : Theme.Text,
+            FontSize = 11,
+            FontWeight = FontWeights.Bold,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            MaxWidth = width - 4,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var button = new Button
+        {
+            Content = content,
+            Width = width,
+            Height = height,
+            Background = Brushes.Transparent,
+            BorderBrush = hasBinding ? binding!.Color : OverlayBorder,
+            BorderThickness = new Thickness(hasBinding ? 2 : 1),
+            Foreground = Theme.Text,
+            ToolTip = (hasBinding ? $"{tipName}：{binding!.ActionName}" : $"{tipName}：未割当（クリックで、左で選んでいる操作を載せます）") + toolTipSuffix,
+        };
+        AutomationProperties.SetName(button, hasBinding ? $"{tipName}（{binding!.ActionName}）" : $"{tipName}（未割当）");
+        button.Click += (_, _) => onClick();
+        return button;
+    }
+
+    /// <summary>Canvas を Viewbox で包み、右ペインを圧迫しない高さへ等比縮小する。</summary>
+    private static UIElement WrapFigure(Canvas canvas, double maxHeight) => new Viewbox
+    {
+        Child = canvas,
+        MaxHeight = maxHeight,
+        Stretch = Stretch.Uniform,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        Margin = new Thickness(4),
+    };
 
     private static Button Key(
         string kid, string controlId, IReadOnlyDictionary<string, FigureBinding> bindings, bool dimple, Action onClick,
@@ -234,6 +253,7 @@ public static class InputStudioFigures
             Text = kid,
             Foreground = Theme.Muted,
             FontSize = 9,
+            TextAlignment = TextAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
         });
         if (hasBinding)
@@ -274,7 +294,6 @@ public static class InputStudioFigures
             Content = content,
             Width = width,
             Height = height,
-            Margin = new Thickness(2),
             Background = Theme.Sunken,
             BorderBrush = hasBinding ? binding!.Color : Theme.Line2,
             BorderThickness = new Thickness(hasBinding ? 2 : 1),
@@ -285,10 +304,6 @@ public static class InputStudioFigures
         button.Click += (_, _) => onClick();
         return button;
     }
-
-    private static UIElement SideKey(string controlId, IReadOnlyDictionary<string, FigureBinding> bindings, bool nub, Action onClick) =>
-        Key(controlId, controlId, bindings, dimple: false, onClick, width: 46, height: 36,
-            toolTipSuffix: nub ? "（親指のホーム位置）" : string.Empty);
 
     private static Button ModeKey(string kid, string tooltip, bool wide = false)
     {
@@ -304,21 +319,14 @@ public static class InputStudioFigures
         var button = new Button
         {
             Content = content,
-            Width = wide ? 60 : 40,
+            Width = wide ? 66 : 56,
             Height = wide ? 30 : 26,
-            Margin = new Thickness(2),
             Background = Theme.Panel,
             BorderBrush = Theme.Muted,
             BorderThickness = new Thickness(1),
             IsEnabled = true,
             ToolTip = tooltip,
         };
-        if (wide)
-        {
-            button.HorizontalAlignment = HorizontalAlignment.Right;
-            button.VerticalAlignment = VerticalAlignment.Bottom;
-        }
-
         AutomationProperties.SetName(button, $"{kid}：{tooltip}");
         // selector control は通常の割当対象にしない——クリックは何もしない（層切替 UI は上部の配置チップ）。
         button.Click += (_, _) => { };
