@@ -12,6 +12,12 @@ public interface IResidentApplyIntent
     /// <summary>document を compile し、常駐中の対象 device へ新 profile を即時反映する。</summary>
     void ApplyIfResident(WorkspaceDocument document);
 
-    /// <summary>fast path が処理した直近の input を、動作チェック strip 向けの表示行として取り出す（無ければ空）。</summary>
-    IReadOnlyList<string> DrainTraceLines();
+    /// <summary>fast path が処理した直近の input（動作チェック表示行＋実機ボタンでの割当指定用）を取り出す（無ければ空）。</summary>
+    IReadOnlyList<ResidentTraceEvent> DrainTraceEvents();
 }
+
+/// <summary>
+/// fast path が処理した1件の物理 input。DisplayLine は動作チェック strip 向けの表示行
+/// （down のみ。up は null）。DeviceKind は "G13"／"G600"（判定不能なら instance ID のまま）。
+/// </summary>
+public sealed record ResidentTraceEvent(string DeviceKind, string ControlId, bool IsDown, string? DisplayLine);

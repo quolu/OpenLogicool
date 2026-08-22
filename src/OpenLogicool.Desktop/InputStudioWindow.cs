@@ -71,7 +71,6 @@ public sealed class InputStudioWindow : Window
 
     // 左ペイン: 操作一覧
     private readonly ListBox _actionList = new();
-    private readonly Button _addActionButton = new() { Content = "＋ 操作を追加" };
 
     // 中央ペイン: device タブ・配置チップ・模式図
     private readonly Button _g13TabButton = new();
@@ -107,8 +106,18 @@ public sealed class InputStudioWindow : Window
         CaretBrush = Theme.Text,
         Padding = new Thickness(4, 3, 4, 3),
     };
-    private readonly TextBox _outputsBox = new();
-    private readonly Button _recordKeyButton = new() { Content = "録る…", Margin = new Thickness(6, 0, 0, 12), Padding = new Thickness(8, 6, 8, 6) };
+    private readonly Button _recordAddButton = new() { Content = "録って追加", Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(0, 0, 8, 0) };
+    private readonly Button _recordUpdateButton = new() { Content = "録って更新", Padding = new Thickness(10, 6, 10, 6) };
+    // 実機ボタン押しで割当先を指定する待機状態（録画確定後に自動で入る。常駐同居時のみ機能）。
+    private bool _pendingAssign;
+    private readonly TextBlock _assignHint = new()
+    {
+        Foreground = Theme.Warn,
+        FontSize = 12,
+        TextWrapping = TextWrapping.Wrap,
+        Margin = new Thickness(0, 0, 0, 10),
+        Visibility = Visibility.Collapsed,
+    };
     private readonly StackPanel _conflictNotePanel = new();
     private readonly StackPanel _g13BindingsPanel = new();
     private readonly StackPanel _g600BindingsPanel = new();
@@ -201,30 +210,60 @@ public sealed class InputStudioWindow : Window
 
     private void PollResidentTrace()
     {
-        var lines = _residentApply!.DrainTraceLines();
-        if (lines.Count > 0)
+        var events = _residentApply!.DrainTraceEvents();
+        foreach (var traceEvent in events)
         {
-            _testFieldHint.Text = lines[^1];
+            if (_pendingAssign && traceEvent.IsDown)
+            {
+                AssignByPress(traceEvent.DeviceKind, traceEvent.ControlId);
+            }
+        }
+
+        var lastLine = events.LastOrDefault(traceEvent => traceEvent.DisplayLine is not null)?.DisplayLine;
+        if (lastLine is not null)
+        {
+            _testFieldHint.Text = lastLine;
         }
     }
 
-    private void OnRecordKeyClicked()
+    /// <summary>「録って追加」: 新しい操作を作って録画に入る。取り消されたら空の操作を残さない。</summary>
+    private void RecordNewAction()
     {
-        // 操作未選択でも録画から始められる導線にする（実利用の指摘 2026-08-22:
-        // 一覧が空の状態で「録る…」が黙って何もしないのは導線が壊れている）。
-        // その場で操作を作って録画に入り、取り消されたら空の操作を残さない。
-        var createdForRecording = false;
+        var newActionId = GenerateActionId("action");
+        var newActionName = GenerateActionName();
+        if (!TryMutateDocument(document => WorkspaceDocumentEditor.AddAction(document, newActionId, newActionName, [])))
+        {
+            return;
+        }
+
+        _selectedActionId = newActionId;
+        Render();
+
+        var dialog = new KeyCaptureDialog(newActionName, "（未設定）", overwritesExisting: false) { Owner = this };
+        if (dialog.ShowDialog() == true && dialog.Result is { } token)
+        {
+            if (TryMutateDocument(document => SetOutputsWithAutoName(document, newActionId, WorkspaceEditorProjection.ParseOutputs(token))))
+            {
+                ArmAssignByPress();
+                Render();
+            }
+        }
+        else
+        {
+            _selectedActionId = null;
+            if (TryMutateDocument(document => WorkspaceDocumentEditor.DeleteAction(document, newActionId)))
+            {
+                Render();
+            }
+        }
+    }
+
+    /// <summary>「録って更新」: 選んでいる操作のキーを録り直す（上書きは dialog で明示する）。</summary>
+    private void RecordUpdateSelected()
+    {
         if (_selectedActionId is null)
         {
-            var newActionId = GenerateActionId("action");
-            if (!TryMutateDocument(document => WorkspaceDocumentEditor.AddAction(document, newActionId, GenerateActionName(), [])))
-            {
-                return;
-            }
-
-            _selectedActionId = newActionId;
-            createdForRecording = true;
-            Render();
+            return;
         }
 
         var actionId = _selectedActionId;
@@ -235,22 +274,72 @@ public sealed class InputStudioWindow : Window
         }
 
         var currentLabel = WorkspaceEditorProjection.FormatOutputs(action.Outputs) is { Length: > 0 } label ? label : "（未設定）";
-        var dialog = new KeyCaptureDialog(action.Name, currentLabel) { Owner = this };
+        var dialog = new KeyCaptureDialog(action.Name, currentLabel, overwritesExisting: action.Outputs.Count > 0) { Owner = this };
         if (dialog.ShowDialog() == true && dialog.Result is { } token)
         {
             if (TryMutateDocument(document => SetOutputsWithAutoName(document, actionId, WorkspaceEditorProjection.ParseOutputs(token))))
             {
+                ArmAssignByPress();
                 Render();
             }
         }
-        else if (createdForRecording)
+    }
+
+    /// <summary>
+    /// 録画確定後、選択中の操作にまだ割当が無ければ「実機のボタンを押して割当先を決める」待機に入る。
+    /// 常駐同居時だけ機能する（fast path の trace を割当指定に使うため）。
+    /// </summary>
+    private void ArmAssignByPress()
+    {
+        if (_residentApply is null || _selectedActionId is null)
         {
-            _selectedActionId = null;
-            if (TryMutateDocument(document => WorkspaceDocumentEditor.DeleteAction(document, actionId)))
-            {
-                Render();
-            }
+            return;
         }
+
+        var actionId = _selectedActionId;
+        if (_document.Bindings.Any(binding => binding.ActionId == actionId))
+        {
+            return;
+        }
+
+        _pendingAssign = true;
+    }
+
+    /// <summary>実機ボタン押下で割当先を確定する（割当待機中のみ。層切替キーは対象外として待機を続ける）。</summary>
+    private void AssignByPress(string deviceKind, string controlId)
+    {
+        if (_selectedActionId is null || deviceKind is not ("G13" or "G600"))
+        {
+            return;
+        }
+
+        var layout = _document.Devices.FirstOrDefault(device => device.DeviceKind == deviceKind);
+        if (layout is not null &&
+            layout.LatchSelectors.Concat(layout.HoldSelectors).Any(selector => selector.ControlId == controlId))
+        {
+            _assignHint.Text = $"{controlId} は層切替キーなので割り当てられません。別のボタンを押してください";
+            return;
+        }
+
+        var actionId = _selectedActionId;
+        var layerId = CurrentLayerFor(deviceKind);
+        _pendingAssign = false;
+        if (TryMutateDocument(document => WorkspaceDocumentEditor.SetBinding(document, actionId, deviceKind, controlId, layerId)))
+        {
+            Render();
+        }
+    }
+
+    private string CurrentLayerFor(string deviceKind)
+    {
+        var layout = _document.Devices.FirstOrDefault(device => device.DeviceKind == deviceKind);
+        var fallback = layout?.DefaultLayerId ?? "base";
+        if (!_figureLayerByDevice.TryGetValue(deviceKind, out var layerId))
+        {
+            return fallback;
+        }
+
+        return layout is not null && layout.LayerIds.Contains(layerId) ? layerId : fallback;
     }
 
     /// <summary>
@@ -299,7 +388,6 @@ public sealed class InputStudioWindow : Window
             }
         };
 
-        _addActionButton.Click += (_, _) => OnAddAction();
         _actionList.SelectionChanged += OnActionListSelectionChanged;
         _actionList.PreviewKeyDown += OnActionListPreviewKeyDown;
 
@@ -330,8 +418,6 @@ public sealed class InputStudioWindow : Window
         _inspectorNameBox.LostFocus += (_, _) => OnInspectorNameCommitted();
         _inspectorNameBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) { OnInspectorNameCommitted(); e.Handled = true; } };
 
-        _outputsBox.LostFocus += (_, _) => OnInspectorOutputsCommitted();
-        _outputsBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) { OnInspectorOutputsCommitted(); e.Handled = true; } };
 
         _saveButton.Click += (_, _) => SaveCurrentDocument();
         _revertButton.Click += (_, _) => DiscardUnsavedChanges();
@@ -434,23 +520,6 @@ public sealed class InputStudioWindow : Window
         DockPanel.SetDock(header, Dock.Top);
         dock.Children.Add(header);
 
-        var addRow = new Border
-        {
-            Margin = new Thickness(14, 8, 14, 0),
-            BorderBrush = Theme.Line,
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(8),
-        };
-        addRow.Child = _addActionButton;
-        _addActionButton.HorizontalAlignment = HorizontalAlignment.Stretch;
-        _addActionButton.HorizontalContentAlignment = HorizontalAlignment.Center;
-        _addActionButton.Foreground = Theme.Muted;
-        _addActionButton.Background = Brushes.Transparent;
-        _addActionButton.BorderThickness = new Thickness(0);
-        AutomationProperties.SetName(_addActionButton, "操作を追加");
-        DockPanel.SetDock(addRow, Dock.Bottom);
-        dock.Children.Add(addRow);
-
         AutomationProperties.SetName(_actionList, "操作一覧");
         _actionList.Background = Brushes.Transparent;
         _actionList.BorderThickness = new Thickness(0);
@@ -540,25 +609,17 @@ public sealed class InputStudioWindow : Window
 
         stack.Children.Add(_inspectorEmptyPanel);
 
-        var outputsLabel = new TextBlock { Text = "ゲームに送るキー", Foreground = Theme.Muted, FontSize = 11, Margin = new Thickness(0, 8, 0, 4) };
-        stack.Children.Add(outputsLabel);
-        var outputsRow = new Grid { Margin = new Thickness(0, 0, 0, 12) };
-        outputsRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        outputsRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        _outputsBox.Background = Theme.Sunken;
-        _outputsBox.BorderBrush = Theme.Line;
-        _outputsBox.Foreground = Theme.Text;
-        _outputsBox.CaretBrush = Theme.Text;
-        _outputsBox.Padding = new Thickness(8, 6, 8, 6);
-        AutomationProperties.SetName(_outputsBox, "ゲームに送るキー");
-        _outputsBox.ToolTip = "空白区切りで複数キーを送れます（例: Key:LCtrl Key:C）";
-        outputsRow.Children.Add(_outputsBox);
-        _recordKeyButton.Margin = new Thickness(6, 0, 0, 0);
-        AutomationProperties.SetName(_recordKeyButton, "ゲームに送るキーを録画で決める");
-        _recordKeyButton.Click += (_, _) => OnRecordKeyClicked();
-        Grid.SetColumn(_recordKeyButton, 1);
-        outputsRow.Children.Add(_recordKeyButton);
-        stack.Children.Add(outputsRow);
+        var recordRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 12) };
+        AutomationProperties.SetName(_recordAddButton, "キーを録って新しい操作を追加する");
+        _recordAddButton.ToolTip = "キーを録画して、新しい操作として追加します";
+        _recordAddButton.Click += (_, _) => RecordNewAction();
+        recordRow.Children.Add(_recordAddButton);
+        AutomationProperties.SetName(_recordUpdateButton, "選んだ操作のキーを録り直す");
+        _recordUpdateButton.ToolTip = "選んでいる操作のキーを、新しく録ったキーで上書きします";
+        _recordUpdateButton.Click += (_, _) => RecordUpdateSelected();
+        recordRow.Children.Add(_recordUpdateButton);
+        stack.Children.Add(recordRow);
+        stack.Children.Add(_assignHint);
 
         stack.Children.Add(BuildDeviceBlockHeader("G13 キーパッド", Theme.G13));
         stack.Children.Add(_g13BindingsPanel);
@@ -666,6 +727,7 @@ public sealed class InputStudioWindow : Window
 
         _selectedActionId = selectedActionId;
         _isRenamingAction = false;
+        _pendingAssign = false;
         Render();
     }
 
@@ -689,20 +751,6 @@ public sealed class InputStudioWindow : Window
         }
     }
 
-    private void OnAddAction()
-    {
-        var actionId = GenerateActionId("action");
-        var name = GenerateActionName();
-        if (TryMutateDocument(document => WorkspaceDocumentEditor.AddAction(document, actionId, name, [])))
-        {
-            _selectedActionId = actionId;
-            _isRenamingAction = true;
-            Render();
-            _inspectorNameBox.Focus();
-            _inspectorNameBox.SelectAll();
-        }
-    }
-
     private void OnInspectorNameCommitted()
     {
         _isRenamingAction = false;
@@ -719,23 +767,9 @@ public sealed class InputStudioWindow : Window
         }
     }
 
-    private void OnInspectorOutputsCommitted()
-    {
-        if (_selectedActionId is null)
-        {
-            return;
-        }
-
-        var actionId = _selectedActionId;
-        var outputs = WorkspaceEditorProjection.ParseOutputs(_outputsBox.Text);
-        if (TryMutateDocument(document => SetOutputsWithAutoName(document, actionId, outputs)))
-        {
-            Render();
-        }
-    }
-
     private void OnFigureKeyClicked(string deviceKind, string controlId)
     {
+        _pendingAssign = false;
         if (_selectedActionId is null)
         {
             return;
@@ -1133,12 +1167,27 @@ public sealed class InputStudioWindow : Window
         _actionNotesPanel.Children.Clear();
 
         _deleteActionButton.Visibility = inspector is null ? Visibility.Collapsed : Visibility.Visible;
+        _recordUpdateButton.IsEnabled = inspector is not null;
+        if (_pendingAssign && inspector is not null)
+        {
+            if (_assignHint.Text.Length == 0 || !_assignHint.Text.Contains("層切替"))
+            {
+                _assignHint.Text = $"デバイスのボタンを押すと『{inspector.Name}』をそのボタンへ割り当てます（絵のボタンをクリックでも可）";
+            }
+
+            _assignHint.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            _pendingAssign = false;
+            _assignHint.Text = string.Empty;
+            _assignHint.Visibility = Visibility.Collapsed;
+        }
+
         if (inspector is null)
         {
             _inspectorTitleButton.Visibility = Visibility.Collapsed;
             _inspectorNameBox.Visibility = Visibility.Collapsed;
-            _outputsBox.IsEnabled = false;
-            _outputsBox.Text = string.Empty;
             _inspectorEmptyPanel.Children.Add(new TextBlock
             {
                 Text = "左の一覧から操作を選ぶと、ここに割当を出します。",
@@ -1166,12 +1215,6 @@ public sealed class InputStudioWindow : Window
             titleContent.Children.Add(new TextBlock { Text = inspector.Name, FontSize = 16, FontWeight = FontWeights.Bold });
             _inspectorTitleButton.Content = titleContent;
             AutomationProperties.SetName(_inspectorTitleButton, $"操作名: {inspector.Name}（クリックで変更）");
-        }
-
-        _outputsBox.IsEnabled = true;
-        if (!_outputsBox.IsFocused)
-        {
-            _outputsBox.Text = inspector.OutputsTokenText;
         }
 
         foreach (var deviceOptions in inspector.DeviceOptions)
@@ -1214,59 +1257,8 @@ public sealed class InputStudioWindow : Window
                 panel.Children.Add(row);
             }
 
-            panel.Children.Add(BuildAssignRow(inspector, deviceOptions));
+            // 割当先の指定は「実機のボタンを押す」または絵のボタンをクリック（pulldown は撤去・オーナー指示 2026-08-22）。
         }
-    }
-
-    private UIElement BuildAssignRow(BindingInspectorView inspector, DeviceBindingOptionsView deviceOptions)
-    {
-        var layerCombo = new ComboBox { Margin = new Thickness(0, 4, 4, 0), MinWidth = 90 };
-        foreach (var layerId in deviceOptions.LayerIds)
-        {
-            layerCombo.Items.Add(new ComboBoxItem { Content = LayerLabel(deviceOptions.DeviceKind, layerId), Tag = layerId });
-        }
-
-        if (layerCombo.Items.Count > 0)
-        {
-            layerCombo.SelectedIndex = 0;
-        }
-
-        var controlCombo = new ComboBox { Margin = new Thickness(0, 4, 4, 0), MinWidth = 90 };
-        foreach (var control in deviceOptions.Controls)
-        {
-            var controlLabel = ControlLabel(deviceOptions.DeviceKind, control.ControlId);
-            controlCombo.Items.Add(new ComboBoxItem { Content = control.IsConfirmed ? controlLabel : $"{controlLabel}（強い推定）", Tag = control.ControlId });
-        }
-
-        if (controlCombo.Items.Count > 0)
-        {
-            controlCombo.SelectedIndex = 0;
-        }
-
-        var assignButton = new Button { Content = "割り当てる", Margin = new Thickness(0, 4, 0, 0) };
-        assignButton.Click += (_, _) =>
-        {
-            if (layerCombo.SelectedItem is not ComboBoxItem { Tag: string layerId } ||
-                controlCombo.SelectedItem is not ComboBoxItem { Tag: string controlId })
-            {
-                return;
-            }
-
-            var actionId = inspector.ActionId;
-            var deviceKind = deviceOptions.DeviceKind;
-            if (TryMutateDocument(document => WorkspaceDocumentEditor.SetBinding(document, actionId, deviceKind, controlId, layerId)))
-            {
-                Render();
-            }
-        };
-
-        var row = new StackPanel { Orientation = Orientation.Horizontal };
-        AutomationProperties.SetName(layerCombo, $"{deviceOptions.DeviceKind} 割当先の配置");
-        AutomationProperties.SetName(controlCombo, $"{deviceOptions.DeviceKind} 割当先のボタン");
-        row.Children.Add(layerCombo);
-        row.Children.Add(controlCombo);
-        row.Children.Add(assignButton);
-        return row;
     }
 
     private static TextBlock NoteBlock(string text, Brush accent) => new()

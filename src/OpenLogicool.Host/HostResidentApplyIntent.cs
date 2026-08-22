@@ -33,25 +33,27 @@ public sealed class HostResidentApplyIntent(
         }
     }
 
-    public IReadOnlyList<string> DrainTraceLines()
+    public IReadOnlyList<ResidentTraceEvent> DrainTraceEvents()
     {
         var kindByInstanceId = deviceInstanceIdsByKind
             .SelectMany(pair => pair.Value.Select(instanceId => (InstanceId: instanceId, Kind: pair.Key)))
             .ToDictionary(pair => pair.InstanceId, pair => pair.Kind, StringComparer.Ordinal);
 
-        var lines = new List<string>();
+        var events = new List<ResidentTraceEvent>();
         foreach (var entry in pump.DrainTrace())
         {
-            if (entry.Edge != PhysicalInputEdge.Down || !entry.Emitted)
+            var kindLabel = kindByInstanceId.TryGetValue(entry.DeviceInstanceId, out var kind) ? kind : entry.DeviceInstanceId;
+            var isDown = entry.Edge == PhysicalInputEdge.Down;
+            string? displayLine = null;
+            if (isDown)
             {
-                continue;
+                var outputsLabel = entry.OutputTokens.Count == 0 ? "（割当なし）" : string.Join(" ", entry.OutputTokens);
+                displayLine = $"{kindLabel} の {entry.ControlId} を押した → {outputsLabel} を送りました";
             }
 
-            var kindLabel = kindByInstanceId.TryGetValue(entry.DeviceInstanceId, out var kind) ? kind : entry.DeviceInstanceId;
-            var outputsLabel = entry.OutputTokens.Count == 0 ? "（割当なし）" : string.Join(" ", entry.OutputTokens);
-            lines.Add($"{kindLabel} の {entry.ControlId} を押した → {outputsLabel} を送りました");
+            events.Add(new ResidentTraceEvent(kindLabel, entry.ControlId, isDown, displayLine));
         }
 
-        return lines;
+        return events;
     }
 }

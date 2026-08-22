@@ -28,7 +28,7 @@ public sealed class KeyCaptureDialog : Window
 
     public string? Result { get; private set; }
 
-    public KeyCaptureDialog(string actionName, string currentOutputsLabel)
+    public KeyCaptureDialog(string actionName, string currentOutputsLabel, bool overwritesExisting = false)
     {
         Title = "ゲームに送るキー";
         Background = Theme.Raised;
@@ -81,7 +81,14 @@ public sealed class KeyCaptureDialog : Window
         well.Child = wellStack;
         stack.Children.Add(well);
 
-        _nowText.Text = $"いまの割当: {currentOutputsLabel}（もう一度押すと録り直します）";
+        _nowText.Text = overwritesExisting
+            ? $"注意: いまの割当「{currentOutputsLabel}」を新しく録ったキーで上書きします"
+            : $"いまの割当: {currentOutputsLabel}（もう一度押すと録り直します）";
+        if (overwritesExisting)
+        {
+            _nowText.Foreground = Theme.Warn;
+        }
+
         stack.Children.Add(_nowText);
 
         var mouseRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 16) };
@@ -104,6 +111,7 @@ public sealed class KeyCaptureDialog : Window
         cancelButton.Click += (_, _) => { Result = null; DialogResult = false; };
         actions.Children.Add(cancelButton);
 
+        _acceptButton.Content = overwritesExisting ? "上書きして決める" : "これに決める";
         _acceptButton.Background = Theme.Accent;
         _acceptButton.Foreground = Brushes.White;
         _acceptButton.IsEnabled = false;

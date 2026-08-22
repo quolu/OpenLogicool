@@ -266,6 +266,8 @@ public static class InputStudioFigures
             });
         }
 
+        // ToolTip に内部 control ID をそのまま出さない（STICK_PRESS 等は表示名へ）。
+        var tipName = controlId == "STICK_PRESS" ? "スティック押込み" : controlId;
         var dimpleToolTipSuffix = dimple && !hasBinding ? "（指のホーム位置）" : string.Empty;
         var button = new Button
         {
@@ -277,9 +279,9 @@ public static class InputStudioFigures
             BorderBrush = hasBinding ? binding!.Color : Theme.Line2,
             BorderThickness = new Thickness(hasBinding ? 2 : 1),
             Foreground = Theme.Text,
-            ToolTip = (hasBinding ? $"{controlId}：{binding!.ActionName}" : $"{controlId}：未割当（クリックで、左で選んでいる操作を載せます）") + dimpleToolTipSuffix + toolTipSuffix,
+            ToolTip = (hasBinding ? $"{tipName}：{binding!.ActionName}" : $"{tipName}：未割当（クリックで、左で選んでいる操作を載せます）") + dimpleToolTipSuffix + toolTipSuffix,
         };
-        AutomationProperties.SetName(button, hasBinding ? $"{controlId}（{binding!.ActionName}）" : $"{controlId}（未割当）");
+        AutomationProperties.SetName(button, hasBinding ? $"{tipName}（{binding!.ActionName}）" : $"{tipName}（未割当）");
         button.Click += (_, _) => onClick();
         return button;
     }
