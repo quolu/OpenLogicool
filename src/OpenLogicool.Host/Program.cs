@@ -423,7 +423,7 @@ static int Ui(string[] arguments)
             ["G13"] = residentStatus.G13DeviceInstanceIds,
             ["G600"] = residentStatus.G600DeviceInstanceIds,
         };
-        residentApply = new HostResidentApplyIntent(residentHost.Pump, instanceIdsByKind);
+        residentApply = new HostResidentApplyIntent(residentHost, instanceIdsByKind);
     }
 
     var exitCode = 0;

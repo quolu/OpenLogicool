@@ -39,6 +39,8 @@ public sealed class ResidentInputHost : IDisposable
     private FastPathPump? _pump;
     private Thread? _foregroundPollThread;
     private volatile bool _foregroundPollStop;
+    private volatile AppFirstData? _appFirstData;
+    private IReadOnlyDictionary<string, IReadOnlyList<string>>? _instancesByKind;
     private bool _stopped;
     private readonly ProfileSwitchDecisionRing _decisionRing = new();
     private long _decisionSequence;
@@ -128,9 +130,11 @@ public sealed class ResidentInputHost : IDisposable
             enableTrace: _enableTrace);
         _pump.Start();
 
+        _instancesByKind = instancesByKind;
+        _appFirstData = new AppFirstData(resolver, profilesById, Version: 0);
         if (resolver.HasAppAssociations && instancesByKind.Count > 0)
         {
-            StartForegroundPolling(resolver, profilesById, instancesByKind);
+            StartForegroundPolling();
         }
 
         return new ResidentHostStatus(
@@ -142,21 +146,57 @@ public sealed class ResidentInputHost : IDisposable
             leftoverApply);
     }
 
+    /// <summary>foreground 監視が参照する app-first データ一式（immutable・保存で丸ごと差し替える）。</summary>
+    private sealed record AppFirstData(
+        AppProfileResolver Resolver,
+        IReadOnlyDictionary<string, MappingProfile> ProfilesById,
+        long Version);
+
+    /// <summary>
+    /// 保存後に app-first データ（resolver・profile 実体・関連付け）を DB から読み直して監視へ反映する。
+    /// これをしないと監視 thread は起動時 snapshot のままで、保存後の前面切替が古い profile へ
+    /// 巻き戻り、起動後に初めて関連付けが出来た場合は監視自体が始まらない（実利用の欠陥 2026-08-22）。
+    /// </summary>
+    public void RefreshAppFirstData()
+    {
+        if (_connection is null || _instancesByKind is null)
+        {
+            return;
+        }
+
+        var documents = new SqliteMappingProfileStore(_connection).ListAll();
+        var associations = new SqliteAppAssociationStore(_connection).ListAll();
+        var resolver = AppProfileResolver.Build(documents, associations);
+        var profilesById = documents.ToDictionary(
+            document => document.ProfileId,
+            MappingProfileMaterializer.ToProfile,
+            StringComparer.Ordinal);
+
+        var previous = _appFirstData;
+        _appFirstData = new AppFirstData(resolver, profilesById, (previous?.Version ?? 0) + 1);
+
+        if (_foregroundPollThread is null && resolver.HasAppAssociations && _instancesByKind.Count > 0)
+        {
+            StartForegroundPolling();
+        }
+    }
+
     /// <summary>
     /// foreground app の監視（app-first 切替）。fast path 外の専用 thread が 200ms 間隔で
     /// foreground EXE を観測し、適用 profile が変わる時だけ pump へ論理切替を依頼する
     /// （切替は新規 down から有効・device write はしない＝MAP-010）。
+    /// データは _appFirstData を毎周期読む（保存による差し替えを次周期から反映する）。
     /// </summary>
-    private void StartForegroundPolling(
-        AppProfileResolver resolver,
-        IReadOnlyDictionary<string, MappingProfile> profilesById,
-        IReadOnlyDictionary<string, IReadOnlyList<string>> instancesByKind)
+    private void StartForegroundPolling()
     {
+        var instancesByKind = _instancesByKind!;
         _foregroundPollThread = new Thread(() =>
         {
+            var data = _appFirstData!;
+            var seenVersion = data.Version;
             var activeProfileIdByKind = instancesByKind.Keys.ToDictionary(
                 kind => kind,
-                kind => resolver.DefaultByKind[kind].ProfileId,
+                kind => data.Resolver.DefaultByKind[kind].ProfileId,
                 StringComparer.Ordinal);
             ForegroundApplicationIdentity? previousIdentity = null;
             string? lastKey = null;
@@ -164,6 +204,17 @@ public sealed class ResidentInputHost : IDisposable
 
             while (!_foregroundPollStop)
             {
+                var current = _appFirstData!;
+                if (current.Version != seenVersion)
+                {
+                    // 保存で差し替わった: 次の判断を強制し、最新の resolver／profile で引き直す
+                    data = current;
+                    seenVersion = current.Version;
+                    first = true;
+                }
+
+                var resolver = data.Resolver;
+                var profilesById = data.ProfilesById;
                 var identity = ForegroundAppTracker.GetForegroundIdentity();
                 // path・package のどちらかが変われば再判断する（片側だけ null の変化も逃さない）
                 var key = identity is null ? null : $"{identity.NormalizedFullPath}{identity.PackageFamilyName}";

@@ -12,7 +12,7 @@ namespace OpenLogicool.Host;
 /// 即時反映する（新規 down から有効・device write はしない＝MAP-010）。
 /// </summary>
 public sealed class HostResidentApplyIntent(
-    FastPathPump pump,
+    ResidentInputHost host,
     IReadOnlyDictionary<string, IReadOnlyList<string>> deviceInstanceIdsByKind) : IResidentApplyIntent
 {
     public void ApplyIfResident(WorkspaceDocument document)
@@ -28,9 +28,13 @@ public sealed class HostResidentApplyIntent(
             var profile = MappingProfileMaterializer.ToProfile(profileDocument);
             foreach (var deviceInstanceId in instanceIds)
             {
-                pump.RequestProfileChange(deviceInstanceId, profile);
+                host.Pump.RequestProfileChange(deviceInstanceId, profile);
             }
         }
+
+        // 前面監視の resolver／profile も保存後の内容へ差し替える（次の app 切替が古い版へ
+        // 巻き戻らないように。起動後に初めて関連付けが出来た場合はここで監視が始まる）。
+        host.RefreshAppFirstData();
     }
 
     public string? CurrentForegroundWindowTitle() => ForegroundAppTracker.GetForegroundWindowTitle();
@@ -42,7 +46,7 @@ public sealed class HostResidentApplyIntent(
             .ToDictionary(pair => pair.InstanceId, pair => pair.Kind, StringComparer.Ordinal);
 
         var events = new List<ResidentTraceEvent>();
-        foreach (var entry in pump.DrainTrace())
+        foreach (var entry in host.Pump.DrainTrace())
         {
             var kindLabel = kindByInstanceId.TryGetValue(entry.DeviceInstanceId, out var kind) ? kind : entry.DeviceInstanceId;
             var isDown = entry.Edge == PhysicalInputEdge.Down;
