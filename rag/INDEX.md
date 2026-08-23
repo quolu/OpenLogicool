@@ -1,5 +1,6 @@
 # OpenLogicool knowledge index
 
+- [STEP 0 Web Reference Policy（2026-08-24）](openlogicool/step0-web-reference-policy-2026-08-24.md) — GameWith利用規約／robotsとMarkdown保存境界、Web仮説をgame内検証へ従属させる契約
 - [OpenLogicool feasibility research — G13/G600 on Windows](openlogicool/feasibility-2026-08-14.md) — 既存OSS、公開プロトコル、Windows実装境界、ブロッカー、最小実験、推奨試作。取得日: 2026-08-14、確度: 高（実機情報＋一次資料。一部は実機未検証）
 - [Primary-source manifest](openlogicool/raw/source-manifest.md) — 調査に使用した一次資料URL、用途、ライセンス上の扱い。取得日: 2026-08-14、確度: 高
 - [G600 onboard write protocol 公開実装調査](openlogicool/g600-write-protocol-2026-08-15.md) — 公開実装は全員 F3/F4/F5 へ 154-byte 直書き（F6 不使用）、write は settle+retry+fresh handle が要る運用知、incident の原因訂正。取得日: 2026-08-15、確度: 高（一次コード3実装+descriptor）

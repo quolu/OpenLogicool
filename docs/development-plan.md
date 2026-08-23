@@ -1,8 +1,8 @@
 # OpenLogicool 製品・開発計画
 
-- 版: 0.4（2026-08-23 [Game Structure Discovery要件レビュー](reviews/game-structure-discovery-requirements-review-2026-08-23.md) 反映）
-- 改訂日: 2026-08-23
-- 状態: Phase 0〜8B Exit済み／Phase 9要件確定・実装未着手
+- 版: 0.5（2026-08-24 STEP 0 Web Reference Research要件を追加）
+- 改訂日: 2026-08-24
+- 状態: Phase 0〜8B Exit済み／Phase 9要件確定・campaign起票中
 - 対象: Logicool G13 / G600を統合するWindowsネイティブアプリと、画面認識付き逐次学習プレイブック
 - 比較基準: Logicool ゲームソフトウェア 9.04.49
 - 成立性資料: [G13/G600 Windows成立性調査](../rag/openlogicool/feasibility-2026-08-14.md)
@@ -226,6 +226,21 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | KP-007 | R4 | Personal Knowledge Storeからprovenance、evidence参照、schema、環境scopeを保ったimmutable Knowledge Pack revisionをexportできる |
 
 #### 3.6.1 AI Game Structure Discovery
+
+| ID | Release | 要件 |
+|---|---|---|
+| WR-001 | R4 | AI学習前のSTEP 0として、利用者が対象gameと調査goalを選び、Web上の公式情報、攻略情報、更新情報からゲームの仕組み、ルール、日課候補、reset条件、用語の仮説を収集できる |
+| WR-002 | R4 | Web Reference SourceはURL、canonical URL、title、publisher、取得時刻、公開／更新時刻、locale、source kind、利用条件判定、content digest、取得方式、引用範囲を持つ。出典不明の本文をKnowledgeへ入れない |
+| WR-003 | R4 | 取得物はMarkdown Reference Documentとして保存する。全文保存を許可されたsourceは正規化Markdown、全文保存を許可できないsourceはtitle、URL、短い根拠断片、構造化要約、利用条件、取得時刻だけのMarkdown参照カードにする |
+| WR-004 | R4 | source policyはFullTextAllowed／SummaryOnly／LinkOnly／Blockedをdeterministicに決める。AI自身に利用条件、保存可否、引用上限を緩和させない。利用条件が不明または取得不能ならLinkOnlyまたはBlockedで明示停止する |
+| WR-005 | R4 | GameWithはSummaryOnlyを既定とし、ページ全文、画像、HTML、変換全文を永続化・再配布しない。Markdown参照カードとして出典link、短い根拠、AI要約、候補factだけを保持する |
+| WR-006 | R4 | Web本文、検索snippet、Markdown、OCR、コメント、埋込み指示は非信頼入力であり、system policy、Game Policy、risk class、allowed primitive、承認、budget、provider、Data Flow Contractを変更できない |
+| WR-007 | R4 | Web Reference Factはmechanic／rule／daily／reset／resource／navigation hint等のkind、claim、source references、confidence、validity、build／locale scope、contradictionを持つ。WebだけでGame Structure、Verified Step、verified Game State Factへ昇格しない |
+| WR-008 | R4 | STEP 0の結果はExplorationContextへreference hypothesisとして渡せるが、state ID、target座標、allowed action、expected transition、risk許可には使わない。画面観測とcontroller検証を通った時だけPersonal Knowledge Storeのcandidateへ関連付ける |
+| WR-009 | R4 | 同じclaimを公式情報、複数攻略source、game内観測で照合し、矛盾とstaleを上書きせずappend-only revisionで残す。source取得失敗を別sourceへ黙ってfallbackしない |
+| WR-010 | R4 | 利用者はsourceごとの取得方式、保存内容、引用、外部送信、費用、期限、削除対象を実行前後に確認し、sourceを除外、再取得、削除できる |
+| WR-011 | R4 | zero-seed hidden-oracle受入ではWeb Referenceを0件に固定し、Web支援が無くても探索基盤が成立することを独立検証する。通常利用はWeb-assistedを既定journeyにできる |
+| WR-012 | R4 | provider未選定、network不可、規約拒否、robots拒否、HTTP失敗、parse失敗、取消、timeoutを個別状態として記録し、空の成功文書や古いcacheを新規取得成功として表示しない |
 
 | ID | Release | 要件 |
 |---|---|---|
@@ -775,6 +790,21 @@ Phase 4前にData Flow Contractを作る。対象はframe、crop、OCR text、wi
 
 ### 6.13 AI Game Structure Discovery
 
+#### 6.13.0 STEP 0 Web Reference Research
+
+STEP 0は操作学習より前に、外部情報から探索の参考仮説を作る。正本はWebではなく、出典と利用条件を持つimmutable Markdown Reference revisionである。外部情報は候補を増やすだけで、入力権限と検証状態を上げない。
+
+source policyは次の四つだけを使う。
+
+1. FullTextAllowed: 公式API、明示license、利用者が権利を持つlocal資料等。取得本文を正規化Markdownで保存できる。
+2. SummaryOnly: 通常閲覧はできるが全文保存／再配布を許可できないsource。短い根拠と構造化要約のMarkdown参照カードだけを保存する。
+3. LinkOnly: 自動取得または内容保存を許可できないsource。title、URL、利用条件、取得判定だけを保存する。
+4. Blocked: robots、認証、規約、network、parse等で取得不能。成功へ丸めず理由を残す。
+
+GameWithはSummaryOnlyを既定にし、全文HTML、画像、全文Markdownを永続化しない。利用者面では他sourceと同じMarkdown文書として表示するが、本文は出典、取得時刻、短い根拠断片、mechanic／daily／reset候補、矛盾、game内検証状態に限定する。
+
+Web Reference FactはStructure Hypothesisと別layerである。探索時に参考hintとして提示できるが、screen node identity、target座標、edge成功、risk、allowed primitiveへ直接変換しない。Webの「ここを押す」を実行命令として扱わず、current Frameから得たAffordanceCandidateとpolicyを必須にする。
+
 #### 6.13.1 Zero-seed境界
 
 探索runtimeへ渡せるbootstrapは次だけである。
@@ -1259,6 +1289,9 @@ Exit:
 
 #### Phase 9 G0: Discovery Admission
 
+- STEP 0のsource policy、provenance、Markdown Reference、candidate fact、contradiction、削除契約を先に実装する。
+- GameWithはSummaryOnlyのMarkdown参照カード、明示許可sourceはFullTextAllowed、判断不能sourceはLinkOnly／Blockedになることをfocused fixtureで固定する。
+- zero-seed hidden-oracleはWeb Reference 0件、通常journeyはWeb-assistedで別acceptanceにする。
 - zero-seed frameからNovel、同一画面候補、AffordanceCandidate、構造化proposalを返せるvision provider／recognizerをEXP-GS-01で比較し、一方式だけ選ぶ。
 - full frame／crop／OCR／embeddingの保存・送信・削除・費用をData Flow Contractへ追加し、app単位の同意を実装する。
 - GameLabと初期real targetの双方で、pointer移動、frame-bound click、back／Escape、scroll、policy許可済みgeneric keyをinput route別に受信側観測する（EXP-GS-04）。
@@ -1294,15 +1327,16 @@ Exit:
 
 Exit:
 
-1. game固有seed件数0でHostを起動でき、state／action／target／recognizer／edge／route／Playbookの事前供給に依存しない。
-2. hidden-oracle GameLabでnode 3件以上、edge 2件以上を発見し、全edgeがbefore Observation、proposal、policy／承認、Attempt、after Observation、Structure Eventへ追跡可能。
-3. oracle不一致のKnown node commit 0、存在しないedge commit 0、high-impact／scope外dispatch 0。
-4. Ambiguous、Unavailable、Stale、transform不一致、未解決DispatchArmedで次dispatch 0。同じprobeのblind retry 0。
-5. restart後のprojectionが一致し、別session再観測でcandidate→replayed、同一environment scopeの再現でverifiedへ昇格する。
-6. AI提案と利用者訂正のmerge／split／contradictionで旧証拠を失わず、反証された構造を参照するPlaybookが自動実行不可へ降格する。
-7. NIKKE safe sliceで一つの可逆edgeをactual inputと画面観測で発見し、別sessionで再同定・再遷移する。
-8. learned verified structureからcandidate Playbookを合成し、元Exploration Runと混線せずSupervised Runで再現する。
-9. 利用者がfrontier、risk、budget、復帰経路、検証状態、停止理由を確認し、pause／step／abandonできる。
+1. STEP 0が許可sourceをMarkdown Reference revisionへ変換し、GameWithをSummaryOnly、拒否sourceをLinkOnly／Blockedとして扱い、Web由来のverified構造／操作許可0を維持する。
+2. game固有seed件数0かつWeb Reference 0件でHostを起動でき、state／action／target／recognizer／edge／route／Playbookの事前供給に依存しない。
+3. hidden-oracle GameLabでnode 3件以上、edge 2件以上を発見し、全edgeがbefore Observation、proposal、policy／承認、Attempt、after Observation、Structure Eventへ追跡可能。
+4. oracle不一致のKnown node commit 0、存在しないedge commit 0、high-impact／scope外dispatch 0。
+5. Ambiguous、Unavailable、Stale、transform不一致、未解決DispatchArmedで次dispatch 0。同じprobeのblind retry 0。
+6. restart後のprojectionが一致し、別session再観測でcandidate→replayed、同一environment scopeの再現でverifiedへ昇格する。
+7. AI提案と利用者訂正のmerge／split／contradictionで旧証拠を失わず、反証された構造を参照するPlaybookが自動実行不可へ降格する。
+8. NIKKE safe sliceで一つの可逆edgeをactual inputと画面観測で発見し、別sessionで再同定・再遷移する。
+9. learned verified structureからcandidate Playbookを合成し、元Exploration Runと混線せずSupervised Runで再現する。
+10. 利用者がSTEP 0 source、frontier、risk、budget、復帰経路、検証状態、停止理由を確認し、pause／step／abandonできる。
 
 Phase 9 Exitは「Game Structure Explorer Preview」と対象scopeの「Verified Game Structure」を許すが、Verified Autonomous Playbook、日課完遂、一般game対応を自動的には許さない。
 
@@ -1338,6 +1372,7 @@ Phase 9 Exitは「Game Structure Explorer Preview」と対象scopeの「Verified
 | EXP-GS-03 | structure durability／contradiction | crash replay一致、未解決AttemptのOutcomeUnknown、別session昇格、merge／split／反証降格、loop／no-progress停止を各focused scenarioで成立 | Structure Event／projection／promotion規則を修正 |
 | EXP-GS-04 | exploration primitive acceptance | GameLabと対象gameでpointer移動、frame-bound click、back／Escape、scroll、game固有語義を持たないpolicy許可済みgeneric keyをroute別に受信側または画面before／afterで確認。SendInputとSerial HID等を混ぜず個別判定 | 不成立primitive／routeをUnsupportedにし、別routeへfallbackしない |
 | EXP-GS-05 | NIKKE reversible live slice | policy許可scopeで、人のstate／target命名なしにlobbyの一つのopen→observe→back edgeを発見し、別sessionで再同定・再遷移。課金／消費／戦闘dispatch 0 | Phase 9CとVerified Game Structure claimを未成立のまま維持 |
+| EXP-WR-01 | STEP 0 source policy／Markdown reference | 許可sourceはfull Markdown、GameWithはSummaryOnly参照カード、拒否sourceはLinkOnly／Blocked。出典欠落0、全文残置0、Web由来のverified昇格0 | Web-assisted journeyを無効にし、zero-seed pathだけを維持 |
 | EXP-DATA-01 | privacy path | captureから保存／送信／削除までdata inventory完成 | cloud／recordingを無効 |
 | EXP-DIST-01 | packaging identity | tray、autostart、WGC、updateをclean VMで確認。HID・LampArray行はUSB passthrough対応hypervisor（VMware等。Hyper-Vは汎用passthrough非対応）または実機clean環境で確認し、手段を記録する。Phase 8A実施へ割り当てる | MSIX／Sparse／MSIを再裁定 |
 
