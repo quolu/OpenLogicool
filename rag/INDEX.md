@@ -5,6 +5,7 @@
 - [G600 onboard write protocol 公開実装調査](openlogicool/g600-write-protocol-2026-08-15.md) — 公開実装は全員 F3/F4/F5 へ 154-byte 直書き（F6 不使用）、write は settle+retry+fresh handle が要る運用知、incident の原因訂正。取得日: 2026-08-15、確度: 高（一次コード3実装+descriptor）
 - [Serial HID firmware toolchain調査](openlogicool/serial-hid-toolchain-2026-08-23.md) — Arduino CLI 1.5.1、SparkFun AVR 1.1.13、Arduino AVR 1.8.8、Pro Micro 5V / 16 MHz FQBN、HID API、checksum、固定compile。取得日: 2026-08-23、確度: 高（公式catalog＋導入後source＋compile）
 - [Serial HID Windows discovery調査](openlogicool/serial-hid-windows-discovery-2026-08-23.md) — SetupAPI COM interface列挙、PnP device instance ID、SparkFun VID/PID、SerialPort partial readの実装根拠。取得日: 2026-08-23、確度: 高（Microsoft公式API＋導入済みboard定義）
+- [G13 LCD Windows標準HID write調査](openlogicool/g13-lcd-windows-write-2026-08-23.md) — 960-byte framebuffer＋32-byte header、標準HidUsbの`WriteFile`でLCD反映、write後もG1 down/up・drop 0、driver差替え不要。取得日: 2026-08-23、確度: 高（Microsoft公式仕様＋G13公開一次コード＋Windows実機）
 
 実測で確定した仕様知識（正本は docs/ 側・ここは索引のみ）:
 

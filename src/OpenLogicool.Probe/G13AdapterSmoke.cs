@@ -10,7 +10,9 @@ internal static class G13AdapterSmoke
 {
     public static int Run(string[] args, string outputDirectory)
     {
-        var seconds = args.Length > 0 ? int.Parse(args[0]) : 30;
+        var untilG1 = args.Contains("--until-g1", StringComparer.Ordinal);
+        var secondsArgument = args.FirstOrDefault(argument => !argument.StartsWith("--", StringComparison.Ordinal));
+        var seconds = secondsArgument is not null ? int.Parse(secondsArgument) : 30;
 
         using var source = new G13RawInputSource();
         var devices = source.EnumerateDevices();
@@ -26,15 +28,19 @@ internal static class G13AdapterSmoke
             return 1;
         }
 
-        Console.WriteLine($"[g13-smoke] {seconds}s 間 pull します。G13 のキー・スティックを操作してください。");
+        Console.WriteLine(untilG1
+            ? "[g13-smoke] G1のdown/upを観測するまで待機します。G1を1回押して離してください。"
+            : $"[g13-smoke] {seconds}s 間 pull します。G13 のキー・スティックを操作してください。");
 
         var inputs = new List<object>();
         var stickSampleCount = 0L;
         object? firstStick = null;
         object? lastStick = null;
         var deadline = DateTime.UtcNow.AddSeconds(seconds);
+        var sawG1Down = false;
+        var sawG1Up = false;
 
-        while (DateTime.UtcNow < deadline)
+        while (untilG1 ? !sawG1Up : DateTime.UtcNow < deadline)
         {
             var pulled = false;
             while (source.TryPull(out var input))
@@ -42,6 +48,16 @@ internal static class G13AdapterSmoke
                 pulled = true;
                 Console.WriteLine($"[g13-smoke] {input.MonotonicMs,10:F1}ms {input.ControlId,-11} {input.Edge} seq={input.ReportSequence}");
                 inputs.Add(new { input.MonotonicMs, input.ControlId, Edge = input.Edge.ToString(), input.ReportSequence });
+                if (input.ControlId == "G1" && input.Edge == OpenLogicool.Contracts.Devices.Shared.PhysicalInputEdge.Down)
+                {
+                    sawG1Down = true;
+                }
+                else if (input.ControlId == "G1" &&
+                         input.Edge == OpenLogicool.Contracts.Devices.Shared.PhysicalInputEdge.Up &&
+                         sawG1Down)
+                {
+                    sawG1Up = true;
+                }
             }
 
             while (source.TryPullStick(out var stick))
@@ -66,7 +82,9 @@ internal static class G13AdapterSmoke
             CapturedAtUtc = DateTime.UtcNow.ToString("O"),
             Machine = Environment.MachineName,
             OsVersion = Environment.OSVersion.VersionString,
-            DurationSeconds = seconds,
+            DurationSeconds = untilG1 ? (int?)null : seconds,
+            UntilG1 = untilG1,
+            SawG1DownUp = sawG1Down && sawG1Up,
             Devices = devices,
             InputCount = inputs.Count,
             Inputs = inputs,
@@ -79,6 +97,6 @@ internal static class G13AdapterSmoke
 
         Console.WriteLine($"[g13-smoke] inputs={inputs.Count} stickSamples={stickSampleCount} dropped={source.DroppedInputCount}");
         Console.WriteLine($"[g13-smoke] evidence → {outputPath}");
-        return 0;
+        return untilG1 && (!sawG1Up || source.DroppedInputCount != 0) ? 2 : 0;
     }
 }

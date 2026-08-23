@@ -300,7 +300,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | G13 M1／M2／M3／MR | 対象 | — | R1/R5 | firmware依存、未確認 |
 | G13 stick／dead zone／diagonal | 対象 | — | R1 | 未確認 |
 | G13 RGB／M LED | 対象 | — | R5 | protocolあり、Windows write未確認 |
-| G13 LCD framebuffer | 対象 | — | R5 | protocolあり、Windows endpoint未確認 |
+| G13 LCD framebuffer | 対象 | — | R5 | Windows標準HidUsb＋`WriteFile`で実機反映、write後も入力drop 0（2026-08-23） |
 | G13 LCD applet相当 | 対象 | — | R5裁定 | 目録未作成 |
 | G600通常button | — | 対象 | R1 | live route未確認 |
 | G600 G-Shift | — | 対象 | R1/R5 | profile構造確認、live route未確認 |
@@ -1109,6 +1109,7 @@ Exit:
 
 - G13／G600の既存fast pathを共通の物理USB HID出力へ接続するSerial HID bridgeは、Phase番号を追加せず独立campaignとして扱う。設計、非目標、Task、実機受入の正本は[Serial HID Output campaign](serial-hid-output-campaign-plan.md)。実行状態はLattice storeだけに置く。
 - **Serial HID Output campaign Exit成立（2026-08-23）**: Exit 11条件をすべて満たしCLOSE。判定は[Exit Assessment](serial-hid-output-exit-assessment.md)、通常操作と復旧は[運用手順](serial-hid-output-operation.md)を正とする。製品公開claimは`Partial LGS Replacement`のまま維持する。
+- **G13 Native LCD campaign Phase 1 Exit成立（2026-08-23）**: Windows標準HidUsbの992-byte output collectionへ`WriteFile`でsolid frameを送り、LCD反映とwrite後のG1 down/up・drop 0を実機確認。`HidD_SetOutputReport`はerror 31で不採用、driver差替え不要。Phase 2のresident LCD runtimeへ進む。判定は[Phase 1標準HID write gate](../evidence/g13-native-lcd/p1-standard-hid-write-gate.md)。
 
 ## 9. Blockerを潰すfocused experiment
 
@@ -1297,7 +1298,7 @@ Logicool、Logitech、G13、G600は他社brand／製品識別子である。
 |---|---|---|---|---|---|
 | R-01 | G600 live inputを一意に取れない | 未確認 | Critical | EXP-G600-02、onboard限定またはdriver分岐 | G0-Device-W |
 | R-02 | G600 writeでunknown byte／profileを壊す | 未確認 | High | full backup、byte diff、power cycle、restore | 各write前 |
-| R-03 | G13 LCD endpointへHidUsbのまま書けない | 未確認 | Medium | outputを独立probe、WinUSBは別decision | R5 |
+| R-03 | G13 LCD endpointへHidUsbのまま書けない | 解消（2026-08-23） | Medium | 標準HidUsb＋`WriteFile`でLCD反映と入力継続を実機確認 | R5 |
 | R-04 | 元入力抑止にdriverが必要 | 未確認 | High | suppressionとvirtual HIDを分離評価 | R1/R5 |
 | R-05 | profile切替中にwrong key release | 設計済み未実装 | Critical | PressOwnershipとgeneration property test | R1 |
 | R-06 | hard crashでkeyが残る | 未確認 | High | output残留なしの実証、または期限付きrelease watchdog | R1／Game Operator |
@@ -1422,6 +1423,7 @@ LGS Parityは、Phase 0のcanonical inventoryでLGS 9.04.49上の存在を確認
 | public product name | 最初の外部配布前 | trademark、publisher identity |
 | MSIX／Sparse／MSI | 最初の外部配布またはLampArray background制御の早い方の前（本行が唯一の期限。§0.2・§11.2はここを参照する） | EXP-DIST-01（Phase 8A実施）、identity、tray、update、driver |
 | optional kernel driver | G0-Device-W後 | suppression necessity、signing burden |
+| G13 LCD transport | **決定済み（2026-08-23）: Windows標準HidUsb＋`WriteFile`を採用。`HidD_SetOutputReport`、WinUSB、libusb、driver差替えは不採用** | 992-byte solid frameのLCD反映、write後G1 down/up、drop 0。証跡: [Phase 1標準HID write gate](../evidence/g13-native-lcd/p1-standard-hid-write-gate.md) |
 | full LGS script／LCD applet compatibility | parity inventory後 | 実装しない場合はLGS Parity claimを使わずCore／Partial claimへ固定 |
 
 未決定を仮の実装で埋めない。各deadlineまではinterfaceとfixtureだけを作り、decision後に一つの方式を実装する。
