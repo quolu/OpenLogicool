@@ -83,7 +83,7 @@ public sealed class ProposalRejectTests
             "observation-1",
             [actionId],
             "menu observed",
-            new PlannerBudget(ContractSchemaVersions.Revision01, 1, 0m)),
+            new PlannerBudget(ContractSchemaVersions.Revision01, 1, 0)),
         ProposalMode.VerifiedRun,
         new VerifiedRunAction(ContractSchemaVersions.Revision01, actionId),
         new ProposalPrecondition(ContractSchemaVersions.Revision01, "state:menu", 100),

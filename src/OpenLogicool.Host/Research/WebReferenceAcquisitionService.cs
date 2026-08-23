@@ -422,8 +422,8 @@ public sealed class WebReferenceAcquisitionService(
                         command.Plan.SummaryModel!,
                         "step0-summary-v1",
                         now,
-                        command.Plan.ExternalDestination!,
-                        command.Plan.EstimatedCostUsd)
+                        command.Plan.ExecutionLocation,
+                        command.Plan.ExternalApiCostUsd)
                     : null,
                 command.Plan.ExpiresUtc));
         var document = new ReferenceDocument(

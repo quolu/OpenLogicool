@@ -41,7 +41,7 @@ public sealed class ShadowCompareTests
         "observation-1",
         ["action.open-menu"],
         "shadow context",
-        new PlannerBudget(ContractSchemaVersions.Revision01, 1, 1m));
+        new PlannerBudget(ContractSchemaVersions.Revision01, 1, 1));
 
     private static NextActionProposal VerifiedProposal(string actionId) => new(
         ContractSchemaVersions.Revision01,

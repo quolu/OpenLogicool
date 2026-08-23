@@ -131,10 +131,15 @@ public static class WebReferenceContractSchema
             throw new ArgumentException("summary providerとmodelは両方設定するか両方省略します。", nameof(plan));
         }
 
-        RequireOptionalText(plan.ExternalDestination, "external destination");
-        if (plan.EstimatedCostUsd is < 0)
+        EnsureDefined(plan.ExecutionLocation, nameof(plan.ExecutionLocation));
+        if (plan.ExecutionLocation != AiExecutionLocation.LocalDevice)
         {
-            throw new ArgumentOutOfRangeException(nameof(plan), "estimated costは負にできません。");
+            throw new ArgumentException("AI summaryは利用者端末内でだけ実行できます。", nameof(plan));
+        }
+
+        if (plan.ExternalApiCostUsd != 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(plan), "外部AI API費用は0でなければなりません。");
         }
     }
 
@@ -375,10 +380,15 @@ public static class WebReferenceContractSchema
             RequireText(summary.Provider, "summary provider");
             RequireText(summary.Model, "summary model");
             RequireText(summary.PromptRevision, "summary prompt revision");
-            RequireText(summary.ExternalDestination, "summary external destination");
-            if (summary.CostUsd is < 0)
+            EnsureDefined(summary.ExecutionLocation, nameof(summary.ExecutionLocation));
+            if (summary.ExecutionLocation != AiExecutionLocation.LocalDevice)
             {
-                throw new ArgumentOutOfRangeException(nameof(provenance), "summary costは負にできません。");
+                throw new ArgumentException("AI summary provenanceは利用者端末内の実行だけを記録できます。", nameof(provenance));
+            }
+
+            if (summary.ExternalApiCostUsd != 0m)
+            {
+                throw new ArgumentOutOfRangeException(nameof(provenance), "外部AI API費用は0でなければなりません。");
             }
         }
     }

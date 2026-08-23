@@ -17,14 +17,14 @@ public sealed class EvalHarnessTests
                 Case("phase5:unknown", expectedActionKey: null),
             ],
             new FixedEvaluator(
-                Response("action.open-menu", 11, .02m),
-                new EvaluationResponse(null, 7, 0m)));
+                Response("action.open-menu", 11, 200),
+                new EvaluationResponse(null, 7, 300)));
 
         Assert.Equal(2, report.ProcessedCases);
         Assert.Equal(1m, report.KnownActionAccuracy);
         Assert.Equal(1m, report.UnknownRejectionRate);
         Assert.Equal(18, report.TotalLatencyMs);
-        Assert.Equal(.02m, report.TotalCostUsd);
+        Assert.Equal(300, report.MaximumWorkingSetBytes);
         Assert.False(report.Cancelled);
     }
 
@@ -33,7 +33,7 @@ public sealed class EvalHarnessTests
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        var evaluator = new FixedEvaluator(Response("action.open-menu", 1, 0m));
+        var evaluator = new FixedEvaluator(Response("action.open-menu", 1, 0));
 
         var report = EvalHarness.Measure([Case("phase5:menu", "action.open-menu")], evaluator, cancellation.Token);
 
@@ -50,10 +50,10 @@ public sealed class EvalHarnessTests
             corpusItemId,
             ["action.open-menu"],
             "Phase 5 frozen corpus",
-            new PlannerBudget(ContractSchemaVersions.Revision01, 1, 1m)),
+            new PlannerBudget(ContractSchemaVersions.Revision01, 1, 1)),
         expectedActionKey);
 
-    private static EvaluationResponse Response(string actionId, long latencyMs, decimal costUsd) => new(
+    private static EvaluationResponse Response(string actionId, long latencyMs, long workingSetBytes) => new(
         new NextActionProposal(
             ContractSchemaVersions.Revision01,
             $"proposal:{actionId}",
@@ -68,7 +68,7 @@ public sealed class EvalHarnessTests
             new ProposalStopCondition(ContractSchemaVersions.Revision01, 100, "pause"),
             new ProposalValidity(ContractSchemaVersions.Revision01, 1, 1)),
         latencyMs,
-        costUsd);
+        workingSetBytes);
 
     private sealed class FixedEvaluator(params EvaluationResponse[] responses) : IFrozenProposalEvaluator
     {

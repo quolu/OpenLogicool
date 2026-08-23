@@ -12,7 +12,7 @@ public sealed record FrozenEvaluationCase(
 public sealed record EvaluationResponse(
     NextActionProposal? Proposal,
     long LatencyMs,
-    decimal CostUsd);
+    long WorkingSetBytes);
 
 /// <summary>未選定 provider の代わりに、評価対象を注入するための狭い口。</summary>
 public interface IFrozenProposalEvaluator
@@ -27,7 +27,7 @@ public sealed record FrozenEvaluationReport(
     int UnknownCases,
     int CorrectUnknownRejections,
     long TotalLatencyMs,
-    decimal TotalCostUsd,
+    long MaximumWorkingSetBytes,
     bool Cancelled)
 {
     public decimal? KnownActionAccuracy => KnownCases == 0
@@ -60,7 +60,7 @@ public static class EvalHarness
         var unknownCases = 0;
         var correctUnknownRejections = 0;
         var totalLatencyMs = 0L;
-        var totalCostUsd = 0m;
+        var maximumWorkingSetBytes = 0L;
         var processedCases = 0;
 
         foreach (var item in frozenCorpus)
@@ -72,9 +72,9 @@ public static class EvalHarness
 
             PlannerProposalSchema.Validate(item.Context);
             var response = evaluator.Evaluate(item.Context, cancellationToken);
-            if (response.LatencyMs < 0 || response.CostUsd < 0)
+            if (response.LatencyMs < 0 || response.WorkingSetBytes < 0)
             {
-                throw new ArgumentException("評価 response の latency と cost は負にできません。", nameof(evaluator));
+                throw new ArgumentException("評価 response の latency と working set は負にできません。", nameof(evaluator));
             }
 
             if (response.Proposal is not null)
@@ -84,7 +84,7 @@ public static class EvalHarness
 
             processedCases++;
             totalLatencyMs += response.LatencyMs;
-            totalCostUsd += response.CostUsd;
+            maximumWorkingSetBytes = Math.Max(maximumWorkingSetBytes, response.WorkingSetBytes);
             if (item.ExpectedActionKey is null)
             {
                 unknownCases++;
@@ -111,7 +111,7 @@ public static class EvalHarness
             unknownCases,
             correctUnknownRejections,
             totalLatencyMs,
-            totalCostUsd,
+            maximumWorkingSetBytes,
             cancelled);
     }
 

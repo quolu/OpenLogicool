@@ -7,7 +7,7 @@ public sealed record EvalThreshold(
     decimal MinimumKnownActionAccuracy,
     decimal MinimumUnknownRejectionRate,
     long MaximumTotalLatencyMs,
-    decimal MaximumTotalCostUsd)
+    long MaximumWorkingSetBytes)
 {
     public void Validate()
     {
@@ -18,9 +18,9 @@ public sealed record EvalThreshold(
             throw new ArgumentOutOfRangeException(nameof(MaximumTotalLatencyMs));
         }
 
-        if (MaximumTotalCostUsd < 0)
+        if (MaximumWorkingSetBytes < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(MaximumTotalCostUsd));
+            throw new ArgumentOutOfRangeException(nameof(MaximumWorkingSetBytes));
         }
     }
 
@@ -121,7 +121,7 @@ public enum EvalThresholdFailure
     MissingUnknownCases,
     UnknownRejectionRateBelowThreshold,
     TotalLatencyAboveThreshold,
-    TotalCostAboveThreshold,
+    WorkingSetAboveThreshold,
 }
 
 public sealed record EvalThresholdAssessment(
@@ -173,9 +173,9 @@ public static class EvalThresholdRecord
             failures.Add(EvalThresholdFailure.TotalLatencyAboveThreshold);
         }
 
-        if (report.TotalCostUsd > threshold.MaximumTotalCostUsd)
+        if (report.MaximumWorkingSetBytes > threshold.MaximumWorkingSetBytes)
         {
-            failures.Add(EvalThresholdFailure.TotalCostAboveThreshold);
+            failures.Add(EvalThresholdFailure.WorkingSetAboveThreshold);
         }
 
         return new EvalThresholdAssessment(input, threshold, report, failures.AsReadOnly());

@@ -84,7 +84,7 @@ public static class PlannerProposalSchema
         RequireText(context.HistorySummary, "history summary");
         ArgumentNullException.ThrowIfNull(context.Budget);
         EnsureSchema(context.Budget.SchemaVersion, nameof(PlannerBudget));
-        if (context.Budget.RemainingProposals < 0 || context.Budget.RemainingCostUsd is < 0)
+        if (context.Budget.RemainingProposals < 0 || context.Budget.RemainingInferenceMilliseconds is < 0)
         {
             throw new ArgumentException("planner budget は負にできません。", nameof(context));
         }

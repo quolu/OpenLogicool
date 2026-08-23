@@ -21,8 +21,8 @@ public sealed class EvalThresholdRecordTests
 
         var assessment = EvalThresholdRecord.Assess(
             input,
-            new EvalThreshold(1m, 1m, 18, .02m),
-            Report(knownAccuracy: 1, unknownRejections: 1, latencyMs: 18, costUsd: .02m));
+            new EvalThreshold(1m, 1m, 18, 200),
+            Report(knownAccuracy: 1, unknownRejections: 1, latencyMs: 18, workingSetBytes: 200));
 
         Assert.True(assessment.IsAccepted);
         Assert.Empty(assessment.Failures);
@@ -35,8 +35,8 @@ public sealed class EvalThresholdRecordTests
     {
         var assessment = EvalThresholdRecord.Assess(
             Input(),
-            new EvalThreshold(1m, 1m, 10, .01m),
-            Report(knownAccuracy: 0, unknownRejections: 0, latencyMs: 11, costUsd: .02m, cancelled: true));
+            new EvalThreshold(1m, 1m, 10, 100),
+            Report(knownAccuracy: 0, unknownRejections: 0, latencyMs: 11, workingSetBytes: 200, cancelled: true));
 
         Assert.False(assessment.IsAccepted);
         Assert.Equal(
@@ -45,7 +45,7 @@ public sealed class EvalThresholdRecordTests
             EvalThresholdFailure.KnownActionAccuracyBelowThreshold,
             EvalThresholdFailure.UnknownRejectionRateBelowThreshold,
             EvalThresholdFailure.TotalLatencyAboveThreshold,
-            EvalThresholdFailure.TotalCostAboveThreshold,
+            EvalThresholdFailure.WorkingSetAboveThreshold,
         ],
         assessment.Failures);
     }
@@ -55,8 +55,8 @@ public sealed class EvalThresholdRecordTests
     {
         var assessment = EvalThresholdRecord.Assess(
             Input(),
-            new EvalThreshold(.5m, .5m, 1, 1m),
-            new FrozenEvaluationReport(0, 0, 0, 0, 0, 0, 0m, false));
+            new EvalThreshold(.5m, .5m, 1, 1),
+            new FrozenEvaluationReport(0, 0, 0, 0, 0, 0, 0, false));
 
         Assert.Equal(
         [
@@ -66,8 +66,8 @@ public sealed class EvalThresholdRecordTests
         assessment.Failures);
         Assert.Throws<ArgumentOutOfRangeException>(() => EvalThresholdRecord.Assess(
             Input(),
-            new EvalThreshold(1.01m, 0m, 0, 0m),
-            Report(1, 1, 0, 0m)));
+            new EvalThreshold(1.01m, 0m, 0, 0),
+            Report(1, 1, 0, 0)));
         Assert.Throws<ArgumentException>(() => new EvalInputRecord(
             new EvalDatasetRecord("dataset", "v1", "digest"),
             new EvalModelPromptRecord("model", "prompt", "digest"),
@@ -83,7 +83,7 @@ public sealed class EvalThresholdRecordTests
         int knownAccuracy,
         int unknownRejections,
         long latencyMs,
-        decimal costUsd,
+        long workingSetBytes,
         bool cancelled = false) => new(
         ProcessedCases: 2,
         KnownCases: 1,
@@ -91,6 +91,6 @@ public sealed class EvalThresholdRecordTests
         UnknownCases: 1,
         CorrectUnknownRejections: unknownRejections,
         TotalLatencyMs: latencyMs,
-        TotalCostUsd: costUsd,
+        MaximumWorkingSetBytes: workingSetBytes,
         Cancelled: cancelled);
 }

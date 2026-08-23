@@ -419,8 +419,8 @@ public sealed class SqliteWebReferenceStoreTests
                     "model",
                     "prompt-v1",
                     Now,
-                    "provider-api",
-                    0.01m),
+                    AiExecutionLocation.LocalDevice,
+                    0m),
                 Now.AddDays(1)));
     }
 

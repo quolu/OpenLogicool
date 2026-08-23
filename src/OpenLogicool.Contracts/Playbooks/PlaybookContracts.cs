@@ -6,8 +6,8 @@ public sealed record PlannerBudget(
     string SchemaVersion,
     [property: JsonPropertyName("proposals")]
     int RemainingProposals,
-    [property: JsonPropertyName("costUsd")]
-    decimal? RemainingCostUsd);
+    [property: JsonPropertyName("inferenceMs")]
+    long? RemainingInferenceMilliseconds);
 
 public sealed record PlannerContext(
     string SchemaVersion,

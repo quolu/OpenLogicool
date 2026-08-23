@@ -37,20 +37,20 @@ public static class GameOperatorSupportMatrix
             "Phase 6 ProposalReject focused test",
             "拒否口は pure gate であり、AI は Input、device API、SQLite へ直接到達しない。"),
         new(
-            "Data Flow contract による frame、OCR、journal、evidence crop の保存・送信境界",
+            "Data Flow contract による frame、OCR、journal、evidence crop のローカル処理境界",
             GameOperatorSupportStatus.Supported,
-            "data-flow-contract.md と Phase 4 focused contract test",
-            "full-screen frame の永続保存と cloud 送信は既定 OFF。evidence crop は Teach で利用者が選択し、app 単位の明示同意時だけ provider へ送る。"),
+            "2026-08-24 オーナー裁定と STEP 0 local-only contract test",
+            "full-screen frame の永続保存は既定 OFF。AI推論目的の外部送信経路と外部AI API key設定はなく、外部AI API費用は0。"),
         new(
             "game ごとの policy record による Assist／Auto の gate",
             GameOperatorSupportStatus.Supported,
             "Phase 7 GamePolicyGate focused test",
             "Unverified、Changed、InterpretationUnknown の policy record は Assist／Auto を拒否する。実 ToS の解釈や許可を意味しない。"),
         new(
-            "AI provider と provider data policy",
+            "ローカルAI provider と model",
             GameOperatorSupportStatus.Unverified,
-            "provider は未選定",
-            "比較 harness はあるが、本番 provider、credential、cloud 送信先は選定していない。"),
+            "ローカルprovider／modelはPhase 9 G0で未選定",
+            "OpenAI APIを含む従量課金型の外部AI APIとcloud fallbackは不採用。ローカル方式の実測完了まではUnverified。"),
         new(
             "実 game の Observe Only と game policy の live 確認",
             GameOperatorSupportStatus.Unverified,

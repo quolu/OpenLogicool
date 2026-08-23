@@ -205,9 +205,9 @@ public sealed class WebReferenceAcquisitionServiceTests
             "https://gamewith.jp/nikke/article/show/1",
             SourceTermsDisposition.SummaryAllowed,
             RobotsDisposition.Allowed,
-            withProvider ? "openai" : null,
+            withProvider ? "local-runtime" : null,
             withProvider ? "summary-model" : null,
-            withProvider ? "OpenAI API" : null);
+            AiExecutionLocation.LocalDevice);
 
     private static WebReferenceAcquisitionPlan Plan(
         string url,
@@ -215,7 +215,7 @@ public sealed class WebReferenceAcquisitionServiceTests
         RobotsDisposition robots,
         string? provider = null,
         string? model = null,
-        string? destination = null)
+        AiExecutionLocation executionLocation = AiExecutionLocation.LocalDevice)
     {
         var uri = new Uri(url);
         var evidence = new SourcePolicyEvidence(ContractSchemaVersions.Revision01, terms, robots);
@@ -229,8 +229,8 @@ public sealed class WebReferenceAcquisitionServiceTests
             SourcePolicyEvaluator.Evaluate(uri, uri, evidence),
             provider,
             model,
-            destination,
-            provider is null ? null : 0.01m,
+            executionLocation,
+            0m,
             Now.AddDays(7));
     }
 

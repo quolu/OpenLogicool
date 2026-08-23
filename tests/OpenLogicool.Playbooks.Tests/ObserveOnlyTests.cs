@@ -44,7 +44,7 @@ public sealed class ObserveOnlyTests
             "observation-1",
             ["action:advance"],
             "menu observed",
-            new PlannerBudget(ContractSchemaVersions.Revision01, 1, 0m)),
+            new PlannerBudget(ContractSchemaVersions.Revision01, 1, 0)),
         ProposalMode.VerifiedRun,
         new VerifiedRunAction(ContractSchemaVersions.Revision01, "action:advance"),
         new ProposalPrecondition(ContractSchemaVersions.Revision01, "state:menu", 100),

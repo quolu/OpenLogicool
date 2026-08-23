@@ -48,7 +48,7 @@ public sealed class PlannerProposalSchemaTests
             "observation-1",
             ["action.open-menu"],
             "入口画面を観測済み",
-            new PlannerBudget(ContractSchemaVersions.Revision01, 3, 1.25m)),
+            new PlannerBudget(ContractSchemaVersions.Revision01, 3, 1250)),
         ProposalMode.Teach,
         new TeachAction(ContractSchemaVersions.Revision01, "target:menu", "click"),
         new ProposalPrecondition(ContractSchemaVersions.Revision01, "state:entry", 500),

@@ -129,7 +129,7 @@ public sealed class WebReferenceContractTests
     }
 
     [Fact]
-    public void AcquisitionPlan_ExposesPreflightPolicyTransmissionCostAndExpiry()
+    public void AcquisitionPlan_ExposesLocalOnlyPreflightAndRejectsExternalApiCost()
     {
         var url = new Uri("https://gamewith.jp/nikke/article/show/1");
         var evidence = new SourcePolicyEvidence(Schema, SourceTermsDisposition.SummaryAllowed, RobotsDisposition.Allowed);
@@ -141,10 +141,10 @@ public sealed class WebReferenceContractTests
             WebReferenceAcquisitionMethod.DirectHttp,
             evidence,
             SourcePolicyEvaluator.Evaluate(url, url, evidence),
-            "provider-1",
+            "local-provider-1",
             "model-1",
-            "provider.example",
-            0.01m,
+            AiExecutionLocation.LocalDevice,
+            0m,
             Now.AddDays(30));
 
         WebReferenceContractSchema.Validate(plan);
@@ -152,7 +152,7 @@ public sealed class WebReferenceContractTests
         Assert.Throws<ArgumentException>(() => WebReferenceContractSchema.Validate(
             plan with { SummaryModel = null }));
         Assert.Throws<ArgumentOutOfRangeException>(() => WebReferenceContractSchema.Validate(
-            plan with { EstimatedCostUsd = -0.01m }));
+            plan with { ExternalApiCostUsd = 0.01m }));
     }
 
     [Fact]

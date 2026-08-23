@@ -40,7 +40,7 @@ public sealed class TeachSupervisedTests
         "phase5:frozen-menu",
         ["action.open-menu"],
         "frozen corpus context",
-        new PlannerBudget(ContractSchemaVersions.Revision01, 1, 1m));
+        new PlannerBudget(ContractSchemaVersions.Revision01, 1, 1));
 
     private static NextActionProposal TeachProposal() => new(
         ContractSchemaVersions.Revision01,

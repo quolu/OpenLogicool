@@ -72,14 +72,20 @@ public sealed record SourcePolicyDecision(
     SourcePolicyReason Reason,
     ReferenceQuoteScope QuoteScope);
 
+/// <summary>Game OperatorのAI処理場所。製品契約は利用者端末内だけを表す。</summary>
+public enum AiExecutionLocation
+{
+    LocalDevice,
+}
+
 public sealed record AiSummaryProvenance(
     string SchemaVersion,
     string Provider,
     string Model,
     string PromptRevision,
     DateTimeOffset GeneratedUtc,
-    string ExternalDestination,
-    decimal? CostUsd);
+    AiExecutionLocation ExecutionLocation,
+    decimal ExternalApiCostUsd);
 
 public sealed record WebReferenceProvenance(
     string SchemaVersion,
@@ -133,7 +139,7 @@ public sealed record RestrictedWebReferenceSource(
     DateTimeOffset EvaluatedUtc)
     : WebReferenceSource(SchemaVersion, SourceId, Url, CanonicalUrl, PolicyEvidence, PolicyDecision);
 
-/// <summary>取得前に保存内容・引用・外部送信・費用・期限を表示するpure plan。</summary>
+/// <summary>取得前に保存内容・引用・ローカルAI処理・外部AI API費用0・期限を表示するpure plan。</summary>
 public sealed record WebReferenceAcquisitionPlan(
     string SchemaVersion,
     string PlanId,
@@ -144,8 +150,8 @@ public sealed record WebReferenceAcquisitionPlan(
     SourcePolicyDecision PolicyDecision,
     string? SummaryProvider,
     string? SummaryModel,
-    string? ExternalDestination,
-    decimal? EstimatedCostUsd,
+    AiExecutionLocation ExecutionLocation,
+    decimal ExternalApiCostUsd,
     DateTimeOffset? ExpiresUtc);
 
 public sealed record WebReferenceSourceExclusion(

@@ -15,10 +15,6 @@ public enum GameOperatorDataControlReason
 {
     Allowed,
     LocalImageSavingDisabled,
-    CloudTransmissionDisabled,
-    ProviderUnselected,
-    DataKindNotEligibleForCloud,
-    CostLimitExceeded,
     NothingStored,
 }
 
@@ -27,32 +23,31 @@ public sealed record GameOperatorDataControlDecision(bool IsAllowed, GameOperato
 
 /// <summary>
 /// 利用者が確認・変更できる Game Operator のデータ制御設定。
-/// providerId は選定済み provider の識別子を表すだけで、この型は provider を選定せず、network に到達しない。
+/// local provider／modelは選定済み識別子を表すだけで、この型はproviderを選定せずnetworkに到達しない。
 /// </summary>
 public sealed record GameOperatorDataControlSettings(
     bool SaveScreenImages,
-    bool AllowCloudEvidenceCropTransmission,
-    string? ProviderId,
-    decimal CostLimitUsd)
+    string? LocalProviderId,
+    string? LocalModelId)
 {
     public static GameOperatorDataControlSettings Default { get; } = new(
         SaveScreenImages: false,
-        AllowCloudEvidenceCropTransmission: false,
-        ProviderId: null,
-        CostLimitUsd: 0m);
+        LocalProviderId: null,
+        LocalModelId: null);
 }
 
 /// <summary>利用者へ表示する現在のデータ制御状態。</summary>
 public sealed record GameOperatorDataControlStatus(
     bool SavesScreenImages,
-    bool CloudEvidenceCropTransmissionEnabled,
-    bool HasSelectedProvider,
-    decimal CostLimitUsd,
+    bool ProcessesAiLocally,
+    bool ExternalAiTransmissionAvailable,
+    bool HasSelectedLocalModel,
+    decimal ExternalApiCostUsd,
     IReadOnlyList<GameOperatorDataKind> DefaultDiagnosticBundleExcludedKinds);
 
 /// <summary>
-/// Game Operator の画像保存、cloud 送信、削除、provider、cost の pure な制御口。
-/// DiagnosticBundle の生成・削除や provider 通信を再実装せず、呼び出し側が副作用の前にこの decision を使う。
+/// Game Operatorの画像保存、削除、ローカルAI状態のpureな制御口。
+/// 外部AI送信の許可口とAPI key設定は意図的に持たない。
 /// </summary>
 public static class GameOperatorDataControls
 {
@@ -67,9 +62,10 @@ public static class GameOperatorDataControls
         Validate(settings);
         return new(
             settings.SaveScreenImages,
-            settings.AllowCloudEvidenceCropTransmission,
-            HasSelectedProvider(settings),
-            settings.CostLimitUsd,
+            ProcessesAiLocally: true,
+            ExternalAiTransmissionAvailable: false,
+            HasSelectedLocalModel(settings),
+            ExternalApiCostUsd: 0m,
             DefaultDiagnosticBundleExcludedKinds);
     }
 
@@ -81,43 +77,11 @@ public static class GameOperatorDataControls
             : Deny(GameOperatorDataControlReason.LocalImageSavingDisabled);
     }
 
-    public static GameOperatorDataControlDecision AuthorizeCloudTransmission(
-        GameOperatorDataControlSettings settings,
-        GameOperatorDataKind kind,
-        decimal alreadySpentUsd,
-        decimal estimatedCostUsd)
-    {
-        Validate(settings);
-        ValidateCost(alreadySpentUsd, nameof(alreadySpentUsd));
-        ValidateCost(estimatedCostUsd, nameof(estimatedCostUsd));
-
-        if (!settings.AllowCloudEvidenceCropTransmission)
-        {
-            return Deny(GameOperatorDataControlReason.CloudTransmissionDisabled);
-        }
-
-        if (!HasSelectedProvider(settings))
-        {
-            return Deny(GameOperatorDataControlReason.ProviderUnselected);
-        }
-
-        // Full-screen images and secrets are never a default cloud payload. The only explicit cloud
-        // data surface presently offered is a user-selected Teach evidence crop.
-        if (kind != GameOperatorDataKind.EvidenceCrop)
-        {
-            return Deny(GameOperatorDataControlReason.DataKindNotEligibleForCloud);
-        }
-
-        return alreadySpentUsd + estimatedCostUsd <= settings.CostLimitUsd
-            ? Allow()
-            : Deny(GameOperatorDataControlReason.CostLimitExceeded);
-    }
-
     public static GameOperatorDataControlDecision AuthorizeDeletion(bool hasStoredImage) =>
         hasStoredImage ? Allow() : Deny(GameOperatorDataControlReason.NothingStored);
 
-    private static bool HasSelectedProvider(GameOperatorDataControlSettings settings) =>
-        !string.IsNullOrWhiteSpace(settings.ProviderId);
+    private static bool HasSelectedLocalModel(GameOperatorDataControlSettings settings) =>
+        !string.IsNullOrWhiteSpace(settings.LocalProviderId);
 
     private static GameOperatorDataControlDecision Allow() => new(true, GameOperatorDataControlReason.Allowed);
 
@@ -126,14 +90,11 @@ public static class GameOperatorDataControls
     private static void Validate(GameOperatorDataControlSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        ValidateCost(settings.CostLimitUsd, nameof(settings.CostLimitUsd));
-    }
-
-    private static void ValidateCost(decimal amount, string parameterName)
-    {
-        if (amount < 0m)
+        var hasProvider = !string.IsNullOrWhiteSpace(settings.LocalProviderId);
+        var hasModel = !string.IsNullOrWhiteSpace(settings.LocalModelId);
+        if (hasProvider != hasModel)
         {
-            throw new ArgumentOutOfRangeException(parameterName, "cost は負にできません。");
+            throw new ArgumentException("local providerとmodelは両方設定するか両方省略します。", nameof(settings));
         }
     }
 }
