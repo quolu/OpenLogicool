@@ -56,6 +56,16 @@ return command switch
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
     "serial-hid-fastpath-latency" => OpenLogicool.Probe.SerialHidFastPathLatencySmoke.Run(
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "serial-hid-hard-kill-smoke" => OpenLogicool.Probe.SerialHidHardKillAndGameSmoke.RunHardKill(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "serial-hid-game-observation" => OpenLogicool.Probe.SerialHidHardKillAndGameSmoke.RunGameObservation(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "serial-hid-game-finalize" => OpenLogicool.Probe.SerialHidHardKillAndGameSmoke.RunGameObservationFinalize(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "serial-hid-probe-host" => OpenLogicool.Probe.SerialHidHardKillAndGameSmoke.RunHostChild(args[1..]),
     "g600-adapter-smoke" => OpenLogicool.Probe.G600AdapterSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),

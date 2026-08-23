@@ -155,11 +155,18 @@ public sealed class ResidentInputHost : IDisposable
         _outputSession.Start();
         var emitter = _outputSession.Emitter;
 
-        _pump = new FastPathPump(
+        var inputSources = ResidentInputSourceSelection.Select(
             [
-                new FastPathSource(_g13Source, () => _g13Source.DroppedInputCount),
-                new FastPathSource(_g600Source, () => _g600Source.DroppedInputCount),
+                new ResidentInputSourceCandidate(
+                    "G13",
+                    new FastPathSource(_g13Source, () => _g13Source.DroppedInputCount)),
+                new ResidentInputSourceCandidate(
+                    "G600",
+                    new FastPathSource(_g600Source, () => _g600Source.DroppedInputCount)),
             ],
+            instancesByKind.Keys);
+        _pump = new FastPathPump(
+            inputSources,
             runtimes,
             emitter,
             enableTrace: _enableTrace);

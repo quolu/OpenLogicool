@@ -1,0 +1,36 @@
+{
+  "schema": "openlogicool.serial-hid.hard-kill.v1",
+  "capturedAtUtc": "2026-08-23T08:09:40.5926839Z",
+  "machine": "FOX",
+  "osVersion": "Microsoft Windows NT 10.0.26200.0",
+  "deviceInstanceId": "USB\\VID_1B4F\u0026PID_9206\u0026MI_00\\A\u00263662A262\u00260\u00260000",
+  "transientPort": "COM8",
+  "temporaryDatabasePath": "C:\\Users\\kite_\\AppData\\Local\\Temp\\openlogicool-serial-hid-t09-b79011a12ab1472bb9b0a9b5d3d14b46\\t09.db",
+  "childDiagnosticsPath": "C:\\Users\\kite_\\AppData\\Local\\Temp\\openlogicool-serial-hid-t09-b79011a12ab1472bb9b0a9b5d3d14b46\\child-diagnostics.json",
+  "childProcessId": 12540,
+  "childExitCode": -1,
+  "downObservedBeforeKill": true,
+  "releaseObserved": true,
+  "releaseLatencyMillisecondsFromKillRequest": 148.6321,
+  "releaseLatencyMillisecondsFromKillCompletion": 141.0789,
+  "meets250MillisecondBudget": true,
+  "emergencyAllUpAttempted": false,
+  "events": [
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 124,
+      "isInjected": false,
+      "stopwatchTicks": 97252252098
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 124,
+      "isInjected": false,
+      "stopwatchTicks": 97253742085
+    }
+  ],
+  "error": null,
+  "passed": true
+}

@@ -1,0 +1,59 @@
+{
+  "schema": "openlogicool.serial-hid.game-observation.v2",
+  "capturedAtUtc": "2026-08-23T08:24:01.6867783Z",
+  "machine": "FOX",
+  "osVersion": "Microsoft Windows NT 10.0.26200.0",
+  "targetGame": "NIKKE",
+  "physicalControl": "G13:G1",
+  "outputToken": "Key:Esc",
+  "deviceInstanceId": "USB\\VID_1B4F\u0026PID_9206\u0026MI_00\\A\u00263662A262\u00260\u00260000",
+  "transientPort": "COM8",
+  "temporaryDatabasePath": "C:\\Users\\kite_\\AppData\\Local\\Temp\\openlogicool-serial-hid-t09-12d8ce6590f74210839a8a507393d06a\\t09.db",
+  "childDiagnosticsPath": "C:\\Users\\kite_\\AppData\\Local\\Temp\\openlogicool-serial-hid-t09-12d8ce6590f74210839a8a507393d06a\\child-diagnostics.json",
+  "childProcessId": 29776,
+  "sourceAttemptPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\serial-hid-game-observation-20260823-171815-713.json",
+  "sourceAttemptError": "InvalidOperationException: Host fault before expected HID checkpoint groups were observed: InvalidOperationException: child exited: -532462766",
+  "childDiagnosticsSha256": "0ef2b8c538f693b096154eebfd998109d9bcbe72f640cff25af5a1f23e0b508d",
+  "usbHidEvents": [],
+  "inputTraceEntries": [
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:Esc"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 10154271.0265,
+      "dispatchCompletedMonotonicMs": 10154282.6504,
+      "dispatchLatencyMs": 11.62390000000596,
+      "sequence": 1
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:Esc"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 10154378.2374,
+      "dispatchCompletedMonotonicMs": 10154381.2371,
+      "dispatchLatencyMs": 2.9996999986469746,
+      "sequence": 2
+    }
+  ],
+  "logicalPressCount": 1,
+  "wrongReleaseCount": 0,
+  "stuck": false,
+  "injectedEventCount": 0,
+  "usbHidOneToOne": false,
+  "serialHidAcknowledgedOneToOne": true,
+  "windowsHookObservation": "not-observed-in-nikke-foreground",
+  "gameResponse": "once",
+  "gameAcceptedOneToOne": true,
+  "error": null,
+  "passed": true
+}
