@@ -36,6 +36,17 @@ public sealed class FastPathPumpTests
         public void Emit(IReadOnlyList<MappedOutputEdge> edges) => Emitted.AddRange(edges);
     }
 
+    private sealed class FailingReleaseEmitter : IOutputEmitter
+    {
+        public void Emit(IReadOnlyList<MappedOutputEdge> edges)
+        {
+            if (edges.Any(edge => edge.Edge == PhysicalInputEdge.Up))
+            {
+                throw new InvalidOperationException("release failed");
+            }
+        }
+    }
+
     private static DeviceInstance Device(string id) =>
         new(ContractSchemaVersions.Revision01, id, 0x046D, 0xC24A, id, "{00000000-0000-0000-0000-000000000000}", 1, []);
 
@@ -282,5 +293,27 @@ public sealed class FastPathPumpTests
         Assert.IsType<FastPathFaultException>(pump.Failure);
         Assert.Contains(new MappedOutputEdge("Key:F13", PhysicalInputEdge.Up), emitter.Emitted);
         Assert.False(pump.IsRunning);
+    }
+
+    [Fact]
+    public void Worker_release_failure_uses_output_route_neutral_diagnostic()
+    {
+        var dropAfterDown = 0L;
+        var source = new FakeDeviceInputSource(
+            [Device("dev-a")],
+            [Edge("dev-a", "G9", PhysicalInputEdge.Down, 1)]);
+        var pump = new FastPathPump(
+            [new FastPathSource(source, DroppedCountProbe: () => Interlocked.Read(ref dropAfterDown))],
+            new Dictionary<string, DeviceMappingRuntime> { ["dev-a"] = Runtime("dev-a", "Key:F13") },
+            new FailingReleaseEmitter());
+
+        pump.Start();
+        Assert.True(SpinWait.SpinUntil(() => pump.ProcessedCount == 1, TimeSpan.FromSeconds(1)));
+        Interlocked.Exchange(ref dropAfterDown, 1);
+        Assert.True(SpinWait.SpinUntil(() => pump.Failure is AggregateException, TimeSpan.FromSeconds(1)));
+
+        var failure = Assert.IsType<AggregateException>(pump.Failure);
+        Assert.Contains("出力経路側の独立した解放機構", failure.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("watchdog", failure.Message, StringComparison.OrdinalIgnoreCase);
     }
 }

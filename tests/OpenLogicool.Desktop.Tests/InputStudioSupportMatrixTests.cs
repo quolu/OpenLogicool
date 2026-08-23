@@ -19,6 +19,7 @@ public sealed class InputStudioSupportMatrixTests
                 "Windows 11 build 26200 / x64 での G13・G600 入力と profile 適用",
                 "G600 side button の legacy 無害化",
                 "G600 onboard slot の切替と退避",
+                "Windows 11 build 26200 / x64 での Serial HID v1 出力",
             ],
             InputStudioSupportMatrix.SupportedEntries.Select(entry => entry.Capability));
 
@@ -51,5 +52,18 @@ public sealed class InputStudioSupportMatrixTests
 
         Assert.Equal(InputStudioSupportStatus.Unsupported, f6.Status);
         Assert.Equal(InputStudioSupportStatus.Unverified, parity.Status);
+    }
+
+    [Fact]
+    public void Serial_hid_limits_are_shared_with_the_settings_ui_and_not_supported()
+    {
+        var limits = Assert.Single(
+            InputStudioSupportMatrix.Entries,
+            entry => entry.Capability.Contains("6キー超過", StringComparison.Ordinal));
+
+        Assert.Equal(InputStudioSupportStatus.Unsupported, limits.Status);
+        Assert.Equal(SerialHidSettingsPresentation.LimitNotice, limits.Detail);
+        Assert.Contains("同時6個", limits.Detail, StringComparison.Ordinal);
+        Assert.Contains("部分送出せず停止", limits.Detail, StringComparison.Ordinal);
     }
 }

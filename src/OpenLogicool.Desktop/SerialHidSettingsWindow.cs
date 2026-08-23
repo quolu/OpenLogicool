@@ -11,6 +11,13 @@ public sealed class SerialHidSettingsWindow : Window
     private readonly RadioButton _sendInput = new() { Content = "Windows出力（SendInput）", Margin = new Thickness(0, 0, 0, 8) };
     private readonly RadioButton _serialHid = new() { Content = "USB出力（SparkFun Pro Micro）", Margin = new Thickness(0, 0, 0, 8) };
     private readonly ComboBox _candidates = new() { MinWidth = 360, Margin = new Thickness(22, 0, 0, 10) };
+    private readonly TextBlock _limitations = new()
+    {
+        Text = SerialHidSettingsPresentation.LimitNotice,
+        TextWrapping = TextWrapping.Wrap,
+        Foreground = Theme.Warn,
+        Margin = new Thickness(22, 0, 0, 14),
+    };
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, Foreground = Theme.Muted, Margin = new Thickness(0, 12, 0, 0) };
 
     public SerialHidSettingsWindow(ISerialHidSettingsIntent intent)
@@ -18,7 +25,7 @@ public sealed class SerialHidSettingsWindow : Window
         _intent = intent;
         Title = "出力方式";
         Width = 520;
-        Height = 330;
+        Height = 390;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Background = Theme.Bg;
@@ -36,6 +43,7 @@ public sealed class SerialHidSettingsWindow : Window
         root.Children.Add(_sendInput);
         root.Children.Add(_serialHid);
         root.Children.Add(_candidates);
+        root.Children.Add(_limitations);
 
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         var save = new Button

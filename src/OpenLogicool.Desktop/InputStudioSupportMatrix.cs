@@ -42,6 +42,16 @@ public static class InputStudioSupportMatrix
             "EXP-G600-03 実機往復",
             "A方式を補完として使う。onboard profile は F3/F4/F5 の3 slotだけである。"),
         new(
+            "Windows 11 build 26200 / x64 での Serial HID v1 出力",
+            InputStudioSupportStatus.Supported,
+            "G13・G600実機のSerial HID campaign受入",
+            "SparkFun Pro Micro ATmega32U4 5V / 16MHz、firmware 1.0.0に限定する。"),
+        new(
+            "Serial HID v1の6キー超過と対象外出力",
+            InputStudioSupportStatus.Unsupported,
+            "protocol v1固定制約",
+            SerialHidSettingsPresentation.LimitNotice),
+        new(
             "G600 F6 profile の読取",
             InputStudioSupportStatus.Unsupported,
             "実機 read 不可",

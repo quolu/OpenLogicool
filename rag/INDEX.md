@@ -8,6 +8,7 @@
 
 実測で確定した仕様知識（正本は docs/ 側・ここは索引のみ）:
 
+- Serial HID Output campaign: [Exit Assessment](../docs/serial-hid-output-exit-assessment.md)／[運用手順](../docs/serial-hid-output-operation.md)（確認済み。SparkFun Pro Micro ATmega32U4 5V / 16MHz、firmware 1.0.0、Windows 11 x64、6KRO、G13／G600共通経路、no fallback、hard-kill release 148.6321ms、dispatch p99 3.425ms）
 - G600 onboard profile 154-byte layout: [docs/probes/g600-profile-decode-2026-08-15.md](../docs/probes/g600-profile-decode-2026-08-15.md)（強い推定・独立整合3本）
 - G600 raw report 0x80 全control対応: [docs/probes/g600-input-map-2026-08-15.md](../docs/probes/g600-input-map-2026-08-15.md)（確認済み）
 - WGC/DXGI/GDI capture backend成立と WinRT interop の罠: [docs/probes/capture-backend-matrix-2026-08-15.md](../docs/probes/capture-backend-matrix-2026-08-15.md)（確認済み）

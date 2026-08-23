@@ -225,7 +225,7 @@ public sealed class FastPathPump : IDisposable
             catch (Exception releaseFailure)
             {
                 _failure = new AggregateException(
-                    "fast path が fault 停止し、所有 output の release も失敗しました（watchdog が process 終了時に release します）。",
+                    "fast path が fault 停止し、所有 output の release も失敗しました（出力経路側の独立した解放機構が release を引き継ぎます）。",
                     ex,
                     releaseFailure);
             }
