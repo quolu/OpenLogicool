@@ -1,0 +1,613 @@
+{
+  "actor": {
+    "agent": "bell-sol",
+    "host": "kite-win11",
+    "session": "sess-20260824-p9"
+  },
+  "extraction_digest": "e10609f387d9fc33fa44a7681cb97e3d3fbfd6cd06c42f1f17c111896b11fc05",
+  "hard_dependencies": [
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t01-step0-policy-contract"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t02-step0-store"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t01-step0-policy-contract"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t03-step0-acquisition"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t01-step0-policy-contract"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t05-discovery-admission"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t02-step0-store"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t04-step0-ui"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t03-step0-acquisition"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t04-step0-ui"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t04-step0-ui"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t10-hidden-oracle-gamelab"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t05-discovery-admission"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t06-scene-contract-migration"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t06-scene-contract-migration"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t07-structure-store"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t06-scene-contract-migration"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t09-vision-provider"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t07-structure-store"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t08-exploration-coordinator"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t08-exploration-coordinator"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t10-hidden-oracle-gamelab"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t08-exploration-coordinator"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t11-explorer-ui"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t09-vision-provider"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t08-exploration-coordinator"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t10-hidden-oracle-gamelab"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t12-nikke-safe-slice"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t11-explorer-ui"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t12-nikke-safe-slice"
+    }
+  },
+  {
+    "from": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t12-nikke-safe-slice"
+    },
+    "to": {
+      "plan_key": "phase9-game-structure-discovery",
+      "project_id": "OpenLogicool",
+      "task_id": "t13-phase9-exit"
+    }
+  }
+  ],
+  "joins": [],
+  "plan_key": "phase9-game-structure-discovery",
+  "plan_version": "v1",
+  "project_id": "OpenLogicool",
+  "recorded_at": "2026-08-23T16:58:40.719Z",
+  "schema": "lattice.todo_extraction.v4",
+  "tasks": [
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "WR-001〜012のsource policy、provenance、contradiction、deletion境界をpure contractとmachine testで固定する。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t01-step0-policy-contract"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 64,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t01-step0-policy-contract",
+      "title": "STEP 0 policy contract"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "append-only reference revision、SQLite復元、削除、exportを実装し、SummaryOnlyのraw本文を保存しない。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t02-step0-store"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 68,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t02-step0-store",
+      "title": "STEP 0 reference store"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "HTTP取得、canonical URL、digest、source policy評価、Markdown正規化を実装し、暗黙fallbackを行わない。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t03-step0-acquisition"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 72,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t03-step0-acquisition",
+      "title": "STEP 0 acquisition"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "調査preview、開始、除外、再取得、削除、Markdown表示をGame Operator画面で一巡させる。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t04-step0-ui"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 76,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t04-step0-ui",
+      "title": "STEP 0 Web調査 UI"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "zero-seed visual groundingとprimitive routeを実測し、一方式だけを採用して不成立routeを明示する。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t05-discovery-admission"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 80,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t05-discovery-admission",
+      "title": "Discovery admission実測"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "Game Structure Discoveryのcontractを追加し、ObservationResultと既存consumerを同一revisionへ移す。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t06-scene-contract-migration"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 84,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t06-scene-contract-migration",
+      "title": "Scene contract migration"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "append-only Structure Event Storeとimmutable projection、migration、replay、訂正、exportを実装する。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t07-structure-store"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 88,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t07-structure-store",
+      "title": "Game Structure Store"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "観測からproposal、policy、probe、再観測、Transition Evidence、StructureDelta検証までをDurable Attempt境界へ配線する。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t08-exploration-coordinator"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 92,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t08-exploration-coordinator",
+      "title": "Exploration Coordinator"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "採用したvision方式だけを実装し、frame-bound affordanceと構造化proposal、費用・送信範囲を記録する。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t09-vision-provider"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 96,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t09-vision-provider",
+      "title": "Vision provider"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "Web Reference 0件・game固有seed 0でhidden oracleを成立させ、異常系と別session昇格をfocused testする。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t10-hidden-oracle-gamelab"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 100,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t10-hidden-oracle-gamelab",
+      "title": "Hidden-oracle GameLab"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "structure revision、frontier、probe、risk、budget、停止理由、根拠4値と操作intentをUIへ表示する。",
+      "disposition": "register_pending",
+      "lane": "A",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t11-explorer-ui"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 104,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t11-explorer-ui",
+      "title": "Explorer UI"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "非課金・非消費・非戦闘scopeで可逆edgeを発見し、別sessionで再同定・再遷移する実機手番。",
+      "disposition": "register_pending",
+      "lane": "H",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": true,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t12-nikke-safe-slice"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 108,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t12-nikke-safe-slice",
+      "title": "NIKKE safe slice"
+    },
+    {
+      "compile_binding": null,
+      "completion": null,
+      "design_memo": "candidate Playbook再現、非回帰、最終full regression、反証、Exit assessment、公開claim裁定とpushを完遂する。",
+      "disposition": "register_pending",
+      "lane": "F",
+      "migration_context": {
+        "carry_over_ref": "docs/phase8b-exit-assessment.md",
+        "condition": null,
+        "evidence_refs": [],
+        "external_canonical_ref": "docs/development-plan.md",
+        "h_required": false,
+        "notes": []
+      },
+      "narrative_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+      "source": {
+        "checkbox_state": "absent",
+        "heading_path": [
+          "Lattice task仕様",
+          "t13-phase9-exit"
+        ],
+        "markdown_depth": 3,
+        "origin_line": 112,
+        "origin_plan_ref": "docs/phase9-game-structure-discovery-campaign-plan.md",
+        "parent_task_id": null,
+        "source_commit": "3a6ac08da6d5d6ad2b48758607627411bf6d6a81"
+      },
+      "start": null,
+      "task_id": "t13-phase9-exit",
+      "title": "Phase 9 Exit"
+    }
+  ]
+}
