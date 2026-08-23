@@ -109,6 +109,14 @@ public static class WorkspaceDocumentEditor
                 .ToArray(),
         };
 
+    public static WorkspaceDocument SetG13Lcd(
+        WorkspaceDocument document,
+        WorkspaceG13LcdSetting setting) =>
+        document with { G13Lcd = setting ?? throw new ArgumentNullException(nameof(setting)) };
+
+    public static WorkspaceDocument ClearG13Lcd(WorkspaceDocument document) =>
+        document with { G13Lcd = null };
+
     /// <summary>
     /// G600 の G-Shift（G6）を層切替から通常ボタンへ変える——hold selector と shift 層を layout から外し、
     /// G6 を割当可能にする。shift 層に割当が残っている場合は黙って消さず拒否する。

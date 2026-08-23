@@ -57,7 +57,7 @@ public sealed class HostResidentApplyIntent(
                 displayLine = $"{kindLabel} の {entry.ControlId} を押した → {outputsLabel} を送りました";
             }
 
-            events.Add(new ResidentTraceEvent(kindLabel, entry.ControlId, isDown, displayLine));
+            events.Add(new ResidentTraceEvent(kindLabel, entry.ControlId, isDown, entry.InputMonotonicMs, displayLine));
         }
 
         return events;

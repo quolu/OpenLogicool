@@ -151,6 +151,34 @@ internal static class WorkspaceEditorIntentsSupport
         return workspaceId;
     }
 
+    /// <summary>
+    /// 特定アプリの行が共通設定と同じprofile一式を参照しているか。
+    /// この状態のdocumentをそのまま編集すると共通設定まで上書きするため、編集時はapp専用workspaceへ分岐する。
+    /// </summary>
+    public static bool ReusesDefaultWorkspace(
+        string applicationFullPath,
+        string workspaceId,
+        IReadOnlyList<ApplicationWorkspaceRow> workspaces)
+    {
+        if (applicationFullPath == AppProfileResolver.DefaultMarker)
+        {
+            return false;
+        }
+
+        var defaultRow = workspaces.First(workspace =>
+            workspace.ApplicationFullPath == AppProfileResolver.DefaultMarker);
+        return string.Equals(
+            TryReverseWorkspaceId(defaultRow.ProfileIdByKind),
+            workspaceId,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>共通設定を内容ごと継承し、特定アプリ専用の未保存workspaceへ分岐する。</summary>
+    public static WorkspaceDocument ForkForApplication(
+        WorkspaceDocument source,
+        string applicationFullPath) =>
+        source with { WorkspaceId = ProposeWorkspaceId(applicationFullPath) };
+
     /// <summary>逆引き不能な app のための新規 WorkspaceId 提案（rail の選択名から作る最小規則）。</summary>
     public static string ProposeWorkspaceId(string applicationFullPath)
     {

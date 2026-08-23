@@ -13,8 +13,8 @@ namespace OpenLogicool.Desktop;
 /// </summary>
 public sealed class KeyCaptureDialog : Window
 {
-    private readonly List<Key> _recordedKeys = [];
-    private readonly HashSet<Key> _currentlyHeld = [];
+    private readonly KeyCaptureSession _session = new();
+    private readonly bool _canAssignByDevicePress;
 
     private readonly TextBlock _captureText = new()
     {
@@ -24,12 +24,19 @@ public sealed class KeyCaptureDialog : Window
         HorizontalAlignment = HorizontalAlignment.Center,
     };
     private readonly TextBlock _nowText = new() { Foreground = Theme.Muted, FontSize = 12, Margin = new Thickness(0, 0, 0, 16) };
+    private readonly TextBlock _deviceHintText = new() { Foreground = Theme.Warn, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
     private readonly Button _acceptButton = new() { Content = "これに決める", Padding = new Thickness(14, 6, 14, 6) };
+    private readonly Button _resetButton = new() { Content = "録り直す", Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(0, 0, 8, 0) };
 
     public string? Result { get; private set; }
 
-    public KeyCaptureDialog(string actionName, string currentOutputsLabel, bool overwritesExisting = false)
+    public KeyCaptureDialog(
+        string actionName,
+        string currentOutputsLabel,
+        bool overwritesExisting = false,
+        bool canAssignByDevicePress = false)
     {
+        _canAssignByDevicePress = canAssignByDevicePress;
         Title = "ゲームに送るキー";
         Background = Theme.Raised;
         Foreground = Theme.Text;
@@ -90,6 +97,11 @@ public sealed class KeyCaptureDialog : Window
         }
 
         stack.Children.Add(_nowText);
+        _deviceHintText.Text = canAssignByDevicePress
+            ? "送るキーを押して離した後、割り当てたい G13 / G600 のボタンを押すと、その場で確定します。"
+            : string.Empty;
+        _deviceHintText.Visibility = canAssignByDevicePress ? Visibility.Visible : Visibility.Collapsed;
+        stack.Children.Add(_deviceHintText);
 
         var mouseRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 16) };
         mouseRow.Children.Add(new TextBlock { Text = "マウスボタン: ", Foreground = Theme.Muted, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
@@ -107,6 +119,9 @@ public sealed class KeyCaptureDialog : Window
         stack.Children.Add(mouseRow);
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        _resetButton.IsEnabled = false;
+        _resetButton.Click += (_, _) => ResetCapture();
+        actions.Children.Add(_resetButton);
         var cancelButton = new Button { Content = "取り消す", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 0), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
         cancelButton.Click += (_, _) => { Result = null; DialogResult = false; };
         actions.Children.Add(cancelButton);
@@ -115,7 +130,7 @@ public sealed class KeyCaptureDialog : Window
         _acceptButton.Background = Theme.Accent;
         _acceptButton.Foreground = Brushes.White;
         _acceptButton.IsEnabled = false;
-        _acceptButton.Click += (_, _) => Commit(KeyCaptureTokenizer.ToChordText(_recordedKeys));
+        _acceptButton.Click += (_, _) => Commit(_session.CandidateToken!);
         actions.Children.Add(_acceptButton);
         stack.Children.Add(actions);
 
@@ -127,27 +142,65 @@ public sealed class KeyCaptureDialog : Window
 
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
-        var key = ResolveKey(e);
-        if (_currentlyHeld.Count == 0)
+        if (e.Key == Key.Escape)
         {
-            // 前回の chord が全て離されたあとの、新規押下——録り直し。
-            _recordedKeys.Clear();
+            Result = null;
+            DialogResult = false;
+            e.Handled = true;
+            return;
         }
 
-        if (_currentlyHeld.Add(key) && !_recordedKeys.Contains(key))
-        {
-            _recordedKeys.Add(key);
-        }
-
-        _captureText.Text = string.Join(" + ", _recordedKeys.Select(KeyCaptureTokenizer.ToDisplayName));
-        _acceptButton.IsEnabled = _recordedKeys.Count > 0;
+        _session.KeyDown(ResolveKey(e));
+        RefreshCaptureState();
         e.Handled = true;
     }
 
     private void OnPreviewKeyUp(object? sender, KeyEventArgs e)
     {
-        _currentlyHeld.Remove(ResolveKey(e));
+        _session.KeyUp(ResolveKey(e));
+        RefreshCaptureState();
         e.Handled = true;
+    }
+
+    public bool TryCommitFromDevicePress(double inputMonotonicMs)
+    {
+        if (!_canAssignByDevicePress || !_session.CanCommitFromDevicePress(inputMonotonicMs))
+        {
+            ShowDeviceHint("先にゲームへ送るキーを押して、すべて離してからデバイスのボタンを押してください。");
+            return false;
+        }
+
+        Commit(_session.CandidateToken!);
+        return true;
+    }
+
+    public void ShowDeviceHint(string message)
+    {
+        _deviceHintText.Text = message;
+        _deviceHintText.Visibility = Visibility.Visible;
+    }
+
+    private void RefreshCaptureState()
+    {
+        _captureText.Text = _session.RecordedKeys.Count == 0
+            ? "（未入力）"
+            : string.Join(" + ", _session.RecordedKeys.Select(KeyCaptureTokenizer.ToDisplayName));
+        _acceptButton.IsEnabled = _session.CandidateToken is not null;
+        _resetButton.IsEnabled = _session.CandidateToken is not null;
+        if (_canAssignByDevicePress && _session.IsReady)
+        {
+            ShowDeviceHint("記録できました。割り当てたい G13 / G600 のボタンを押してください。");
+        }
+    }
+
+    private void ResetCapture()
+    {
+        _session.Reset();
+        RefreshCaptureState();
+        if (_canAssignByDevicePress)
+        {
+            ShowDeviceHint("送るキーを録り直してください。");
+        }
     }
 
     /// <summary>Alt 系（Key.System）と IME 経由（Key.ImeProcessed）を実キーへ解決する。</summary>

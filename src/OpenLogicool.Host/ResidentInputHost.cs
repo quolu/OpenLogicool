@@ -17,7 +17,8 @@ public sealed record ResidentHostStatus(
     IReadOnlyList<string> G600DeviceInstanceIds,
     IReadOnlyList<string> WiredDeviceInstanceIds,
     int AppAssociationCount,
-    G600LeftoverResult? LeftoverApply);
+    G600LeftoverResult? LeftoverApply,
+    bool G13LcdStarted);
 
 /// <summary>
 /// Input Studio の resident 実行体（計画 §6.2 の初期 process model）。
@@ -33,10 +34,12 @@ public sealed class ResidentInputHost : IDisposable
     private readonly G600LeftoverSession? _leftover;
     private readonly G600OnboardModeStore? _onboardMode;
     private readonly Func<IResidentOutputSession> _outputSessionFactory;
+    private readonly Func<G13LcdRuntime> _g13LcdRuntimeFactory;
     private volatile bool _g600OnboardSuppressed;
     private SqliteConnection? _connection;
     private G13RawInputSource? _g13Source;
     private G600RawInputSource? _g600Source;
+    private G13LcdRuntime? _g13LcdRuntime;
     private IResidentOutputSession? _outputSession;
     private FastPathPump? _pump;
     private Thread? _foregroundPollThread;
@@ -55,7 +58,8 @@ public sealed class ResidentInputHost : IDisposable
         bool enableTrace = false,
         G600LeftoverSession? leftover = null,
         G600OnboardModeStore? onboardMode = null,
-        Func<IResidentOutputSession>? outputSessionFactory = null)
+        Func<IResidentOutputSession>? outputSessionFactory = null,
+        Func<G13LcdRuntime>? g13LcdRuntimeFactory = null)
     {
         _databasePath = databasePath;
         _enableTrace = enableTrace;
@@ -63,6 +67,8 @@ public sealed class ResidentInputHost : IDisposable
         _onboardMode = onboardMode;
         _outputSessionFactory = outputSessionFactory
             ?? (() => new SendInputResidentOutputSession(watchdogExePath));
+        _g13LcdRuntimeFactory = g13LcdRuntimeFactory
+            ?? (() => new G13LcdRuntime(new G13LcdHidTransport()));
     }
 
     /// <summary>onboard 書込み中で G600 の SendInput 送出を抑止しているか（二重入力防止）。</summary>
@@ -92,6 +98,9 @@ public sealed class ResidentInputHost : IDisposable
     /// </summary>
     public ForegroundState? CurrentForegroundState => _currentForegroundState;
 
+    /// <summary>G13 LCDはfast pathと独立しているため、faultはresident停止原因へ丸めず個別状態で公開する。</summary>
+    public G13LcdRuntimeStatus? G13LcdStatus => _g13LcdRuntime?.Status;
+
     public ResidentHostStatus Start()
     {
         if (_pump is not null || _stopped)
@@ -118,11 +127,23 @@ public sealed class ResidentInputHost : IDisposable
             document => document.ProfileId,
             MappingProfileMaterializer.ToProfile,
             StringComparer.Ordinal);
+        var documentsById = documents.ToDictionary(
+            document => document.ProfileId,
+            StringComparer.Ordinal);
 
         _g13Source = new G13RawInputSource();
         _g600Source = new G600RawInputSource();
         var g13Devices = _g13Source.EnumerateDevices();
         var g600Devices = _g600Source.EnumerateDevices();
+
+        resolver.DefaultByKind.TryGetValue("G13", out var initialG13Document);
+        if (g13Devices.Count > 0)
+        {
+            _g13LcdRuntime = _g13LcdRuntimeFactory()
+                ?? throw new InvalidOperationException("G13 LCD runtime factoryがnullを返しました。");
+            _g13LcdRuntime.RequestFrame(G13LcdDisplayFrameSelector.Select(initialG13Document?.G13Lcd).Span);
+            _g13LcdRuntime.Start();
+        }
 
         // onboard 書込み中は本体がハードウェアとして送るため、常駐側の G600 送出を抑止し
         // （空 profile を配線）、残置（leftover）の apply も行わない（焼いた内容を上書きしない）。
@@ -173,8 +194,8 @@ public sealed class ResidentInputHost : IDisposable
         _pump.Start();
 
         _instancesByKind = instancesByKind;
-        _appFirstData = new AppFirstData(resolver, profilesById, Version: 0);
-        if (resolver.HasAppAssociations && instancesByKind.Count > 0)
+        _appFirstData = new AppFirstData(resolver, profilesById, documentsById, Version: 0);
+        if ((resolver.HasAppAssociations && instancesByKind.Count > 0) || _g13LcdRuntime is not null)
         {
             StartForegroundPolling();
         }
@@ -185,13 +206,15 @@ public sealed class ResidentInputHost : IDisposable
             g600Devices.Select(device => device.DeviceInstanceId).ToArray(),
             runtimes.Keys.Order(StringComparer.Ordinal).ToArray(),
             associations.Count,
-            leftoverApply);
+            leftoverApply,
+            _g13LcdRuntime is not null);
     }
 
     /// <summary>foreground 監視が参照する app-first データ一式（immutable・保存で丸ごと差し替える）。</summary>
     private sealed record AppFirstData(
         AppProfileResolver Resolver,
         IReadOnlyDictionary<string, MappingProfile> ProfilesById,
+        IReadOnlyDictionary<string, MappingProfileDocument> DocumentsById,
         long Version);
 
     /// <summary>
@@ -213,11 +236,15 @@ public sealed class ResidentInputHost : IDisposable
             document => document.ProfileId,
             MappingProfileMaterializer.ToProfile,
             StringComparer.Ordinal);
+        var documentsById = documents.ToDictionary(
+            document => document.ProfileId,
+            StringComparer.Ordinal);
 
         var previous = _appFirstData;
-        _appFirstData = new AppFirstData(resolver, profilesById, (previous?.Version ?? 0) + 1);
+        _appFirstData = new AppFirstData(resolver, profilesById, documentsById, (previous?.Version ?? 0) + 1);
 
-        if (_foregroundPollThread is null && resolver.HasAppAssociations && _instancesByKind.Count > 0)
+        if (_foregroundPollThread is null &&
+            ((resolver.HasAppAssociations && _instancesByKind.Count > 0) || _g13LcdRuntime is not null))
         {
             StartForegroundPolling();
         }
@@ -257,6 +284,7 @@ public sealed class ResidentInputHost : IDisposable
 
                 var resolver = data.Resolver;
                 var profilesById = data.ProfilesById;
+                var documentsById = data.DocumentsById;
                 var identity = ForegroundAppTracker.GetForegroundIdentity();
                 // path・package のどちらかが変われば再判断する（片側だけ null の変化も逃さない）
                 var key = identity is null ? null : $"{identity.NormalizedFullPath}{identity.PackageFamilyName}";
@@ -306,6 +334,14 @@ public sealed class ResidentInputHost : IDisposable
                         Console.WriteLine(
                             $"profile switch: {outcome.DeviceKind} -> '{outcome.SelectedProfileId}'（{DescribeSwitchReason(outcome.MatchKind, identity)}）");
                     }
+
+                    var lcdSetting = G13LcdProfileSettingSelector.Select(
+                        decision,
+                        documentsById,
+                        resolver.DefaultByKind.TryGetValue("G13", out var defaultG13Document)
+                            ? defaultG13Document
+                            : null);
+                    UpdateG13Lcd(lcdSetting);
 
                     previousIdentity = identity;
                 }
@@ -362,6 +398,8 @@ public sealed class ResidentInputHost : IDisposable
         {
             _stopFailure ??= exception;
         }
+
+        _g13LcdRuntime?.Stop(clearDisplay: true);
 
         if (!_g600OnboardSuppressed)
         {
@@ -429,7 +467,18 @@ public sealed class ResidentInputHost : IDisposable
         _outputSession?.Dispose();
         _g13Source?.Dispose();
         _g600Source?.Dispose();
+        _g13LcdRuntime?.Dispose();
         _connection?.Dispose();
+    }
+
+    private void UpdateG13Lcd(WorkspaceG13LcdSetting? setting)
+    {
+        if (_g13LcdRuntime is null)
+        {
+            return;
+        }
+
+        _g13LcdRuntime.RequestFrame(G13LcdDisplayFrameSelector.Select(setting).Span);
     }
 
     private G600LeftoverResult? ApplyLeftoverIfManaged(AppProfileResolver resolver, int g600DeviceCount)

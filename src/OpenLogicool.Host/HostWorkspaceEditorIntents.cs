@@ -32,6 +32,17 @@ public sealed class HostWorkspaceEditorIntents(SqliteConnection connection) : IW
             if (revisions.Count > 0)
             {
                 var latest = revisions[^1];
+                if (WorkspaceEditorIntentsSupport.ReusesDefaultWorkspace(
+                        applicationFullPath,
+                        workspaceId,
+                        workspaces))
+                {
+                    return new WorkspaceLoadResult(
+                        WorkspaceEditorIntentsSupport.ForkForApplication(latest.Document, applicationFullPath),
+                        RevisionNumber: null,
+                        BuildStages(savedRevisionNumber: null));
+                }
+
                 return new WorkspaceLoadResult(latest.Document, latest.RevisionNumber, BuildStages(latest.RevisionNumber));
             }
         }

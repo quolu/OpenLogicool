@@ -36,6 +36,8 @@ public static class WorkspaceCompiler
             throw new ArgumentException("WorkspaceId が空です。", nameof(document));
         }
 
+        ValidateG13Lcd(document.G13Lcd);
+
         var actionsById = new Dictionary<string, WorkspaceActionEntry>(StringComparer.Ordinal);
         foreach (var action in document.Actions)
         {
@@ -151,7 +153,8 @@ public static class WorkspaceCompiler
                 device.LayerIds,
                 device.LatchSelectors,
                 device.HoldSelectors,
-                bindingsByKind[device.DeviceKind]);
+                bindingsByKind[device.DeviceKind],
+                document.G13Lcd);
 
             // binding 重複・selector 衝突・layer 不整合・空 outputs は Domain 検証をそのまま通す
             _ = MappingProfileMaterializer.ToProfile(profile);
@@ -159,6 +162,41 @@ public static class WorkspaceCompiler
         }
 
         return new WorkspaceCompilation(profiles, warnings);
+    }
+
+    private static void ValidateG13Lcd(WorkspaceG13LcdSetting? setting)
+    {
+        if (setting is null)
+        {
+            return;
+        }
+
+        byte[] framebuffer;
+        try
+        {
+            framebuffer = Convert.FromBase64String(setting.FramebufferBase64);
+        }
+        catch (FormatException error)
+        {
+            throw new ArgumentException("G13 LCD frameがBase64ではありません。", nameof(setting), error);
+        }
+
+        if (framebuffer.Length != G13LcdContract.FramebufferLength)
+        {
+            throw new ArgumentException(
+                $"G13 LCD frameは{G13LcdContract.FramebufferLength} bytesでなければなりません。実際: {framebuffer.Length}",
+                nameof(setting));
+        }
+
+        if (setting.Kind == WorkspaceG13LcdContentKind.Image && string.IsNullOrWhiteSpace(setting.SourceName))
+        {
+            throw new ArgumentException("G13 LCD画像の表示名が空です。", nameof(setting));
+        }
+
+        if (setting.Kind == WorkspaceG13LcdContentKind.Text && string.IsNullOrWhiteSpace(setting.Text))
+        {
+            throw new ArgumentException("G13 LCDテキストが空です。", nameof(setting));
+        }
     }
 
     /// <summary>device 種別ごとの確認済み control 集合。未知 DeviceKind は null（この警告の対象外）。</summary>

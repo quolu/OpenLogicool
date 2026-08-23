@@ -2,7 +2,7 @@
 
 - 起票日: 2026-08-23
 - 対象requirement: DEV-011
-- 状態: Phase 1 Exit成立、Phase 2着手
+- 状態: Phase 1 Exit成立、Phase 2機能中核成立（latency／実機hotplugのExit確認待ち）
 - 調査正本: [G13 LCD Windows write調査](../rag/openlogicool/g13-lcd-windows-write-2026-08-23.md)
 
 ## 1. 目的
@@ -77,6 +77,16 @@ Exit:
 - app/profile切替がLCDへ反映される。
 - LCD write中もfocused latency gateとG13 input conformanceを維持する。
 - 抜差し後にstale handleを再利用せず再表示する。
+
+Phase 2機能中核結果（2026-08-23）:
+
+- 独立workerの`G13LcdRuntime`、最新frame優先、明示fault、resident host配線を実装した。
+- workspaceごとの画像／テキストframe保存と、Input Studio G13ペインの設定UIを実装した。
+- 既存app-first判定から対象workspaceのLCD設定を選び、対象外／Unknown／共通設定ではWindows画像へ戻す。
+- NIKKE画像とWindows画像を実機LCDで確認し、一時DBのpath一致で`ws-nikke-G13`への自動切替を実測した。
+- NIKKEと共通設定が同じprofileを参照していた既存データ構造を発見し、アプリ編集前のworkspace分岐で根治した。実DBもNIKKE=`ws-nikke`、共通設定=LCD未設定へ分離済み。
+- 証跡は[プリセット表示・設定 delivery](../evidence/g13-native-lcd/p2-preset-lcd-delivery.md)。
+- Phase 2 Exit全体は、LCD更新中のfocused latency gateと実機抜差し後の再表示を確認してから判定する。
 
 ### Phase 3 — Input Studio delivery
 

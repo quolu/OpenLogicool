@@ -156,4 +156,23 @@ public sealed class WorkspaceDocumentEditorTests
         var error = Assert.Throws<ArgumentException>(() => WorkspaceDocumentEditor.SetG600ShiftAsSelector(draft));
         Assert.Contains("G6", error.Message);
     }
+
+    [Fact]
+    public void Set_and_clear_g13_lcd_only_replace_the_lcd_setting()
+    {
+        var draft = WorkspaceDocumentEditor.CreateDraft("ws");
+        var setting = new WorkspaceG13LcdSetting(
+            WorkspaceG13LcdContentKind.Text,
+            Convert.ToBase64String(new byte[960]),
+            null,
+            "NIKKE");
+
+        var configured = WorkspaceDocumentEditor.SetG13Lcd(draft, setting);
+        var cleared = WorkspaceDocumentEditor.ClearG13Lcd(configured);
+
+        Assert.Equal(setting, configured.G13Lcd);
+        Assert.Null(cleared.G13Lcd);
+        Assert.Equal(draft.Actions, cleared.Actions);
+        Assert.Equal(draft.Bindings, cleared.Bindings);
+    }
 }

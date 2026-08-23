@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -5,6 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using OpenLogicool.Contracts.Profiles;
 
 namespace OpenLogicool.Desktop;
@@ -23,6 +25,7 @@ public sealed class InputStudioWindow : Window
     private readonly InputStudioReport _report;
     private readonly IResidentApplyIntent? _residentApply;
     private readonly ISerialHidSettingsIntent? _serialHidSettingsIntent;
+    private readonly IG13LcdSettingsIntent? _g13LcdSettingsIntent;
     private DiagnosticsWindow? _diagnosticsWindow;
     private DispatcherTimer? _traceTimer;
 
@@ -117,6 +120,29 @@ public sealed class InputStudioWindow : Window
     private readonly Button _g13TabButton = new();
     private readonly Button _g600TabButton = new();
     private readonly StackPanel _layerChipRow = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+    private readonly Border _g13LcdSettingsPanel = new()
+    {
+        Background = Theme.Sunken,
+        BorderBrush = Theme.Line,
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(4),
+        Padding = new Thickness(10, 8, 10, 8),
+        Margin = new Thickness(0, 0, 0, 10),
+    };
+    private readonly TextBlock _g13LcdSummary = new() { Foreground = Theme.Muted, FontSize = 11, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBox _g13LcdTextBox = new()
+    {
+        Background = Theme.Raised,
+        Foreground = Theme.Text,
+        BorderBrush = Theme.Line,
+        CaretBrush = Theme.Text,
+        Padding = new Thickness(6, 4, 6, 4),
+        MaxLength = 120,
+        MinWidth = 150,
+    };
+    private readonly Button _g13LcdImageButton = new() { Content = "画像を選ぶ", Padding = new Thickness(9, 4, 9, 4) };
+    private readonly Button _g13LcdTextButton = new() { Content = "テキストを表示", Padding = new Thickness(9, 4, 9, 4), Margin = new Thickness(6, 0, 0, 0) };
+    private readonly Button _g13LcdClearButton = new() { Content = "共通表示に戻す", Padding = new Thickness(9, 4, 9, 4), Margin = new Thickness(6, 0, 0, 0), Background = Brushes.Transparent };
     private readonly Border _figureHost = new()
     {
         Background = Theme.Raised,
@@ -151,6 +177,8 @@ public sealed class InputStudioWindow : Window
     private readonly Button _recordUpdateButton = new() { Content = "録って更新", Padding = new Thickness(10, 6, 10, 6) };
     // 実機ボタン押しで割当先を指定する待機状態（録画確定後に自動で入る。常駐同居時のみ機能）。
     private bool _pendingAssign;
+    private KeyCaptureDialog? _activeKeyCaptureDialog;
+    private PhysicalAssignmentTarget? _capturedPhysicalAssignment;
     private readonly TextBlock _assignHint = new()
     {
         Foreground = Theme.Warn,
@@ -175,13 +203,15 @@ public sealed class InputStudioWindow : Window
         IWorkspaceEditorIntents intents,
         IResidentApplyIntent? residentApply = null,
         IG600OnboardIntent? onboardIntent = null,
-        ISerialHidSettingsIntent? serialHidSettingsIntent = null)
+        ISerialHidSettingsIntent? serialHidSettingsIntent = null,
+        IG13LcdSettingsIntent? g13LcdSettingsIntent = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
         _residentApply = residentApply;
         _onboardIntent = onboardIntent;
         _serialHidSettingsIntent = serialHidSettingsIntent;
+        _g13LcdSettingsIntent = g13LcdSettingsIntent;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
 
@@ -260,7 +290,29 @@ public sealed class InputStudioWindow : Window
         var events = _residentApply!.DrainTraceEvents();
         foreach (var traceEvent in events)
         {
-            if (_pendingAssign && traceEvent.IsDown)
+            if (!traceEvent.IsDown)
+            {
+                continue;
+            }
+
+            if (_activeKeyCaptureDialog is not null)
+            {
+                if (!TryResolvePhysicalAssignment(
+                        traceEvent.DeviceKind,
+                        traceEvent.ControlId,
+                        out var target,
+                        out var rejectionMessage))
+                {
+                    _activeKeyCaptureDialog.ShowDeviceHint(rejectionMessage);
+                    continue;
+                }
+
+                if (_activeKeyCaptureDialog.TryCommitFromDevicePress(traceEvent.InputMonotonicMs))
+                {
+                    _capturedPhysicalAssignment = target;
+                }
+            }
+            else if (_pendingAssign)
             {
                 AssignByPress(traceEvent.DeviceKind, traceEvent.ControlId);
             }
@@ -298,12 +350,32 @@ public sealed class InputStudioWindow : Window
         _selectedActionId = newActionId;
         Render();
 
-        var dialog = new KeyCaptureDialog(newActionName, "（未設定）", overwritesExisting: false) { Owner = this };
-        if (dialog.ShowDialog() == true && dialog.Result is { } token)
+        var dialog = new KeyCaptureDialog(
+            newActionName,
+            "（未設定）",
+            overwritesExisting: false,
+            canAssignByDevicePress: _residentApply is not null) { Owner = this };
+        _capturedPhysicalAssignment = null;
+        if (ShowKeyCaptureDialog(dialog) && dialog.Result is { } token)
         {
-            if (TryMutateDocument(document => SetOutputsWithAutoName(document, newActionId, WorkspaceEditorProjection.ParseOutputs(token))))
+            var assignment = _capturedPhysicalAssignment;
+            if (TryMutateDocument(document =>
+                {
+                    var updated = SetOutputsWithAutoName(document, newActionId, WorkspaceEditorProjection.ParseOutputs(token));
+                    return assignment is { } target
+                        ? WorkspaceDocumentEditor.SetBinding(
+                            updated,
+                            newActionId,
+                            target.DeviceKind,
+                            target.ControlId,
+                            target.LayerId)
+                        : updated;
+                }))
             {
-                ArmAssignByPress();
+                if (assignment is null)
+                {
+                    ArmAssignByPress();
+                }
                 Render();
             }
         }
@@ -333,14 +405,47 @@ public sealed class InputStudioWindow : Window
         }
 
         var currentLabel = WorkspaceEditorProjection.FormatOutputs(action.Outputs) is { Length: > 0 } label ? label : "（未設定）";
-        var dialog = new KeyCaptureDialog(action.Name, currentLabel, overwritesExisting: action.Outputs.Count > 0) { Owner = this };
-        if (dialog.ShowDialog() == true && dialog.Result is { } token)
+        var dialog = new KeyCaptureDialog(
+            action.Name,
+            currentLabel,
+            overwritesExisting: action.Outputs.Count > 0,
+            canAssignByDevicePress: _residentApply is not null) { Owner = this };
+        _capturedPhysicalAssignment = null;
+        if (ShowKeyCaptureDialog(dialog) && dialog.Result is { } token)
         {
-            if (TryMutateDocument(document => SetOutputsWithAutoName(document, actionId, WorkspaceEditorProjection.ParseOutputs(token))))
+            var assignment = _capturedPhysicalAssignment;
+            if (TryMutateDocument(document =>
+                {
+                    var updated = SetOutputsWithAutoName(document, actionId, WorkspaceEditorProjection.ParseOutputs(token));
+                    return assignment is { } target
+                        ? WorkspaceDocumentEditor.SetBinding(
+                            updated,
+                            actionId,
+                            target.DeviceKind,
+                            target.ControlId,
+                            target.LayerId)
+                        : updated;
+                }))
             {
-                ArmAssignByPress();
+                if (assignment is null)
+                {
+                    ArmAssignByPress();
+                }
                 Render();
             }
+        }
+    }
+
+    private bool ShowKeyCaptureDialog(KeyCaptureDialog dialog)
+    {
+        _activeKeyCaptureDialog = dialog;
+        try
+        {
+            return dialog.ShowDialog() == true;
+        }
+        finally
+        {
+            _activeKeyCaptureDialog = null;
         }
     }
 
@@ -367,35 +472,64 @@ public sealed class InputStudioWindow : Window
     /// <summary>実機ボタン押下で割当先を確定する（割当待機中のみ。層切替キーは対象外として待機を続ける）。</summary>
     private void AssignByPress(string deviceKind, string controlId)
     {
-        if (_selectedActionId is null || deviceKind is not ("G13" or "G600"))
+        if (_selectedActionId is null)
         {
             return;
         }
 
-        // マウスの左右クリックはこの画面の操作にも使われるため、押下では割り当てない
-        // （待機中に UI をクリックしただけで G1 が割り当たる事故の根治。左右は絵のクリックで割当可能）。
+        if (!TryResolvePhysicalAssignment(deviceKind, controlId, out var target, out var rejectionMessage))
+        {
+            _assignHint.Text = rejectionMessage;
+            return;
+        }
+
+        var actionId = _selectedActionId;
+        _pendingAssign = false;
+        if (TryMutateDocument(document => WorkspaceDocumentEditor.SetBinding(
+                document,
+                actionId,
+                target.DeviceKind,
+                target.ControlId,
+                target.LayerId)))
+        {
+            Render();
+        }
+    }
+
+    private bool TryResolvePhysicalAssignment(
+        string deviceKind,
+        string controlId,
+        out PhysicalAssignmentTarget target,
+        out string rejectionMessage)
+    {
+        target = default;
+        if (deviceKind is not ("G13" or "G600"))
+        {
+            rejectionMessage = $"未対応のデバイス '{deviceKind}' からの入力は割り当てられません。";
+            return false;
+        }
+
+        // マウスの左右クリックはこの画面の操作にも使われるため、押下では割り当てない。
         if (deviceKind == "G600" && controlId is "G1" or "G2")
         {
-            _assignHint.Text = "左/右クリックは画面操作と区別できないため、絵の G1/G2 をクリックして割り当ててください";
-            return;
+            rejectionMessage = "左/右クリックは画面操作と区別できないため、絵の G1/G2 をクリックして割り当ててください。";
+            return false;
         }
 
         var layout = _document.Devices.FirstOrDefault(device => device.DeviceKind == deviceKind);
         if (layout is not null &&
             layout.LatchSelectors.Concat(layout.HoldSelectors).Any(selector => selector.ControlId == controlId))
         {
-            _assignHint.Text = $"{controlId} は層切替キーなので割り当てられません。別のボタンを押してください";
-            return;
+            rejectionMessage = $"{controlId} は層切替キーなので割り当てられません。別のボタンを押してください。";
+            return false;
         }
 
-        var actionId = _selectedActionId;
-        var layerId = CurrentLayerFor(deviceKind);
-        _pendingAssign = false;
-        if (TryMutateDocument(document => WorkspaceDocumentEditor.SetBinding(document, actionId, deviceKind, controlId, layerId)))
-        {
-            Render();
-        }
+        target = new PhysicalAssignmentTarget(deviceKind, controlId, CurrentLayerFor(deviceKind));
+        rejectionMessage = string.Empty;
+        return true;
     }
+
+    private readonly record struct PhysicalAssignmentTarget(string DeviceKind, string ControlId, string LayerId);
 
     private string CurrentLayerFor(string deviceKind)
     {
@@ -657,12 +791,6 @@ public sealed class InputStudioWindow : Window
         };
 
         var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        _saveChip.Child = _saveChipText;
-        right.Children.Add(_saveChip);
-        _saveButton.Background = Theme.Accent;
-        _saveButton.Foreground = Brushes.White;
-        right.Children.Add(_saveButton);
-        right.Children.Add(_revertButton);
         if (_serialHidSettingsIntent is not null)
         {
             right.Children.Add(_outputSettingsButton);
@@ -729,6 +857,8 @@ public sealed class InputStudioWindow : Window
         };
         var stageStack = new StackPanel();
         stageStack.Children.Add(_layerChipRow);
+        BuildG13LcdSettingsPanel();
+        stageStack.Children.Add(_g13LcdSettingsPanel);
 
         var figureScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxHeight = 520 };
         var figureCenter = new Grid { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 8, 0, 0) };
@@ -742,6 +872,114 @@ public sealed class InputStudioWindow : Window
 
         pane.Child = dock;
         return pane;
+    }
+
+    private void BuildG13LcdSettingsPanel()
+    {
+        var stack = new StackPanel();
+        var titleRow = new StackPanel { Orientation = Orientation.Horizontal };
+        titleRow.Children.Add(new TextBlock
+        {
+            Text = "LCD表示",
+            Foreground = Theme.Text,
+            FontWeight = FontWeights.Bold,
+            FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        titleRow.Children.Add(new TextBlock
+        {
+            Text = "このプリセットが前面の時",
+            Foreground = Theme.Muted,
+            FontSize = 11,
+            Margin = new Thickness(8, 1, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        stack.Children.Add(titleRow);
+        _g13LcdSummary.Margin = new Thickness(0, 3, 0, 7);
+        stack.Children.Add(_g13LcdSummary);
+
+        var editRow = new Grid();
+        editRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        editRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        editRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        editRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        editRow.Children.Add(_g13LcdImageButton);
+        _g13LcdTextBox.Margin = new Thickness(8, 0, 0, 0);
+        AutomationProperties.SetName(_g13LcdTextBox, "G13 LCDへ表示するテキスト");
+        Grid.SetColumn(_g13LcdTextBox, 1);
+        editRow.Children.Add(_g13LcdTextBox);
+        Grid.SetColumn(_g13LcdTextButton, 2);
+        editRow.Children.Add(_g13LcdTextButton);
+        Grid.SetColumn(_g13LcdClearButton, 3);
+        editRow.Children.Add(_g13LcdClearButton);
+        stack.Children.Add(editRow);
+
+        _g13LcdImageButton.Click += (_, _) => SelectG13LcdImage();
+        _g13LcdTextButton.Click += (_, _) => SetG13LcdText();
+        _g13LcdClearButton.Click += (_, _) =>
+        {
+            if (TryMutateDocument(WorkspaceDocumentEditor.ClearG13Lcd))
+            {
+                Render();
+            }
+        };
+        _g13LcdSettingsPanel.Child = stack;
+    }
+
+    private void SelectG13LcdImage()
+    {
+        if (_g13LcdSettingsIntent is null)
+        {
+            return;
+        }
+
+        var dialog = new OpenFileDialog
+        {
+            Title = "G13 LCDへ表示する画像を選ぶ",
+            Filter = "画像ファイル|*.png;*.jpg;*.jpeg;*.bmp;*.gif|すべてのファイル|*.*",
+            CheckFileExists = true,
+            Multiselect = false,
+        };
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var setting = _g13LcdSettingsIntent.FromImageFile(dialog.FileName);
+            if (TryMutateDocument(document => WorkspaceDocumentEditor.SetG13Lcd(document, setting)))
+            {
+                Render();
+            }
+        }
+        catch (Exception error) when (error is IOException or InvalidDataException or NotSupportedException or ArgumentException)
+        {
+            _saveErrorMessage = $"LCD画像を設定できませんでした: {error.Message}";
+            Render();
+        }
+    }
+
+    private void SetG13LcdText()
+    {
+        if (_g13LcdSettingsIntent is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var setting = _g13LcdSettingsIntent.FromText(_g13LcdTextBox.Text);
+            if (TryMutateDocument(document => WorkspaceDocumentEditor.SetG13Lcd(document, setting)))
+            {
+                Render();
+            }
+        }
+        catch (ArgumentException error)
+        {
+            _saveErrorMessage = $"LCDテキストを設定できませんでした: {error.Message}";
+            Render();
+        }
     }
 
     private static void ConfigureTabButton(Button button, Brush accent)
@@ -760,6 +998,10 @@ public sealed class InputStudioWindow : Window
     private UIElement BuildBindingPane()
     {
         var pane = new Border { Background = Theme.Panel, BorderBrush = Theme.Line, BorderThickness = new Thickness(1, 0, 0, 0) };
+        var layout = new Grid();
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
         var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         var stack = new StackPanel { Margin = new Thickness(14, 10, 14, 14) };
 
@@ -804,7 +1046,38 @@ public sealed class InputStudioWindow : Window
         stack.Children.Add(_actionNotesPanel);
 
         scroll.Content = stack;
-        pane.Child = scroll;
+        layout.Children.Add(scroll);
+
+        var saveArea = new Border
+        {
+            Background = Theme.Chrome,
+            BorderBrush = Theme.Line,
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(14, 10, 14, 10),
+        };
+        var saveStack = new StackPanel();
+        _saveChip.Child = _saveChipText;
+        _saveChip.Margin = new Thickness(0, 0, 0, 8);
+        saveStack.Children.Add(_saveChip);
+
+        var saveRow = new Grid();
+        saveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        saveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        _saveButton.Background = Theme.Accent;
+        _saveButton.Foreground = Brushes.White;
+        _saveButton.Margin = new Thickness(0, 0, 4, 0);
+        AutomationProperties.SetName(_saveButton, "編集内容を保存");
+        saveRow.Children.Add(_saveButton);
+        _revertButton.Margin = new Thickness(4, 0, 0, 0);
+        AutomationProperties.SetName(_revertButton, "未保存の変更を元に戻す");
+        Grid.SetColumn(_revertButton, 1);
+        saveRow.Children.Add(_revertButton);
+        saveStack.Children.Add(saveRow);
+        saveArea.Child = saveStack;
+        Grid.SetRow(saveArea, 1);
+        layout.Children.Add(saveArea);
+
+        pane.Child = layout;
         return pane;
     }
 
@@ -1205,6 +1478,7 @@ public sealed class InputStudioWindow : Window
         _g600TabButton.Content = "G600 マウス　" + (_snapshot.G600ConnectedCount > 0 ? "接続中" : "未接続");
         StyleTab(_g13TabButton, isG13, Theme.G13);
         StyleTab(_g600TabButton, !isG13, Theme.G600);
+        RenderG13LcdSettings(isG13);
 
         var layout = _document.Devices.FirstOrDefault(device => device.DeviceKind == _selectedFigureDeviceKind);
         _layerChipRow.Children.Clear();
@@ -1287,6 +1561,32 @@ public sealed class InputStudioWindow : Window
         _figureNoteText.Text = isG13
             ? "空のキーをクリックすると、左で選んでいる操作を載せます。色は左の操作と同じです。窪みは指のホーム位置です。"
             : "左が親指で押す 12 ボタンです。同じ色は左の操作と対応します。突起は親指のホーム位置です。";
+    }
+
+    private void RenderG13LcdSettings(bool isG13)
+    {
+        _g13LcdSettingsPanel.Visibility = isG13 && _g13LcdSettingsIntent is not null
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        if (_g13LcdSettingsPanel.Visibility != Visibility.Visible)
+        {
+            return;
+        }
+
+        _g13LcdSummary.Text = _document.G13Lcd switch
+        {
+            { Kind: WorkspaceG13LcdContentKind.Image } image => $"画像: {image.SourceName}",
+            { Kind: WorkspaceG13LcdContentKind.Text } text => $"テキスト: {text.Text}",
+            _ => "未設定：共通のWindows表示を使います",
+        };
+        if (!_g13LcdTextBox.IsKeyboardFocusWithin)
+        {
+            _g13LcdTextBox.Text = _document.G13Lcd?.Kind == WorkspaceG13LcdContentKind.Text
+                ? _document.G13Lcd.Text ?? string.Empty
+                : string.Empty;
+        }
+
+        _g13LcdClearButton.IsEnabled = _document.G13Lcd is not null;
     }
 
     private static void StyleTab(Button button, bool isOn, Brush accent)

@@ -1,13 +1,15 @@
+using OpenLogicool.Contracts.Devices.G13;
+
 namespace OpenLogicool.Devices.G13;
 
 /// <summary>G13の160×43 monochrome LCDに渡すframebufferとwire reportを組み立てるpure実装。</summary>
 public static class G13LcdFrame
 {
-    public const int Width = 160;
-    public const int Height = 43;
+    public const int Width = G13LcdContract.Width;
+    public const int Height = G13LcdContract.Height;
     public const int BytesPerBand = Width;
-    public const int BandCount = 6;
-    public const int FramebufferLength = BytesPerBand * BandCount;
+    public const int BandCount = G13LcdContract.BandCount;
+    public const int FramebufferLength = G13LcdContract.FramebufferLength;
     public const int HeaderLength = 32;
     public const int ReportLength = HeaderLength + FramebufferLength;
     public const byte ReportId = 0x03;

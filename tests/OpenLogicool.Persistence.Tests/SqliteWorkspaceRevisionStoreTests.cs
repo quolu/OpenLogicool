@@ -10,7 +10,10 @@ public sealed class SqliteWorkspaceRevisionStoreTests : IDisposable
     private readonly string _databasePath = Path.Combine(
         Path.GetTempPath(), $"openlogicool-workspace-revision-{Guid.NewGuid():N}.db");
 
-    private static WorkspaceDocument Document(string workspaceId, string profileRevision = "rev-1") =>
+    private static WorkspaceDocument Document(
+        string workspaceId,
+        string profileRevision = "rev-1",
+        WorkspaceG13LcdSetting? g13Lcd = null) =>
         new(
             ContractSchemaVersions.Revision01,
             workspaceId,
@@ -21,7 +24,8 @@ public sealed class SqliteWorkspaceRevisionStoreTests : IDisposable
             [
                 new WorkspaceDeviceLayout("G13", "base", ["base"], [], []),
             ],
-            Bindings: [new WorkspaceActionBinding("dodge", "G13", "G1", "base")]);
+            Bindings: [new WorkspaceActionBinding("dodge", "G13", "G1", "base")],
+            G13Lcd: g13Lcd);
 
     private SqliteConnection OpenMigrated()
     {
@@ -50,9 +54,14 @@ public sealed class SqliteWorkspaceRevisionStoreTests : IDisposable
     [Fact]
     public void Revisions_survive_reopening_the_database()
     {
+        var lcd = new WorkspaceG13LcdSetting(
+            WorkspaceG13LcdContentKind.Text,
+            Convert.ToBase64String(new byte[960]),
+            null,
+            "NIKKE");
         using (var connection = OpenMigrated())
         {
-            new SqliteWorkspaceRevisionStore(connection).Append(Document("ws-a"), "2026-08-16T00:00:00Z");
+            new SqliteWorkspaceRevisionStore(connection).Append(Document("ws-a", g13Lcd: lcd), "2026-08-16T00:00:00Z");
         }
 
         using (var connection = OpenMigrated())
@@ -61,8 +70,9 @@ public sealed class SqliteWorkspaceRevisionStoreTests : IDisposable
 
             var revision = Assert.Single(restored);
             Assert.Equal(
-                System.Text.Json.JsonSerializer.Serialize(Document("ws-a")),
+                System.Text.Json.JsonSerializer.Serialize(Document("ws-a", g13Lcd: lcd)),
                 System.Text.Json.JsonSerializer.Serialize(revision.Document));
+            Assert.Equal(lcd, revision.Document.G13Lcd);
         }
     }
 

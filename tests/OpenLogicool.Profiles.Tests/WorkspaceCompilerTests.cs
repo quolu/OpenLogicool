@@ -11,7 +11,8 @@ public sealed class WorkspaceCompilerTests
         IReadOnlyList<WorkspaceActionEntry>? actions = null,
         IReadOnlyList<WorkspaceDeviceLayout>? devices = null,
         IReadOnlyList<WorkspaceActionBinding>? bindings = null,
-        string schemaVersion = ContractSchemaVersions.Revision01) =>
+        string schemaVersion = ContractSchemaVersions.Revision01,
+        WorkspaceG13LcdSetting? g13Lcd = null) =>
         new(
             schemaVersion,
             WorkspaceId: "ws",
@@ -19,7 +20,8 @@ public sealed class WorkspaceCompilerTests
             MappingRevision: "map-1",
             actions ?? [new WorkspaceActionEntry("dodge", "回避", ["Key:Space"])],
             devices ?? [Layout("G13"), Layout("G600")],
-            bindings ?? []);
+            bindings ?? [],
+            g13Lcd);
 
     private static WorkspaceDeviceLayout Layout(
         string deviceKind,
@@ -186,5 +188,21 @@ public sealed class WorkspaceCompilerTests
             ])));
 
         Assert.Throws<ArgumentException>(() => WorkspaceCompiler.Compile(Document(schemaVersion: "9.9.9")));
+    }
+
+    [Fact]
+    public void G13_lcd_setting_is_validated_and_copied_to_all_workspace_profiles()
+    {
+        var setting = new WorkspaceG13LcdSetting(
+            WorkspaceG13LcdContentKind.Image,
+            Convert.ToBase64String(new byte[960]),
+            "game.png",
+            null);
+
+        var compilation = WorkspaceCompiler.Compile(Document(g13Lcd: setting));
+
+        Assert.All(compilation.Profiles, profile => Assert.Equal(setting, profile.G13Lcd));
+        Assert.Throws<ArgumentException>(() => WorkspaceCompiler.Compile(Document(
+            g13Lcd: setting with { FramebufferBase64 = Convert.ToBase64String([0x01]) })));
     }
 }

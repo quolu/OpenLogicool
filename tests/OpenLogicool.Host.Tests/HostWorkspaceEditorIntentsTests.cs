@@ -94,7 +94,9 @@ public sealed class HostWorkspaceEditorIntentsTests : IDisposable
 
         var reloaded = _intents.LoadDocument(@"c:\game\nikke.exe");
 
-        Assert.Equal(1, reloaded.RevisionNumber);
+        // 特定アプリが共通設定と同じprofileを参照している間は、編集前にapp専用workspaceへ分岐する。
+        Assert.Null(reloaded.RevisionNumber);
+        Assert.Equal("ws-nikke", reloaded.Document.WorkspaceId);
         var dodge = Assert.Single(reloaded.Document.Actions);
         Assert.Equal("dodge", dodge.ActionId);
         var binding = Assert.Single(reloaded.Document.Bindings);
@@ -139,5 +141,41 @@ public sealed class HostWorkspaceEditorIntentsTests : IDisposable
         // 再読込で app workspace が関連付け経由で引けること（保存が袋小路を作らない）
         var reloaded = _intents.LoadDocument(@"c:\nikke\nikke\game\nikke.exe");
         Assert.Equal("ws-nikke", reloaded.Document.WorkspaceId);
+    }
+
+    [Fact]
+    public void App_that_reuses_default_profiles_is_forked_before_editing()
+    {
+        var commonLcd = new WorkspaceG13LcdSetting(
+            WorkspaceG13LcdContentKind.Text,
+            Convert.ToBase64String(new byte[960]),
+            null,
+            "COMMON");
+        var defaultDraft = WorkspaceDocumentEditor.CreateDraft("default") with { G13Lcd = commonLcd };
+        defaultDraft = WorkspaceDocumentEditor.AddAction(defaultDraft, "dodge", "回避", ["Key:Space"]);
+        _intents.Save(defaultDraft, "*");
+
+        var associations = new SqliteAppAssociationStore(_connection);
+        associations.Upsert(new AppProfileAssociation(
+            ContractSchemaVersions.Revision01, @"c:\nikke\nikke\game\nikke.exe", "G13", "default-G13"));
+        associations.Upsert(new AppProfileAssociation(
+            ContractSchemaVersions.Revision01, @"c:\nikke\nikke\game\nikke.exe", "G600", "default-G600"));
+
+        var inherited = _intents.LoadDocument(@"c:\nikke\nikke\game\nikke.exe");
+
+        Assert.Equal("ws-nikke", inherited.Document.WorkspaceId);
+        Assert.Null(inherited.RevisionNumber);
+        Assert.Equal(commonLcd, inherited.Document.G13Lcd);
+        Assert.Single(inherited.Document.Actions);
+
+        var gameLcd = commonLcd with { Text = "NIKKE" };
+        _intents.Save(inherited.Document with { G13Lcd = gameLcd }, @"c:\nikke\nikke\game\nikke.exe");
+
+        var reloadedGame = _intents.LoadDocument(@"c:\nikke\nikke\game\nikke.exe");
+        var reloadedDefault = _intents.LoadDocument("*");
+        Assert.Equal("ws-nikke", reloadedGame.Document.WorkspaceId);
+        Assert.Equal(gameLcd, reloadedGame.Document.G13Lcd);
+        Assert.Equal("default", reloadedDefault.Document.WorkspaceId);
+        Assert.Equal(commonLcd, reloadedDefault.Document.G13Lcd);
     }
 }

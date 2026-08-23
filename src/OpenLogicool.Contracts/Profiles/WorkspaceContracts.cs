@@ -21,6 +21,22 @@ public sealed record WorkspaceActionBinding(
     string ControlId,
     string LayerId);
 
+public enum WorkspaceG13LcdContentKind
+{
+    Image,
+    Text,
+}
+
+/// <summary>
+/// workspace適用中にG13 LCDへ出す内容。FramebufferBase64は160×43の1-bit 960-byte frameを保持し、
+/// runtimeは画像decodeやfont描画を行わない。SourceName／TextはInput Studioの再編集表示用。
+/// </summary>
+public sealed record WorkspaceG13LcdSetting(
+    WorkspaceG13LcdContentKind Kind,
+    string FramebufferBase64,
+    string? SourceName,
+    string? Text);
+
 /// <summary>
 /// Action-centric binding editor の編集単位（APP-003）の wire type。
 /// Semantic Action の一覧・device 種別ごとの layer 構成・action→control の binding を一冊で持ち、
@@ -33,7 +49,8 @@ public sealed record WorkspaceDocument(
     string MappingRevision,
     IReadOnlyList<WorkspaceActionEntry> Actions,
     IReadOnlyList<WorkspaceDeviceLayout> Devices,
-    IReadOnlyList<WorkspaceActionBinding> Bindings);
+    IReadOnlyList<WorkspaceActionBinding> Bindings,
+    WorkspaceG13LcdSetting? G13Lcd = null);
 
 /// <summary>保存済み workspace revision 1件（MAP-009）。RevisionNumber は workspace ごとの連番。</summary>
 public sealed record WorkspaceRevisionRecord(

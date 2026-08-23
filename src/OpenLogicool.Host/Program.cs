@@ -251,6 +251,7 @@ static int Run(string[] arguments)
     Console.WriteLine($"g600 devices: {status.G600DeviceInstanceIds.Count}");
     Console.WriteLine($"wired devices: {status.WiredDeviceInstanceIds.Count}");
     Console.WriteLine($"output: {host.OutputRoute}");
+    Console.WriteLine($"g13 lcd: {(status.G13LcdStarted ? "started" : "not present")}");
     foreach (var deviceInstanceId in status.WiredDeviceInstanceIds)
     {
         Console.WriteLine($"  wired: {deviceInstanceId}");
@@ -461,7 +462,8 @@ static int Ui(string[] arguments)
             editorIntents,
             residentApply,
             onboardIntent,
-            serialHidSettingsIntent);
+            serialHidSettingsIntent,
+            new HostG13LcdSettingsIntent());
         System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
         if (residentHost is not null)
         {

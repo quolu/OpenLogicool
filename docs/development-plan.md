@@ -1110,6 +1110,7 @@ Exit:
 - G13／G600の既存fast pathを共通の物理USB HID出力へ接続するSerial HID bridgeは、Phase番号を追加せず独立campaignとして扱う。設計、非目標、Task、実機受入の正本は[Serial HID Output campaign](serial-hid-output-campaign-plan.md)。実行状態はLattice storeだけに置く。
 - **Serial HID Output campaign Exit成立（2026-08-23）**: Exit 11条件をすべて満たしCLOSE。判定は[Exit Assessment](serial-hid-output-exit-assessment.md)、通常操作と復旧は[運用手順](serial-hid-output-operation.md)を正とする。製品公開claimは`Partial LGS Replacement`のまま維持する。
 - **G13 Native LCD campaign Phase 1 Exit成立（2026-08-23）**: Windows標準HidUsbの992-byte output collectionへ`WriteFile`でsolid frameを送り、LCD反映とwrite後のG1 down/up・drop 0を実機確認。`HidD_SetOutputReport`はerror 31で不採用、driver差替え不要。Phase 2のresident LCD runtimeへ進む。判定は[Phase 1標準HID write gate](../evidence/g13-native-lcd/p1-standard-hid-write-gate.md)。
+- **G13 Native LCD campaign Phase 2機能中核成立（2026-08-23）**: resident LCD worker、workspace単位の画像／テキスト保存、Input Studio G13ペイン、app-first前面連動、共通Windows表示を実装し、実機G13と実SQLiteで確認した。特定アプリが共通profileを再利用していた場合は編集前に専用workspaceへ分岐し、共通設定の巻込みを防ぐ。証跡は[プリセット表示・設定 delivery](../evidence/g13-native-lcd/p2-preset-lcd-delivery.md)。Phase 2 Exit全体はfocused latencyと実機hotplug再表示の確認待ち。
 
 ## 9. Blockerを潰すfocused experiment
 

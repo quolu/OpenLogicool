@@ -23,4 +23,9 @@ public interface IResidentApplyIntent
 /// fast path が処理した1件の物理 input。DisplayLine は動作チェック strip 向けの表示行
 /// （down のみ。up は null）。DeviceKind は "G13"／"G600"（判定不能なら instance ID のまま）。
 /// </summary>
-public sealed record ResidentTraceEvent(string DeviceKind, string ControlId, bool IsDown, string? DisplayLine);
+public sealed record ResidentTraceEvent(
+    string DeviceKind,
+    string ControlId,
+    bool IsDown,
+    double InputMonotonicMs,
+    string? DisplayLine);

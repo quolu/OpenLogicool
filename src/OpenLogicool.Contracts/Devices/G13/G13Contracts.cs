@@ -13,6 +13,15 @@ public static class G13DeviceIdentity
     public const int InputReportLength = 8;
 }
 
+/// <summary>G13 monochrome LCDのwire非依存な表示寸法。workspace契約とdevice実装の共通正本。</summary>
+public static class G13LcdContract
+{
+    public const int Width = 160;
+    public const int Height = 43;
+    public const int BandCount = 6;
+    public const int FramebufferLength = Width * BandCount;
+}
+
 /// <summary>
 /// G13 の canonical control ID。実測台帳で「確認済み」または「強い推定」の control だけを含む。
 /// 未確認 bit（byte5 bit6-7・byte7 bit1-2・bit4-7）は contract に載せない。
