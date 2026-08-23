@@ -1,0 +1,75 @@
+{
+  "schema": "openlogicool.serial-hid.flash-evidence.v1",
+  "capturedAtUtc": "2026-08-22T19:19:07.7675102Z",
+  "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
+  "fqbn": "SparkFun:avr:promicro:cpu=16MHzatmega32U4",
+  "transientRuntimePort": "COM8",
+  "firmwareHexSha256": "bb40946e827a04d5c75cc28b442a6ec5a994dcdc48ee5e7eed17b9c560e288c8",
+  "before": {
+    "targetInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
+    "targetStatus": "OK",
+    "targetFriendlyName": "USB Composite Device",
+    "cdc": [
+      {
+        "instanceId": "USB\\VID_1B4F&PID_9206&MI_00\\A&3662A262&0&0000",
+        "friendlyName": "USB シリアル デバイス (COM8)",
+        "status": "OK"
+      }
+    ],
+    "keyboard": [
+      {
+        "instanceId": "HID\\VID_1B4F&PID_9206&MI_02&COL01\\B&8A63DBF&0&0000",
+        "friendlyName": "HID キーボード デバイス",
+        "status": "OK"
+      }
+    ],
+    "mouse": [
+      {
+        "instanceId": "HID\\VID_1B4F&PID_9206&MI_02&COL02\\B&8A63DBF&0&0001",
+        "friendlyName": "HID 準拠マウス",
+        "status": "OK"
+      }
+    ],
+    "hid": [
+      {
+        "instanceId": "USB\\VID_1B4F&PID_9206&MI_02\\A&3662A262&0&0002",
+        "friendlyName": "USB 入力デバイス",
+        "status": "OK"
+      }
+    ]
+  },
+  "uploadVerified": true,
+  "after": {
+    "targetInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
+    "targetStatus": "OK",
+    "targetFriendlyName": "USB Composite Device",
+    "cdc": [
+      {
+        "instanceId": "USB\\VID_1B4F&PID_9206&MI_00\\A&3662A262&0&0000",
+        "friendlyName": "USB シリアル デバイス (COM8)",
+        "status": "OK"
+      }
+    ],
+    "keyboard": [
+      {
+        "instanceId": "HID\\VID_1B4F&PID_9206&MI_02&COL01\\B&8A63DBF&0&0000",
+        "friendlyName": "HID キーボード デバイス",
+        "status": "OK"
+      }
+    ],
+    "mouse": [
+      {
+        "instanceId": "HID\\VID_1B4F&PID_9206&MI_02&COL02\\B&8A63DBF&0&0001",
+        "friendlyName": "HID 準拠マウス",
+        "status": "OK"
+      }
+    ],
+    "hid": [
+      {
+        "instanceId": "USB\\VID_1B4F&PID_9206&MI_02\\A&3662A262&0&0002",
+        "friendlyName": "USB 入力デバイス",
+        "status": "OK"
+      }
+    ]
+  }
+}
