@@ -1,8 +1,8 @@
 # OpenLogicool 製品・開発計画
 
-- 版: 0.3（2026-08-15監査 [reviews/plan-audit-2026-08-15.md](reviews/plan-audit-2026-08-15.md) の指摘反映）
-- 改訂日: 2026-08-15
-- 状態: 改訂版・実装着手前
+- 版: 0.4（2026-08-23 [Game Structure Discovery要件レビュー](reviews/game-structure-discovery-requirements-review-2026-08-23.md) 反映）
+- 改訂日: 2026-08-23
+- 状態: Phase 0〜8B Exit済み／Phase 9要件確定・実装未着手
 - 対象: Logicool G13 / G600を統合するWindowsネイティブアプリと、画面認識付き逐次学習プレイブック
 - 比較基準: Logicool ゲームソフトウェア 9.04.49
 - 成立性資料: [G13/G600 Windows成立性調査](../rag/openlogicool/feasibility-2026-08-14.md)
@@ -17,15 +17,9 @@ OpenLogicoolは、次の二つの製品価値を同じアプリで提供する�
 
 両者は同じ意味操作とアプリプロファイルを共有するが、稼働条件とrelease gateを分ける。AI、network、captureが利用不能でもInput Studioは動作しなければならない。Input Studioを完成させるためにGame Operatorを待たず、Game Operatorを急ぐためにG13/G600の低遅延入力経路へAIを混ぜない。
 
-公開先行実装から主要経路の成立可能性は確認できたが、本製品のWindows実機環境で致命的ブロッカーがないことは未実証である。G13入力、G600 Feature Report、G600 live input routeが成立するまで、ユーザーモード製品の成立性はUnverifiedとする。特に「ユーザーモードだけでG600の全ボタンを無制限のアプリプロファイルへ割り当て、元入力を重複させない」ことは未成立である。次の三方式から実測後に明示的に選ぶ必要がある。
+2026-08-23時点でPhase 0〜8BはExit済みであり、Input Studioの両実機fast path、app-first設定、Durable Attempt、capture／perception契約、Game Operator Previewまで成立している。Serial HID Output campaignもExit済みである。一方、現行Game Operatorは既知state／actionまたは開発者作成fixtureを前提とした安全な一手実行基盤であり、ゲーム固有知識が空の状態からAI自身が画面を探索して構造を構築するruntimeではない。
 
-- 方式A: 3個のオンボードプロファイルを直接利用する。
-- 方式B: 中間usageをユーザーモードで変換する。
-- 方式C: 物理入力抑止を署名済みdriverで実装する（出力はSendInputまたは仮想HID。2変種は§6.6で別capabilityとして評価する）。
-
-本書で「方式A／B／C」はこの3方式だけを指す。route決定は2段で行う: read-onlyで判定できる範囲（G0-Device-RO、Phase 0内）と、Migration Safety Gate通過後の最小write実験を要する範囲（G0-Device-W、Phase 2入口）を分け、最終決定はG0-Device-Wで行う。
-
-したがって、今すぐ許可するのはPhase 0のread-only調査、契約draft、UX prototype、GameLab prototypeまでとする。製品実装のGoは分野別admission gateで決める。
+次の主目標をPhase 9「AI Game Structure Discovery」とする。開発者は対象ゲームのstate、visual target、遷移、recognizer、正解手順を事前投入しない。AIは画面から探索候補を提案し、既存のDurable Attempt境界を通って操作し、前後観測を証拠としてScreen GraphとGame State Factを育てる。AIは入力、risk判定、検証昇格、DB writeを直接行わない。未知ゲームでの初回probeは一手承認から始め、実測済みの低risk・可逆・既知復帰経路内だけをbounded autonomous explorationへ段階解放する。
 
 ### 0.1 根拠の表記
 
@@ -67,10 +61,15 @@ UnverifiedをSupportedとして表示しない。実験失敗を別方式へ黙�
 | Observation | capture frameを状態候補、確度、根拠領域、鮮度へ変換した結果 |
 | Knowledge Pack | ゲーム固有のapp identity、state、recognizer、action参照、playbook、fixtureを収めるversioned data |
 | Screen Graph | 画面（state）をnode、画面内のvisual targetと画面遷移をedgeとする、ゲームの構造地図。Playbookから独立した第一級成果物 |
+| Game Structure | Screen Graph、画面variant、遷移証拠、Game State Factをimmutable revisionとしてまとめた、runtime生成のゲーム構造データ |
+| Personal Knowledge Store | runtimeがlocalに生成・更新するゲーム知識境界。append-only Structure Event Storeをsource of truthとし、Game Structure projectionとexport可能なKnowledge Pack revisionを提供する |
+| Exploration Run | task達成用Runと分離し、探索範囲・risk・primitive・費用・回数・停止条件を開始時に固定して未知構造を調べる永続実行instance |
+| Structure Hypothesis | 画面、target、遷移、同一性、merge／splitについてAIまたはPerceptionが提案した未検証仮説。証拠とcontroller検証なしに構造へ確定しない |
+| Game State Fact | 日課回数、資源、reset時刻、選択中項目等の変動値。画面遷移構造と分離し、evidence、scope、有効期限を持つ |
 | Learning | modelのfine-tuningではなく、観測、訂正、成功経路をKnowledge Pack／Playbookへversioned保存すること |
 | Verified Step | GameLabではscenario oracle付き別session、実gameでは同一環境scopeの独立live sessionで再現済みのPlaybook step（凍結acceptance datasetは評価専用で昇格根拠にしない。§10.3） |
 
-一般化するのは観察、計画、操作、確認、学習の仕組みである。任意ゲームを初見で完全自動化できるとは約束しない。ゲーム固有知識はKnowledge Packとして追加する。
+一般化するのは観察、探索、操作、確認、構造化、計画、学習の仕組みである。ゲーム固有知識は開発者が必須seedとして提供せず、runtimeがPersonal Knowledge Storeへ構築する。import Knowledge Packは任意の加速材に限る。任意ゲームを初見から無制限・無人で操作できるとは約束せず、探索範囲と自律度は証拠に応じて段階解放する。
 
 ## 2. 製品目標と境界
 
@@ -106,6 +105,8 @@ UnverifiedをSupportedとして表示しない。実験失敗を別方式へ黙�
 | App-first Unified Configuration | 一つのApplication Workspaceで両機の保存・適用状態を個別確認できる |
 | Durable Automation | GameLabで全crash boundary、停止、修正、再開の不変条件を満たす |
 | AI-assisted | 観察／提案／承認付き実行が凍結evalを通る |
+| Game Structure Explorer Preview | ゲーム固有seedなしでhidden-oracle GameLabのcandidate構造を生成し、未検証状態を明示できる |
+| Verified Game Structure | 対象ゲーム、version、環境scope内でnode／edgeが独立live sessionにより再同定・再遷移済みである |
 | Verified Autonomous Playbook | 対象ゲーム、version、環境、規約の範囲でverified stepだけを無人実行できる |
 | LGS Parity | canonical inventoryでLGS 9.04.49上の存在を確認した全capabilityが、対象support matrixでSupportedである |
 
@@ -193,33 +194,62 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | CAP-003 | R4 | backend変更や座標系変更時は観測連続性を切り、再校正まで自動入力を止める |
 | CAP-004 | R4 | backend選択と失敗理由を記録し、別backendへの切替を利用者へ明示する |
 | CAP-005 | R4 | support matrixをwindowed／borderless／fullscreen、DPI、HDR、multi-monitor、遮蔽、最小化ごとに持つ |
-| PER-001 | R4 | ObservationResultをKnown、Ambiguous、Unknown、Unavailableに分ける |
-| PER-002 | R4 | Observationへframe ID、age、recognizer version、候補、校正済みconfidence、evidence regionを付ける |
+| PER-001 | R4 | capture可否（Available／Unavailable／Stale）とstate同定（Known／Novel／Ambiguous／InsufficientEvidence）を別軸にし、AvailableかつNovelを既知stateへ丸めない |
+| PER-002 | R4 | Observationへframe ID、age、recognizer version、state候補、校正済みconfidence、evidence regionを付け、Novelでもframe-bound affordance候補と証拠を失わない |
 | PER-003 | R4 | Known以外を既知Playbookの自動実行条件にしない |
 | PER-004 | R4 | 成功条件を操作前後の時系列と安定観測窓で判定し、単一frameだけに依存しない |
 | PER-005 | R4 | 対象window、capture source、input targetが一致しない場合はdispatch前に停止する |
 | PER-006 | R4 | absolute座標だけのstepはfragileと表示し、anchorまたはvisual targetへ昇格できない限りverifiedにしない |
+| PER-007 | R4 | 画面同一性、variant、animation、modal、network待ち、no-changeを区別し、単一の決定論的state遷移へ誤って畳み込まない |
 
 ### 3.6 AI／Knowledge
 
 | ID | Release | 要件 |
 |---|---|---|
 | AI-001 | R4 | 利用者の自然言語goalを小目標と次の構造化proposalへ変換する |
-| AI-002 | R4 | AIはSendInput、HID write、DB writeを直接呼ばず、NextActionProposalだけを返す |
+| AI-002 | R4 | AIはSendInput、HID write、DB writeを直接呼ばず、NextActionProposal、ExplorationProposal、StructureDeltaProposalのいずれかだけを返す |
 | AI-003 | R4 | verified runでは既存Semantic Action IDだけを提案できる |
-| AI-004 | R4 | teach modeおよびSupervised Runの未知操作は、Perceptionが現在frameから列挙したvisual targetと事前許可primitiveだけを選べる（frameに紐付かない絶対座標の提案はmodeを問わず拒否する） |
-| AI-005 | R4 | schema version、catalog version、state前提、risk class、承認要否が不一致のproposalをPlaybookが拒否する |
-| AI-006 | R4 | prompt、model、parameter、dataset、Knowledge Pack versionをrunへ記録する |
+| AI-004 | R4 | Explore／Teach／Supervisedの未知操作は、Perceptionが現在frameから列挙したAffordanceCandidateと事前許可primitiveだけを選べる（frameに紐付かない絶対座標の提案はmodeを問わず拒否する） |
+| AI-005 | R4 | schema version、catalog version、stateまたはStructure revision前提、risk class、承認要否が不一致のproposalを拒否する。task proposalはPlaybook controller、probeはExploration Coordinator、構造deltaはStructure Knowledge Controllerが検証する |
+| AI-006 | R4 | prompt、model、parameter、dataset、Knowledge Pack／Game Structure version、Exploration Policyをrunへ記録する |
 | AI-007 | R4 | provider/modelを精度、未知棄却、p50/p95遅延、取消、費用、data policyで比較する |
 | AI-008 | R4 | provider切替、local/cloud切替、送信範囲変更を暗黙に行わない |
 | AI-009 | R4 | session／日単位の費用上限を利用者が設定でき、到達時は次のdispatch前に停止する |
 | AI-010 | R4 | OCR、画面内指示、import dataは非信頼入力であり、system policyや権限を変更できない |
 | AI-011 | R4 | model fine-tuning、provider側学習、Playbook学習を別概念としてUIと記録で区別する |
-| KP-001 | R4 | Knowledge Packにgame/build、locale、UI scale、state、anchor、success condition、action参照、schema、出典、license、検証状態を持たせる |
+| KP-001 | R4 | Knowledge Packにgame/build、locale、UI scale、state、anchor、success condition、action参照、schema、出典、license、検証状態を持たせる。game固有sectionが空の初期revisionも妥当とする |
 | KP-002 | R4 | Knowledge Packは実行code、任意script、provider変更、秘密を含めない |
 | KP-003 | R4 | import直後はUntrusted／Candidateとし、対象環境で検証するまで自動実行へ使わない |
 | KP-004 | R4 | Screen Graph（state、visual target、遷移）をPlaybookの付属品ではなく独立成果物として保存・閲覧・versionできる |
-| KP-005 | R4 | Observe Onlyで利用者の実操作を観察し、入力を行わずにScreen Graphのcandidate node／edgeを蓄積する。candidateは検証まで自動実行の根拠にしない |
+| KP-005 | R4 | Observe Onlyの利用者操作とExploreのAI probeを別actorとして観測し、前後Observationに帰属したcandidate node／edgeを蓄積する。candidateは検証までVerified Runの根拠にしない |
+| KP-006 | R4 | runtime生成のPersonal Knowledge Storeを既定の知識源とし、import Knowledge Packや開発者fixtureを起動必須条件にしない |
+| KP-007 | R4 | Personal Knowledge Storeからprovenance、evidence参照、schema、環境scopeを保ったimmutable Knowledge Pack revisionをexportできる |
+
+#### 3.6.1 AI Game Structure Discovery
+
+| ID | Release | 要件 |
+|---|---|---|
+| GS-001 | R4 | 新規gameはgame固有state、Semantic Action、visual target、recognizer、edge、route、Playbook、allowed action列、expected sequenceを0件で開始できる。初期入力として許すのはapp／window identity、capture frameとtransform、環境fingerprint、game固有語義を持たないgeneric primitive catalog、構造情報を含まない利用者goal、policy、同意、budgetだけとする |
+| GS-002 | R4 | AvailableかつNovelな画面を棄却せず、ObservedSceneとしてstate hypothesis、affordance candidate、evidenceを保存できる。人の事前命名をnode作成条件にしない |
+| GS-003 | R4 | AffordanceCandidateはObservation ID、Frame sequence、transform revision、対象window、領域またはlocator、evidence、confidence、許可primitiveへ束縛する。AI生成の任意screen座標、古いtransform、window外targetはdispatch前に拒否する |
+| GS-004 | R4 | ExplorationContext／ExplorationProposalをtask実行用PlannerContext／NextActionProposalから分離する。探索proposalは既知Action ID、既知destination state、成功予測を必須にせず、source observation、structure revision、target、primitive、probe仮説、許容outcome、wait／stability、停止条件を必須にする |
+| GS-005 | R4 | AIの構造変更はStructureDeltaProposalに限定し、evidence参照、node作成、edge帰属、label、merge／split、fact抽出の提案だけを許す。Lane LのStructure Knowledge Controllerだけがschema、identity、policy、evidenceを検証してappendし、AIにDB write、risk確定、検証昇格を許さない |
+| GS-006 | R4 | raw Frame／Observation、AI hypothesis、controller受理済みcandidate、replayed／verified構造、Playbookを別layerとして保持する。AIの説明または一回成功だけで上位layerへ昇格しない |
+| GS-007 | R4 | Screen Graph nodeはsystem発行stable ID、環境scope、scene signature集合、variant関係、evidence集合、provisional label、verification状態、作成／更新revisionを持つ。AI labelをidentity keyにしない |
+| GS-008 | R4 | Screen Graph edgeはsource hypothesis、frame-bound target／locator revision、primitive、guard、risk／reversibility判定、before／after Observation、待機条件、timeout、observed outcome分布、no-change／unknown／fault、証拠回数を持つ。単一試行を決定論的遷移として固定しない |
+| GS-009 | R4 | 同一画面候補のmerge／split、edge再帰属、label変更、contradiction、retireは旧IDと証拠を失わない新revisionとして行う。反証されたverified node／edgeは依存Playbookとともに自動実行不可へ降格する |
+| GS-010 | R4 | Structure Event Storeはappend-onlyとし、Observation、probe proposal、承認、Attempt、outcome、delta、projection revisionを相関できる。process再起動後に同じrevisionを再構成し、未解決DispatchArmedをOutcomeUnknownとして残す |
+| GS-011 | R4 | Exploration Run開始時にapp／window、environment、許可primitive、探索領域、action回数、時間、費用、cloud送信、保存期間、risk禁止項目、復帰境界、停止条件をimmutable policyとして固定する。Run中にAIが拡張できない |
+| GS-012 | R4 | 未知targetの初回probeは一手承認を既定とする。自動probeは利用者が許可した探索範囲内で、利用者またはdeterministic policyがlow-risk／side-effect-freeとして登録し、可逆性と既知復帰経路を実証したprimitiveだけに段階解放する。AI／OCRのrisk自己申告を根拠にせず、課金、購入、削除、account変更、希少資源消費、自由text入力を初期自動探索から除外する |
+| GS-013 | R4 | no-progress、同一edge反復、画面振動、modal閉じ込め、animation、network待ち、capture喪失、stale／transform変更、budget到達、復帰経路喪失を検出して停止する。同一probeを根拠なく再送せず、復帰不能時はStopAndAskにする |
+| GS-014 | R4 | navigation topologyを表すScreen Graphと、日課回数、資源、reset、選択値等のGame State Factを分離する。Factはextractor version、evidence、confidence、environment、validity／reset scopeを持ち、値変化だけで新nodeを乱造しない |
+| GS-015 | R4 | Exploration Runとtask達成用Runを別instance・別目的・別active executorとして扱う。task Run中にNovel branchへ到達した場合は自動で構造を書き換えず、taskをpauseして別Exploration Runを開始し、元Runはpin済みrevisionのまま残す |
+| GS-016 | R4 | Goal Plannerはverified構造と、run modeに必要なverification状態・environment一致・未失効validity／reset scopeを満たすGame State Factからroute／Playbook候補を合成できる。candidate／replayed edgeを含む経路はVerified Runへ昇格せず、ExploreまたはSupervisedとして表示する |
+| GS-017 | R4 | provider／model／prompt／vision入力範囲／response／費用をversioned記録し、provider切替やlocal／cloud fallbackを行わない。full frameまたはcrop送信はapp単位の明示同意とData Flow Contractを要求する |
+| GS-018 | R4 | hidden-oracle GameLabではruntimeとplannerへstate ID、transition表、allowed action、expected event列、正解recognizerを渡さない。oracleは最終assertionだけに使い、この依存禁止をarchitecture testで固定する |
+| GS-019 | R4 Gate | live探索前に、対象gameでcapture継続、visual grounding、pointer移動、target click、back／Escape、scroll、policyで許可したgeneric keyの受理をprimitiveごと・input routeごとに実観測する。不成立primitiveを別routeへ黙ってfallbackせずUnsupportedにする |
+| GS-020 | R4 | UIは現在のstructure revision、Known／Novel、frontier、提案probe、risk／承認理由、残budget、復帰経路、停止理由、candidate／replayed／verifiedを表示し、利用者がpause、step、abandon、evidence確認を行える |
+| GS-021 | R4 | 利用者はnode label、同一性、merge／split、edge帰属、fact値の誤りを訂正できる。訂正はactor=userのappend-only Structure Eventと新revisionを作り、旧証拠を削除せず、verifiedへの自動昇格根拠にしない |
 
 ### 3.7 UX／Operations
 
@@ -275,9 +305,10 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | DEV | Phase 0／2／8A | B、C、D | device report、golden vector、実機readback、hotplug |
 | PB、OPS-008／009、UX-003〜005 | Phase 4 | E、I、K | state model、journal replay、crash matrix |
 | CAP | Phase 0／5 | F | backend matrix、Frame conformance、live capture |
-| PER、KP-001〜004 | Phase 5 | G、I | frozen frame corpus、Observation conformance |
-| KP-005 | Phase 5／6 | G、H | Screen Graph candidate蓄積のObserve Only scenario |
-| AI、UX-008、OPS-003／004 | Phase 6 | H、E | proposal conformance、provider eval、Data Flow |
+| PER、KP-001〜004 | Phase 5／9 | G、I、L | frozen frame corpus、Observation／ObservedScene conformance |
+| KP-005〜007 | Phase 5／6／9 | G、H、K、L | Observe Only／Exploreのevidence蓄積、再起動復元、pack export |
+| AI、UX-008、OPS-003／004 | Phase 6／9 | H、E、L | proposal conformance、provider eval、Data Flow |
+| GS-001〜021 | Phase 9 | G、H、E、K、L | zero-seed hidden-oracle discovery、structure replay、独立session再同定、live primitive受理 |
 | OPS distribution群 | Phase 3／8A／8B | A、J、K | diagnostic bundle、clean VM、signed artifact |
 | NFR | 各該当Phase | 各owner＋I | gate manifest、benchmark、support matrix |
 
@@ -366,14 +397,17 @@ Hardware Maintenanceは保守面であり、通常のゲーム設定flowへ出�
 5. revisionを保存し、runtime適用結果をdevice別に確認する。
 6. gameへ戻り、active profile表示とtest inputで確認する。
 
-#### Journey C: AIへ教える
+#### Journey C: AIに探索させてゲーム構造を育てる
 
-1. 対象window、capture範囲、外部送信、保存期間、費用上限を確認する。
-2. Observe OnlyでAIの状態認識と次操作proposalを見る。
-3. Teach modeで一手を承認する。
-4. runtimeがdispatchし、Perceptionが期待結果を確認する。
-5. 成功stepをcandidateとして即時保存する。
-6. 翌sessionでreplayし、verifiedへ昇格する。
+1. 対象app／window、探索領域、許可primitive、risk禁止項目、復帰境界、外部送信、保存期間、action／時間／費用上限を固定する。
+2. game固有state、visual target、recognizer、routeが0件のPersonal Knowledge StoreからExploration Runを開始する。
+3. Observe OnlyでAIが現在画面のNovel判定、affordance候補、探索frontierを提示する。
+4. 未知targetの最初の一手を利用者が承認し、runtimeが既存Durable Attempt境界からdispatchする。
+5. Perceptionが前後の安定観測を取り、node／edge／no-change／faultをTransition Evidenceとして保存する。
+6. AIがStructureDeltaProposalを返し、Structure Knowledge Controllerが証拠を検証して新しいGame Structure revisionを作る。
+7. low-risk、可逆、既知復帰経路が実証された範囲だけbounded autonomous explorationを許す。
+8. 別sessionでnodeを再同定しedgeを再観測してcandidate→replayed→verifiedへ昇格する。
+9. verified構造とGame State Factからtask用Playbook候補を合成し、Supervised Runで検証する。
 
 #### Journey D: 停止・訂正・再開
 
@@ -401,7 +435,8 @@ Hardware Maintenanceは保守面であり、通常のゲーム設定flowへ出�
 
 | Mode | AI | 入力 | 知識更新 |
 |---|---|---|---|
-| Observe Only | 状態とproposalを表示 | なし | observationとScreen Graph candidate |
+| Observe Only | state同定、Novel、affordance、proposalを表示 | なし | observation、hypothesis、利用者操作由来candidate |
+| Explore | frontierとframe-bound probeを提案 | 初回一手承認。実証済みlow-risk／可逆／既知復帰範囲だけbounded auto | Structure Evidence、Screen Graph、Game State Fact |
 | Teach | 一手を提案 | stepごとに承認 | 成功後candidate |
 | Supervised Run | known low-riskを実行、未知は確認 | 条件付き | candidate／replayed／verified昇格（§6.8） |
 | Verified Run | verified pathだけ実行 | ambiguityで停止 | 実行証拠を追加 |
@@ -422,7 +457,14 @@ flowchart LR
 
     CAP["Capture"] --> PER["Perception"]
     PER --> PB["Durable Playbook"]
-    AI["AI Planner"] -->|proposal only| PB
+    PER --> EX["Exploration Coordinator"]
+    AI["AI Planner"] -->|NextActionProposal| PB
+    AI -->|ExplorationProposal / StructureDeltaProposal| EX
+    EX -->|authorized probe request| PB
+    EX --> SE["Structure Event Store"]
+    SE --> GS["Game Structure Projection"]
+    GS --> EX
+    GS --> PB
     PB --> AC["Semantic Action Catalog"]
     AC --> MR
     PB --> J["Event Journal"]
@@ -432,7 +474,7 @@ flowchart LR
 
 Device Input → Mapping Runtime → Input Emitterはfast pathである。このpathではAI、network、capture、SQLite、UI renderingを待たない。
 
-Capture → Perception → Playbook → Semantic Actionはdurable pathである。遅延、pause、取消、journal、結果確認を扱う。AIはこのpathへproposalを返すだけで、fast pathを直接操作しない。
+Capture → Perception → Playbook → Semantic Actionはtask実行のdurable pathである。Capture → Perception → Exploration Coordinator → Playbookのprobe要求 → 再観測 → Structure Event Storeは探索のdurable pathである。両pathとも遅延、pause、取消、journal、結果確認を扱い、外部入力は同じDurable Attempt境界を通す。AIはproposalだけを返し、fast path、Input、Persistenceを直接操作しない。
 
 ### 6.2 初期process model
 
@@ -460,6 +502,7 @@ src/
   OpenLogicool.Persistence/
   OpenLogicool.Capture/
   OpenLogicool.Perception/
+  OpenLogicool.Exploration/
   OpenLogicool.AI/
   OpenLogicool.Desktop/
   OpenLogicool.Host/
@@ -477,6 +520,7 @@ tests/
   Playbook/
   Capture/
   Perception/
+  Exploration/
   AI/
   UI/
   Packaging/
@@ -493,8 +537,9 @@ test-assets/
 - Contractsはwire type、ID、enum、portだけを持ち、具体SDKを参照しない。
 - DomainはSemantic Action、Profile、Playbookのpure modelを持つ。
 - DesktopはHID、SendInput、capture API、AI SDK、SQLiteを直接呼ばない。
-- AIは変更可能なPlaybook controllerを参照しない。immutable PlannerContextを受け、NextActionProposalだけを返す。
-- Playbooksだけがproposalの承認、dispatch依頼、結果確認、journal、version確定を統括する。
+- AIは変更可能なPlaybook／Exploration controllerを参照しない。immutable PlannerContextまたはExplorationContextを受け、定義済みproposalだけを返す。
+- Playbooksだけが外部入力の承認、Durable Attempt、dispatch依頼、結果確認、Run Journalを統括する。
+- ExplorationはObservedScene、frontier、StructureDelta検証、Structure Event、Game Structure projectionを統括し、Input EmitterまたはSQLite実装を直接参照しない。
 - DevicesはUI、AI、Perception、SQLiteを参照しない。
 - Perceptionは入力を実行しない。
 - Hostだけが具体implementationを配線する。
@@ -510,13 +555,22 @@ test-assets/
 | SemanticAction | stable ID、name、risk class、parameter schema | Domain |
 | BindingRevision | app、device、layer、mapping revision、outputs | Input/Profile |
 | CapturedFrame | source、backend、sequence、time、DPI、format、transform、freshness | Capture |
-| ObservationResult | Known／Ambiguous／Unknown／Unavailable、evidence、confidence、version | Perception |
+| ObservationResult | capture可否（Available／Unavailable／Stale）、state同定（Known／Novel／Ambiguous／InsufficientEvidence）、evidence、confidence、version | Perception |
 | PlannerContext | goal、state、allowed action、history summary、budget | Playbook |
 | NextActionProposal | action IDまたは許可target、precondition、expected outcome、stop condition | AI |
+| ObservedScene | capture availability、state identity、Novel hypothesis、affordance、Observation／Frame／transform参照 | Perception |
+| AffordanceCandidate | frame-bound target、locator、evidence、confidence、許可primitive | Perception |
+| ExplorationPolicy | app／window、environment、scope、primitive、risk、budget、consent、recovery、stop条件 | Exploration |
+| ExplorationContext | policy、current scene、structure revision、frontier、known return path、budget残量 | Exploration |
+| ExplorationProposal | source scene／revision、target、primitive、probe hypothesis、許容outcome、wait／stop | AI |
+| StructureDeltaProposal | evidence参照、node／edge／fact／merge／split／labelの変更候補 | AI |
+| TransitionEvidence | before／after observation、Attempt、target、primitive、outcome、environment、timing | Exploration |
+| GameStructureRevision | immutable Screen Graph projection、parent、evidence sequence、environment scope | Exploration |
+| GameStateFact | fact type／value、extractor、evidence、confidence、validity／reset scope | Exploration |
 | PlaybookVersion | immutable ID、parent、nodes、edges、change reason | Playbook |
 | RunEvent | schema、run sequence、attempt、causation、actor、payload | Playbook |
-| KnowledgePackManifest | game/build、locale、schema、provenance、verification | Perception/Knowledge |
-| ScreenGraph | node（state ID）、edge（visual target参照・遷移・帰属操作）、node/edgeごとのcandidate／verified状態、immutable version、環境scope | Perception/Knowledge |
+| KnowledgePackManifest | game/build、locale、schema、provenance、verification | Exploration/Knowledge |
+| ScreenGraph | node（stable local state ID）、edge（frame-bound target／primitive／outcome分布）、node／edgeごとのcandidate／replayed／verified状態、immutable version、環境scope | Exploration/Knowledge |
 
 全contractにschema version、stable ID、wall-clockと必要なmonotonic time、取消時の意味を定義する。enum追加、nullability変更、順序変更、confidence意味変更は、source互換でもsemantic breakingになり得る。
 
@@ -627,15 +681,16 @@ verification statusはenvironment scopeを持つ。GameLabでのVerifiedはGameL
 - replayed → verified: 同一環境scopeの独立live sessionで再現した場合。candidateから直接verifiedになるのは、最初の独立再現が同一環境scopeだった場合である。
 - 環境scopeは game/build、locale、UI scale、resolution、display mode（windowed／borderless／fullscreen）、DPI、HDR、capture backend、input route、Screen Graph version、recognizer version の同一性で判定する。
 
-Screen Graphのnode／edgeも同じ2段で昇格する: Observe Only等で蓄積したcandidateは、別sessionの実観測で同一node（state ID）がUniqueMatch再現し、edgeは同一遷移が再観測された場合だけverifiedへ昇格する。PB-009の再開照合とVerified Runのstate根拠に使えるのはverified node／edgeだけであり、candidateは提案・表示・Teachの参考にだけ使う（KP-005）。Verified StepはScreen Graph versionへpinし、参照先node／edgeがcandidateへ降格または削除された場合はverified statusを失いreplayedへ戻る。
+Screen Graphのnode／edgeもcandidate／replayed／verifiedの3状態を持つ。別sessionで同一node hypothesisが再同定され、edgeが同じtarget／primitiveから互換outcomeへ再遷移した時にreplayedへ上げる。そのsessionが同一environment scopeならverifiedへ上げられる。fixture、同一session反復、AIの自己評価、利用者の成功申告だけでは昇格しない。PB-009の再開照合とVerified Runのstate根拠に使えるのはverified node／edgeだけであり、candidate／replayedは提案、表示、Explore、Teach、Supervisedの参考に限る。Verified StepはScreen Graph versionへpinし、参照先の反証、merge／split、環境scope不一致が生じた場合は自動実行不可へ降格する。
 
 State matchは次を返す。
 
 - UniqueMatch
-- NoMatch
+- Novel
 - AmbiguousMatch
 - InsufficientEvidence
 - StaleObservation
+- UnavailableCapture
 
 自動再開できるのは、app、target window、Playbook version、観測鮮度、安定窓、state predicateを満たすUniqueMatchだけである。
 
@@ -657,9 +712,11 @@ ObservationResultのconfidenceはrecognizerごとにcalibration datasetで定義
 
 ### 6.10 AI proposal境界
 
-verified runのAI出力は既存Semantic Action ID、expected outcome、stop conditionだけを含む。
+verified runのAI出力は既存Semantic Action ID、expected outcome、stop conditionだけを含む。既知task実行のNextActionProposalと未知構造探索のExplorationProposalを同じschemaやmode flagで兼用しない。
 
-未知ゲームのTeach modeでは、AIが任意座標やkey codeを生成するのではなく、Perceptionが現在frameから列挙したvisual targetを選ぶ。Runtimeはtargetが同じFrame／transform revisionへ属し、対象window内にあり、許可primitiveであることを検証する。成功後に利用者が命名したSemantic Actionとlocator candidateへ保存する。
+未知ゲームのExplore／Teachでは、AIが任意座標やkey codeを生成するのではなく、Perceptionが現在frameから列挙したAffordanceCandidateを選ぶ。Runtimeはtargetが同じObservation／Frame／transform revisionへ属し、対象window内にあり、Exploration Policyで許可されたprimitiveであることを検証する。Exploreでは未知destination、no-change、複数outcomeを正当な観測結果として扱う。Teachでは利用者が目的を与え、成功後にSemantic ActionとPlaybook candidateへ帰属できる。
+
+AIが返すStructureDeltaProposalは構造の仮説であり、Structure Eventではない。Structure Knowledge Controllerは`OpenLogicool.Exploration`内のcomponentでLane Lが所有する。参照evidenceの存在、source revision、stable ID規則、environment scope、merge／split影響、依存Playbookを検証し、受理した変更だけを新revisionへappendする。
 
 AIは次を変更できない。
 
@@ -671,13 +728,13 @@ AIは次を変更できない。
 - daily cost cap
 - game policy
 - Playbook verified status
-- Screen Graphのnode／edgeのcandidate／verified状態
+- Screen Graphのnode／edgeのcandidate／replayed／verified状態、merge／split、retire
 
 provider error、timeout、rate limit、schema error、budget到達は明示停止する。別providerへfallbackしない。
 
 ### 6.11 Knowledge Pack
 
-初期formatはdataのみとし、実行plugin systemを作らない。
+初期formatはdataのみとし、実行plugin systemを作らない。Knowledge Packはimport必須seedではなく、Personal Knowledge Storeのimmutable revisionを交換する形式である。新規gameの初期revisionはgame固有sectionが空でも妥当とする。
 
 ~~~text
 manifest
@@ -690,7 +747,7 @@ visual-targets
 screen-graph
 playbooks
 
-`states`はScreen Graphのnode台帳であり、Screen Graphのnode IDは`states`のstable state IDと同一とする。Playbookの前提・ObservationのKnown候補・visual targetの帰属・Screen Graphのnodeは、すべてこの単一のstate IDを参照し、同じ画面状態を別IDで二重定義しない。`screen-graph`はnode間のedge（遷移・帰属visual target・candidate/verified状態）を持つ。
+`states`はScreen Graphのnode台帳であり、Screen Graphのnode IDは`states`のstable state IDと同一とする。Playbookの前提・ObservationのKnown候補・visual targetの帰属・Screen Graphのnodeは、すべてこの単一のstate IDを参照し、同じ画面状態を別IDで二重定義しない。`screen-graph`はnode間のedge（遷移・帰属visual target・candidate／replayed／verified状態）を持つ。
 fixtures
 policy-record
 provenance-and-license
@@ -698,6 +755,8 @@ migrations
 ~~~
 
 stateとrecognizerはgame build、locale、resolution、UI scale、capture conditionへ紐付ける。pack import直後はUntrustedであり、code、script、prompt override、provider設定、secretを受理しない。
+
+runtime生成の構造では、`states`、`visual-targets`、`screen-graph`、`recognizers`をStructure Eventとevidenceからprojectionする。export後のpackを再importしてもverified状態を無条件継承せず、environment scopeと署名済みevidence参照を照合する。
 
 ### 6.12 Data flow／secret
 
@@ -714,6 +773,88 @@ Phase 4前にData Flow Contractを作る。対象はframe、crop、OCR text、wi
 - secret: Windows Credential ManagerまたはCurrentUser scope保護。export対象外
 - deletion: SQLite、image、cache、temp、upload queue、bundle、backupの対象をpreviewする
 
+### 6.13 AI Game Structure Discovery
+
+#### 6.13.1 Zero-seed境界
+
+探索runtimeへ渡せるbootstrapは次だけである。
+
+- 対象Application／window identityと利用者が選んだ探索範囲
+- current Frame、座標transform、capture／input capability
+- Windowsとgameのenvironment fingerprint
+- click、back／Escape、scroll、許可key等のgame非依存primitive catalog
+- 利用者goal、Game Policy、risk禁止項目、data consent、budget、停止条件
+
+次はtest fixture、import、prompt、codeのどこからも探索runtimeへ渡さない。
+
+- game固有state ID／画面名／正解label
+- visual target位置、anchor、recognizer、affordance正解
+- Semantic Action、allowed action列、遷移表、route、Playbook
+- expected destination、expected event sequence、GameLab oracle
+
+利用者が探索範囲やriskを指定することは構造seedではない。利用者が画面名、target、正解遷移を入力できるUIは訂正機能として持てるが、その情報をzero-seed受入の成立証拠へ算入しない。
+
+zero-seed受入scenarioのgoalは「許可scopeを探索する」等の目的だけに限定し、oracleのstate名、target名、座標、keyとのgame固有対応、遷移順、正解routeを含めない。goal／system prompt／conversation contextもseed inventoryの検査対象にする。game固有のtask goalはGame Structure revisionを探索loopから独立してfreezeした後にだけ導入し、そのrevisionの発見証拠へ算入しない。
+
+generic key primitiveは`Escape`、scan code、virtual-key等の物理識別と送出能力だけを持つ。「I＝inventory」等のgame固有語義、target、expected transitionをcatalog labelやpolicyへ埋め込まない。
+
+#### 6.13.2 構造と証拠model
+
+Game Structureは次のlayerを混ぜずに保持する。
+
+1. Observation evidence: Frame、transform、ObservedScene、候補、鮮度、provider／recognizer version。
+2. Hypothesis: AIまたはPerceptionが提案したstate identity、affordance、edge、fact、merge／split。
+3. Candidate structure: controllerがschemaとevidenceを検証して受理したnode／edge／fact。
+4. Replayed／Verified structure: 独立sessionの再同定／再遷移で昇格した構造。
+5. Playbook: task goalのために構造上の一部を順序・分岐として固定した実行手順。
+
+nodeはAIが付けた名前ではなくsystem発行stable local IDで同定する。一つのnodeは複数のscene signatureとvariantを持てる。類似だけで即mergeせず、誤mergeと誤splitの両仮説を証拠付きrevisionとして扱う。animationや日替わり文言等の見た目差と、操作可能targetが異なるnavigation stateを区別する。
+
+edgeは一つの`from → to`断定ではなく、source hypothesisとprobeに対する観測分布である。少なくともdestination候補、no-change、Novel、Ambiguous、Unavailable、fault、件数、時系列、wait／stability、environmentを持つ。同じtargetが条件により別destinationへ進む場合はguardまたは複数outcomeとして保存し、最後の一回で上書きしない。
+
+Game State Factはnavigation nodeから分離する。factの値だけが変わった場合は原則として同じnodeに留める。ただしmodal表示やtarget集合の変化等、到達可能edgeが変わる差はvariantまたは別node候補にできる。factを自動操作条件へ使うには、extractorとenvironment scopeごとの検証状態を持たせる。
+
+#### 6.13.3 探索loopとcommit authority
+
+一回のprobeは次の順序だけで進める。
+
+1. CaptureがFrameを取得し、PerceptionがObservedSceneとAffordanceCandidateを作る。
+2. Exploration CoordinatorがObservation evidenceをcommitする。
+3. AIがimmutable ExplorationContextからExplorationProposalを返す。
+4. controllerがschema、source revision、Frame／transform、target window、primitive、risk、budget、復帰境界を検証する。
+5. 必要な一手承認をObservation、proposal、policy revisionへ束縛する。
+6. PlaybooksがAttemptとDispatchArmedをcommitし、初めてInput Emitterへprobeを依頼する。
+7. Perceptionが安定窓まで再観測し、Destination／Novel／NoChange／Ambiguous／Unavailable／faultの探索outcomeを返す。Playbooksはcommit済みObservationで効果を確定できた場合だけAttemptをConfirmed／Rejectedへ進め、確定不能ならOutcomeUnknownにする。
+8. Exploration CoordinatorがTransition Evidenceをappendする。
+9. AIは必要ならStructureDeltaProposalを返し、Structure Knowledge Controllerだけが検証・commitして新Game Structure revisionを作る。
+
+input API成功、AIの予想一致、単一frame、利用者の口頭成功だけではedge成功にしない。crashまたは観測欠落でDispatchArmed以降の結果が確定できなければOutcomeUnknownとし、同じprobeを自動再送せず、構造昇格の正例にも使わない。
+
+Structure Event StoreとRun Journalは相関IDを共有するが別source of truthとする。Run Journalは一回の実行履歴、Structure Event Storeは複数Runを横断する知識の証拠履歴を所有する。SQLite実装は同じfileを使えても、retention、migration、訂正意味を混ぜない。
+
+#### 6.13.4 自律度、risk、停止
+
+探索開始時の既定は一手承認である。次をすべて満たすfrontierだけ、利用者が許可したRun内で自動probeへ移せる。
+
+- controllerがlow-riskと判定したprimitiveである
+- targetがcurrent Observation／Frame／transformへ一意に束縛されている
+- 課金、購入、削除、account変更、希少資源消費、自由text入力ではない
+- verifiedまたは同Run内で実証済みの復帰edge列があり、残budget内で戻れる
+- no-progress、loop、capture loss、modal、network waitを検出する停止条件がある
+- Game Policyが対象modeを許可する
+
+AI自身のrisk説明を許可根拠にしない。risk分類と自律可否はdeterministic policyが決める。復帰edgeが反証された時点で自動probe権限を失う。budget到達、同一probe反復、画面振動、frontier枯渇、target confidence不足、対象app不一致、transform変更では新しい入力を出さず停止する。
+
+未知targetのrisk classはUnknownから始める。low-riskへの登録は、利用者の明示分類または事前合意したdeterministic ruleと観測証拠だけで行う。画面上で戻れたことはpersistent side effectが巻き戻った証拠ではないため、既知復帰経路だけでside-effect-freeへ昇格しない。
+
+#### 6.13.5 Exploration Runとtask Run
+
+Exploration Runは構造を増やすためのRun、task Runはgoalを達成するためのRunである。一つのapp／windowで同時に両executorを動かさない。各Runは開始時のGame Structure revisionとpolicyへpinする。
+
+task RunがNovel branchに到達した場合はそのRunをpauseし、未解決Attemptがないことを確認して別Exploration Runを開始する。探索で新revisionができても元task Runへ自動適用しない。再観測と互換性確認後に新Playbook versionまたは新Runとして採用する。
+
+Goal Plannerはverified node／edge／factを無人実行候補に使える。candidate／replayedを含むrouteは候補Playbookとして表示し、ExploreまたはSupervisedで検証する。構造のVerifiedと日課taskのVerified Stepは別状態であり、構造がverifiedでもtask全体の成功を意味しない。
+
 ## 7. 並行開発model
 
 ### 7.1 Workstream
@@ -726,11 +867,12 @@ Phase 4前にData Flow Contractを作る。対象はframe、crop、OCR text、wi
 | D Input／Profile | Domain mapping、Input、Profiles | generation model、resolver、macro runtime | fake physical input | latency、wrong release 0 |
 | E Playbook | Playbooks、event semantics | state machine、journal replay、fault results | GameLab oracle、fake Perception | crash invariant全通過 |
 | F Capture | Capture、CaptureProbe | capability matrix、Frame fixture | recorded／live frame | frame conformance |
-| G Perception／Knowledge | Perception、pack schema | annotation、Observation、unknown判定 | frozen frame corpus | calibration／acceptance gate |
+| G Perception | Perception、ObservedScene、affordance、pack schema | annotation、Observation、Novel判定 | frozen frame corpus | calibration／acceptance gate |
 | H AI | AI、provider eval | proposal schema、eval report | recorded PlannerContext | direct input不可能、frozen eval |
 | I GameLab／Quality | GameLab、scenario、acceptance assets | deterministic app、ground truth、fault hooks | virtual clock／seed | fixture v1とscenario conformance |
 | J Platform／Integration | shared primitives、contract baseline index、Host、共通build | baseline index、composition、dependency結果 | fake modules | cross-contract／Host integration gate |
 | K Persistence／Release | Persistence実装、migration runner、packaging | DB migration、install／update／artifact | repository fake、clean VM | migration、rollback、package gate |
+| L Game Structure Discovery | Exploration Coordinator、Structure Event semantics、Screen Graph projection、Exploration Policy | zero-seed loop、evidence projection、frontier／recovery | hidden-oracle GameLab | structure replay、独立session再同定、live safe slice |
 
 staffが少ない場合は複数Laneを一人が持てるが、ownershipとgateは統合しない。G13とG600、CaptureとPerception、AIとPlaybookを別scopeにすることで独立作業を可能にする。
 
@@ -748,7 +890,8 @@ OpenLogicool.Contracts/
   Profiles/        D
   Playbooks/       E
   Capture/         F
-  Perception/      G    （ObservationResult・KnowledgePack・ScreenGraphを含む）
+  Perception/      G    （ObservationResult・ObservedScene・AffordanceCandidateを含む）
+  Exploration/     L    （ExplorationPolicy・Structure Event・GameStructureRevision・KnowledgePackを含む）
   AI/              H
 ~~~
 
@@ -757,6 +900,7 @@ OpenLogicool.Contracts/
 - Eventとtransaction semanticsはE、SQLite implementationとmigration runnerはKが所有する。
 - consumerは自scopeのadapterを所有し、中央担当が他Lane実装を代行しない。
 - AIとPlaybookの循環依存を禁止する。AIはproposal portだけを実装する。
+- GはFrameからのscene／affordance観測、Lは複数観測からの構造投影と探索統括を所有する。Screen Graphの意味ownerはL、SQLite実装ownerはKとする。
 - 複数contractを同時変更する作業とShared変更だけintegration slotを必要とする。
 
 ### 7.3 Definition of Ready
@@ -833,6 +977,7 @@ flowchart TD
     W3 --> W6["Wave 6: 実game observe／approve／verified run"]
     W5 --> W6
     W6 --> W7G["Wave 7B: Game Operator distribution"]
+    W7G --> W8["Wave 8: zero-seed Game Structure Discovery"]
 ~~~
 
 big-bangでHostへ集めない。各Waveは一つのvertical sliceとして受け入れる。
@@ -842,9 +987,10 @@ big-bangでHostへ集めない。各Waveは一つのvertical sliceとして受�
 - Wave 2Cはinputを行わずlive／recorded captureを同じObservationへ変換する。
 - Wave 4で初めてAIなしの画面closed loopを通す。
 - Wave 5のAIはGameLab以外へ入力しない。
-- Wave 6はObserve Only、Teach、Supervised、Verifiedの順に解禁する。
+- Wave 6はObserve Only、Teach、Supervised、Verifiedの順に解禁した。zero-seed Exploreはこの既存modeへ混ぜずWave 8で追加する。
 - Wave 7AはPlaybook、Capture、Perception、AI、実game pilotを待たず、Input Studio Public GateとShared Distribution Gateの2つだけで公開できる（Game Operator系のgateを待たない）。
 - Wave 7BはShared Distribution GateとGame Operator Public Gateを通す。
+- Wave 8はprovider／data／actual inputのG0後、hidden-oracle GameLabからreal-game safe sliceの順で進める。
 
 ## 8. Phase計画
 
@@ -1096,7 +1242,7 @@ Exit:
 - Playbook／journal／Knowledge Packのschema updateとrollback contract。
 - Game Operator support matrix、Data Flow、provider、Game Policyの公開情報。
 - active Run中のupdate抑止とresume compatibility。
-- Observe Only、Teach、Supervised、Verifiedのcapability別release設定。
+- Observe Only、Explore、Teach、Supervised、Verifiedのcapability別release設定。
 
 Exit:
 
@@ -1104,6 +1250,61 @@ Exit:
 - 実game用Verified Stepが独立live session証拠を持つ。
 - output ownershipをreconcileするまで再起動後のdispatchを禁止する。
 - Input Studioの既存機能と設定をAI／network障害で損なわない。
+
+### Phase 9: AI Game Structure Discovery（要件確定 2026-08-23・実装未着手）
+
+目的: game固有state／target／recognizer／遷移／正解手順を開発時に提供せず、AIが安全な画面操作と再観測からGame Structureを構築し、その知識を再起動・別session・task計画へ再利用できる基盤を成立させる。
+
+既存のWGC Frame、transform／freshness、Durable Attempt、commit-before-dispatch、Run Journal、Run Controls、policy／risk gate、AI proposal-only境界は作り直さず利用する。`FixtureFrameRecognizer`、手書きGameLab遷移、script済みAllowedAction、`UnknownBranchAppend`を探索成立の主経路または証拠にしない。
+
+#### Phase 9 G0: Discovery Admission
+
+- zero-seed frameからNovel、同一画面候補、AffordanceCandidate、構造化proposalを返せるvision provider／recognizerをEXP-GS-01で比較し、一方式だけ選ぶ。
+- full frame／crop／OCR／embeddingの保存・送信・削除・費用をData Flow Contractへ追加し、app単位の同意を実装する。
+- GameLabと初期real targetの双方で、pointer移動、frame-bound click、back／Escape、scroll、policy許可済みgeneric keyをinput route別に受信側観測する（EXP-GS-04）。
+- 対象gameのObserve／Assist／Explore／AutoをGame Policy Recordで分ける。
+- G0が不成立の間はlive Exploreを実装せず、provider mockや別input routeへ黙ってfallbackしない。
+
+#### Phase 9A: Contract／Store／Coordinator
+
+- ObservedScene、AffordanceCandidate、ExplorationPolicy／Context／Proposal、StructureDeltaProposal、TransitionEvidence、GameStructureRevision、GameStateFactをcontract化する。
+- capture availabilityとstate identityを別軸にし、Available＋Novelを保持する。
+- ObservationResultの2軸化は既存`ObservationKind`のsemantic breaking migrationとして扱い、Phase 5〜7由来のconsumer、recorded fixture、conformance／frozen test、GameLab資産を同じcontract revisionへ移行して再green化する。
+- append-only Structure Event Store、SQLite実装、immutable projection、restart replay、schema migration、pack exportを実装する。
+- Exploration Coordinatorを、観測commit→AI proposal→policy／承認→Playbook probe要求→再観測→evidence→delta検証の順で配線する。
+- AI、Perception、ExplorationからInput／Persistence実装への直接依存をarchitecture testで拒否する。
+- zero-seed禁止項目がHost composition、fixture、promptから混入していないことをmachine testにする。
+
+#### Phase 9B: Hidden-oracle GameLab
+
+- runtimeへ渡す初期dataをpixels、app／window identity、generic click／back、policy／budgetだけにする。
+- oracle graph、state ID、正解target、AllowedAction、ExpectedEventSequenceを別test processに隔離する。
+- 空DBからnode 3件以上、遷移edge 2件以上を発見し、no-changeまたはloopもoutcome evidenceとして保存する。
+- crash、OutcomeUnknown、capture loss、stale transform、budget到達、復帰経路喪失をfocused scenarioで検証する。
+- app／Host再起動後にevent replayから同じstructure revisionを復元し、別sessionでnode再同定とedge再観測を行う。
+- discovery用goalだけで構造revisionをfreezeした後、初めてgame固有task goalを別入力として与える。learned structureからcandidate Playbookを合成し、Supervisedで同じrouteを再現する。task goalをfreeze前の構造発見証拠へ混ぜない。
+
+#### Phase 9C: Real-game Safe Slice
+
+- 初期対象はNIKKEの非課金・非消費・非戦闘のlobby範囲とし、対象build／locale／resolution／input routeを固定する。
+- 一つの可逆な「画面を開く→別画面を観測→戻る」経路を、人のstate／target命名なしで発見する。
+- 最初は一手承認で成立させ、その同一scope内でlow-risk、可逆、既知復帰条件を満たした後だけbounded autoで再実行する。
+- input APIまたはSerial HID ACKではなく、game画面のbefore／after Observationで受理を判定する。
+- 規約、capture、visual grounding、pointer／click受理のどれかが不成立ならPhase 9Cは未成立のまま止め、GameLab成功をreal-game成功へ読み替えない。
+
+Exit:
+
+1. game固有seed件数0でHostを起動でき、state／action／target／recognizer／edge／route／Playbookの事前供給に依存しない。
+2. hidden-oracle GameLabでnode 3件以上、edge 2件以上を発見し、全edgeがbefore Observation、proposal、policy／承認、Attempt、after Observation、Structure Eventへ追跡可能。
+3. oracle不一致のKnown node commit 0、存在しないedge commit 0、high-impact／scope外dispatch 0。
+4. Ambiguous、Unavailable、Stale、transform不一致、未解決DispatchArmedで次dispatch 0。同じprobeのblind retry 0。
+5. restart後のprojectionが一致し、別session再観測でcandidate→replayed、同一environment scopeの再現でverifiedへ昇格する。
+6. AI提案と利用者訂正のmerge／split／contradictionで旧証拠を失わず、反証された構造を参照するPlaybookが自動実行不可へ降格する。
+7. NIKKE safe sliceで一つの可逆edgeをactual inputと画面観測で発見し、別sessionで再同定・再遷移する。
+8. learned verified structureからcandidate Playbookを合成し、元Exploration Runと混線せずSupervised Runで再現する。
+9. 利用者がfrontier、risk、budget、復帰経路、検証状態、停止理由を確認し、pause／step／abandonできる。
+
+Phase 9 Exitは「Game Structure Explorer Preview」と対象scopeの「Verified Game Structure」を許すが、Verified Autonomous Playbook、日課完遂、一般game対応を自動的には許さない。
 
 ### Post-8B capability campaign
 
@@ -1132,6 +1333,11 @@ Exit:
 | EXP-CAP-02 | backend matrix | WGC／Duplication／visibleを同じFrame contractへ変換 | backendごとにUnsupported条件 |
 | EXP-PB-01 | crash matrix | 全boundaryでunknown再送0、journal再生一致 | state machineを修正 |
 | EXP-AI-01 | provider benchmark | frozen corpusで精度、unknown、latency、cost、cancelを比較 | provider未選定を維持 |
+| EXP-GS-01 | zero-seed visual discovery／provider admission | game固有label／recognizerなしのheld-out FrameからNovel、同一画面候補、frame-bound affordance、schema準拠proposalを返し、事前固定metric、unknown棄却、latency、cancel、cost、data policyを満たす | provider／recognizer未選定を維持し、live Exploreを禁止 |
+| EXP-GS-02 | hidden-oracle GameLab structure induction | runtimeへのseed 0でnode 3件以上、edge 2件以上を発見し、oracle不一致commit 0、scope外dispatch 0。oracleは最終assertion以外から参照不能 | zero-seed contract／scene analysis／coordinatorを修正 |
+| EXP-GS-03 | structure durability／contradiction | crash replay一致、未解決AttemptのOutcomeUnknown、別session昇格、merge／split／反証降格、loop／no-progress停止を各focused scenarioで成立 | Structure Event／projection／promotion規則を修正 |
+| EXP-GS-04 | exploration primitive acceptance | GameLabと対象gameでpointer移動、frame-bound click、back／Escape、scroll、game固有語義を持たないpolicy許可済みgeneric keyをroute別に受信側または画面before／afterで確認。SendInputとSerial HID等を混ぜず個別判定 | 不成立primitive／routeをUnsupportedにし、別routeへfallbackしない |
+| EXP-GS-05 | NIKKE reversible live slice | policy許可scopeで、人のstate／target命名なしにlobbyの一つのopen→observe→back edgeを発見し、別sessionで再同定・再遷移。課金／消費／戦闘dispatch 0 | Phase 9CとVerified Game Structure claimを未成立のまま維持 |
 | EXP-DATA-01 | privacy path | captureから保存／送信／削除までdata inventory完成 | cloud／recordingを無効 |
 | EXP-DIST-01 | packaging identity | tray、autostart、WGC、updateをclean VMで確認。HID・LampArray行はUSB passthrough対応hypervisor（VMware等。Hyper-Vは汎用passthrough非対応）または実機clean環境で確認し、手段を記録する。Phase 8A実施へ割り当てる | MSIX／Sparse／MSIを再裁定 |
 
@@ -1148,9 +1354,10 @@ G600の「LED 1項目変更」も転送上は154-byte profile全体のwriteに�
 5. Fault injection: DB commit、dispatch、capture、Observation、version switch、update。
 6. Frame corpus: state別precision／recall、unknown、stale、evidence。
 7. AI eval: model／prompt／parameter固定、複数反復、cost／latency／cancel。
-8. Windows integration: foreground、UIPI、DPI、HDR、hotplug、sleep。
-9. Clean VM: install、update、rollback、repair、uninstall、migration。
-10. 実game E2E: 上記が全て通った後に一度だけ最終確認。
+8. Hidden-oracle discovery: seed 0、構造precision、evidence chain、frontier、loop／recovery、restart replay。
+9. Windows integration: foreground、UIPI、DPI、HDR、hotplug、sleep、pointer／click／back／scroll受理。
+10. Clean VM: install、update、rollback、repair、uninstall、migration。
+11. 実game E2E: 上記が全て通った後に一度だけ最終確認。
 
 通し試験を個別featureの原因調査に使わない。失敗したmoduleを最小再現へ切り分け、focused testで修正確認後、最後に通し試験を再実行する。
 
@@ -1189,6 +1396,8 @@ session単位でdevelopment、calibration、acceptanceへ分ける。同じ連�
 
 正解はGameLab内部stateまたは独立human labelから作る。Planner自身を成功判定者にしない。
 
+zero-seed discoveryのGameLab oracleはruntimeと別assembly／processに置き、acceptance assertionだけから参照する。oracle state、遷移表、AllowedAction、ExpectedEventSequence、正解recognizerをPlannerContext、prompt、fixture manifest、Host compositionへ含めない。architecture testと実行時seed inventoryの両方で確認する。
+
 frozen acceptance datasetはrecognizer、planner、runtimeの品質判定に使うが、実game stepをVerifiedへ昇格させない。実gameの昇格証拠は独立live sessionだけである。
 
 ### 10.4 Support matrix
@@ -1205,6 +1414,7 @@ frozen acceptance datasetはrecognizer、planner、runtimeの品質判定に使�
 - input route
 - policy確認日
 - AI provider／model／network mode
+- Game Structure revision／verification scope／許可exploration primitive
 - installer／update route
 
 Windows 10は一般support終了後のOSであるため、Phase 0で明示裁定する。初期primary targetは現在の実機Windows 11 x64とし、Windows 10、ARM64、RDPを自動的にSupportedへ含めない。
@@ -1356,16 +1566,34 @@ Shared Distribution Gateに加えて次を全て要求する。
 4. frame corpusとAI evalが事前固定thresholdを満たし、dataset、model、prompt、parameterを記録。
 5. image保存、cloud送信、削除、provider、costをUIから確認・制御可能。
 6. provider data policyと対象Game Policy Recordがmode別に承認済み。
-7. Observe Only、Teach、Supervised、Verifiedの各modeがcapability gateを迂回できない。
+7. Observe Only、Explore、Teach、Supervised、Verifiedの各modeがcapability gateを迂回できない。
 8. 実game用Verified Stepは同一環境条件の独立live session証拠を持つ。
 
 ### 14.4 LGS Parity Claim Gate
 
 LGS Parityは、Phase 0のcanonical inventoryでLGS 9.04.49上の存在を確認した全capabilityが、対象support matrixでSupportedの場合だけ使用できる。Unsupported、Deferred、Out of Scope、未確認が一行でもあれば不合格であり、owner裁定で例外化しない。その場合のclaimはCore LGS ReplacementまたはPartial LGS Replacementに限定する。
 
-## 15. 最初の着手package
+### 14.5 Game Structure Explorer Gate
 
-計画承認後の最初の実装packageはPhase 0だけとする。
+Game Structure Explorer Previewには次を全て要求する。
+
+1. game固有seed inventoryが0であり、hidden-oracle／expected sequence／fixture recognizerがruntime dependencyにない。
+2. node／edge／factがObservation、proposal、policy／承認、Attempt、outcome、Structure Eventへ追跡可能。
+3. restart replay、OutcomeUnknown、loop／no-progress停止、budget停止、scope外dispatch拒否が合格。
+4. AIがInput、Persistence、risk確定、verification昇格へ直接到達できない。
+5. candidate／replayed／verified、Known／Novel、frontier、risk、残budget、復帰経路、停止理由をUIで区別する。
+6. provider、vision送信範囲、保存、削除、費用がData Flow Contractと利用者同意に従う。
+
+real gameを対象とするVerified Game Structure claimには、さらに次を要求する。
+
+7. 対象game／build／environment／policyでcapture、visual grounding、使用primitive、input routeが個別実測済み。
+8. nodeは独立live sessionで再同定し、edgeはactual inputとbefore／after Observationで再遷移済み。
+9. high-impact、scope外、復帰経路なしの自動dispatch 0。
+10. GameLab証拠、AI自己評価、利用者命名をreal-game verificationへ読み替えていない。
+
+## 15. Admission package
+
+以下のPhase 0 packageは完了済みのhistorical baselineである。現在の次着手は本節末尾のPhase 9 G0だけとする。
 
 ### Deliverable 0A: LGS baseline
 
@@ -1410,6 +1638,17 @@ LGS Parityは、Phase 0のcanonical inventoryでLGS 9.04.49上の存在を確認
 - G600 route、Migration Safety、Frame／Observation契約の次の決定ができる。
 - Phase 1へ進めるLaneと、追加実験が必要なLaneを別々に判定できる。
 
+### 次の着手package: Phase 9 G0
+
+- zero-seed seed inventoryとhidden-oracle dependency testの受入fixture
+- EXP-GS-01用held-out Frame corpus、metric、provider benchmark harness
+- visual inputのData Flow Contract、app単位consent、削除経路
+- EXP-GS-04用pointer／click／back／scroll／key acceptance probe
+- NIKKE lobby safe sliceのGame Policy Recordとnon-impact boundary
+- G0結果を反映したExploration contract revisionとPhase 9Aのfocused test一覧
+
+G0ではScreen Graph builderや自動探索loopを先に実装しない。provider／recognizer、data、input、policyのadmissionが成立してからPhase 9Aへ進む。
+
 ## 16. 未決定事項と決定期限
 
 | Decision | 期限 | 決定材料 |
@@ -1419,8 +1658,9 @@ LGS Parityは、Phase 0のcanonical inventoryでLGS 9.04.49上の存在を確認
 | hard-crash watchdog | **決定済み（2026-08-16 オーナー裁定）**: watchdog採用は必須（実測確定 2026-08-15）。**uiAccess署名は費用（署名subscription）を理由に不採用**。watchdogの昇格実行も現段階では不採用とし、elevated foreground中の配送・release不能は残留riskとしてSupported matrixの行条件に表示して閉じる。elevated対応の実需要が出た時だけ、昇格watchdog（初回UAC承認のopt-in・証明書不要）を再検討する | EXP-IN-03 実測済み（probe `crash-keystate`・Windows 11 26200・2試行再現）: SendInput key-down は process hard kill（TerminateProcess）後も残留し OS は自動releaseしない（5秒/10秒観測とも残留継続）。別 process からの SendInput key-up で release 成立（通常IL・非elevated foreground 条件）。よって「残留なし実証」ルートは棄却、Supported path は watchdog release が条件。elevated foreground 下の release 可否は EXP-IN-01 の elevated 実測と併せて判定する。証跡: probe-output/crash-keystate-20260815-142715-246.json / -142739-698.json |
 | SendInput acceptance（EXP-IN-01） | **実測完了（2026-08-16）**——受信側観測（probe `sendinput-accept`・test target window の WM_KEYDOWN/KEYUP log と送信列の突合・Windows 11 26200）で両側分類確定: **standard foreground＝Delivered（確認済み）**——単一 key・chord とも完全順序一致（6/6）。**elevated foreground＝Blocked（確認済み）**——target の昇格を TokenElevation で実測・foreground 確認済みの条件で受信ゼロ（UIPI 遮断どおり・API 戻り値は成功のまま）。target game 分類は Phase 7 pilot で個別実測。mouse button 分類は cursor 依存のため未実施 | 証跡: probe-output/sendinput-accept-standard-20260816-014738-596.json / sendinput-accept-elevated-20260816-022736-103.json。含意: elevated foreground 中は配送も release 注入も不能＝Supported matrix の行条件として明示必須。watchdog の昇格実行/uiAccess 署名の採否（上行）はこの結果を材料にオーナー裁定 |
 | WGC以外のbackendを製品化するか | Phase 5開始 | capability matrix |
-| AI provider／local model | Phase 6内・Teach mode実装前 | EXP-AI-01 frozen benchmark（Phase 6序盤に割当。corpusはPhase 5成果を使う）、cost、data policy |
-| initial real-game pilot | Phase 7開始 | policy、capture、input、reset cycle |
+| AI vision provider／local model | Phase 9 G0・Exploration Coordinator実装前（Phase 6はprovider未選定のままExitしたため本期限へ更新） | EXP-AI-01／EXP-GS-01、zero-seed visual grounding、unknown棄却、schema、cancel、latency、cost、data policy |
+| exploration pointer／click route | Phase 9 G0・live Explore前 | EXP-GS-04。pointer移動、frame-bound click、back／Escape、scroll、policy許可済みgeneric keyをGameLabと対象gameで個別実測し、一方式を選ぶ |
+| initial real-game discovery | Phase 9C開始 | NIKKE lobby safe sliceのpolicy、capture、visual grounding、input受理、可逆復帰、non-impact scope |
 | public product name | 最初の外部配布前 | trademark、publisher identity |
 | MSIX／Sparse／MSI | 最初の外部配布またはLampArray background制御の早い方の前（本行が唯一の期限。§0.2・§11.2はここを参照する） | EXP-DIST-01（Phase 8A実施）、identity、tray、update、driver |
 | optional kernel driver | G0-Device-W後 | suppression necessity、signing burden |
