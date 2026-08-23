@@ -24,7 +24,7 @@ public sealed record ResidentHostStatus(
 /// SQLite から mapping profile を復元し、実機 G13/G600 を列挙して fast path
 /// （Device Input → Mapping Runtime → resident output session）を起動する。
 /// UI・AI・capture は含まない。profile が無い device 種別は配線しない（黙って既定値を作らない）。
-/// G600 が配線されるとき、fast path の外で B変種残置を apply し、停止時に restore する。
+/// G600 が配線されるとき、fast path の外で route 別の legacy 抑止を apply し、停止時に restore する。
 /// </summary>
 public sealed class ResidentInputHost : IDisposable
 {
@@ -73,6 +73,12 @@ public sealed class ResidentInputHost : IDisposable
 
     /// <summary>fast pathまたはoutput sessionのresident停止原因（nullなら正常）。</summary>
     public Exception? Failure => _pump?.Failure ?? _outputSession?.BackgroundFailure ?? _stopFailure;
+
+    /// <summary>live Raw Input queueが破棄したG13 input件数。0以外ならfast pathはfault停止する。</summary>
+    public long DroppedG13InputCount => _g13Source?.DroppedInputCount ?? 0;
+
+    /// <summary>live Raw Input queueが破棄したG600 input件数。0以外ならfast pathはfault停止する。</summary>
+    public long DroppedG600InputCount => _g600Source?.DroppedInputCount ?? 0;
 
     public FastPathPump Pump =>
         _pump ?? throw new InvalidOperationException("resident host は未起動です。");
@@ -427,7 +433,7 @@ public sealed class ResidentInputHost : IDisposable
         }
 
         var managed = resolver.DefaultByKind.ContainsKey("G600") && g600DeviceCount > 0;
-        var result = _leftover.Apply(managed);
+        var result = _leftover.Apply(managed, G600LeftoverHostSupport.SuppressionModeFor(_outputSession!.Route));
         Console.WriteLine(G600LeftoverHostSupport.Describe(result));
         if (result.IsHardFailure)
         {

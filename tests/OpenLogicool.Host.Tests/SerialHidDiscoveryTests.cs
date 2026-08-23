@@ -142,7 +142,9 @@ public sealed class SerialHidDiscoveryTests
             CandidateA.DeviceInstanceId);
         var factory = ResidentOutputSessionFactory.Create(settings, "unused-watchdog.exe", Service([]));
 
-        Assert.Throws<SerialHidDiscoveryException>(() => factory());
+        using var session = factory();
+
+        Assert.Throws<SerialHidDiscoveryException>(() => session.Start());
     }
 
     [Fact]
@@ -243,6 +245,25 @@ public sealed class SerialHidDiscoveryTests
         using var session = factory();
 
         Assert.Equal(ResidentOutputRoute.SerialHid, session.Route);
+    }
+
+    [Fact]
+    public void Serial_factory_defers_hello_until_output_session_start()
+    {
+        var exchanges = new FakeExchangeFactory();
+        var discovery = new SerialHidDiscoveryService(new FakeCandidates([CandidateA]), exchanges);
+        var settings = new SerialHidOutputSettings(
+            SerialHidOutputSettings.CurrentSchemaVersion,
+            ResidentOutputRoute.SerialHid,
+            CandidateA.DeviceInstanceId);
+        var factory = ResidentOutputSessionFactory.Create(settings, "unused-watchdog.exe", discovery);
+
+        using var session = factory();
+
+        Assert.Empty(exchanges.OpenedDeviceInstanceIds);
+        session.Start();
+        Assert.Equal([CandidateA.DeviceInstanceId], exchanges.OpenedDeviceInstanceIds);
+        Assert.Equal(SerialHidMessageKind.Hello, exchanges.Exchanges.Single().RequestKinds[0]);
     }
 
     private static SerialHidDiscoveryService Service(IReadOnlyList<SerialHidCandidate> candidates) =>

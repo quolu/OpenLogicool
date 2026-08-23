@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Domain;
 
@@ -27,6 +28,9 @@ public sealed class FastPathPump : IDisposable
     private readonly IOutputEmitter _emitter;
     private readonly ConcurrentQueue<(string DeviceInstanceId, MappingProfile Profile)> _profileChangeRequests = new();
     private readonly Thread _worker;
+    private readonly AutoResetEvent _controlWake = new(false);
+    private readonly WaitHandle[] _wakeHandles;
+    private readonly bool _allSourcesSignal;
     private readonly bool _traceEnabled;
     private readonly int _traceCapacity;
     private readonly ConcurrentQueue<InputTraceEntry> _traceBuffer = new();
@@ -36,6 +40,7 @@ public sealed class FastPathPump : IDisposable
     private long _processedCount;
     private long _traceSequence;
     private long _traceApproxCount;
+    private bool _disposed;
 
     /// <summary>
     /// trace（test field・Journey A-6）は既定 off。有効化すると worker が処理した各 input を
@@ -54,6 +59,13 @@ public sealed class FastPathPump : IDisposable
         _emitter = emitter;
         _traceEnabled = enableTrace;
         _traceCapacity = traceCapacity;
+        var sourceSignals = sources
+            .Select(entry => (entry.Source as IDeviceInputSignalSource)?.InputAvailable)
+            .Where(signal => signal is not null)
+            .Cast<WaitHandle>()
+            .ToArray();
+        _allSourcesSignal = sourceSignals.Length == sources.Count;
+        _wakeHandles = [_controlWake, .. sourceSignals];
         _worker = new Thread(Worker) { IsBackground = true, Name = "OpenLogicoolFastPath" };
     }
 
@@ -85,8 +97,11 @@ public sealed class FastPathPump : IDisposable
     /// 適用は worker の次の RunOnce 冒頭で行われ、変更は新規 down から有効（DEV-007・MAP-010:
     /// runtime mapping の差し替えのみで device write はしない）。
     /// </summary>
-    public void RequestProfileChange(string deviceInstanceId, MappingProfile profile) =>
+    public void RequestProfileChange(string deviceInstanceId, MappingProfile profile)
+    {
         _profileChangeRequests.Enqueue((deviceInstanceId, profile));
+        _controlWake.Set();
+    }
 
     public int RunOnce()
     {
@@ -124,8 +139,8 @@ public sealed class FastPathPump : IDisposable
 
                 var layerId = runtime.CurrentLayerId;
                 var edges = runtime.Process(input);
-                RecordTrace(input, layerId, edges);
                 _emitter.Emit(edges);
+                RecordTrace(input, layerId, edges, MonotonicMilliseconds());
                 processed++;
                 Interlocked.Increment(ref _processedCount);
             }
@@ -171,6 +186,7 @@ public sealed class FastPathPump : IDisposable
     public void Stop()
     {
         _stopRequested = true;
+        _controlWake.Set();
         if (_started && _worker.IsAlive)
         {
             if (!_worker.Join(TimeSpan.FromSeconds(5)))
@@ -193,7 +209,9 @@ public sealed class FastPathPump : IDisposable
             {
                 if (RunOnce() == 0)
                 {
-                    Thread.Sleep(1);
+                    // live sourceはqueue投入後にsignalするため、WindowsのSleep(1)量子へ依存せず即時起床する。
+                    // signal非対応sourceだけは既存互換の短周期pullを維持する。
+                    WaitHandle.WaitAny(_wakeHandles, _allSourcesSignal ? 50 : 1);
                 }
             }
         }
@@ -215,7 +233,11 @@ public sealed class FastPathPump : IDisposable
     }
 
     /// <summary>trace が off なら何もしない（enqueue 自体を行わない構成で既存 test 挙動に影響を出さない）。</summary>
-    private void RecordTrace(PhysicalInput input, string layerId, IReadOnlyList<MappedOutputEdge> edges)
+    private void RecordTrace(
+        PhysicalInput input,
+        string layerId,
+        IReadOnlyList<MappedOutputEdge> edges,
+        double dispatchCompletedMonotonicMs)
     {
         if (!_traceEnabled)
         {
@@ -229,6 +251,9 @@ public sealed class FastPathPump : IDisposable
             layerId,
             edges.Select(edge => edge.Output).ToArray(),
             edges.Count > 0,
+            input.MonotonicMs,
+            dispatchCompletedMonotonicMs,
+            Math.Max(0, dispatchCompletedMonotonicMs - input.MonotonicMs),
             Interlocked.Increment(ref _traceSequence));
 
         _traceBuffer.Enqueue(entry);
@@ -266,9 +291,19 @@ public sealed class FastPathPump : IDisposable
 
     public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
         if (_started && _failure is null && _worker.IsAlive)
         {
             Stop();
         }
+        _disposed = true;
+        _controlWake.Dispose();
     }
+
+    private static double MonotonicMilliseconds() =>
+        Stopwatch.GetTimestamp() * 1000d / Stopwatch.Frequency;
 }

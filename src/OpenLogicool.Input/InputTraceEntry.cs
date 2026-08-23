@@ -13,4 +13,7 @@ public sealed record InputTraceEntry(
     string LayerId,
     IReadOnlyList<string> OutputTokens,
     bool Emitted,
+    double InputMonotonicMs,
+    double DispatchCompletedMonotonicMs,
+    double DispatchLatencyMs,
     long Sequence);

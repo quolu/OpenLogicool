@@ -51,6 +51,11 @@ return command switch
     "serial-hid-direct-smoke" => OpenLogicool.Probe.SerialHidDirectSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "serial-hid-live-smoke" => OpenLogicool.Probe.SerialHidLiveSmoke.Run(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "serial-hid-fastpath-latency" => OpenLogicool.Probe.SerialHidFastPathLatencySmoke.Run(
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
     "g600-adapter-smoke" => OpenLogicool.Probe.G600AdapterSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),

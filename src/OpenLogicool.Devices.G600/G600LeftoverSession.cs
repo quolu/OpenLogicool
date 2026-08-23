@@ -46,7 +46,9 @@ public sealed class G600LeftoverSession
     public static G600LeftoverSession CreateDefault(string baselineDirectory, Func<bool> coexistenceRunning) =>
         new(new G600FeatureHidAccess(), new FileG600OnboardBaselineStore(baselineDirectory), coexistenceRunning);
 
-    public G600LeftoverResult Apply(bool managed)
+    public G600LeftoverResult Apply(
+        bool managed,
+        G600LegacySuppressionMode mode = G600LegacySuppressionMode.IntermediateUsage)
     {
         var current = managed ? G600EvidenceWrite.TryRead(_access, G600EvidenceWrite.ProfileReportIdF3, _sleep, _settleMs) : null;
         var baseline = _baseline.LoadF3();
@@ -55,16 +57,27 @@ public sealed class G600LeftoverSession
             devicePresent: current is not null,
             _coexistenceRunning(),
             current,
-            baseline);
+            baseline,
+            mode);
 
         if (!decision.IsWrite)
         {
             return new(decision.Kind, decision.Reason, Wrote: false, Attempts: 0, OpenError: null, ByteMatched: false);
         }
 
-        // 復元元を write より先に残す（apply 失敗時も戻せる）。
-        _baseline.SaveF3(current!);
-        var payload = G600SideRemap.Build(current!);
+        // 現在値が自分の抑止状態なら異常終了後なので既存baselineを保持する。それ以外は、停止中に
+        // 外部で変更された可能性を含む現在値をwrite前の新baselineにする。
+        var currentIsSuppressed = G600LegacySuppression.IsAnyApplied(current!);
+        var source = current!;
+        if (currentIsSuppressed)
+        {
+            source = baseline!; // baselineなしはpolicyがRefuseAppliedWithoutBaselineで上で返している。
+        }
+        else
+        {
+            _baseline.SaveF3(current!);
+        }
+        var payload = G600LegacySuppression.Build(source, mode);
         var write = G600EvidenceWrite.TryWrite(_access, payload, _sleep, _maxAttempts, _settleMs);
         return ToResult(decision, write);
     }

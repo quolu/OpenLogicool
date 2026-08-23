@@ -1,0 +1,1420 @@
+{
+  "schema": "openlogicool.serial-hid.live-smoke.v1",
+  "capturedAtUtc": "2026-08-23T04:51:48.3425633Z",
+  "machine": "FOX",
+  "selectedDeviceInstanceId": "USB\\VID_1B4F\u0026PID_9206\u0026MI_00\\A\u00263662A262\u00260\u00260000",
+  "transientPort": "COM8",
+  "temporaryDatabasePath": "C:\\Users\\kite_\\AppData\\Local\\Temp\\openlogicool-serial-hid-live-ff4e49516c9844ce9b2cb72d9c27cfcb\\live-smoke.db",
+  "settingsPersisted": true,
+  "initialOutputRoute": "SerialHid",
+  "restartAppliedPersistedRoute": true,
+  "g13DeviceInstanceIds": [
+    "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+  ],
+  "g600DeviceInstanceIds": [
+    "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+  ],
+  "foregroundIdentity": null,
+  "foregroundProfileApplied": false,
+  "boardDisconnectObserved": false,
+  "boardFaultObserved": false,
+  "boardFault": null,
+  "boardDisconnectEvents": [],
+  "boardDisconnectInjectedEvents": [],
+  "noAutomaticResume": false,
+  "explicitRestartOutputRoute": null,
+  "explicitRestartRecovered": false,
+  "droppedG13": 0,
+  "droppedG600": 0,
+  "ackedEmissionCount": 0,
+  "emitterRoundTripMilliseconds": [],
+  "actions": [
+    {
+      "actionId": "g13-key",
+      "instruction": "G13\u306EG1\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 124,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 124,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 124,
+          "isInjected": false,
+          "stopwatchTicks": 1591780046079
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 124,
+          "isInjected": false,
+          "stopwatchTicks": 1591781927234
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G1",
+          "edge": 0,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F13"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159177970.7269,
+          "dispatchCompletedMonotonicMs": 159178006.2225,
+          "dispatchLatencyMs": 35.49559998512268,
+          "sequence": 1
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G1",
+          "edge": 1,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F13"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159178179.3279,
+          "dispatchCompletedMonotonicMs": 159178192.5458,
+          "dispatchLatencyMs": 13.21790000796318,
+          "sequence": 2
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "g13-chord",
+      "instruction": "G13\u306EG2\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 162,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 125,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 162,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 125,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 162,
+          "isInjected": false,
+          "stopwatchTicks": 1592086043720
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 125,
+          "isInjected": false,
+          "stopwatchTicks": 1592086051114
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 162,
+          "isInjected": false,
+          "stopwatchTicks": 1592088389987
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 125,
+          "isInjected": false,
+          "stopwatchTicks": 1592088412547
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G2",
+          "edge": 0,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:LCtrl",
+            "Key:F14"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159208598.0713,
+          "dispatchCompletedMonotonicMs": 159208604.5818,
+          "dispatchLatencyMs": 6.510500013828278,
+          "sequence": 11
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G2",
+          "edge": 1,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:LCtrl",
+            "Key:F14"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159208830.1811,
+          "dispatchCompletedMonotonicMs": 159208838.5245,
+          "dispatchLatencyMs": 8.343400001525879,
+          "sequence": 12
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "g13-mouse",
+      "instruction": "G13\u306EG3\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "mouse",
+            "edge": "down",
+            "code": 4,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "mouse",
+            "edge": "up",
+            "code": 4,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "mouse",
+          "edge": "down",
+          "code": 4,
+          "isInjected": false,
+          "stopwatchTicks": 1592210440666
+        },
+        {
+          "kind": "mouse",
+          "edge": "up",
+          "code": 4,
+          "isInjected": false,
+          "stopwatchTicks": 1592211825154
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G3",
+          "edge": 0,
+          "layerId": "base",
+          "outputTokens": [
+            "Mouse:Middle"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159221032.9193,
+          "dispatchCompletedMonotonicMs": 159221043.1145,
+          "dispatchLatencyMs": 10.195199996232986,
+          "sequence": 13
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G3",
+          "edge": 1,
+          "layerId": "base",
+          "outputTokens": [
+            "Mouse:Middle"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159221172.5461,
+          "dispatchCompletedMonotonicMs": 159221182.0299,
+          "dispatchLatencyMs": 9.483800023794174,
+          "sequence": 14
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "g13-sequence",
+      "instruction": "G13\u306EG4\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 126,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 126,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 162,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 127,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 162,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 127,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 126,
+          "isInjected": false,
+          "stopwatchTicks": 1592475615001
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 126,
+          "isInjected": false,
+          "stopwatchTicks": 1592475649559
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 162,
+          "isInjected": false,
+          "stopwatchTicks": 1592475664853
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 127,
+          "isInjected": false,
+          "stopwatchTicks": 1592475677274
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 162,
+          "isInjected": false,
+          "stopwatchTicks": 1592475692302
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 127,
+          "isInjected": false,
+          "stopwatchTicks": 1592475702043
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G4",
+          "edge": 0,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F15",
+            "Key:F15",
+            "Key:LCtrl",
+            "Key:F16",
+            "Key:F16",
+            "Key:LCtrl"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159247559.5157,
+          "dispatchCompletedMonotonicMs": 159247569.111,
+          "dispatchLatencyMs": 9.595299988985062,
+          "sequence": 17
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G4",
+          "edge": 1,
+          "layerId": "base",
+          "outputTokens": [],
+          "emitted": false,
+          "inputMonotonicMs": 159247739.3522,
+          "dispatchCompletedMonotonicMs": 159247750.4297,
+          "dispatchLatencyMs": 11.077499985694885,
+          "sequence": 18
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "g600-key",
+      "instruction": "G600\u306EG9\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 128,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 128,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 128,
+          "isInjected": false,
+          "stopwatchTicks": 1593456943114
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 128,
+          "isInjected": false,
+          "stopwatchTicks": 1593458684708
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G9",
+          "edge": 0,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:F17"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159345688.3981,
+          "dispatchCompletedMonotonicMs": 159345694.9685,
+          "dispatchLatencyMs": 6.57039999961853,
+          "sequence": 19
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G9",
+          "edge": 1,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:F17"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159345854.3966,
+          "dispatchCompletedMonotonicMs": 159345868.9281,
+          "dispatchLatencyMs": 14.531499981880188,
+          "sequence": 20
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "g600-chord",
+      "instruction": "G600\u306EG10\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 160,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 129,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 160,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 129,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 160,
+          "isInjected": false,
+          "stopwatchTicks": 1593914191157
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 129,
+          "isInjected": false,
+          "stopwatchTicks": 1593914196004
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 160,
+          "isInjected": false,
+          "stopwatchTicks": 1593915881227
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 129,
+          "isInjected": false,
+          "stopwatchTicks": 1593915887469
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G10",
+          "edge": 0,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:LShift",
+            "Key:F18"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159391407.7609,
+          "dispatchCompletedMonotonicMs": 159391419.6157,
+          "dispatchLatencyMs": 11.854800015687943,
+          "sequence": 23
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G10",
+          "edge": 1,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:LShift",
+            "Key:F18"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159391571.7731,
+          "dispatchCompletedMonotonicMs": 159391587.8582,
+          "dispatchLatencyMs": 16.085100024938583,
+          "sequence": 24
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "g600-mouse",
+      "instruction": "G600\u306EG11\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "mouse",
+            "edge": "down",
+            "code": 4,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "mouse",
+            "edge": "up",
+            "code": 4,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "mouse",
+          "edge": "down",
+          "code": 4,
+          "isInjected": false,
+          "stopwatchTicks": 1594091278992
+        },
+        {
+          "kind": "mouse",
+          "edge": "up",
+          "code": 4,
+          "isInjected": false,
+          "stopwatchTicks": 1594092859338
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G11",
+          "edge": 0,
+          "layerId": "normal",
+          "outputTokens": [
+            "Mouse:Middle"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159409118.3313,
+          "dispatchCompletedMonotonicMs": 159409127.2853,
+          "dispatchLatencyMs": 8.953999996185303,
+          "sequence": 27
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G11",
+          "edge": 1,
+          "layerId": "normal",
+          "outputTokens": [
+            "Mouse:Middle"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159409277.2742,
+          "dispatchCompletedMonotonicMs": 159409284.4326,
+          "dispatchLatencyMs": 7.158399999141693,
+          "sequence": 28
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "g600-sequence",
+      "instruction": "G600\u306EG12\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 132,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 132,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 164,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 133,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 164,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 133,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 132,
+          "isInjected": false,
+          "stopwatchTicks": 1594306846479
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 132,
+          "isInjected": false,
+          "stopwatchTicks": 1594306867542
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 164,
+          "isInjected": false,
+          "stopwatchTicks": 1594306888762
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 133,
+          "isInjected": false,
+          "stopwatchTicks": 1594306896615
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 164,
+          "isInjected": false,
+          "stopwatchTicks": 1594306909099
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 133,
+          "isInjected": false,
+          "stopwatchTicks": 1594306926693
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G12",
+          "edge": 0,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:F21",
+            "Key:F21",
+            "Key:LAlt",
+            "Key:F22",
+            "Key:F22",
+            "Key:LAlt"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159430668.9838,
+          "dispatchCompletedMonotonicMs": 159430691.2626,
+          "dispatchLatencyMs": 22.278800010681152,
+          "sequence": 31
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G12",
+          "edge": 1,
+          "layerId": "normal",
+          "outputTokens": [],
+          "emitted": false,
+          "inputMonotonicMs": 159430814.911,
+          "dispatchCompletedMonotonicMs": 159430821.2231,
+          "dispatchLatencyMs": 6.312099993228912,
+          "sequence": 32
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "both-devices",
+      "instruction": "G13\u306EG5\u3068G600\u306EG13\u3092\u540C\u6642\u306B\u62BC\u3057\u3066\u3001\u4E21\u65B9\u3068\u3082\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 130,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 134,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 130,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 134,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 130,
+          "isInjected": false,
+          "stopwatchTicks": 1594919662703
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594920141306
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594925272390
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594925577949
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594925894175
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594926200047
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594926507411
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594926821083
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594927126812
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594927586965
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594927896597
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594928208106
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594928520014
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594928824639
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594929133639
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 130,
+          "isInjected": false,
+          "stopwatchTicks": 1594929301904
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594929461288
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594925272390
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594925577949
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594925894175
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594926200047
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594926507411
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594926821083
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594927126812
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594927586965
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594927896597
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594928208106
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594928520014
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594928824639
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 1594929133639
+        }
+      ],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G5",
+          "edge": 0,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F19"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159491962.3747,
+          "dispatchCompletedMonotonicMs": 159491966.8232,
+          "dispatchLatencyMs": 4.448499977588654,
+          "sequence": 35
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G13",
+          "edge": 0,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:F23"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159492005.7398,
+          "dispatchCompletedMonotonicMs": 159492014.6788,
+          "dispatchLatencyMs": 8.938999980688095,
+          "sequence": 36
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G5",
+          "edge": 1,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F19"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159492926.3852,
+          "dispatchCompletedMonotonicMs": 159492929.6748,
+          "dispatchLatencyMs": 3.2896000146865845,
+          "sequence": 37
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G13",
+          "edge": 1,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:F23"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 159492936.7523,
+          "dispatchCompletedMonotonicMs": 159492946.6391,
+          "dispatchLatencyMs": 9.886799991130829,
+          "sequence": 38
+        }
+      ],
+      "passed": false
+    }
+  ],
+  "traceEntries": [
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F13"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159177970.7269,
+      "dispatchCompletedMonotonicMs": 159178006.2225,
+      "dispatchLatencyMs": 35.49559998512268,
+      "sequence": 1
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F13"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159178179.3279,
+      "dispatchCompletedMonotonicMs": 159178192.5458,
+      "dispatchLatencyMs": 13.21790000796318,
+      "sequence": 2
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G2",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:LCtrl",
+        "Key:F14"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159208598.0713,
+      "dispatchCompletedMonotonicMs": 159208604.5818,
+      "dispatchLatencyMs": 6.510500013828278,
+      "sequence": 11
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G2",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:LCtrl",
+        "Key:F14"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159208830.1811,
+      "dispatchCompletedMonotonicMs": 159208838.5245,
+      "dispatchLatencyMs": 8.343400001525879,
+      "sequence": 12
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G3",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Mouse:Middle"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159221032.9193,
+      "dispatchCompletedMonotonicMs": 159221043.1145,
+      "dispatchLatencyMs": 10.195199996232986,
+      "sequence": 13
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G3",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Mouse:Middle"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159221172.5461,
+      "dispatchCompletedMonotonicMs": 159221182.0299,
+      "dispatchLatencyMs": 9.483800023794174,
+      "sequence": 14
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G4",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F15",
+        "Key:F15",
+        "Key:LCtrl",
+        "Key:F16",
+        "Key:F16",
+        "Key:LCtrl"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159247559.5157,
+      "dispatchCompletedMonotonicMs": 159247569.111,
+      "dispatchLatencyMs": 9.595299988985062,
+      "sequence": 17
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G4",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [],
+      "emitted": false,
+      "inputMonotonicMs": 159247739.3522,
+      "dispatchCompletedMonotonicMs": 159247750.4297,
+      "dispatchLatencyMs": 11.077499985694885,
+      "sequence": 18
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G9",
+      "edge": 0,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:F17"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159345688.3981,
+      "dispatchCompletedMonotonicMs": 159345694.9685,
+      "dispatchLatencyMs": 6.57039999961853,
+      "sequence": 19
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G9",
+      "edge": 1,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:F17"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159345854.3966,
+      "dispatchCompletedMonotonicMs": 159345868.9281,
+      "dispatchLatencyMs": 14.531499981880188,
+      "sequence": 20
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G10",
+      "edge": 0,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:LShift",
+        "Key:F18"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159391407.7609,
+      "dispatchCompletedMonotonicMs": 159391419.6157,
+      "dispatchLatencyMs": 11.854800015687943,
+      "sequence": 23
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G10",
+      "edge": 1,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:LShift",
+        "Key:F18"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159391571.7731,
+      "dispatchCompletedMonotonicMs": 159391587.8582,
+      "dispatchLatencyMs": 16.085100024938583,
+      "sequence": 24
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G11",
+      "edge": 0,
+      "layerId": "normal",
+      "outputTokens": [
+        "Mouse:Middle"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159409118.3313,
+      "dispatchCompletedMonotonicMs": 159409127.2853,
+      "dispatchLatencyMs": 8.953999996185303,
+      "sequence": 27
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G11",
+      "edge": 1,
+      "layerId": "normal",
+      "outputTokens": [
+        "Mouse:Middle"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159409277.2742,
+      "dispatchCompletedMonotonicMs": 159409284.4326,
+      "dispatchLatencyMs": 7.158399999141693,
+      "sequence": 28
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G12",
+      "edge": 0,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:F21",
+        "Key:F21",
+        "Key:LAlt",
+        "Key:F22",
+        "Key:F22",
+        "Key:LAlt"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159430668.9838,
+      "dispatchCompletedMonotonicMs": 159430691.2626,
+      "dispatchLatencyMs": 22.278800010681152,
+      "sequence": 31
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G12",
+      "edge": 1,
+      "layerId": "normal",
+      "outputTokens": [],
+      "emitted": false,
+      "inputMonotonicMs": 159430814.911,
+      "dispatchCompletedMonotonicMs": 159430821.2231,
+      "dispatchLatencyMs": 6.312099993228912,
+      "sequence": 32
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G5",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F19"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159491962.3747,
+      "dispatchCompletedMonotonicMs": 159491966.8232,
+      "dispatchLatencyMs": 4.448499977588654,
+      "sequence": 35
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G13",
+      "edge": 0,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:F23"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159492005.7398,
+      "dispatchCompletedMonotonicMs": 159492014.6788,
+      "dispatchLatencyMs": 8.938999980688095,
+      "sequence": 36
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G5",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F19"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159492926.3852,
+      "dispatchCompletedMonotonicMs": 159492929.6748,
+      "dispatchLatencyMs": 3.2896000146865845,
+      "sequence": 37
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G13",
+      "edge": 1,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:F23"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 159492936.7523,
+      "dispatchCompletedMonotonicMs": 159492946.6391,
+      "dispatchLatencyMs": 9.886799991130829,
+      "sequence": 38
+    }
+  ],
+  "injectedFallbackEvents": [],
+  "wrongReleaseCount": 0,
+  "stuckOutputs": [],
+  "latency": {
+    "count": 0,
+    "p50Milliseconds": 0,
+    "p95Milliseconds": 0,
+    "p99Milliseconds": 0,
+    "maximumMilliseconds": 0
+  },
+  "stopErrors": [],
+  "passed": false,
+  "error": "System.InvalidOperationException: action \u0027both-devices\u0027 \u306Elive\u53D7\u5165\u304C\u4E0D\u6210\u7ACB\u3067\u3059\u3002\r\n   at OpenLogicool.Probe.SerialHidLiveSmoke.RunAction(ResidentInputHost host, HidObservationWindow observer, SerialHidLiveSmokeResult result, String actionId, String instruction, IReadOnlyList\u00601 expectedGroups, IReadOnlyList\u00601 expectedInputs, Boolean checkUnexpectedHardware) in C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.Probe\\SerialHidLiveSmoke.cs:line 248\r\n   at OpenLogicool.Probe.SerialHidLiveSmoke.RunDefaultActions(ResidentInputHost host, HidObservationWindow observer, SerialHidLiveSmokeResult result, String g13, String g600) in C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.Probe\\SerialHidLiveSmoke.cs:line 198\r\n   at OpenLogicool.Probe.SerialHidLiveSmoke.Run(String[] arguments, String outputDirectory) in C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.Probe\\SerialHidLiveSmoke.cs:line 65"
+}

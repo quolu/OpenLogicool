@@ -1,4 +1,5 @@
 using OpenLogicool.Contracts.Devices.Shared;
+using OpenLogicool.Devices.G600;
 using OpenLogicool.Input;
 using Xunit;
 
@@ -65,6 +66,17 @@ public sealed class ResidentOutputSessionTests
         Assert.Contains("同時に使えません", error.Message, StringComparison.Ordinal);
         ResidentOutputPolicy.EnsureStartAllowed(ResidentOutputRoute.SerialHid, g600OnboardActive: false);
         ResidentOutputPolicy.EnsureStartAllowed(ResidentOutputRoute.SendInput, g600OnboardActive: true);
+    }
+
+    [Fact]
+    public void G600_legacy_suppression_is_selected_by_output_route()
+    {
+        Assert.Equal(
+            G600LegacySuppressionMode.IntermediateUsage,
+            G600LeftoverHostSupport.SuppressionModeFor(ResidentOutputRoute.SendInput));
+        Assert.Equal(
+            G600LegacySuppressionMode.NoOutput,
+            G600LeftoverHostSupport.SuppressionModeFor(ResidentOutputRoute.SerialHid));
     }
 
     [Fact]

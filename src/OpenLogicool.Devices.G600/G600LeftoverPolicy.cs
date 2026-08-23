@@ -32,7 +32,8 @@ public static class G600LeftoverPolicy
         bool devicePresent,
         bool coexistenceRunning,
         byte[]? currentF3,
-        byte[]? baselineF3)
+        byte[]? baselineF3,
+        G600LegacySuppressionMode mode = G600LegacySuppressionMode.IntermediateUsage)
     {
         if (!managed)
         {
@@ -49,19 +50,33 @@ public static class G600LeftoverPolicy
             return new(G600LeftoverKind.RefuseNoDevice, "G600 の feature report を読めない。");
         }
 
-        if (G600SideRemap.IsApplied(currentF3))
+        if (G600LegacySuppression.IsApplied(currentF3, mode))
         {
             if (baselineF3 is null)
             {
                 return new(
                     G600LeftoverKind.RefuseAppliedWithoutBaseline,
-                    "既に中間 usage だが復元元がない。probe g600-restore-retry で戻してから再実行すること。");
+                    "既に legacy 抑止済みだが復元元がない。probe g600-restore-retry で戻してから再実行すること。");
             }
 
-            return new(G600LeftoverKind.AlreadyApplied, "side remap は既に残置されている。");
+            return new(G600LeftoverKind.AlreadyApplied, "選択中の legacy 抑止は既に残置されている。");
         }
 
-        return new(G600LeftoverKind.Apply, "出荷時の side 割当を中間 usage へ書き換えて残置する。");
+        if (baselineF3 is null && G600LegacySuppression.IsAnyApplied(currentF3))
+        {
+            return new(
+                G600LeftoverKind.RefuseAppliedWithoutBaseline,
+                "別方式の legacy 抑止が残っているが復元元がない。probe g600-restore-retry で戻してから再実行すること。");
+        }
+
+        return mode switch
+        {
+            G600LegacySuppressionMode.IntermediateUsage =>
+                new(G600LeftoverKind.Apply, "side 割当を中間 usage へ書き換えて残置する。"),
+            G600LegacySuppressionMode.NoOutput =>
+                new(G600LeftoverKind.Apply, "G6〜G20 の onboard 出力を無効化して残置する。"),
+            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "unknown G600 legacy suppression mode"),
+        };
     }
 
     public static G600LeftoverDecision DecideRestore(

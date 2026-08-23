@@ -1,0 +1,4227 @@
+{
+  "schema": "openlogicool.serial-hid.fastpath-latency.v1",
+  "capturedAtUtc": "2026-08-23T05:46:30.9198035Z",
+  "machine": "FOX",
+  "selectedDeviceInstanceId": "USB\\VID_1B4F\u0026PID_9206\u0026MI_00\\A\u00263662A262\u00260\u00260000",
+  "transientPort": "COM8",
+  "firmwareVersion": "1.0.0",
+  "requestedEdgeCount": 200,
+  "processedEdgeCount": 200,
+  "traceEntries": [
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1079859.6338,
+      "dispatchCompletedMonotonicMs": 1079872.5357,
+      "dispatchLatencyMs": 12.901899999938905,
+      "sequence": 1
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1079899.1404,
+      "dispatchCompletedMonotonicMs": 1079902.1843,
+      "dispatchLatencyMs": 3.0439000001642853,
+      "sequence": 2
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1079929.8546,
+      "dispatchCompletedMonotonicMs": 1079931.202,
+      "dispatchLatencyMs": 1.3474000000860542,
+      "sequence": 3
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1079960.9001,
+      "dispatchCompletedMonotonicMs": 1079963.0609,
+      "dispatchLatencyMs": 2.160799999954179,
+      "sequence": 4
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1079991.5451,
+      "dispatchCompletedMonotonicMs": 1079993.1977,
+      "dispatchLatencyMs": 1.6525999999139458,
+      "sequence": 5
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080023.014,
+      "dispatchCompletedMonotonicMs": 1080026.1787,
+      "dispatchLatencyMs": 3.1647000000812113,
+      "sequence": 6
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080054.146,
+      "dispatchCompletedMonotonicMs": 1080055.1706,
+      "dispatchLatencyMs": 1.0246000001206994,
+      "sequence": 7
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080085.0586,
+      "dispatchCompletedMonotonicMs": 1080087.069,
+      "dispatchLatencyMs": 2.0103999997954816,
+      "sequence": 8
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080116.017,
+      "dispatchCompletedMonotonicMs": 1080117.2018,
+      "dispatchLatencyMs": 1.1847999999299645,
+      "sequence": 9
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080147.704,
+      "dispatchCompletedMonotonicMs": 1080151.1294,
+      "dispatchLatencyMs": 3.425400000065565,
+      "sequence": 10
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080180.006,
+      "dispatchCompletedMonotonicMs": 1080181.2368,
+      "dispatchLatencyMs": 1.2308000000193715,
+      "sequence": 11
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080211.4553,
+      "dispatchCompletedMonotonicMs": 1080214.2358,
+      "dispatchLatencyMs": 2.7804999998770654,
+      "sequence": 12
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080242.6134,
+      "dispatchCompletedMonotonicMs": 1080244.2236,
+      "dispatchLatencyMs": 1.6101999999955297,
+      "sequence": 13
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080273.2291,
+      "dispatchCompletedMonotonicMs": 1080275.0768,
+      "dispatchLatencyMs": 1.8476999998092651,
+      "sequence": 14
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080304.2987,
+      "dispatchCompletedMonotonicMs": 1080305.1876,
+      "dispatchLatencyMs": 0.8889000001363456,
+      "sequence": 15
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080335.891,
+      "dispatchCompletedMonotonicMs": 1080338.0852,
+      "dispatchLatencyMs": 2.1942000000271946,
+      "sequence": 16
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080367.065,
+      "dispatchCompletedMonotonicMs": 1080368.0849,
+      "dispatchLatencyMs": 1.019899999955669,
+      "sequence": 17
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080398.312,
+      "dispatchCompletedMonotonicMs": 1080400.1572,
+      "dispatchLatencyMs": 1.8452000000979751,
+      "sequence": 18
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080428.7504,
+      "dispatchCompletedMonotonicMs": 1080430.1557,
+      "dispatchLatencyMs": 1.4052999999839813,
+      "sequence": 19
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080459.3839,
+      "dispatchCompletedMonotonicMs": 1080461.1333,
+      "dispatchLatencyMs": 1.7494000000879169,
+      "sequence": 20
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080490.0979,
+      "dispatchCompletedMonotonicMs": 1080491.1162,
+      "dispatchLatencyMs": 1.0183000001125038,
+      "sequence": 21
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080521.057,
+      "dispatchCompletedMonotonicMs": 1080523.029,
+      "dispatchLatencyMs": 1.9720000000670552,
+      "sequence": 22
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080551.9012,
+      "dispatchCompletedMonotonicMs": 1080553.3144,
+      "dispatchLatencyMs": 1.4132000000681728,
+      "sequence": 23
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080582.8803,
+      "dispatchCompletedMonotonicMs": 1080585.0675,
+      "dispatchLatencyMs": 2.187199999811128,
+      "sequence": 24
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080613.8821,
+      "dispatchCompletedMonotonicMs": 1080615.2735,
+      "dispatchLatencyMs": 1.3913999998476356,
+      "sequence": 25
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080646.071,
+      "dispatchCompletedMonotonicMs": 1080648.0034,
+      "dispatchLatencyMs": 1.9324000000488013,
+      "sequence": 26
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080678.0157,
+      "dispatchCompletedMonotonicMs": 1080679.267,
+      "dispatchLatencyMs": 1.2512999998871237,
+      "sequence": 27
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080708.6056,
+      "dispatchCompletedMonotonicMs": 1080711.0403,
+      "dispatchLatencyMs": 2.434700000099838,
+      "sequence": 28
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080740.0697,
+      "dispatchCompletedMonotonicMs": 1080741.4025,
+      "dispatchLatencyMs": 1.332799999974668,
+      "sequence": 29
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080770.1739,
+      "dispatchCompletedMonotonicMs": 1080772.0806,
+      "dispatchLatencyMs": 1.9066999999340624,
+      "sequence": 30
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080802.9116,
+      "dispatchCompletedMonotonicMs": 1080804.2425,
+      "dispatchLatencyMs": 1.3308999999426305,
+      "sequence": 31
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080834.8269,
+      "dispatchCompletedMonotonicMs": 1080837.214,
+      "dispatchLatencyMs": 2.387099999934435,
+      "sequence": 32
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080865.4918,
+      "dispatchCompletedMonotonicMs": 1080867.1595,
+      "dispatchLatencyMs": 1.6677000001072884,
+      "sequence": 33
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080896.897,
+      "dispatchCompletedMonotonicMs": 1080899.1174,
+      "dispatchLatencyMs": 2.2203999999910593,
+      "sequence": 34
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080927.2779,
+      "dispatchCompletedMonotonicMs": 1080929.2039,
+      "dispatchLatencyMs": 1.9259999999776483,
+      "sequence": 35
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080958.1034,
+      "dispatchCompletedMonotonicMs": 1080960.0406,
+      "dispatchLatencyMs": 1.9372000000439584,
+      "sequence": 36
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1080989.791,
+      "dispatchCompletedMonotonicMs": 1080991.3123,
+      "dispatchLatencyMs": 1.5213000001385808,
+      "sequence": 37
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081021.5834,
+      "dispatchCompletedMonotonicMs": 1081024.1547,
+      "dispatchLatencyMs": 2.571300000185147,
+      "sequence": 38
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081052.6038,
+      "dispatchCompletedMonotonicMs": 1081054.2869,
+      "dispatchLatencyMs": 1.6831000000238419,
+      "sequence": 39
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081083.3387,
+      "dispatchCompletedMonotonicMs": 1081085.173,
+      "dispatchLatencyMs": 1.8342999999877065,
+      "sequence": 40
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081114.9039,
+      "dispatchCompletedMonotonicMs": 1081116.3482,
+      "dispatchLatencyMs": 1.4442999998573214,
+      "sequence": 41
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081145.6804,
+      "dispatchCompletedMonotonicMs": 1081148.2025,
+      "dispatchLatencyMs": 2.522099999943748,
+      "sequence": 42
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081176.0164,
+      "dispatchCompletedMonotonicMs": 1081177.2964,
+      "dispatchLatencyMs": 1.2800000000279397,
+      "sequence": 43
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081206.9882,
+      "dispatchCompletedMonotonicMs": 1081209.0657,
+      "dispatchLatencyMs": 2.0774999998975545,
+      "sequence": 44
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081238.8584,
+      "dispatchCompletedMonotonicMs": 1081240.3488,
+      "dispatchLatencyMs": 1.4904000000096858,
+      "sequence": 45
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081270.1983,
+      "dispatchCompletedMonotonicMs": 1081272.0732,
+      "dispatchLatencyMs": 1.8748999999370426,
+      "sequence": 46
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081300.5831,
+      "dispatchCompletedMonotonicMs": 1081302.2094,
+      "dispatchLatencyMs": 1.6263000001199543,
+      "sequence": 47
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081332.5049,
+      "dispatchCompletedMonotonicMs": 1081334.0773,
+      "dispatchLatencyMs": 1.5723999999463558,
+      "sequence": 48
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081363.6028,
+      "dispatchCompletedMonotonicMs": 1081365.337,
+      "dispatchLatencyMs": 1.7342000000644475,
+      "sequence": 49
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081395.4069,
+      "dispatchCompletedMonotonicMs": 1081397.2153,
+      "dispatchLatencyMs": 1.8083999999798834,
+      "sequence": 50
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081425.489,
+      "dispatchCompletedMonotonicMs": 1081427.2069,
+      "dispatchLatencyMs": 1.7179000000469387,
+      "sequence": 51
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081456.1105,
+      "dispatchCompletedMonotonicMs": 1081458.1992,
+      "dispatchLatencyMs": 2.0886999999638647,
+      "sequence": 52
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081486.9002,
+      "dispatchCompletedMonotonicMs": 1081488.1639,
+      "dispatchLatencyMs": 1.2637000000104308,
+      "sequence": 53
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081517.671,
+      "dispatchCompletedMonotonicMs": 1081520.2926,
+      "dispatchLatencyMs": 2.621599999954924,
+      "sequence": 54
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081548.7997,
+      "dispatchCompletedMonotonicMs": 1081550.1831,
+      "dispatchLatencyMs": 1.3833999999333173,
+      "sequence": 55
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081579.3051,
+      "dispatchCompletedMonotonicMs": 1081581.188,
+      "dispatchLatencyMs": 1.8829000000841916,
+      "sequence": 56
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081609.9802,
+      "dispatchCompletedMonotonicMs": 1081611.2572,
+      "dispatchLatencyMs": 1.2770000000018626,
+      "sequence": 57
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081641.5605,
+      "dispatchCompletedMonotonicMs": 1081643.0643,
+      "dispatchLatencyMs": 1.503800000064075,
+      "sequence": 58
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081672.4044,
+      "dispatchCompletedMonotonicMs": 1081674.3447,
+      "dispatchLatencyMs": 1.9402999999001622,
+      "sequence": 59
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081703.4469,
+      "dispatchCompletedMonotonicMs": 1081705.0934,
+      "dispatchLatencyMs": 1.6464999997988343,
+      "sequence": 60
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081733.9427,
+      "dispatchCompletedMonotonicMs": 1081735.1952,
+      "dispatchLatencyMs": 1.2524999999441206,
+      "sequence": 61
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081764.9751,
+      "dispatchCompletedMonotonicMs": 1081767.0959,
+      "dispatchLatencyMs": 2.1208000001497567,
+      "sequence": 62
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081795.6672,
+      "dispatchCompletedMonotonicMs": 1081797.2109,
+      "dispatchLatencyMs": 1.5437000000383705,
+      "sequence": 63
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081826.302,
+      "dispatchCompletedMonotonicMs": 1081828.0513,
+      "dispatchLatencyMs": 1.7493000000249594,
+      "sequence": 64
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081858.0708,
+      "dispatchCompletedMonotonicMs": 1081859.1579,
+      "dispatchLatencyMs": 1.0870999998878688,
+      "sequence": 65
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081888.9598,
+      "dispatchCompletedMonotonicMs": 1081891.2396,
+      "dispatchLatencyMs": 2.279799999902025,
+      "sequence": 66
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081920.2191,
+      "dispatchCompletedMonotonicMs": 1081921.0522,
+      "dispatchLatencyMs": 0.8330999999307096,
+      "sequence": 67
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081951.3957,
+      "dispatchCompletedMonotonicMs": 1081953.0975,
+      "dispatchLatencyMs": 1.701799999922514,
+      "sequence": 68
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1081982.9708,
+      "dispatchCompletedMonotonicMs": 1081984.2721,
+      "dispatchLatencyMs": 1.3012999999336898,
+      "sequence": 69
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082013.3201,
+      "dispatchCompletedMonotonicMs": 1082015.1891,
+      "dispatchLatencyMs": 1.8690000001806766,
+      "sequence": 70
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082044.491,
+      "dispatchCompletedMonotonicMs": 1082046.2464,
+      "dispatchLatencyMs": 1.755400000140071,
+      "sequence": 71
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082075.4364,
+      "dispatchCompletedMonotonicMs": 1082077.182,
+      "dispatchLatencyMs": 1.7456000000238419,
+      "sequence": 72
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082107.4619,
+      "dispatchCompletedMonotonicMs": 1082109.2655,
+      "dispatchLatencyMs": 1.8035999999847263,
+      "sequence": 73
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082137.7702,
+      "dispatchCompletedMonotonicMs": 1082140.0991,
+      "dispatchLatencyMs": 2.3289000000804663,
+      "sequence": 74
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082169.0664,
+      "dispatchCompletedMonotonicMs": 1082170.2346,
+      "dispatchLatencyMs": 1.1682000001892447,
+      "sequence": 75
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082200.2284,
+      "dispatchCompletedMonotonicMs": 1082202.1795,
+      "dispatchLatencyMs": 1.951100000180304,
+      "sequence": 76
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082231.5664,
+      "dispatchCompletedMonotonicMs": 1082233.2354,
+      "dispatchLatencyMs": 1.668999999994412,
+      "sequence": 77
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082262.8305,
+      "dispatchCompletedMonotonicMs": 1082264.2614,
+      "dispatchLatencyMs": 1.4309000000357628,
+      "sequence": 78
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082294.5936,
+      "dispatchCompletedMonotonicMs": 1082296.2782,
+      "dispatchLatencyMs": 1.6846000000368804,
+      "sequence": 79
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082326.6005,
+      "dispatchCompletedMonotonicMs": 1082328.129,
+      "dispatchLatencyMs": 1.5285000000149012,
+      "sequence": 80
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082358.1012,
+      "dispatchCompletedMonotonicMs": 1082359.1609,
+      "dispatchLatencyMs": 1.0597000000998378,
+      "sequence": 81
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082389.1604,
+      "dispatchCompletedMonotonicMs": 1082391.2483,
+      "dispatchLatencyMs": 2.0879000001586974,
+      "sequence": 82
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082419.9511,
+      "dispatchCompletedMonotonicMs": 1082421.3238,
+      "dispatchLatencyMs": 1.3726999999489635,
+      "sequence": 83
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082450.8097,
+      "dispatchCompletedMonotonicMs": 1082453.1645,
+      "dispatchLatencyMs": 2.3547999998554587,
+      "sequence": 84
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082481.9361,
+      "dispatchCompletedMonotonicMs": 1082483.2824,
+      "dispatchLatencyMs": 1.346299999859184,
+      "sequence": 85
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082512.8557,
+      "dispatchCompletedMonotonicMs": 1082515.2079,
+      "dispatchLatencyMs": 2.3522000000812113,
+      "sequence": 86
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082543.5603,
+      "dispatchCompletedMonotonicMs": 1082545.3251,
+      "dispatchLatencyMs": 1.7648000000044703,
+      "sequence": 87
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082574.384,
+      "dispatchCompletedMonotonicMs": 1082576.1526,
+      "dispatchLatencyMs": 1.7685999998357147,
+      "sequence": 88
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082605.2966,
+      "dispatchCompletedMonotonicMs": 1082606.1348,
+      "dispatchLatencyMs": 0.8382000001147389,
+      "sequence": 89
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082636.1495,
+      "dispatchCompletedMonotonicMs": 1082638.1713,
+      "dispatchLatencyMs": 2.0217999999877065,
+      "sequence": 90
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082667.4442,
+      "dispatchCompletedMonotonicMs": 1082669.2554,
+      "dispatchLatencyMs": 1.8111999998800457,
+      "sequence": 91
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082698.5266,
+      "dispatchCompletedMonotonicMs": 1082700.2109,
+      "dispatchLatencyMs": 1.6843000000808388,
+      "sequence": 92
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082729.968,
+      "dispatchCompletedMonotonicMs": 1082731.3823,
+      "dispatchLatencyMs": 1.4142999998293817,
+      "sequence": 93
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082760.3738,
+      "dispatchCompletedMonotonicMs": 1082762.7381,
+      "dispatchLatencyMs": 2.364300000015646,
+      "sequence": 94
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082791.3945,
+      "dispatchCompletedMonotonicMs": 1082793.3135,
+      "dispatchLatencyMs": 1.918999999994412,
+      "sequence": 95
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082822.0175,
+      "dispatchCompletedMonotonicMs": 1082824.3238,
+      "dispatchLatencyMs": 2.306299999821931,
+      "sequence": 96
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082852.4248,
+      "dispatchCompletedMonotonicMs": 1082854.3039,
+      "dispatchLatencyMs": 1.8791000000201166,
+      "sequence": 97
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082883.3855,
+      "dispatchCompletedMonotonicMs": 1082885.2399,
+      "dispatchLatencyMs": 1.8543999998364598,
+      "sequence": 98
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082915.4714,
+      "dispatchCompletedMonotonicMs": 1082917.2942,
+      "dispatchLatencyMs": 1.8227999999653548,
+      "sequence": 99
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082946.7287,
+      "dispatchCompletedMonotonicMs": 1082949.3135,
+      "dispatchLatencyMs": 2.5847999998368323,
+      "sequence": 100
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1082978.0292,
+      "dispatchCompletedMonotonicMs": 1082979.292,
+      "dispatchLatencyMs": 1.2627999999094754,
+      "sequence": 101
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083009.9596,
+      "dispatchCompletedMonotonicMs": 1083012.2779,
+      "dispatchLatencyMs": 2.31830000015907,
+      "sequence": 102
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083040.9175,
+      "dispatchCompletedMonotonicMs": 1083042.3375,
+      "dispatchLatencyMs": 1.4199999999254942,
+      "sequence": 103
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083071.2456,
+      "dispatchCompletedMonotonicMs": 1083073.3377,
+      "dispatchLatencyMs": 2.0921000000089407,
+      "sequence": 104
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083102.3339,
+      "dispatchCompletedMonotonicMs": 1083103.2639,
+      "dispatchLatencyMs": 0.9299999999348074,
+      "sequence": 105
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083133.3853,
+      "dispatchCompletedMonotonicMs": 1083135.1473,
+      "dispatchLatencyMs": 1.7620000001043081,
+      "sequence": 106
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083163.9859,
+      "dispatchCompletedMonotonicMs": 1083165.4883,
+      "dispatchLatencyMs": 1.5024000001139939,
+      "sequence": 107
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083195.2628,
+      "dispatchCompletedMonotonicMs": 1083197.1811,
+      "dispatchLatencyMs": 1.9183000000193715,
+      "sequence": 108
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083225.7793,
+      "dispatchCompletedMonotonicMs": 1083227.3222,
+      "dispatchLatencyMs": 1.5429000000003725,
+      "sequence": 109
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083256.9226,
+      "dispatchCompletedMonotonicMs": 1083259.2062,
+      "dispatchLatencyMs": 2.2835999999661,
+      "sequence": 110
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083288.5486,
+      "dispatchCompletedMonotonicMs": 1083290.2852,
+      "dispatchLatencyMs": 1.7365999999456108,
+      "sequence": 111
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083319.2772,
+      "dispatchCompletedMonotonicMs": 1083322.2888,
+      "dispatchLatencyMs": 3.011600000085309,
+      "sequence": 112
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083350.982,
+      "dispatchCompletedMonotonicMs": 1083352.2955,
+      "dispatchLatencyMs": 1.3134999999310821,
+      "sequence": 113
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083381.7974,
+      "dispatchCompletedMonotonicMs": 1083384.2359,
+      "dispatchLatencyMs": 2.438499999931082,
+      "sequence": 114
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083412.0664,
+      "dispatchCompletedMonotonicMs": 1083413.3424,
+      "dispatchLatencyMs": 1.2760000000707805,
+      "sequence": 115
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083443.5713,
+      "dispatchCompletedMonotonicMs": 1083445.381,
+      "dispatchLatencyMs": 1.8097000000998378,
+      "sequence": 116
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083474.9879,
+      "dispatchCompletedMonotonicMs": 1083476.3747,
+      "dispatchLatencyMs": 1.3867999999783933,
+      "sequence": 117
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083506.0441,
+      "dispatchCompletedMonotonicMs": 1083508.2819,
+      "dispatchLatencyMs": 2.2378000000026077,
+      "sequence": 118
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083537.9976,
+      "dispatchCompletedMonotonicMs": 1083539.3508,
+      "dispatchLatencyMs": 1.3532000000122935,
+      "sequence": 119
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083568.6985,
+      "dispatchCompletedMonotonicMs": 1083572.2599,
+      "dispatchLatencyMs": 3.5614000000059605,
+      "sequence": 120
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083599.8047,
+      "dispatchCompletedMonotonicMs": 1083601.2638,
+      "dispatchLatencyMs": 1.4591000000946224,
+      "sequence": 121
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083631.4949,
+      "dispatchCompletedMonotonicMs": 1083633.2997,
+      "dispatchLatencyMs": 1.8048000000417233,
+      "sequence": 122
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083663.4543,
+      "dispatchCompletedMonotonicMs": 1083665.2009,
+      "dispatchLatencyMs": 1.746599999954924,
+      "sequence": 123
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083695.2716,
+      "dispatchCompletedMonotonicMs": 1083697.1335,
+      "dispatchLatencyMs": 1.8618999999016523,
+      "sequence": 124
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083726.7108,
+      "dispatchCompletedMonotonicMs": 1083728.485,
+      "dispatchLatencyMs": 1.7742000001017004,
+      "sequence": 125
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083758.2525,
+      "dispatchCompletedMonotonicMs": 1083759.2824,
+      "dispatchLatencyMs": 1.0298999999649823,
+      "sequence": 126
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083789.2887,
+      "dispatchCompletedMonotonicMs": 1083790.3595,
+      "dispatchLatencyMs": 1.0708000001031905,
+      "sequence": 127
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083820.9317,
+      "dispatchCompletedMonotonicMs": 1083823.214,
+      "dispatchLatencyMs": 2.2822999998461455,
+      "sequence": 128
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083852.0235,
+      "dispatchCompletedMonotonicMs": 1083853.3331,
+      "dispatchLatencyMs": 1.3096000000368804,
+      "sequence": 129
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083882.2851,
+      "dispatchCompletedMonotonicMs": 1083884.288,
+      "dispatchLatencyMs": 2.0028999999631196,
+      "sequence": 130
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083914.1003,
+      "dispatchCompletedMonotonicMs": 1083915.1975,
+      "dispatchLatencyMs": 1.0971999999601394,
+      "sequence": 131
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083945.5194,
+      "dispatchCompletedMonotonicMs": 1083947.1676,
+      "dispatchLatencyMs": 1.6481999999377877,
+      "sequence": 132
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1083976.235,
+      "dispatchCompletedMonotonicMs": 1083977.2773,
+      "dispatchLatencyMs": 1.0422999998554587,
+      "sequence": 133
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084007.1458,
+      "dispatchCompletedMonotonicMs": 1084009.3009,
+      "dispatchLatencyMs": 2.1550999998580664,
+      "sequence": 134
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084037.8576,
+      "dispatchCompletedMonotonicMs": 1084039.3395,
+      "dispatchLatencyMs": 1.481900000013411,
+      "sequence": 135
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084068.6101,
+      "dispatchCompletedMonotonicMs": 1084070.3884,
+      "dispatchLatencyMs": 1.778300000121817,
+      "sequence": 136
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084099.842,
+      "dispatchCompletedMonotonicMs": 1084101.3522,
+      "dispatchLatencyMs": 1.510200000135228,
+      "sequence": 137
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084130.5304,
+      "dispatchCompletedMonotonicMs": 1084132.4152,
+      "dispatchLatencyMs": 1.8847999998833984,
+      "sequence": 138
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084161.7361,
+      "dispatchCompletedMonotonicMs": 1084163.3498,
+      "dispatchLatencyMs": 1.6136999998707324,
+      "sequence": 139
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084193.5153,
+      "dispatchCompletedMonotonicMs": 1084195.444,
+      "dispatchLatencyMs": 1.928699999814853,
+      "sequence": 140
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084224.2274,
+      "dispatchCompletedMonotonicMs": 1084225.3131,
+      "dispatchLatencyMs": 1.0856999999377877,
+      "sequence": 141
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084255.1067,
+      "dispatchCompletedMonotonicMs": 1084257.2214,
+      "dispatchLatencyMs": 2.114700000034645,
+      "sequence": 142
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084286.2269,
+      "dispatchCompletedMonotonicMs": 1084287.3592,
+      "dispatchLatencyMs": 1.1323000001721084,
+      "sequence": 143
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084318.3233,
+      "dispatchCompletedMonotonicMs": 1084320.3691,
+      "dispatchLatencyMs": 2.045799999963492,
+      "sequence": 144
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084349.8676,
+      "dispatchCompletedMonotonicMs": 1084351.3778,
+      "dispatchLatencyMs": 1.5101999999023974,
+      "sequence": 145
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084380.5687,
+      "dispatchCompletedMonotonicMs": 1084382.2636,
+      "dispatchLatencyMs": 1.6949000000022352,
+      "sequence": 146
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084410.9551,
+      "dispatchCompletedMonotonicMs": 1084412.4375,
+      "dispatchLatencyMs": 1.4824000000953674,
+      "sequence": 147
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084442.1795,
+      "dispatchCompletedMonotonicMs": 1084444.225,
+      "dispatchLatencyMs": 2.0455000000074506,
+      "sequence": 148
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084472.8362,
+      "dispatchCompletedMonotonicMs": 1084474.4666,
+      "dispatchLatencyMs": 1.6303999999072403,
+      "sequence": 149
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084503.6088,
+      "dispatchCompletedMonotonicMs": 1084505.1989,
+      "dispatchLatencyMs": 1.5900999999139458,
+      "sequence": 150
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084535.4515,
+      "dispatchCompletedMonotonicMs": 1084536.4005,
+      "dispatchLatencyMs": 0.9490000000223517,
+      "sequence": 151
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084566.3673,
+      "dispatchCompletedMonotonicMs": 1084568.2031,
+      "dispatchLatencyMs": 1.835800000000745,
+      "sequence": 152
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084597.8565,
+      "dispatchCompletedMonotonicMs": 1084599.5512,
+      "dispatchLatencyMs": 1.694700000109151,
+      "sequence": 153
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084629.1497,
+      "dispatchCompletedMonotonicMs": 1084631.2411,
+      "dispatchLatencyMs": 2.0914000000339,
+      "sequence": 154
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084660.0514,
+      "dispatchCompletedMonotonicMs": 1084661.4163,
+      "dispatchLatencyMs": 1.3648999999277294,
+      "sequence": 155
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084691.1355,
+      "dispatchCompletedMonotonicMs": 1084693.2313,
+      "dispatchLatencyMs": 2.0958000000100583,
+      "sequence": 156
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084721.8817,
+      "dispatchCompletedMonotonicMs": 1084723.4191,
+      "dispatchLatencyMs": 1.5374000000301749,
+      "sequence": 157
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084754.0759,
+      "dispatchCompletedMonotonicMs": 1084756.2721,
+      "dispatchLatencyMs": 2.196199999889359,
+      "sequence": 158
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084784.4275,
+      "dispatchCompletedMonotonicMs": 1084785.3943,
+      "dispatchLatencyMs": 0.9668000000528991,
+      "sequence": 159
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084815.8025,
+      "dispatchCompletedMonotonicMs": 1084818.2074,
+      "dispatchLatencyMs": 2.4048999999649823,
+      "sequence": 160
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084846.1968,
+      "dispatchCompletedMonotonicMs": 1084847.2995,
+      "dispatchLatencyMs": 1.102699999930337,
+      "sequence": 161
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084877.2373,
+      "dispatchCompletedMonotonicMs": 1084879.2677,
+      "dispatchLatencyMs": 2.0304000000469387,
+      "sequence": 162
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084908.4944,
+      "dispatchCompletedMonotonicMs": 1084910.4781,
+      "dispatchLatencyMs": 1.9836999999824911,
+      "sequence": 163
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084939.2037,
+      "dispatchCompletedMonotonicMs": 1084941.4365,
+      "dispatchLatencyMs": 2.2328000001143664,
+      "sequence": 164
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1084970.0777,
+      "dispatchCompletedMonotonicMs": 1084971.5197,
+      "dispatchLatencyMs": 1.4420000000391155,
+      "sequence": 165
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085001.6931,
+      "dispatchCompletedMonotonicMs": 1085003.3848,
+      "dispatchLatencyMs": 1.691700000083074,
+      "sequence": 166
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085032.6556,
+      "dispatchCompletedMonotonicMs": 1085034.3125,
+      "dispatchLatencyMs": 1.6569000000599772,
+      "sequence": 167
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085064.4391,
+      "dispatchCompletedMonotonicMs": 1085066.3755,
+      "dispatchLatencyMs": 1.9364000000059605,
+      "sequence": 168
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085095.4857,
+      "dispatchCompletedMonotonicMs": 1085096.3172,
+      "dispatchLatencyMs": 0.8314999998547137,
+      "sequence": 169
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085127.2583,
+      "dispatchCompletedMonotonicMs": 1085129.2518,
+      "dispatchLatencyMs": 1.9934999998658895,
+      "sequence": 170
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085158.8154,
+      "dispatchCompletedMonotonicMs": 1085160.2912,
+      "dispatchLatencyMs": 1.4758000001311302,
+      "sequence": 171
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085189.7891,
+      "dispatchCompletedMonotonicMs": 1085192.2392,
+      "dispatchLatencyMs": 2.4501000000163913,
+      "sequence": 172
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085221.3196,
+      "dispatchCompletedMonotonicMs": 1085222.2966,
+      "dispatchLatencyMs": 0.9769999999552965,
+      "sequence": 173
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085252.6857,
+      "dispatchCompletedMonotonicMs": 1085254.2661,
+      "dispatchLatencyMs": 1.5803999998606741,
+      "sequence": 174
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085284.5914,
+      "dispatchCompletedMonotonicMs": 1085286.4066,
+      "dispatchLatencyMs": 1.8152000000700355,
+      "sequence": 175
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085315.0241,
+      "dispatchCompletedMonotonicMs": 1085317.2393,
+      "dispatchLatencyMs": 2.215199999976903,
+      "sequence": 176
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085344.9329,
+      "dispatchCompletedMonotonicMs": 1085346.4491,
+      "dispatchLatencyMs": 1.516200000187382,
+      "sequence": 177
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085375.4352,
+      "dispatchCompletedMonotonicMs": 1085377.3879,
+      "dispatchLatencyMs": 1.9527000000234693,
+      "sequence": 178
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085405.7238,
+      "dispatchCompletedMonotonicMs": 1085407.4857,
+      "dispatchLatencyMs": 1.7619000000413507,
+      "sequence": 179
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085436.4214,
+      "dispatchCompletedMonotonicMs": 1085438.2544,
+      "dispatchLatencyMs": 1.8329999998677522,
+      "sequence": 180
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085468.4075,
+      "dispatchCompletedMonotonicMs": 1085469.367,
+      "dispatchLatencyMs": 0.9595000001136214,
+      "sequence": 181
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085499.9298,
+      "dispatchCompletedMonotonicMs": 1085502.3885,
+      "dispatchLatencyMs": 2.4586999998427927,
+      "sequence": 182
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085530.6554,
+      "dispatchCompletedMonotonicMs": 1085532.5393,
+      "dispatchLatencyMs": 1.8839000000152737,
+      "sequence": 183
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085561.5224,
+      "dispatchCompletedMonotonicMs": 1085563.2586,
+      "dispatchLatencyMs": 1.7362000001594424,
+      "sequence": 184
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085592.5801,
+      "dispatchCompletedMonotonicMs": 1085594.3886,
+      "dispatchLatencyMs": 1.8085000000428408,
+      "sequence": 185
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085624.0705,
+      "dispatchCompletedMonotonicMs": 1085626.3092,
+      "dispatchLatencyMs": 2.238700000103563,
+      "sequence": 186
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085654.7451,
+      "dispatchCompletedMonotonicMs": 1085656.3921,
+      "dispatchLatencyMs": 1.6470000001136214,
+      "sequence": 187
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085686.7828,
+      "dispatchCompletedMonotonicMs": 1085688.2387,
+      "dispatchLatencyMs": 1.4559000001754612,
+      "sequence": 188
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085717.9081,
+      "dispatchCompletedMonotonicMs": 1085719.4134,
+      "dispatchLatencyMs": 1.5053000000771135,
+      "sequence": 189
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085749.3374,
+      "dispatchCompletedMonotonicMs": 1085751.2586,
+      "dispatchLatencyMs": 1.9211999999824911,
+      "sequence": 190
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085780.0216,
+      "dispatchCompletedMonotonicMs": 1085781.426,
+      "dispatchLatencyMs": 1.4043999998830259,
+      "sequence": 191
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085811.4334,
+      "dispatchCompletedMonotonicMs": 1085813.3025,
+      "dispatchLatencyMs": 1.8691000000108033,
+      "sequence": 192
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085842.097,
+      "dispatchCompletedMonotonicMs": 1085843.4514,
+      "dispatchLatencyMs": 1.3543999998364598,
+      "sequence": 193
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085873.344,
+      "dispatchCompletedMonotonicMs": 1085875.2814,
+      "dispatchLatencyMs": 1.9373999999370426,
+      "sequence": 194
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085904.5681,
+      "dispatchCompletedMonotonicMs": 1085905.2922,
+      "dispatchLatencyMs": 0.7240999999921769,
+      "sequence": 195
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085936.9573,
+      "dispatchCompletedMonotonicMs": 1085939.31,
+      "dispatchLatencyMs": 2.3527000001631677,
+      "sequence": 196
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085968.4986,
+      "dispatchCompletedMonotonicMs": 1085969.4342,
+      "dispatchLatencyMs": 0.9355999999679625,
+      "sequence": 197
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1085999.1318,
+      "dispatchCompletedMonotonicMs": 1086001.2974,
+      "dispatchLatencyMs": 2.165599999949336,
+      "sequence": 198
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1086030.2018,
+      "dispatchCompletedMonotonicMs": 1086031.4589,
+      "dispatchLatencyMs": 1.2571000000461936,
+      "sequence": 199
+    },
+    {
+      "deviceInstanceId": "serial-hid-latency-source",
+      "controlId": "Pulse",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 1086061.5117,
+      "dispatchCompletedMonotonicMs": 1086063.3756,
+      "dispatchLatencyMs": 1.8638999999966472,
+      "sequence": 200
+    }
+  ],
+  "hardwareEvents": [
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10798729910
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10799016250
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10799306192
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10799636177
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10799926281
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10800256206
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10800556296
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10800876267
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10801176287
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10801506359
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10801816301
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10802136307
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10802436311
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10802756327
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10803056359
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10803386414
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10803686383
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10804006342
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10804296471
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10804616466
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10804916472
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10805236487
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10805526495
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10805856461
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10806146418
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10806487276
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10806796540
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10807116486
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10807416774
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10807726536
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10808036624
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10808376609
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10808667214
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10808996613
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10809286616
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10809606638
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10809906784
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10810246689
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10810536711
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10810846607
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10811157017
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10811486648
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10811776650
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10812096695
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10812396899
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10812726726
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10813016888
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10813346782
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10813646831
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10813966849
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10814266809
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10814586761
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10814876842
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10815196745
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10815496864
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10815816827
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10816106855
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10816436837
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10816736882
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10817056811
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10817346919
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10817676946
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10817966863
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10818286955
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10818597007
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10818906949
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10819216975
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10819537031
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10819837017
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10820157095
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10820457143
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10820767021
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10821087046
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10821407119
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10821707096
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10822017092
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10822327313
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10822637232
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10822957330
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10823287123
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10823597214
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10823907181
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10824207253
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10824537298
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10824827318
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10825157284
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10825447383
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10825767215
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10826067292
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10826387330
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10826687990
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10827007355
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10827307327
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10827627476
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10827927285
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10828237322
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10828537445
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10828857471
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10829167404
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10829497411
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10829787456
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10830127462
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10830417653
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10830727554
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10831037496
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10831357471
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10831648032
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10831977531
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10832267538
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10832597564
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10832897616
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10833217685
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10833517658
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10833847630
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10834127585
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10834457618
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10834757659
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10835087689
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10835387775
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10835717677
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10836007754
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10836337721
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10836647846
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10836977736
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10837277802
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10837597785
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10837907872
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10838237766
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10838537877
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10838847807
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10839157854
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10839477877
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10839777863
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10840097949
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10840387934
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10840698013
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10841007846
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10841317917
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10841627967
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10841948193
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10842258036
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10842578045
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10842878073
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10843207956
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10843507999
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10843828126
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10844118082
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10844448065
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10844738130
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10845058057
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10845368190
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10845688108
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10845988563
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10846318674
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10846608137
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10846938794
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10847228209
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10847568214
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10847858249
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10848188222
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10848478302
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10848798300
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10849098333
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10849408348
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10849708651
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10850038350
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10850338335
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10850668381
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10850968344
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10851298348
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10851598593
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10851928468
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10852228588
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10852548386
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10852858487
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10853178389
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10853458544
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10853768481
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10854068437
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10854388417
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10854698576
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10855018456
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10855318662
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10855638583
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10855938488
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10856268543
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10856558735
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10856888611
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10857188554
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10857518591
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10857808847
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10858138670
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10858428597
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10858758664
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10859058693
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10859398697
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10859698748
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10860018786
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10860308703
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 135,
+      "isInjected": false,
+      "stopwatchTicks": 10860638740
+    }
+  ],
+  "injectedEvents": [],
+  "wrongReleaseCount": 0,
+  "stuckOutputs": [],
+  "latency": {
+    "count": 200,
+    "p50Milliseconds": 1.746599999954924,
+    "p95Milliseconds": 2.522099999943748,
+    "p99Milliseconds": 3.425400000065565,
+    "maximumMilliseconds": 12.901899999938905
+  },
+  "stopErrors": [],
+  "passed": true,
+  "error": null
+}

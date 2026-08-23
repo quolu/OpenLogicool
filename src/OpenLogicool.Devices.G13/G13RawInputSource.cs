@@ -12,7 +12,7 @@ namespace OpenLogicool.Devices.G13;
 /// VID/PID で G13 だけへ絞って G13ReportStream（recorded adapter と同一経路）で変換する。
 /// 取得経路は Phase 0 実測（docs/probes/g13-input-map-2026-08-15.md）で成立確認済み。
 /// </summary>
-public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource, IG13StickSource, IDisposable
+public sealed class G13RawInputSource : IDeviceInputSource, IDeviceInputSignalSource, IDeviceChangeSource, IG13StickSource, IDisposable
 {
     private const int MaxQueuedInputs = 4096;
     private const int MaxQueuedStickSamples = 1024;
@@ -24,10 +24,10 @@ public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource,
     private readonly ConcurrentDictionary<IntPtr, G13ReportStream> streamsByHandle = new();
     private readonly ConcurrentDictionary<IntPtr, string> devicePathsByHandle = new();
     private readonly List<PhysicalInput> feedBuffer = new();
-    private readonly Stopwatch clock = Stopwatch.StartNew();
     private readonly Thread pumpThread;
     private readonly WndProcDelegate wndProc;
     private readonly ManualResetEventSlim pumpReady = new(false);
+    private readonly AutoResetEvent inputAvailable = new(false);
     private IntPtr windowHandle;
     private Exception? pumpFailure;
     private long droppedInputCount;
@@ -47,6 +47,8 @@ public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource,
 
     /// <summary>consumer が追いつかず破棄した input 件数（0 でないことは overflow の明示）。</summary>
     public long DroppedInputCount => Interlocked.Read(ref droppedInputCount);
+
+    public WaitHandle InputAvailable => inputAvailable;
 
     public IReadOnlyList<DeviceInstance> EnumerateDevices()
     {
@@ -129,6 +131,7 @@ public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource,
 
         pumpThread.Join(TimeSpan.FromSeconds(5));
         pumpReady.Dispose();
+        inputAvailable.Dispose();
     }
 
     private void ThrowIfPumpFailed()
@@ -231,7 +234,7 @@ public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource,
 
     private void HandleDeviceChange(IntPtr wParam, IntPtr deviceHandle)
     {
-        var elapsedMs = clock.Elapsed.TotalMilliseconds;
+        var elapsedMs = MonotonicMilliseconds();
         if (wParam == GIDC_ARRIVAL)
         {
             var info = GetDeviceInfo(deviceHandle);
@@ -248,6 +251,7 @@ public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource,
             streamsByHandle.TryRemove(deviceHandle, out _);
             deviceChanges.Enqueue(new DeviceChange(
                 ContractSchemaVersions.Revision01, devicePath, DeviceChangeKind.Arrival, elapsedMs));
+            inputAvailable.Set();
             return;
         }
 
@@ -258,6 +262,7 @@ public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource,
             streamsByHandle.TryRemove(deviceHandle, out _);
             deviceChanges.Enqueue(new DeviceChange(
                 ContractSchemaVersions.Revision01, removedPath, DeviceChangeKind.Removal, elapsedMs));
+            inputAvailable.Set();
         }
     }
 
@@ -296,12 +301,13 @@ public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource,
                 return;
             }
 
-            var elapsedMs = clock.Elapsed.TotalMilliseconds;
+            var elapsedMs = MonotonicMilliseconds();
             var stream = streamsByHandle.GetOrAdd(
                 header.Device,
                 handle => new G13ReportStream(devicePathsByHandle[handle]));
 
             var report = new byte[hid.SizeHid];
+            var inputQueued = false;
             for (var i = 0; i < hid.Count; i++)
             {
                 Marshal.Copy(dataPtr + Marshal.SizeOf<RAWHID>() + i * (int)hid.SizeHid, report, 0, report.Length);
@@ -316,6 +322,7 @@ public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource,
                     }
 
                     inputs.Enqueue(input);
+                    inputQueued = true;
                 }
 
                 if (stickSample is not null)
@@ -328,12 +335,19 @@ public sealed class G13RawInputSource : IDeviceInputSource, IDeviceChangeSource,
                     stickSamples.Enqueue(stickSample);
                 }
             }
+            if (inputQueued)
+            {
+                inputAvailable.Set();
+            }
         }
         finally
         {
             Marshal.FreeHGlobal(buffer);
         }
     }
+
+    private static double MonotonicMilliseconds() =>
+        Stopwatch.GetTimestamp() * 1000d / Stopwatch.Frequency;
 
     private bool IsG13Device(IntPtr deviceHandle)
     {

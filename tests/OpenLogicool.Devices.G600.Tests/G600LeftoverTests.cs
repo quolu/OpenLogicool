@@ -70,6 +70,23 @@ public sealed class G600LeftoverTests
     }
 
     [Fact]
+    public void Apply_refuses_no_output_state_without_baseline()
+    {
+        var noOutput = G600LegacySuppression.Build(CleanF3(), G600LegacySuppressionMode.NoOutput);
+
+        var decision = G600LeftoverPolicy.DecideApply(
+            true,
+            true,
+            false,
+            noOutput,
+            baselineF3: null,
+            mode: G600LegacySuppressionMode.NoOutput);
+
+        Assert.Equal(G600LeftoverKind.RefuseAppliedWithoutBaseline, decision.Kind);
+        Assert.True(decision.IsHardFailure);
+    }
+
+    [Fact]
     public void Restore_without_baseline_is_a_skip()
     {
         var decision = G600LeftoverPolicy.DecideRestore(false, CleanF3(), null);
@@ -207,6 +224,61 @@ public sealed class G600LeftoverTests
         Assert.Equal(G600LeftoverKind.AlreadyApplied, result.Kind);
         Assert.Equal(1, access.OpenCount);
         Assert.Equal(remapped, access.Current);
+    }
+
+    [Fact]
+    public void Session_serial_hid_apply_uses_no_output_suppression_and_restores_original()
+    {
+        var clean = CleanF3();
+        var access = new ScriptedFeatureAccess(clean);
+        var baseline = new MemoryBaselineStore();
+        var session = new G600LeftoverSession(access, baseline, () => false, _ => { }, settleMs: 0);
+
+        var apply = session.Apply(true, G600LegacySuppressionMode.NoOutput);
+
+        Assert.Equal(G600LeftoverKind.Apply, apply.Kind);
+        Assert.True(apply.ByteMatched);
+        Assert.True(G600LegacySuppression.IsApplied(access.Current, G600LegacySuppressionMode.NoOutput));
+        Assert.Equal(clean, baseline.F3);
+
+        var restore = session.Restore();
+        Assert.Equal(G600LeftoverKind.Restore, restore.Kind);
+        Assert.Equal(clean, access.Current);
+    }
+
+    [Fact]
+    public void Session_mode_change_after_interrupted_run_keeps_original_baseline()
+    {
+        var clean = CleanF3();
+        var access = new ScriptedFeatureAccess(G600SideRemap.Build(clean));
+        var baseline = new MemoryBaselineStore { F3 = clean };
+        var session = new G600LeftoverSession(access, baseline, () => false, _ => { }, settleMs: 0);
+
+        var apply = session.Apply(true, G600LegacySuppressionMode.NoOutput);
+
+        Assert.Equal(G600LeftoverKind.Apply, apply.Kind);
+        Assert.True(apply.ByteMatched);
+        Assert.True(G600LegacySuppression.IsApplied(access.Current, G600LegacySuppressionMode.NoOutput));
+        Assert.Equal(clean, baseline.F3);
+    }
+
+    [Fact]
+    public void Session_external_clean_change_replaces_stale_baseline_before_apply()
+    {
+        var stale = CleanF3();
+        var current = CleanF3();
+        current[10] ^= 0x5A;
+        var access = new ScriptedFeatureAccess(current);
+        var baseline = new MemoryBaselineStore { F3 = stale };
+        var session = new G600LeftoverSession(access, baseline, () => false, _ => { }, settleMs: 0);
+
+        var apply = session.Apply(true, G600LegacySuppressionMode.NoOutput);
+
+        Assert.Equal(G600LeftoverKind.Apply, apply.Kind);
+        Assert.Equal(current, baseline.F3);
+        var restore = session.Restore();
+        Assert.Equal(G600LeftoverKind.Restore, restore.Kind);
+        Assert.Equal(current, access.Current);
     }
 
     private sealed class MemoryBaselineStore : IG600OnboardBaselineStore

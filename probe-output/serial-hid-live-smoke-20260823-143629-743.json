@@ -1,0 +1,5192 @@
+{
+  "schema": "openlogicool.serial-hid.live-smoke.v1",
+  "capturedAtUtc": "2026-08-23T05:31:29.2736179Z",
+  "machine": "FOX",
+  "selectedDeviceInstanceId": "USB\\VID_1B4F\u0026PID_9206\u0026MI_00\\A\u00263662A262\u00260\u00260000",
+  "transientPort": "COM8",
+  "temporaryDatabasePath": "C:\\Users\\kite_\\AppData\\Local\\Temp\\openlogicool-serial-hid-live-f71b62027ab64c0793f3458b41c04012\\live-smoke.db",
+  "resumeEvidencePath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\serial-hid-live-smoke-20260823-135800-688.json",
+  "resumeEvidenceSha256": "e84f64f6be1b9c2927c9f4766ff66a20013fc75751c6a18ecd69788a3d175ab3",
+  "resumedActionIds": [
+    "g13-key",
+    "g13-chord",
+    "g13-mouse",
+    "g13-sequence",
+    "g600-key",
+    "g600-chord",
+    "g600-mouse",
+    "g600-sequence"
+  ],
+  "resumeEvidenceValidated": true,
+  "settingsPersisted": true,
+  "initialOutputRoute": "SerialHid",
+  "restartAppliedPersistedRoute": true,
+  "g13DeviceInstanceIds": [
+    "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+  ],
+  "g600DeviceInstanceIds": [
+    "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}"
+  ],
+  "foregroundIdentity": "c:\\program files\\windowsapps\\openai.codex_26.818.5229.0_x64__2p2nqsd0c76g0\\app\\chatgpt.exe",
+  "foregroundProfileApplied": true,
+  "boardDisconnectObserved": true,
+  "boardFaultObserved": true,
+  "boardFault": "OpenLogicool.Input.SerialHidSessionFaultException: Serial HID Heartbeat sequence 3837 \u306EI/O\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002\u81EA\u52D5\u518D\u9001\u3057\u307E\u305B\u3093\u3002\r\n ---\u003E OpenLogicool.Input.SerialHidTransportException: serial frame\u306Ewrite/read\u306B\u5931\u6557\u3057\u307E\u3057\u305F\u3002\r\n ---\u003E System.InvalidOperationException: The port is closed.\r\n   at System.IO.Ports.SerialPort.Write(Byte[] buffer, Int32 offset, Int32 count)\r\n   at OpenLogicool.Host.SerialPortFrameExchange.Exchange(ReadOnlyMemory\u00601 requestFrame, TimeSpan timeout) in C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.Host\\SerialPortFrameExchange.cs:line 64\r\n   --- End of inner exception stack trace ---\r\n   at OpenLogicool.Host.SerialPortFrameExchange.Exchange(ReadOnlyMemory\u00601 requestFrame, TimeSpan timeout) in C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.Host\\SerialPortFrameExchange.cs:line 77\r\n   at OpenLogicool.Input.SerialHidProtocolSession.ExchangeCore(SerialHidMessageKind requestKind, ReadOnlySpan\u00601 payload, SerialHidMessageKind expectedResponseKind) in C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.Input\\SerialHidEmitter.cs:line 173\r\n   --- End of inner exception stack trace ---\r\n   at OpenLogicool.Input.SerialHidProtocolSession.ExchangeCore(SerialHidMessageKind requestKind, ReadOnlySpan\u00601 payload, SerialHidMessageKind expectedResponseKind) in C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.Input\\SerialHidEmitter.cs:line 185\r\n   at OpenLogicool.Input.SerialHidProtocolSession.SendHeartbeat() in C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.Input\\SerialHidEmitter.cs:line 157\r\n   at OpenLogicool.Host.SerialHidResidentOutputSession.HeartbeatWorker() in C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.Host\\ResidentOutputSession.cs:line 238",
+  "boardDisconnectEvents": [
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 79,
+      "isInjected": false,
+      "stopwatchTicks": 3745608363
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 79,
+      "isInjected": false,
+      "stopwatchTicks": 3746908546
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 83,
+      "isInjected": false,
+      "stopwatchTicks": 3747238298
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 73,
+      "isInjected": false,
+      "stopwatchTicks": 3748188544
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 83,
+      "isInjected": false,
+      "stopwatchTicks": 3748288368
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 73,
+      "isInjected": false,
+      "stopwatchTicks": 3749318457
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 84,
+      "isInjected": false,
+      "stopwatchTicks": 3749324275
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 65,
+      "isInjected": false,
+      "stopwatchTicks": 3749958727
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 84,
+      "isInjected": false,
+      "stopwatchTicks": 3750778301
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 65,
+      "isInjected": false,
+      "stopwatchTicks": 3751338495
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 13,
+      "isInjected": false,
+      "stopwatchTicks": 3751344990
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 13,
+      "isInjected": false,
+      "stopwatchTicks": 3752178949
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 13,
+      "isInjected": false,
+      "stopwatchTicks": 3752560177
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 13,
+      "isInjected": false,
+      "stopwatchTicks": 3753638549
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 72,
+      "isInjected": false,
+      "stopwatchTicks": 4002437320
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 79,
+      "isInjected": false,
+      "stopwatchTicks": 4003348333
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 72,
+      "isInjected": false,
+      "stopwatchTicks": 4004066922
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 90,
+      "isInjected": false,
+      "stopwatchTicks": 4004098414
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 79,
+      "isInjected": false,
+      "stopwatchTicks": 4004768495
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 90,
+      "isInjected": false,
+      "stopwatchTicks": 4005698464
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 73,
+      "isInjected": false,
+      "stopwatchTicks": 4005947052
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 83,
+      "isInjected": false,
+      "stopwatchTicks": 4006697980
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 73,
+      "isInjected": false,
+      "stopwatchTicks": 4006897278
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 83,
+      "isInjected": false,
+      "stopwatchTicks": 4007897020
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 73,
+      "isInjected": false,
+      "stopwatchTicks": 4008066970
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 84,
+      "isInjected": false,
+      "stopwatchTicks": 4008947057
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 73,
+      "isInjected": false,
+      "stopwatchTicks": 4009116977
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 65,
+      "isInjected": false,
+      "stopwatchTicks": 4009426828
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 32,
+      "isInjected": false,
+      "stopwatchTicks": 4009947051
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 84,
+      "isInjected": false,
+      "stopwatchTicks": 4010076867
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 65,
+      "isInjected": false,
+      "stopwatchTicks": 4010837797
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 32,
+      "isInjected": false,
+      "stopwatchTicks": 4011457137
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 13,
+      "isInjected": false,
+      "stopwatchTicks": 4013107660
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 13,
+      "isInjected": false,
+      "stopwatchTicks": 4014147339
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4029304454
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4034445229
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4034750588
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4035065818
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4035378189
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4035690074
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4036003617
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4036315414
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4036630280
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4037091204
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4037398870
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4037706371
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4038016286
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4038326302
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4038631869
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4038938324
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4039260732
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4039733341
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4040042431
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4040352075
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4040657523
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4040964513
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4041278807
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4041589423
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4041900079
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4042361930
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4042672150
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4042982733
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4043290920
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4043595965
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4043903662
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4044215137
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4044530938
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4044998011
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4045315002
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4045617627
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4045947796
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4046249154
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4046565017
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4046879173
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4047183809
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4047498900
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4047958527
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4048266040
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4048577497
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4048891410
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4049213911
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4049523981
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4049828446
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4050285257
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4050592269
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4050898194
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4051215192
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4051519373
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4051839698
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4052148011
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4052456722
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4052923299
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4053237922
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4053547613
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4053873115
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4054196946
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4054512781
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4054822753
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4055135894
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4055433443
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4055903251
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4056215069
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4056531780
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4056839539
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4057142993
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4057447534
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4057759297
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4058076177
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4058389035
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4058852893
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4059162978
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4059469473
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4059776519
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4060099880
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4060411136
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4060733964
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4061036469
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4061500743
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4061815983
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4062130648
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4062437795
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4062747398
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4063057592
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4063369016
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4063679351
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4064133286
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4064451737
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4064775872
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4065090990
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4065405587
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4065716461
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4066027331
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4066336863
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4066647793
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4067101913
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4067413975
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4067728829
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4068036423
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4068338429
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4068650189
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4068953384
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4069408180
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4069730065
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4070041416
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4070343378
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4070649703
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4070960590
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4071272720
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4071730974
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4072053439
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4072358765
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4072665602
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4072978714
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4073289018
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4073590930
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4073903903
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4074229369
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4074686949
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4074993355
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4075304964
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4075619212
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4075942633
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4076247538
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4076569303
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4076870903
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4077334709
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4077654396
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4077956477
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4078272374
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4078578643
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4078885258
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4079185316
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4079636793
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4079950011
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4080266455
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4080576082
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4080896017
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4081200240
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4081506462
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4081827555
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4082301665
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4082612879
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4082928239
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4083237644
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4083543856
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4083859382
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4084174087
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4084479895
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4084942127
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4085268946
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4085568158
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4085883806
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4086199984
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4086517606
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4086822595
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4087139696
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4087449158
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4087906640
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4088215775
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4088532352
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4088837623
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4089143602
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4089471800
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4089787032
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4090089131
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4090402230
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4090871900
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4091186901
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4091490942
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4091808467
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4092113925
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4092425050
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4092737967
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4093051012
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4093516052
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4093836038
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4094150269
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4094462697
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4094768889
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4095090485
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4095398991
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4095707030
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4096016945
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4096343464
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4096800217
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4097111723
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4097419617
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4097726302
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4098028544
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4098335415
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4098789261
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4099100434
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4099414874
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4099741636
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4100051493
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4100361886
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4100677438
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4100980051
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4101435164
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4101762030
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4102075002
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4102387467
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4102699630
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4103012612
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4103317193
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4103623376
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4103939674
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4104406430
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4104714430
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4105031743
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4105337864
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4105644404
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4105957526
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4106273200
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4106590929
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4106898114
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4107364302
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4107664043
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4107987443
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4108297881
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4108613454
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4108918896
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4109224295
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4109686218
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4109992189
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4110313205
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4110636095
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4110957154
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4111272337
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4111583905
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4111896713
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4112199887
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4112663948
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4112963254
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4113268117
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4113577527
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4113881917
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4114191359
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4114504496
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4114829247
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4115289150
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4115593538
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4115917340
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4116224205
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4116542524
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4116862136
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4117179330
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4117487205
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4117800753
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4118260995
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4118572448
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4118886394
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4119193448
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4119516493
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4119830659
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4120145250
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4120456427
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4120771568
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4121234199
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4121539745
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4121848593
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4122155036
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4122482276
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4122787458
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4123095083
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4123408099
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4123876779
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4124192057
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4124503083
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4124813610
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4125128286
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4125440271
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4125766302
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4126065180
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4126376310
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4126850009
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4127154441
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4127463074
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4127770498
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4128081087
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4128397629
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4128699006
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4129024119
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4129483968
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4129793112
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4130115527
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4130411503
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4130731364
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4131046894
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4131349042
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4131664103
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4132125366
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4132444836
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4132762179
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4133068076
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4133384236
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4133685852
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4133990618
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4134312542
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4134623628
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4135089844
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4135401849
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4135715415
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4136027188
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4136334684
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4136647690
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4136958329
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4137266243
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4137745547
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4138046014
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4138359014
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4138667283
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4138969584
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4139276546
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4139581577
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4140044235
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4140355879
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4140662254
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4140979933
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4141297117
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4141597813
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4141914912
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4142232869
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4142541635
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4143018128
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4143330732
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4143645202
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4143952400
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4144261013
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4144567130
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4144874570
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4145183602
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4145647669
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4145965509
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4146278464
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4146591053
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4146898455
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4147207301
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4147523279
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4147831177
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4148295188
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4148608850
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4148917361
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4149227661
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4149534985
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4149856212
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4150169397
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4150478272
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4150793563
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4151254832
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4151571301
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4151886307
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4152203320
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4152515713
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4152831789
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4153150090
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4153461345
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4153773089
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4154242791
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4154547672
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4154860041
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4155171330
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4155479710
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4155794870
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4156097880
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4156413188
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4156732695
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4157186498
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4157497214
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4157808056
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4158113497
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4158425760
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4158727089
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4159040070
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4159517649
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4159821674
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4160137838
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4160448080
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4160765967
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4161069068
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4161376709
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4161697147
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4162017175
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4162475631
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4162796179
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4163120326
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4163421304
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4163731489
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4164044213
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4164357407
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4164673504
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4164983646
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4165458118
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4165765206
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4166088308
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4166401853
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4166713313
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4167021142
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4167337383
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4167639633
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4167955615
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4168422527
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4168735999
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4169046695
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4169353737
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4169666962
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4169977162
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4170289047
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4170605306
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4171067793
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4171389635
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4171708857
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4172014322
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4172325600
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4172636981
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4172948905
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4173262568
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4173570790
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4173891506
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4174347064
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4174658686
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4174974226
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4175289338
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4175587431
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4175903469
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4176214704
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4176682899
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4176993681
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4177302807
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4177605249
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4177914479
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4178223401
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4178532058
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4178843146
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4179316636
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4179621968
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4179927515
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4180249896
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4180562178
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4180869731
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4181176651
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4181495894
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4181953296
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4182266791
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4182586171
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4182901768
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4183215504
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4183530538
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4183846529
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4184161760
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4184468863
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4184932707
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4185245037
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4185555085
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4185875854
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4186184354
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4186490260
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4186811357
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4187114613
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4187440340
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4187755619
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4188217492
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4188532873
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4188850265
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4189158131
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4189476858
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4189780465
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4190093731
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4190400044
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4190859797
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4191183925
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4191506687
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4191816565
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4192121881
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4192438799
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4192747661
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4193057800
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4193372106
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4193829541
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4194143639
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4194463176
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4194772368
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4195092259
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4195400741
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4195718966
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4196029361
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4196336555
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4196807626
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4197116487
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4197426381
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4197746124
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4198061432
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4198362497
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4198673846
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4198987736
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4199298811
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4199766944
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4200082700
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4200389647
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4200698028
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4201017527
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4201316765
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4201643550
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4201953170
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4202413840
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4202719370
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4203032904
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4203338868
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4203644586
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4203950827
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4204256284
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4204726390
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4205031277
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4205343360
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4205645708
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4205945929
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4206255759
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4206715540
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4207023615
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4207332578
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4207650169
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4207955406
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4208260970
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4208576719
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4208883261
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4209350812
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4209675020
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4209985841
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4210290226
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4210602606
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4210911170
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4211212361
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4211525206
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4211992953
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4212303694
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4212614840
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4212929335
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4213240253
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4213552591
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4213867471
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4214178180
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4214498426
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4214952637
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4215259476
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4215566802
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4215894951
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4216202204
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4216511137
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4216813479
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4217123673
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4217585491
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4217897625
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4218201746
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4218515000
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4218821882
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4219134525
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4219449936
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4219762015
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4220226747
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4220551652
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4220876592
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4221178969
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4221494215
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4221801735
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4222112870
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4222429278
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4222744265
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4223216567
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4223528068
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4223838478
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4224153281
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4224463006
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4224767758
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 116,
+      "isInjected": false,
+      "stopwatchTicks": 4225068201
+    }
+  ],
+  "boardDisconnectInjectedEvents": [],
+  "noAutomaticResume": true,
+  "explicitRestartOutputRoute": "SerialHid",
+  "explicitRestartRecovered": true,
+  "droppedG13": 0,
+  "droppedG600": 0,
+  "ackedEmissionCount": 15,
+  "emitterRoundTripMilliseconds": [
+    7.3875,
+    1.7982,
+    1.8636,
+    1.8284,
+    1.6682,
+    2.1122,
+    1.6627,
+    0.9257,
+    3.3096,
+    0.8682,
+    1.9062,
+    2.0958,
+    1.5867,
+    0.8749,
+    1.9904
+  ],
+  "actions": [
+    {
+      "actionId": "both-devices",
+      "instruction": "G13\u306EG5\u3068G600\u306EG13\u3092\u540C\u6642\u306B\u62BC\u3057\u3066\u3001\u4E21\u65B9\u3068\u3082\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 130,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 134,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 130,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 134,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 130,
+          "isInjected": false,
+          "stopwatchTicks": 2030939918
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2031017099
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2036114425
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2036428081
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2036743775
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2037054718
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2037366993
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2037674348
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2038131690
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2038436275
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2038753597
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2039062395
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2039368756
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2039687832
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2040001399
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 130,
+          "isInjected": false,
+          "stopwatchTicks": 2040187791
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 134,
+          "isInjected": false,
+          "stopwatchTicks": 2040337538
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G5",
+          "edge": 0,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F19"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 203083.4714,
+          "dispatchCompletedMonotonicMs": 203094.5752,
+          "dispatchLatencyMs": 11.103799999982584,
+          "sequence": 1
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G13",
+          "edge": 0,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:F23"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 203100.0962,
+          "dispatchCompletedMonotonicMs": 203102.3461,
+          "dispatchLatencyMs": 2.2498999999952503,
+          "sequence": 2
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G5",
+          "edge": 1,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F19"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 204010.6771,
+          "dispatchCompletedMonotonicMs": 204019.2175,
+          "dispatchLatencyMs": 8.540399999998044,
+          "sequence": 3
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G13",
+          "edge": 1,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:F23"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 204032.0844,
+          "dispatchCompletedMonotonicMs": 204034.2417,
+          "dispatchLatencyMs": 2.1573000000207685,
+          "sequence": 4
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "g13-layer",
+      "instruction": "G13\u306EM2\u3092\u62BC\u3057\u3066\u304B\u3089G1\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 131,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 131,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 131,
+          "isInjected": false,
+          "stopwatchTicks": 2330090289
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 131,
+          "isInjected": false,
+          "stopwatchTicks": 2332430211
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G1",
+          "edge": 0,
+          "layerId": "m2",
+          "outputTokens": [
+            "Key:F20"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 232993.6736,
+          "dispatchCompletedMonotonicMs": 233009.6084,
+          "dispatchLatencyMs": 15.934799999988172,
+          "sequence": 9
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G1",
+          "edge": 1,
+          "layerId": "m2",
+          "outputTokens": [
+            "Key:F20"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 233239.6733,
+          "dispatchCompletedMonotonicMs": 233242.4355,
+          "dispatchLatencyMs": 2.7621999999973923,
+          "sequence": 10
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "g600-layer",
+      "instruction": "G600\u306EG6\u3092\u62BC\u3057\u305F\u307E\u307EG9\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3001\u6700\u5F8C\u306BG6\u3092\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 135,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 135,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 135,
+          "isInjected": false,
+          "stopwatchTicks": 2973997895
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 135,
+          "isInjected": false,
+          "stopwatchTicks": 2977258908
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G9",
+          "edge": 0,
+          "layerId": "shift",
+          "outputTokens": [
+            "Key:F24"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 297387.228,
+          "dispatchCompletedMonotonicMs": 297400.4041,
+          "dispatchLatencyMs": 13.176099999982398,
+          "sequence": 18
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G9",
+          "edge": 1,
+          "layerId": "shift",
+          "outputTokens": [
+            "Key:F24"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 297713.2415,
+          "dispatchCompletedMonotonicMs": 297725.2796,
+          "dispatchLatencyMs": 12.038100000005215,
+          "sequence": 19
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "foreground-both",
+      "instruction": "G13\u306EG1\u3068G600\u306EG9\u3092\u540C\u6642\u306B\u62BC\u3057\u3066\u3001\u4E21\u65B9\u3068\u3082\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 116,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 117,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 116,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          },
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 117,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 116,
+          "isInjected": false,
+          "stopwatchTicks": 3726031112
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 117,
+          "isInjected": false,
+          "stopwatchTicks": 3726051204
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 117,
+          "isInjected": false,
+          "stopwatchTicks": 3731146635
+        },
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 117,
+          "isInjected": false,
+          "stopwatchTicks": 3731451844
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 116,
+          "isInjected": false,
+          "stopwatchTicks": 3731462739
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 117,
+          "isInjected": false,
+          "stopwatchTicks": 3731631815
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G1",
+          "edge": 0,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F5"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 372598.3308,
+          "dispatchCompletedMonotonicMs": 372603.663,
+          "dispatchLatencyMs": 5.332200000004377,
+          "sequence": 29
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G9",
+          "edge": 0,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:F6"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 372587.7779,
+          "dispatchCompletedMonotonicMs": 372604.5615,
+          "dispatchLatencyMs": 16.783600000024308,
+          "sequence": 30
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G1",
+          "edge": 1,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F5"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 373134.3346,
+          "dispatchCompletedMonotonicMs": 373146.6512,
+          "dispatchLatencyMs": 12.316600000020117,
+          "sequence": 31
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G9",
+          "edge": 1,
+          "layerId": "normal",
+          "outputTokens": [
+            "Key:F6"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 373146.9389,
+          "dispatchCompletedMonotonicMs": 373162.5993,
+          "dispatchLatencyMs": 15.660399999993388,
+          "sequence": 32
+        }
+      ],
+      "passed": true
+    },
+    {
+      "actionId": "explicit-restart",
+      "instruction": "\u5FA9\u5E30\u78BA\u8A8D\u3067\u3059\u3002G13\u306EG1\u30921\u56DE\u62BC\u3057\u3066\u96E2\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+      "expectedGroups": [
+        [
+          {
+            "kind": "key",
+            "edge": "down",
+            "code": 116,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ],
+        [
+          {
+            "kind": "key",
+            "edge": "up",
+            "code": 116,
+            "isInjected": false,
+            "stopwatchTicks": 0
+          }
+        ]
+      ],
+      "hardwareEvents": [
+        {
+          "kind": "key",
+          "edge": "down",
+          "code": 116,
+          "isInjected": false,
+          "stopwatchTicks": 4716714375
+        },
+        {
+          "kind": "key",
+          "edge": "up",
+          "code": 116,
+          "isInjected": false,
+          "stopwatchTicks": 4720784344
+        }
+      ],
+      "injectedEvents": [],
+      "unexpectedHardwareEvents": [],
+      "traceEntries": [
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G1",
+          "edge": 0,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F5"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 471667.8202,
+          "dispatchCompletedMonotonicMs": 471670.803,
+          "dispatchLatencyMs": 2.982799999997951,
+          "sequence": 1
+        },
+        {
+          "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+          "controlId": "G1",
+          "edge": 1,
+          "layerId": "base",
+          "outputTokens": [
+            "Key:F5"
+          ],
+          "emitted": true,
+          "inputMonotonicMs": 472067.6836,
+          "dispatchCompletedMonotonicMs": 472077.7751,
+          "dispatchLatencyMs": 10.09150000003865,
+          "sequence": 2
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "traceEntries": [
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G5",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F19"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 203083.4714,
+      "dispatchCompletedMonotonicMs": 203094.5752,
+      "dispatchLatencyMs": 11.103799999982584,
+      "sequence": 1
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G13",
+      "edge": 0,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:F23"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 203100.0962,
+      "dispatchCompletedMonotonicMs": 203102.3461,
+      "dispatchLatencyMs": 2.2498999999952503,
+      "sequence": 2
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G5",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F19"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 204010.6771,
+      "dispatchCompletedMonotonicMs": 204019.2175,
+      "dispatchLatencyMs": 8.540399999998044,
+      "sequence": 3
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G13",
+      "edge": 1,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:F23"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 204032.0844,
+      "dispatchCompletedMonotonicMs": 204034.2417,
+      "dispatchLatencyMs": 2.1573000000207685,
+      "sequence": 4
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 0,
+      "layerId": "m2",
+      "outputTokens": [
+        "Key:F20"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 232993.6736,
+      "dispatchCompletedMonotonicMs": 233009.6084,
+      "dispatchLatencyMs": 15.934799999988172,
+      "sequence": 9
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 1,
+      "layerId": "m2",
+      "outputTokens": [
+        "Key:F20"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 233239.6733,
+      "dispatchCompletedMonotonicMs": 233242.4355,
+      "dispatchLatencyMs": 2.7621999999973923,
+      "sequence": 10
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G9",
+      "edge": 0,
+      "layerId": "shift",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 297387.228,
+      "dispatchCompletedMonotonicMs": 297400.4041,
+      "dispatchLatencyMs": 13.176099999982398,
+      "sequence": 18
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G9",
+      "edge": 1,
+      "layerId": "shift",
+      "outputTokens": [
+        "Key:F24"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 297713.2415,
+      "dispatchCompletedMonotonicMs": 297725.2796,
+      "dispatchLatencyMs": 12.038100000005215,
+      "sequence": 19
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F5"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 372598.3308,
+      "dispatchCompletedMonotonicMs": 372603.663,
+      "dispatchLatencyMs": 5.332200000004377,
+      "sequence": 29
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G9",
+      "edge": 0,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:F6"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 372587.7779,
+      "dispatchCompletedMonotonicMs": 372604.5615,
+      "dispatchLatencyMs": 16.783600000024308,
+      "sequence": 30
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F5"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 373134.3346,
+      "dispatchCompletedMonotonicMs": 373146.6512,
+      "dispatchLatencyMs": 12.316600000020117,
+      "sequence": 31
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G9",
+      "edge": 1,
+      "layerId": "normal",
+      "outputTokens": [
+        "Key:F6"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 373146.9389,
+      "dispatchCompletedMonotonicMs": 373162.5993,
+      "dispatchLatencyMs": 15.660399999993388,
+      "sequence": 32
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F5"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 402917.3691,
+      "dispatchCompletedMonotonicMs": 402931.0398,
+      "dispatchLatencyMs": 13.67070000001695,
+      "sequence": 37
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 0,
+      "layerId": "normal",
+      "outputTokens": [],
+      "emitted": false,
+      "inputMonotonicMs": 404417.8545,
+      "dispatchCompletedMonotonicMs": 404421.3219,
+      "dispatchLatencyMs": 3.4673999999649823,
+      "sequence": 38
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C24A\u0026MI_01\u0026Col02#a\u0026d27ebe9\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 1,
+      "layerId": "normal",
+      "outputTokens": [],
+      "emitted": false,
+      "inputMonotonicMs": 404565.8097,
+      "dispatchCompletedMonotonicMs": 404577.0607,
+      "dispatchLatencyMs": 11.25099999998929,
+      "sequence": 39
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 0,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F5"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 471667.8202,
+      "dispatchCompletedMonotonicMs": 471670.803,
+      "dispatchLatencyMs": 2.982799999997951,
+      "sequence": 1
+    },
+    {
+      "deviceInstanceId": "\\\\?\\HID#VID_046D\u0026PID_C21C#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "controlId": "G1",
+      "edge": 1,
+      "layerId": "base",
+      "outputTokens": [
+        "Key:F5"
+      ],
+      "emitted": true,
+      "inputMonotonicMs": 472067.6836,
+      "dispatchCompletedMonotonicMs": 472077.7751,
+      "dispatchLatencyMs": 10.09150000003865,
+      "sequence": 2
+    }
+  ],
+  "injectedFallbackEvents": [],
+  "wrongReleaseCount": 0,
+  "stuckOutputs": [],
+  "latency": {
+    "count": 29,
+    "p50Milliseconds": 10.195199996232986,
+    "p95Milliseconds": 22.278800010681152,
+    "p99Milliseconds": 35.49559998512268,
+    "maximumMilliseconds": 35.49559998512268
+  },
+  "stopErrors": [],
+  "passed": false,
+  "error": null
+}

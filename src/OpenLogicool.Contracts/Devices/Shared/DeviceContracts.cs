@@ -31,6 +31,15 @@ public interface IDeviceInputSource
     bool TryPull(out PhysicalInput input);
 }
 
+/// <summary>
+/// live input source が入力またはdevice changeの到着をconsumerへ通知する面。
+/// signalはqueueの所有権を持たず、consumerは起床後に既存のTryPull面から取り出す。
+/// </summary>
+public interface IDeviceInputSignalSource
+{
+    WaitHandle InputAvailable { get; }
+}
+
 public enum DeviceChangeKind
 {
     Arrival,

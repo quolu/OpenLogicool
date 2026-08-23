@@ -6,6 +6,13 @@ namespace OpenLogicool.Host;
 /// <summary>残置 session の Host 側組み立てと表示。判断本体は Devices.G600 の policy。</summary>
 public static class G600LeftoverHostSupport
 {
+    public static G600LegacySuppressionMode SuppressionModeFor(ResidentOutputRoute route) => route switch
+    {
+        ResidentOutputRoute.SendInput => G600LegacySuppressionMode.IntermediateUsage,
+        ResidentOutputRoute.SerialHid => G600LegacySuppressionMode.NoOutput,
+        _ => throw new ArgumentOutOfRangeException(nameof(route), route, "unknown resident output route"),
+    };
+
     public static bool IsCoexistenceRunning() =>
         OnboardingObservationCollector.DetectCoexistingSoftware().Any(software => software.Detected);
 

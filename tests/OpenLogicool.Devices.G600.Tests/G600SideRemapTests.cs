@@ -110,4 +110,63 @@ public sealed class G600SideRemapTests
         wrongId[0] = 0xF4;
         Assert.Throws<ArgumentException>(() => G600SideRemap.Build(wrongId));
     }
+
+    [Fact]
+    public void Serial_hid_suppression_disables_g6_through_g20_in_both_layers()
+    {
+        var modified = G600LegacySuppression.Build(SyntheticF3(), G600LegacySuppressionMode.NoOutput);
+
+        foreach (var layerBase in new[] { G600SideRemap.NormalLayerBaseOffset, G600SideRemap.ShiftLayerBaseOffset })
+        {
+            for (var button = 6; button <= 20; button++)
+            {
+                var offset = layerBase + (button - 1) * G600SideRemap.BytesPerButton;
+                Assert.Equal([0x00, 0x00, 0x00], modified[offset..(offset + G600SideRemap.BytesPerButton)]);
+            }
+        }
+
+        Assert.True(G600LegacySuppression.IsApplied(modified, G600LegacySuppressionMode.NoOutput));
+        Assert.True(G600LegacySuppression.IsAnyApplied(modified));
+    }
+
+    [Fact]
+    public void Serial_hid_suppression_preserves_g1_through_g5_and_non_button_bytes()
+    {
+        var original = SyntheticF3();
+        var modified = G600LegacySuppression.Build(original, G600LegacySuppressionMode.NoOutput);
+
+        var rewritten = new HashSet<int>();
+        foreach (var layerBase in new[] { G600SideRemap.NormalLayerBaseOffset, G600SideRemap.ShiftLayerBaseOffset })
+        {
+            for (var button = 6; button <= 20; button++)
+            {
+                var offset = layerBase + (button - 1) * G600SideRemap.BytesPerButton;
+                rewritten.UnionWith([offset, offset + 1, offset + 2]);
+            }
+        }
+
+        for (var i = 0; i < original.Length; i++)
+        {
+            if (!rewritten.Contains(i))
+            {
+                Assert.Equal(original[i], modified[i]);
+            }
+        }
+        Assert.Equal(original, SyntheticF3());
+    }
+
+    [Fact]
+    public void Suppression_modes_are_distinct_and_unknown_mode_is_rejected()
+    {
+        var original = SyntheticF3();
+        var intermediate = G600LegacySuppression.Build(original, G600LegacySuppressionMode.IntermediateUsage);
+        var noOutput = G600LegacySuppression.Build(original, G600LegacySuppressionMode.NoOutput);
+
+        Assert.True(G600LegacySuppression.IsApplied(intermediate, G600LegacySuppressionMode.IntermediateUsage));
+        Assert.False(G600LegacySuppression.IsApplied(intermediate, G600LegacySuppressionMode.NoOutput));
+        Assert.True(G600LegacySuppression.IsApplied(noOutput, G600LegacySuppressionMode.NoOutput));
+        Assert.False(G600LegacySuppression.IsApplied(noOutput, G600LegacySuppressionMode.IntermediateUsage));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            G600LegacySuppression.Build(original, (G600LegacySuppressionMode)99));
+    }
 }

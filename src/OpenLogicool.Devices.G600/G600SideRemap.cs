@@ -56,7 +56,7 @@ public static class G600SideRemap
         return true;
     }
 
-    private static int CellOffset(int layerBase, int button) => layerBase + (button - 1) * BytesPerButton;
+    internal static int CellOffset(int layerBase, int button) => layerBase + (button - 1) * BytesPerButton;
 
     private static void WriteCell(byte[] report, int layerBase, int button, byte usage)
     {
@@ -72,7 +72,7 @@ public static class G600SideRemap
         return report[offset] == 0x00 && report[offset + 1] == 0x00 && report[offset + 2] == usage;
     }
 
-    private static void EnsureProfileReport(byte[] profileF3)
+    internal static void EnsureProfileReport(byte[] profileF3)
     {
         if (profileF3.Length != ReportLength || profileF3[0] != ProfileReportIdF3)
         {

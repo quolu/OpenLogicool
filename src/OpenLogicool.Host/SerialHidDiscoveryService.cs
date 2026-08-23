@@ -135,8 +135,60 @@ public static class ResidentOutputSessionFactory
         return settings.RequestedRoute switch
         {
             ResidentOutputRoute.SendInput => () => new SendInputResidentOutputSession(watchdogExePath),
-            ResidentOutputRoute.SerialHid => () => discovery.Resolve(settings.SelectedDeviceInstanceId).Session,
+            ResidentOutputRoute.SerialHid => () => new DeferredSerialHidResidentOutputSession(
+                discovery,
+                settings.SelectedDeviceInstanceId),
             _ => throw new ArgumentOutOfRangeException(nameof(settings)),
         };
+    }
+
+    private sealed class DeferredSerialHidResidentOutputSession(
+        SerialHidDiscoveryService discovery,
+        string? selectedDeviceInstanceId) : IResidentOutputSession
+    {
+        private SerialHidResidentOutputSession? _inner;
+        private bool _startAttempted;
+        private bool _disposed;
+
+        public ResidentOutputRoute Route => ResidentOutputRoute.SerialHid;
+
+        public IOutputEmitter Emitter =>
+            _inner?.Emitter ?? throw new InvalidOperationException("Serial HID output sessionは未起動です。");
+
+        public Exception? BackgroundFailure => _inner?.BackgroundFailure;
+
+        public void Start()
+        {
+            if (_startAttempted || _disposed)
+            {
+                throw new InvalidOperationException("Serial HID output sessionは一度しか起動できません。");
+            }
+
+            _startAttempted = true;
+            var session = discovery.Resolve(selectedDeviceInstanceId).Session;
+            try
+            {
+                session.Start();
+                _inner = session;
+            }
+            catch
+            {
+                session.Dispose();
+                throw;
+            }
+        }
+
+        public void Stop() => _inner?.Stop();
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _inner?.Dispose();
+        }
     }
 }

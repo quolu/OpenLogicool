@@ -357,6 +357,7 @@ internal sealed class HidObservationWindow : IDisposable
     private const uint WsOverlappedWindow = 0x00CF0000;
     private const uint WsVisible = 0x10000000;
     private readonly ConcurrentQueue<ObservedHidEvent> _events = new();
+    private readonly ConcurrentQueue<ObservedHidEvent> _injectedEvents = new();
     private readonly AutoResetEvent _changed = new(false);
     private readonly ManualResetEventSlim _ready = new(false);
     private readonly Thread _thread;
@@ -374,6 +375,7 @@ internal sealed class HidObservationWindow : IDisposable
     }
 
     public IReadOnlyList<ObservedHidEvent> Events => _events.ToArray();
+    public IReadOnlyList<ObservedHidEvent> InjectedEvents => _injectedEvents.ToArray();
     public int Count => _events.Count;
 
     public static HidObservationWindow Start()
@@ -390,6 +392,7 @@ internal sealed class HidObservationWindow : IDisposable
     public void Clear()
     {
         while (_events.TryDequeue(out _)) { }
+        while (_injectedEvents.TryDequeue(out _)) { }
     }
 
     public void WaitFor(IReadOnlyList<ObservedHidEvent> expected, int fromIndex, TimeSpan timeout)
@@ -422,6 +425,28 @@ internal sealed class HidObservationWindow : IDisposable
             _changed.WaitOne(TimeSpan.FromMilliseconds(20));
         }
         throw new TimeoutException($"Expected HID checkpoint groups were not observed: {JsonSerializer.Serialize(expectedGroups)}");
+    }
+
+    public void WaitForGroups(
+        IReadOnlyList<IReadOnlyList<ObservedHidEvent>> expectedGroups,
+        int fromIndex,
+        Func<Exception?> failureProvider)
+    {
+        while (true)
+        {
+            if (ContainsGroupsInOrder(Events.Skip(fromIndex).ToArray(), expectedGroups))
+            {
+                return;
+            }
+            var failure = failureProvider();
+            if (failure is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Host fault before expected HID checkpoint groups were observed: {failure.GetType().Name}: {failure.Message}",
+                    failure);
+            }
+            _changed.WaitOne(TimeSpan.FromMilliseconds(20));
+        }
     }
 
     public void Dispose()
@@ -540,12 +565,11 @@ internal sealed class HidObservationWindow : IDisposable
         if (code >= 0 && (unchecked((uint)wParam) is WmKeyDown or WmSysKeyDown or WmKeyUp or WmSysKeyUp))
         {
             var data = Marshal.PtrToStructure<KeyboardHookData>(lParam);
-            if ((data.Flags & 0x10) == 0)
-            {
-                var edge = unchecked((uint)wParam) is WmKeyDown or WmSysKeyDown ? "down" : "up";
-                _events.Enqueue(new ObservedHidEvent("key", edge, unchecked((int)data.VirtualKey), false, Stopwatch.GetTimestamp()));
-                _changed.Set();
-            }
+            var edge = unchecked((uint)wParam) is WmKeyDown or WmSysKeyDown ? "down" : "up";
+            var injected = (data.Flags & 0x10) != 0;
+            var observed = new ObservedHidEvent("key", edge, unchecked((int)data.VirtualKey), injected, Stopwatch.GetTimestamp());
+            (injected ? _injectedEvents : _events).Enqueue(observed);
+            _changed.Set();
         }
         return CallNextHookEx(_keyboardHook, code, wParam, lParam);
     }
@@ -555,12 +579,11 @@ internal sealed class HidObservationWindow : IDisposable
         if (code >= 0 && (unchecked((uint)wParam) is WmMButtonDown or WmMButtonUp))
         {
             var data = Marshal.PtrToStructure<MouseHookData>(lParam);
-            if ((data.Flags & 0x01) == 0)
-            {
-                var edge = unchecked((uint)wParam) == WmMButtonDown ? "down" : "up";
-                _events.Enqueue(new ObservedHidEvent("mouse", edge, 0x04, false, Stopwatch.GetTimestamp()));
-                _changed.Set();
-            }
+            var edge = unchecked((uint)wParam) == WmMButtonDown ? "down" : "up";
+            var injected = (data.Flags & 0x01) != 0;
+            var observed = new ObservedHidEvent("mouse", edge, 0x04, injected, Stopwatch.GetTimestamp());
+            (injected ? _injectedEvents : _events).Enqueue(observed);
+            _changed.Set();
         }
         return CallNextHookEx(_mouseHook, code, wParam, lParam);
     }
@@ -658,7 +681,7 @@ internal sealed class HidObservationWindow : IDisposable
     private static extern IntPtr GetModuleHandle(string? moduleName);
 }
 
-internal sealed record ObservedHidEvent(string Kind, string Edge, int Code, bool IsInjected, long StopwatchTicks);
+public sealed record ObservedHidEvent(string Kind, string Edge, int Code, bool IsInjected, long StopwatchTicks);
 
 internal sealed class DirectSmokeResult
 {

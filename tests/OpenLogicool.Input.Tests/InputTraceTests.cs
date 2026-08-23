@@ -2,6 +2,7 @@ using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Domain;
 using OpenLogicool.Fakes;
+using System.Diagnostics;
 using Xunit;
 
 namespace OpenLogicool.Input.Tests;
@@ -24,7 +25,7 @@ public sealed class InputTraceTests
         new(ContractSchemaVersions.Revision01, id, 0x046D, 0xC24A, id, "{00000000-0000-0000-0000-000000000000}", 1, []);
 
     private static PhysicalInput Edge(string deviceId, string controlId, PhysicalInputEdge edge, long sequence) =>
-        new(ContractSchemaVersions.Revision01, deviceId, controlId, edge, MonotonicMs: 0, ReportSequence: sequence);
+        new(ContractSchemaVersions.Revision01, deviceId, controlId, edge, MonotonicMilliseconds(), ReportSequence: sequence);
 
     private static DeviceMappingRuntime Runtime(string deviceId, string output) =>
         new(deviceId, new MappingProfile(
@@ -61,6 +62,8 @@ public sealed class InputTraceTests
         Assert.Equal("base", trace[0].LayerId);
         Assert.Equal(["Key:F13"], trace[0].OutputTokens);
         Assert.True(trace[0].Emitted);
+        Assert.True(trace[0].DispatchCompletedMonotonicMs >= trace[0].InputMonotonicMs);
+        Assert.True(trace[0].DispatchLatencyMs >= 0);
 
         Assert.Equal(PhysicalInputEdge.Up, trace[1].Edge);
         Assert.Equal(["Key:F13"], trace[1].OutputTokens);
@@ -129,4 +132,7 @@ public sealed class InputTraceTests
 
         Assert.Empty(pump.DrainTrace());
     }
+
+    private static double MonotonicMilliseconds() =>
+        Stopwatch.GetTimestamp() * 1000d / Stopwatch.Frequency;
 }

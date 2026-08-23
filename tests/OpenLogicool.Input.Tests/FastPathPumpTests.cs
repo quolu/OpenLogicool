@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Domain;
@@ -8,6 +9,26 @@ namespace OpenLogicool.Input.Tests;
 
 public sealed class FastPathPumpTests
 {
+    private sealed class SignaledInputSource(DeviceInstance device) : IDeviceInputSource, IDeviceInputSignalSource, IDisposable
+    {
+        private readonly ConcurrentQueue<PhysicalInput> inputs = new();
+        private readonly AutoResetEvent inputAvailable = new(false);
+
+        public WaitHandle InputAvailable => inputAvailable;
+
+        public IReadOnlyList<DeviceInstance> EnumerateDevices() => [device];
+
+        public void Enqueue(PhysicalInput input)
+        {
+            inputs.Enqueue(input);
+            inputAvailable.Set();
+        }
+
+        public bool TryPull(out PhysicalInput input) => inputs.TryDequeue(out input!);
+
+        public void Dispose() => inputAvailable.Dispose();
+    }
+
     private sealed class RecordingEmitter : IOutputEmitter
     {
         public List<MappedOutputEdge> Emitted { get; } = [];
@@ -198,6 +219,32 @@ public sealed class FastPathPumpTests
 
         Assert.Null(pump.Failure);
         Assert.Equal(2, pump.ProcessedCount);
+        Assert.Equal(
+            [
+                new MappedOutputEdge("Key:F13", PhysicalInputEdge.Down),
+                new MappedOutputEdge("Key:F13", PhysicalInputEdge.Up),
+            ],
+            emitter.Emitted);
+    }
+
+    [Fact]
+    public void Worker_waiting_on_live_source_signal_processes_later_input()
+    {
+        using var source = new SignaledInputSource(Device("dev-a"));
+        var emitter = new RecordingEmitter();
+        using var pump = new FastPathPump(
+            [new FastPathSource(source)],
+            new Dictionary<string, DeviceMappingRuntime> { ["dev-a"] = Runtime("dev-a", "Key:F13") },
+            emitter);
+
+        pump.Start();
+        Assert.True(SpinWait.SpinUntil(() => pump.IsRunning, TimeSpan.FromSeconds(1)));
+        source.Enqueue(Edge("dev-a", "G9", PhysicalInputEdge.Down, 1));
+        Assert.True(SpinWait.SpinUntil(() => pump.ProcessedCount == 1, TimeSpan.FromSeconds(1)));
+        Assert.Equal([new MappedOutputEdge("Key:F13", PhysicalInputEdge.Down)], emitter.Emitted);
+        pump.Stop();
+
+        Assert.Null(pump.Failure);
         Assert.Equal(
             [
                 new MappedOutputEdge("Key:F13", PhysicalInputEdge.Down),

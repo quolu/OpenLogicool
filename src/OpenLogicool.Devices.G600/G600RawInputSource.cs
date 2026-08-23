@@ -13,7 +13,7 @@ namespace OpenLogicool.Devices.G600;
 /// 取得経路は Phase 0 実測（docs/probes/g600-input-map-2026-08-15.md）で成立確認済み。
 /// 構造は実機 smoke 済みの G13RawInputSource と同型（意図的な並行実装。統合は Mapping Runtime 時に判断）。
 /// </summary>
-public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource, IG600WheelSource, IDisposable
+public sealed class G600RawInputSource : IDeviceInputSource, IDeviceInputSignalSource, IDeviceChangeSource, IG600WheelSource, IDisposable
 {
     private const int MaxQueuedInputs = 4096;
     private const int MaxQueuedWheelTicks = 1024;
@@ -25,10 +25,10 @@ public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource
     private readonly ConcurrentDictionary<IntPtr, G600ReportStream> streamsByHandle = new();
     private readonly ConcurrentDictionary<IntPtr, string> devicePathsByHandle = new();
     private readonly List<PhysicalInput> feedBuffer = new();
-    private readonly Stopwatch clock = Stopwatch.StartNew();
     private readonly Thread pumpThread;
     private readonly WndProcDelegate wndProc;
     private readonly ManualResetEventSlim pumpReady = new(false);
+    private readonly AutoResetEvent inputAvailable = new(false);
     private IntPtr windowHandle;
     private Exception? pumpFailure;
     private long droppedInputCount;
@@ -48,6 +48,8 @@ public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource
 
     /// <summary>consumer が追いつかず破棄した input 件数（0 でないことは overflow の明示）。</summary>
     public long DroppedInputCount => Interlocked.Read(ref droppedInputCount);
+
+    public WaitHandle InputAvailable => inputAvailable;
 
     public IReadOnlyList<DeviceInstance> EnumerateDevices()
     {
@@ -130,6 +132,7 @@ public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource
 
         pumpThread.Join(TimeSpan.FromSeconds(5));
         pumpReady.Dispose();
+        inputAvailable.Dispose();
     }
 
     private void ThrowIfPumpFailed()
@@ -232,7 +235,7 @@ public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource
 
     private void HandleDeviceChange(IntPtr wParam, IntPtr deviceHandle)
     {
-        var elapsedMs = clock.Elapsed.TotalMilliseconds;
+        var elapsedMs = MonotonicMilliseconds();
         if (wParam == GIDC_ARRIVAL)
         {
             var info = GetDeviceInfo(deviceHandle);
@@ -249,6 +252,7 @@ public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource
             streamsByHandle.TryRemove(deviceHandle, out _);
             deviceChanges.Enqueue(new DeviceChange(
                 ContractSchemaVersions.Revision01, devicePath, DeviceChangeKind.Arrival, elapsedMs));
+            inputAvailable.Set();
             return;
         }
 
@@ -259,6 +263,7 @@ public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource
             streamsByHandle.TryRemove(deviceHandle, out _);
             deviceChanges.Enqueue(new DeviceChange(
                 ContractSchemaVersions.Revision01, removedPath, DeviceChangeKind.Removal, elapsedMs));
+            inputAvailable.Set();
         }
     }
 
@@ -297,12 +302,13 @@ public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource
                 return;
             }
 
-            var elapsedMs = clock.Elapsed.TotalMilliseconds;
+            var elapsedMs = MonotonicMilliseconds();
             var stream = streamsByHandle.GetOrAdd(
                 header.Device,
                 handle => new G600ReportStream(devicePathsByHandle[handle]));
 
             var report = new byte[hid.SizeHid];
+            var inputQueued = false;
             for (var i = 0; i < hid.Count; i++)
             {
                 Marshal.Copy(dataPtr + Marshal.SizeOf<RAWHID>() + i * (int)hid.SizeHid, report, 0, report.Length);
@@ -317,6 +323,7 @@ public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource
                     }
 
                     inputs.Enqueue(input);
+                    inputQueued = true;
                 }
 
                 if (wheelTick is not null)
@@ -329,12 +336,19 @@ public sealed class G600RawInputSource : IDeviceInputSource, IDeviceChangeSource
                     wheelTicks.Enqueue(wheelTick);
                 }
             }
+            if (inputQueued)
+            {
+                inputAvailable.Set();
+            }
         }
         finally
         {
             Marshal.FreeHGlobal(buffer);
         }
     }
+
+    private static double MonotonicMilliseconds() =>
+        Stopwatch.GetTimestamp() * 1000d / Stopwatch.Frequency;
 
     private bool IsG600Device(IntPtr deviceHandle)
     {
