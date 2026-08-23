@@ -1,5 +1,8 @@
+using System.IO;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace OpenLogicool.GameLab.Prototype;
 
@@ -13,6 +16,9 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // GameLabはcapture検証用test fieldである。GPU compositor差を混ぜず、
+        // WGCが実内容を取得できる決定的なsoftware renderへ固定する。
+        RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
         base.OnStartup(e);
 
         var seed = ParseSeed(e.Args);
@@ -24,7 +30,7 @@ public partial class App : Application
             return;
         }
 
-        var window = new MainWindow(seed);
+        var window = new MainWindow(seed, ParseOptionalArgument(e.Args, "--input-log"));
         window.Show();
     }
 
@@ -37,6 +43,14 @@ public partial class App : Application
         }
 
         return 1;
+    }
+
+    private static string? ParseOptionalArgument(string[] args, string name)
+    {
+        var index = Array.IndexOf(args, name);
+        return index >= 0 && index + 1 < args.Length
+            ? Path.GetFullPath(args[index + 1])
+            : null;
     }
 
     private static void RunSelftest(int seed)

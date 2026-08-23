@@ -4,9 +4,10 @@ namespace OpenLogicool.Contracts.Playbooks;
 
 public enum GameAutomationMode
 {
-    Observe,
-    Assist,
-    Auto,
+    Observe = 0,
+    Assist = 1,
+    Auto = 2,
+    Explore = 3,
 }
 
 public enum GamePolicyReviewStatus

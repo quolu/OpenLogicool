@@ -1,3 +1,5 @@
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -31,17 +33,21 @@ public partial class MainWindow : Window
 
     private readonly GameStateMachine _machine;
     private readonly string _oraclePath;
+    private readonly string? _inputLogPath;
     private int _writtenCount;
 
-    public MainWindow(int seed)
+    public MainWindow(int seed, string? inputLogPath = null)
     {
         InitializeComponent();
 
         _machine = new GameStateMachine(seed);
         _oraclePath = OracleWriter.NewFilePath(seed);
+        _inputLogPath = inputLogPath;
         FlushOracle();
 
         KeyDown += OnKeyDown;
+        PreviewMouseWheel += OnMouseWheel;
+        ContentRendered += (_, _) => AppendInputReceipt("window", "rendered");
 
         Render();
     }
@@ -49,6 +55,7 @@ public partial class MainWindow : Window
     private void OnButtonClick(object sender, RoutedEventArgs e)
     {
         var buttonName = (string)((Button)sender).Tag;
+        AppendInputReceipt("button", buttonName);
         _machine.TryButton(buttonName);
         FlushOracle();
         Render();
@@ -56,9 +63,37 @@ public partial class MainWindow : Window
 
     private void OnKeyDown(object sender, KeyEventArgs e)
     {
+        AppendInputReceipt("key", e.Key.ToString());
         _machine.ManualIntervention();
         FlushOracle();
         Render();
+    }
+
+    private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        AppendInputReceipt("wheel", e.Delta.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    private void AppendInputReceipt(string route, string value)
+    {
+        if (_inputLogPath is null)
+        {
+            return;
+        }
+
+        var directory = Path.GetDirectoryName(_inputLogPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var line = JsonSerializer.Serialize(new
+        {
+            route,
+            value,
+            monotonicMs = Environment.TickCount64,
+        });
+        File.AppendAllText(_inputLogPath, line + Environment.NewLine);
     }
 
     private void FlushOracle()

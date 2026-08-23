@@ -22,6 +22,7 @@
     <ProjectReference Include="..\OpenLogicool.Devices.G600\OpenLogicool.Devices.G600.csproj" />
     <ProjectReference Include="..\OpenLogicool.Host\OpenLogicool.Host.csproj" />
     <ProjectReference Include="..\OpenLogicool.Input\OpenLogicool.Input.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Capture\OpenLogicool.Capture.csproj" />
   </ItemGroup>
 
 </Project>

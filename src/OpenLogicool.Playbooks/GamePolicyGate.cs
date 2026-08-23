@@ -22,7 +22,7 @@ public static class GamePolicyGate
         ArgumentNullException.ThrowIfNull(record);
         Validate(record);
 
-        if (requestedMode is GameAutomationMode.Assist or GameAutomationMode.Auto
+        if (requestedMode is GameAutomationMode.Assist or GameAutomationMode.Explore or GameAutomationMode.Auto
             && record.ReviewStatus is not GamePolicyReviewStatus.Confirmed)
         {
             return new GamePolicyDecision(false, ReviewReason(record.ReviewStatus));
@@ -35,7 +35,9 @@ public static class GamePolicyGate
 
     private static void Validate(GamePolicyRecord record)
     {
-        if (!string.Equals(record.SchemaVersion, ContractSchemaVersions.Revision01, StringComparison.Ordinal))
+        var isRevision01 = string.Equals(record.SchemaVersion, ContractSchemaVersions.Revision01, StringComparison.Ordinal);
+        var isRevision02 = string.Equals(record.SchemaVersion, ContractSchemaVersions.Revision02, StringComparison.Ordinal);
+        if (!isRevision01 && !isRevision02)
         {
             throw new ArgumentException("未対応の GamePolicyRecord schema version です。", nameof(record));
         }
@@ -47,6 +49,11 @@ public static class GamePolicyGate
             || record.AllowedModes.Distinct().Count() != record.AllowedModes.Count)
         {
             throw new ArgumentException("GamePolicyRecord の mode または review status が不正です。", nameof(record));
+        }
+
+        if (isRevision01 && record.AllowedModes.Contains(GameAutomationMode.Explore))
+        {
+            throw new ArgumentException("GamePolicyRecord 0.1.0 は Explore mode を表現できません。", nameof(record));
         }
     }
 

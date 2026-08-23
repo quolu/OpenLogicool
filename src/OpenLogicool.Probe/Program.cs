@@ -78,6 +78,8 @@ return command switch
     "g600-adapter-smoke" => OpenLogicool.Probe.G600AdapterSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "windows-ocr-smoke" => OpenLogicool.Probe.WindowsOcrSmoke.Run(args[1..]),
+    "discovery-admission-smoke" => OpenLogicool.Probe.DiscoveryAdmissionSmoke.Run(args[1..]),
     "record" => OpenLogicool.Probe.RawInputRecorder.Run(
         args.Length > 1 ? args[1] : "session",
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output")),
