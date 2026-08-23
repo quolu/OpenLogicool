@@ -48,6 +48,7 @@ public static class PackageIdentities
         DevelopmentLayout: new(
             ApplicationFiles:
             [
+                "OpenLogicool.Launcher.exe",
                 "OpenLogicool.Host.exe",
                 "OpenLogicool.Watchdog.exe",
                 "OpenLogicool.Host.dll と runtime dependencies",

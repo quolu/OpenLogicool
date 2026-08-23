@@ -16,7 +16,12 @@ public sealed class PackageIdentityTests
         Assert.Contains("MSIX", identity.PublicPackagingDecision);
         Assert.Contains("未決定", identity.PublicPackagingDecision);
         Assert.Equal(
-            ["OpenLogicool.Host.exe", "OpenLogicool.Watchdog.exe", "OpenLogicool.Host.dll と runtime dependencies"],
+            [
+                "OpenLogicool.Launcher.exe",
+                "OpenLogicool.Host.exe",
+                "OpenLogicool.Watchdog.exe",
+                "OpenLogicool.Host.dll と runtime dependencies",
+            ],
             identity.DevelopmentLayout.ApplicationFiles);
     }
 

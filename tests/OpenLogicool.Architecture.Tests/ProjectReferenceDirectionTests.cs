@@ -27,6 +27,8 @@ public sealed class ProjectReferenceDirectionTests
             ["OpenLogicool.Perception"] = Set("OpenLogicool.Contracts"),
             ["OpenLogicool.AI"] = Set("OpenLogicool.Contracts"),
             ["OpenLogicool.Desktop"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),
+            // GUI 起動だけを console subsystem から分離する依存ゼロの入口。
+            ["OpenLogicool.Launcher"] = new HashSet<string>(StringComparer.Ordinal),
             ["OpenLogicool.Host"] = Set(
                 "OpenLogicool.Contracts",
                 "OpenLogicool.Domain",
@@ -132,7 +134,7 @@ public sealed class ProjectReferenceDirectionTests
     }
 
     [Fact]
-    public void Only_desktop_and_host_use_wpf()
+    public void Only_desktop_host_and_gui_launcher_use_wpf()
     {
         var useWpfProjects = LoadUseWpf()
             .Where(project => project.Value)
@@ -140,8 +142,21 @@ public sealed class ProjectReferenceDirectionTests
             .OrderBy(projectName => projectName);
 
         Assert.Equal(
-            new[] { "OpenLogicool.Desktop", "OpenLogicool.Host" },
+            new[] { "OpenLogicool.Desktop", "OpenLogicool.Host", "OpenLogicool.Launcher" },
             useWpfProjects);
+    }
+
+    [Fact]
+    public void Gui_launcher_uses_the_windowed_subsystem()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var project = XDocument.Load(Path.Combine(
+            repositoryRoot,
+            "src",
+            "OpenLogicool.Launcher",
+            "OpenLogicool.Launcher.csproj"));
+
+        Assert.Equal("WinExe", project.Descendants("OutputType").Single().Value);
     }
 
     [Fact]

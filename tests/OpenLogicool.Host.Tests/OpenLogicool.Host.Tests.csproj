@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\OpenLogicool.Host\OpenLogicool.Host.csproj" />
+    <ProjectReference Include="..\..\src\OpenLogicool.Launcher\OpenLogicool.Launcher.csproj" />
   </ItemGroup>
 </Project>
