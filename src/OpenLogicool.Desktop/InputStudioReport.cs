@@ -46,10 +46,10 @@ public static class InputStudioReportBuilder
             g13,
             G13Controls.Buttons,
             G13Controls.ConfirmedButtons,
-            ownershipSummary: "read-only（input 読取のみ。onboard write・light/LCD 出力は未実装）",
+            ownershipSummary: "input 読取と native LCD write を実機確認済み（onboard profile・light 出力は未実装）",
             constraints:
             [
-                "light・LCD 出力と onboard profile 転送面は Phase 8A まで未対応。",
+                "native LCD の画像・テキスト表示と app-first 差替えは実機確認済み。LGS LCD applet互換、light、onboard profile転送は未確認または非対応。",
                 "スティック X/Y は生 sample の取得のみ（binding 対象は button edge だけ）。",
                 "未確認 bit（byte5 bit6-7・byte7 bit1-2/4-7）は control として扱わない（Unverified を隠さない）。",
             ]);
@@ -71,7 +71,7 @@ public static class InputStudioReportBuilder
         return new InputStudioReport(
             [g13Section, g600Section],
             [
-                "LGS / G HUB / driver の検出照合は未実装（Unverified）——本画面は表示骨格。",
+                "LGS / G HUB / Logi Options+ の実行中processは検出する。driver存在の完全照合は未確認。",
                 "capability 表記: Supported=実測「確認済み」／Experimental=実測「強い推定」。Unverified は Supported と表示しない（DEV-005）。",
             ]);
     }

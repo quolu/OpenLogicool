@@ -47,6 +47,11 @@ public static class InputStudioSupportMatrix
             "G13・G600実機のSerial HID campaign受入",
             "SparkFun Pro Micro ATmega32U4 5V / 16MHz、firmware 1.0.0に限定する。"),
         new(
+            "Windows 11 build 26200 / x64 での G13 native LCD 表示",
+            InputStudioSupportStatus.Supported,
+            "G13実機のnative LCD campaign受入",
+            "160x43の画像・テキストとapp-first差替えを確認済み。LGS LCD applet互換を意味しない。"),
+        new(
             "Serial HID v1の6キー超過と対象外出力",
             InputStudioSupportStatus.Unsupported,
             "protocol v1固定制約",

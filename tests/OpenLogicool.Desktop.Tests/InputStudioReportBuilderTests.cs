@@ -98,4 +98,27 @@ public sealed class InputStudioReportBuilderTests
         Assert.Contains(constraints, constraint => constraint.Contains("F6"));
         Assert.Contains(constraints, constraint => constraint.Contains("elevated"));
     }
+
+    [Fact]
+    public void G13_report_states_native_lcd_support_without_claiming_lgs_applet_parity()
+    {
+        var report = Build();
+        var g13 = report.Devices.Single(device => device.DeviceKind == "G13");
+
+        Assert.Contains("native LCD write", g13.OwnershipSummary);
+        Assert.Contains(g13.Constraints, constraint =>
+            constraint.Contains("app-first") && constraint.Contains("実機確認済み"));
+        Assert.Contains(g13.Constraints, constraint => constraint.Contains("LGS LCD applet互換"));
+        Assert.DoesNotContain(g13.Constraints, constraint => constraint.Contains("LCD 出力") && constraint.Contains("未実装"));
+    }
+
+    [Fact]
+    public void Environment_note_matches_companion_process_detection_capability()
+    {
+        var report = Build();
+
+        Assert.Contains(report.EnvironmentNotes, note =>
+            note.Contains("LGS") && note.Contains("実行中processは検出する"));
+        Assert.DoesNotContain(report.EnvironmentNotes, note => note.Contains("検出照合は未実装"));
+    }
 }

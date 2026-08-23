@@ -1,5 +1,6 @@
 bin/
 obj/
+artifacts/
 *.user
 
 # capture probe のフレーム画像: 画面内容が写るため repo へ入れない（数値証拠は同名 JSON 側）

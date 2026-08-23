@@ -51,7 +51,7 @@ public static class PackageIdentities
                 "OpenLogicool.Launcher.exe",
                 "OpenLogicool.Host.exe",
                 "OpenLogicool.Watchdog.exe",
-                "OpenLogicool.Host.dll と runtime dependencies",
+                "各exeの .dll/.deps.json/.runtimeconfig.json と runtime dependencies",
             ],
             AutostartConfigured: false,
             UpdateManifestPresent: false,

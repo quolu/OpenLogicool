@@ -20,6 +20,7 @@ public sealed class InputStudioSupportMatrixTests
                 "G600 side button の legacy 無害化",
                 "G600 onboard slot の切替と退避",
                 "Windows 11 build 26200 / x64 での Serial HID v1 出力",
+                "Windows 11 build 26200 / x64 での G13 native LCD 表示",
             ],
             InputStudioSupportMatrix.SupportedEntries.Select(entry => entry.Capability));
 
@@ -65,5 +66,18 @@ public sealed class InputStudioSupportMatrixTests
         Assert.Equal(SerialHidSettingsPresentation.LimitNotice, limits.Detail);
         Assert.Contains("同時6個", limits.Detail, StringComparison.Ordinal);
         Assert.Contains("部分送出せず停止", limits.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Native_lcd_is_supported_without_claiming_lgs_applet_parity()
+    {
+        var lcd = Assert.Single(
+            InputStudioSupportMatrix.Entries,
+            entry => entry.Capability.Contains("native LCD", StringComparison.Ordinal));
+
+        Assert.Equal(InputStudioSupportStatus.Supported, lcd.Status);
+        Assert.Contains("実機", lcd.Evidence);
+        Assert.Contains("app-first", lcd.Detail);
+        Assert.Contains("LGS LCD applet互換を意味しない", lcd.Detail);
     }
 }
