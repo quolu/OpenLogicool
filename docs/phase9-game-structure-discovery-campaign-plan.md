@@ -9,7 +9,7 @@
 
 ## 目的
 
-AI学習前のSTEP 0で、公式情報と攻略情報からゲームの仕組み、ルール、日課候補を出典付きMarkdown Referenceとして集める。その仮説を権限へ変換せず、AIが画面を観測、探索、再観測してGame Structureを構築する。Web支援がないzero-seed pathも独立して成立させる。
+AI学習前のSTEP 0で、公式情報と攻略情報からゲームの仕組み、ルール、日課候補を出典付きMarkdown Referenceとして集める。その仮説を権限へ変換せず、端末内のローカルAIが画面を観測、探索、再観測してGame Structureを構築する。Web支援がないzero-seed pathも独立して成立させる。製品runtimeは外部AI APIへ依存せず、AI推論目的の外部送信と外部AI API費用を0に固定する。
 
 ## 統括レーン判定とF／A／H
 
@@ -43,6 +43,8 @@ AI学習前のSTEP 0で、公式情報と攻略情報からゲームの仕組み
 - Web情報だけでstate、edge、日課、Playbookをverifiedへ昇格する
 - zero-seed acceptanceへWeb Referenceを混ぜる
 - providerを実測前に仮決めする
+- OpenAI APIを含む従量課金型の外部AI API、cloud AI、外部AI API keyを製品runtimeへ組み込む
+- AI推論目的でframe、crop、OCR、embedding、prompt、responseを外部送信する
 - AIからInput、SQLite、risk判定、verification昇格へ直接到達させる
 - NIKKEで課金、購入、資源消費、戦闘、account変更を探索する
 - 既存Capture、Durable Attempt、Run Journal、Game Policy、watchdogを再実装する
@@ -75,11 +77,11 @@ HttpClient境界、redirect／canonical URL、timeout／cancel、content digest�
 
 ### t04-step0-ui
 
-Game Operator画面に「STEP 0 Web調査」を置く。source、保存内容、利用条件、引用、外部送信、費用、期限、削除をpreviewし、調査開始、除外、再取得、削除、Markdown表示を一巡させる。
+Game Operator画面に「STEP 0 Web調査」を置く。source、保存内容、利用条件、引用、ローカルAI処理、外部AI送信なし、外部AI API費用0、期限、削除をpreviewし、調査開始、除外、再取得、削除、Markdown表示を一巡させる。cloudを有効化する設定は作らない。
 
 ### t05-discovery-admission
 
-EXP-GS-01／04とData Flowを実測する。zero-seed visual groundingのprovider／recognizerを比較し、一方式だけ選ぶ。primitiveをGameLabとNIKKEでroute別に分類し、不成立routeへfallbackしない。
+EXP-GS-01／04とData Flowを実測する。zero-seed visual groundingのローカルprovider／recognizerを比較し、外部AI送信0／外部AI API費用0を確認して一方式だけ選ぶ。primitiveをGameLabとNIKKEでroute別に分類し、不成立routeへfallbackしない。
 
 ### t06-scene-contract-migration
 
@@ -95,7 +97,7 @@ append-only Structure Event Store、immutable Screen Graph／Game State Fact pro
 
 ### t09-vision-provider
 
-EXP-GS-01で採用した一方式を実装し、Novel、同一画面候補、frame-bound affordance、構造化proposalを返す。provider／model／prompt／送信crop／費用を記録し、暗黙fallbackを禁止する。
+EXP-GS-01で採用したローカル方式を実装し、Novel、同一画面候補、frame-bound affordance、構造化proposalを返す。provider／model／prompt／ローカル入力crop／resource使用量を記録し、外部AI送信経路、外部AI API key、cloud fallbackを実装しない。
 
 ### t10-hidden-oracle-gamelab
 

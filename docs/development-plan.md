@@ -91,7 +91,7 @@ UnverifiedをSupportedとして表示しない。実験失敗を別方式へ黙�
 - Windows secure desktopへ入力しない。
 - Input APIが成功したことをゲーム内成功と扱わない。
 - 画面内文字列、OCR結果、importしたKnowledge Packを信頼された命令として扱わない。
-- AI providerを黙って切り替えない。localからcloudへのfallbackも行わない。
+- Game OperatorのAI推論は利用者端末内だけで実行し、OpenAI APIを含む従量課金型の外部AI APIへ依存しない。frame、crop、OCR、embedding、prompt、responseをAI推論目的で外部送信せず、cloud fallbackも実装しない。
 - 課金、希少資源の消費、account変更、削除等のhigh-impact操作は、利用者が対象actionを明示許可しない限り自動確定しない。
 - 未確認機能をLGS同等、一般ゲーム対応、完全自動化対応と表示しない。
 - LGS/G HUB設定を既定で削除しない。復元を実証できないdevice writeを製品機能にしない。
@@ -212,9 +212,9 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | AI-004 | R4 | Explore／Teach／Supervisedの未知操作は、Perceptionが現在frameから列挙したAffordanceCandidateと事前許可primitiveだけを選べる（frameに紐付かない絶対座標の提案はmodeを問わず拒否する） |
 | AI-005 | R4 | schema version、catalog version、stateまたはStructure revision前提、risk class、承認要否が不一致のproposalを拒否する。task proposalはPlaybook controller、probeはExploration Coordinator、構造deltaはStructure Knowledge Controllerが検証する |
 | AI-006 | R4 | prompt、model、parameter、dataset、Knowledge Pack／Game Structure version、Exploration Policyをrunへ記録する |
-| AI-007 | R4 | provider/modelを精度、未知棄却、p50/p95遅延、取消、費用、data policyで比較する |
-| AI-008 | R4 | provider切替、local/cloud切替、送信範囲変更を暗黙に行わない |
-| AI-009 | R4 | session／日単位の費用上限を利用者が設定でき、到達時は次のdispatch前に停止する |
+| AI-007 | R4 | ローカルprovider／modelを精度、未知棄却、p50/p95遅延、取消、model取得量、storage、memoryで比較する。外部AI API費用は0で固定する |
+| AI-008 | R4 | ローカルprovider／modelの切替を暗黙に行わず、cloud modeと外部AI APIへのfallbackを実装しない |
+| AI-009 | R4 | session単位のaction数、時間、memory、model storage上限を利用者が確認でき、到達時は次のdispatch前に停止する |
 | AI-010 | R4 | OCR、画面内指示、import dataは非信頼入力であり、system policyや権限を変更できない |
 | AI-011 | R4 | model fine-tuning、provider側学習、Playbook学習を別概念としてUIと記録で区別する |
 | KP-001 | R4 | Knowledge Packにgame/build、locale、UI scale、state、anchor、success condition、action参照、schema、出典、license、検証状態を持たせる。game固有sectionが空の初期revisionも妥当とする |
@@ -238,7 +238,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | WR-007 | R4 | Web Reference Factはmechanic／rule／daily／reset／resource／navigation hint等のkind、claim、source references、confidence、validity、build／locale scope、contradictionを持つ。WebだけでGame Structure、Verified Step、verified Game State Factへ昇格しない |
 | WR-008 | R4 | STEP 0の結果はExplorationContextへreference hypothesisとして渡せるが、state ID、target座標、allowed action、expected transition、risk許可には使わない。画面観測とcontroller検証を通った時だけPersonal Knowledge Storeのcandidateへ関連付ける |
 | WR-009 | R4 | 同じclaimを公式情報、複数攻略source、game内観測で照合し、矛盾とstaleを上書きせずappend-only revisionで残す。source取得失敗を別sourceへ黙ってfallbackしない |
-| WR-010 | R4 | 利用者はsourceごとの取得方式、保存内容、引用、外部送信、費用、期限、削除対象を実行前後に確認し、sourceを除外、再取得、削除できる |
+| WR-010 | R4 | 利用者はsourceごとの取得方式、保存内容、引用、ローカルAI処理、外部AI送信なし、外部AI API費用0、期限、削除対象を実行前後に確認し、sourceを除外、再取得、削除できる |
 | WR-011 | R4 | zero-seed hidden-oracle受入ではWeb Referenceを0件に固定し、Web支援が無くても探索基盤が成立することを独立検証する。通常利用はWeb-assistedを既定journeyにできる |
 | WR-012 | R4 | provider未選定、network不可、規約拒否、robots拒否、HTTP失敗、parse失敗、取消、timeoutを個別状態として記録し、空の成功文書や古いcacheを新規取得成功として表示しない |
 
@@ -254,13 +254,13 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | GS-008 | R4 | Screen Graph edgeはsource hypothesis、frame-bound target／locator revision、primitive、guard、risk／reversibility判定、before／after Observation、待機条件、timeout、observed outcome分布、no-change／unknown／fault、証拠回数を持つ。単一試行を決定論的遷移として固定しない |
 | GS-009 | R4 | 同一画面候補のmerge／split、edge再帰属、label変更、contradiction、retireは旧IDと証拠を失わない新revisionとして行う。反証されたverified node／edgeは依存Playbookとともに自動実行不可へ降格する |
 | GS-010 | R4 | Structure Event Storeはappend-onlyとし、Observation、probe proposal、承認、Attempt、outcome、delta、projection revisionを相関できる。process再起動後に同じrevisionを再構成し、未解決DispatchArmedをOutcomeUnknownとして残す |
-| GS-011 | R4 | Exploration Run開始時にapp／window、environment、許可primitive、探索領域、action回数、時間、費用、cloud送信、保存期間、risk禁止項目、復帰境界、停止条件をimmutable policyとして固定する。Run中にAIが拡張できない |
+| GS-011 | R4 | Exploration Run開始時にapp／window、environment、許可primitive、探索領域、action回数、時間、ローカルmodel／resource上限、外部AI送信なし、外部AI API費用0、保存期間、risk禁止項目、復帰境界、停止条件をimmutable policyとして固定する。Run中にAIが拡張できない |
 | GS-012 | R4 | 未知targetの初回probeは一手承認を既定とする。自動probeは利用者が許可した探索範囲内で、利用者またはdeterministic policyがlow-risk／side-effect-freeとして登録し、可逆性と既知復帰経路を実証したprimitiveだけに段階解放する。AI／OCRのrisk自己申告を根拠にせず、課金、購入、削除、account変更、希少資源消費、自由text入力を初期自動探索から除外する |
 | GS-013 | R4 | no-progress、同一edge反復、画面振動、modal閉じ込め、animation、network待ち、capture喪失、stale／transform変更、budget到達、復帰経路喪失を検出して停止する。同一probeを根拠なく再送せず、復帰不能時はStopAndAskにする |
 | GS-014 | R4 | navigation topologyを表すScreen Graphと、日課回数、資源、reset、選択値等のGame State Factを分離する。Factはextractor version、evidence、confidence、environment、validity／reset scopeを持ち、値変化だけで新nodeを乱造しない |
 | GS-015 | R4 | Exploration Runとtask達成用Runを別instance・別目的・別active executorとして扱う。task Run中にNovel branchへ到達した場合は自動で構造を書き換えず、taskをpauseして別Exploration Runを開始し、元Runはpin済みrevisionのまま残す |
 | GS-016 | R4 | Goal Plannerはverified構造と、run modeに必要なverification状態・environment一致・未失効validity／reset scopeを満たすGame State Factからroute／Playbook候補を合成できる。candidate／replayed edgeを含む経路はVerified Runへ昇格せず、ExploreまたはSupervisedとして表示する |
-| GS-017 | R4 | provider／model／prompt／vision入力範囲／response／費用をversioned記録し、provider切替やlocal／cloud fallbackを行わない。full frameまたはcrop送信はapp単位の明示同意とData Flow Contractを要求する |
+| GS-017 | R4 | ローカルprovider／model／prompt／vision入力範囲／response／resource使用量をversioned記録する。AI推論目的のfull frame／crop／OCR／embedding／prompt／responseの外部送信を禁止し、外部AI API費用0とcloud fallback不在をData Flow Contractで固定する |
 | GS-018 | R4 | hidden-oracle GameLabではruntimeとplannerへstate ID、transition表、allowed action、expected event列、正解recognizerを渡さない。oracleは最終assertionだけに使い、この依存禁止をarchitecture testで固定する |
 | GS-019 | R4 Gate | live探索前に、対象gameでcapture継続、visual grounding、pointer移動、target click、back／Escape、scroll、policyで許可したgeneric keyの受理をprimitiveごと・input routeごとに実観測する。不成立primitiveを別routeへ黙ってfallbackせずUnsupportedにする |
 | GS-020 | R4 | UIは現在のstructure revision、Known／Novel、frontier、提案probe、risk／承認理由、残budget、復帰経路、停止理由、candidate／replayed／verifiedを表示し、利用者がpause、step、abandon、evidence確認を行える |
@@ -280,7 +280,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | UX-008 | R4 | capture不能、AI障害、Observation照合不能に利用者向け復旧選択を出す |
 | OPS-001 | R1 | AI／networkが停止していてもdevice mappingとknown deterministic macroを利用できる |
 | OPS-002 | R1 | 設定とdevice backupをapp再起動後に復元できる |
-| OPS-003 | R4 | full-screen画像の永続保存とcloud送信を既定OFFにする |
+| OPS-003 | R4 | full-screen画像の永続保存を既定OFFにし、AI推論目的のcloud送信経路を実装しない |
 | OPS-004 | R4 | secretをWindows Credential ManagerまたはCurrentUser保護領域へ保存し、log、journal、export、dumpへ含めない |
 | OPS-005 | R2 | device／input向けengineering logと診断bundleを利用者preview付きで生成する |
 | OPS-006 | R5 | install、update、rollback、repair、uninstall、LGS復帰をclean Windows環境で検証する |
@@ -414,7 +414,7 @@ Hardware Maintenanceは保守面であり、通常のゲーム設定flowへ出�
 
 #### Journey C: AIに探索させてゲーム構造を育てる
 
-1. 対象app／window、探索領域、許可primitive、risk禁止項目、復帰境界、外部送信、保存期間、action／時間／費用上限を固定する。
+1. 対象app／window、探索領域、許可primitive、risk禁止項目、復帰境界、ローカルAI処理、外部AI送信なし、保存期間、action／時間／resource上限を固定する。
 2. game固有state、visual target、recognizer、routeが0件のPersonal Knowledge StoreからExploration Runを開始する。
 3. Observe OnlyでAIが現在画面のNovel判定、affordance候補、探索frontierを提示する。
 4. 未知targetの最初の一手を利用者が承認し、runtimeが既存Durable Attempt境界からdispatchする。
@@ -739,8 +739,8 @@ AIは次を変更できない。
 - risk class
 - execution mode
 - provider／model
-- cloud送信範囲
-- daily cost cap
+- 外部AI送信なし／外部AI API費用0
+- session resource上限
 - game policy
 - Playbook verified status
 - Screen Graphのnode／edgeのcandidate／replayed／verified状態、merge／split、retire
@@ -780,7 +780,7 @@ Phase 4前にData Flow Contractを作る。対象はframe、crop、OCR text、wi
 初期既定:
 
 - full-screen frameの永続保存: OFF
-- cloud送信: app単位で明示同意するまでOFF
+- AI推論目的の外部送信: 経路なし
 - confirmed stepのevidence crop保存: 利用者がTeach sessionで選択
 - engineering logへのOCR／prompt本文: OFF
 - crash raw dump: OFF
@@ -1063,7 +1063,7 @@ Phase 0受入の「device writeを行っていない」は維持する。G0-Devi
 Exit Gate G0-Automation:
 
 - Frame、Observation、Proposalのdraftが実frameとGameLab prototypeのfixture案で表現可能（GameLab v1の実装受入はPhase 1 Exit。Phase 0はprototypeと仕様で判定する）。
-- cloud送信前のData Flow Contract項目が決定。
+- ローカルAI処理、外部AI送信なし、外部AI API費用0をData Flow Contract項目として決定。
 - NIKKE実測は探索証拠として再記録し、製品受入と混同していない。
 
 No-Go:
@@ -1200,7 +1200,7 @@ Exit:
 - candidate／replayed／verified昇格。
 - correction、cost cap、timeout、cancel。
 - prompt／model／parameter／dataset version記録。
-- image crop／cloud consent。
+- image cropのローカル処理／保存契約と外部AI送信なし。
 - frozen GameLab AI eval。
 
 Exit:
@@ -1293,7 +1293,7 @@ Exit:
 - GameWithはSummaryOnlyのMarkdown参照カード、明示許可sourceはFullTextAllowed、判断不能sourceはLinkOnly／Blockedになることをfocused fixtureで固定する。
 - zero-seed hidden-oracleはWeb Reference 0件、通常journeyはWeb-assistedで別acceptanceにする。
 - zero-seed frameからNovel、同一画面候補、AffordanceCandidate、構造化proposalを返せるvision provider／recognizerをEXP-GS-01で比較し、一方式だけ選ぶ。
-- full frame／crop／OCR／embeddingの保存・送信・削除・費用をData Flow Contractへ追加し、app単位の同意を実装する。
+- full frame／crop／OCR／embeddingのローカル処理・保存・削除・resource使用量をData Flow Contractへ追加し、外部AI送信なしと外部AI API費用0をmachine testで固定する。
 - GameLabと初期real targetの双方で、pointer移動、frame-bound click、back／Escape、scroll、policy許可済みgeneric keyをinput route別に受信側観測する（EXP-GS-04）。
 - 対象gameのObserve／Assist／Explore／AutoをGame Policy Recordで分ける。
 - G0が不成立の間はlive Exploreを実装せず、provider mockや別input routeへ黙ってfallbackしない。
@@ -1366,14 +1366,14 @@ Phase 9 Exitは「Game Structure Explorer Preview」と対象scopeの「Verified
 | EXP-CAP-01 | NIKKE WGC window | live sequence、hash、resize、遮蔽、最小化、errorを記録 | visible-only等の条件を明示 |
 | EXP-CAP-02 | backend matrix | WGC／Duplication／visibleを同じFrame contractへ変換 | backendごとにUnsupported条件 |
 | EXP-PB-01 | crash matrix | 全boundaryでunknown再送0、journal再生一致 | state machineを修正 |
-| EXP-AI-01 | provider benchmark | frozen corpusで精度、unknown、latency、cost、cancelを比較 | provider未選定を維持 |
-| EXP-GS-01 | zero-seed visual discovery／provider admission | game固有label／recognizerなしのheld-out FrameからNovel、同一画面候補、frame-bound affordance、schema準拠proposalを返し、事前固定metric、unknown棄却、latency、cancel、cost、data policyを満たす | provider／recognizer未選定を維持し、live Exploreを禁止 |
+| EXP-AI-01 | ローカルprovider benchmark | frozen corpusで精度、unknown、latency、model取得量、storage、memory、cancelを比較し、外部AI API呼出0を確認 | provider未選定を維持 |
+| EXP-GS-01 | zero-seed visual discovery／ローカルprovider admission | game固有label／recognizerなしのheld-out FrameからNovel、同一画面候補、frame-bound affordance、schema準拠proposalを返し、事前固定metric、unknown棄却、latency、cancel、resource上限、外部AI送信0を満たす | provider／recognizer未選定を維持し、live Exploreを禁止 |
 | EXP-GS-02 | hidden-oracle GameLab structure induction | runtimeへのseed 0でnode 3件以上、edge 2件以上を発見し、oracle不一致commit 0、scope外dispatch 0。oracleは最終assertion以外から参照不能 | zero-seed contract／scene analysis／coordinatorを修正 |
 | EXP-GS-03 | structure durability／contradiction | crash replay一致、未解決AttemptのOutcomeUnknown、別session昇格、merge／split／反証降格、loop／no-progress停止を各focused scenarioで成立 | Structure Event／projection／promotion規則を修正 |
 | EXP-GS-04 | exploration primitive acceptance | GameLabと対象gameでpointer移動、frame-bound click、back／Escape、scroll、game固有語義を持たないpolicy許可済みgeneric keyをroute別に受信側または画面before／afterで確認。SendInputとSerial HID等を混ぜず個別判定 | 不成立primitive／routeをUnsupportedにし、別routeへfallbackしない |
 | EXP-GS-05 | NIKKE reversible live slice | policy許可scopeで、人のstate／target命名なしにlobbyの一つのopen→observe→back edgeを発見し、別sessionで再同定・再遷移。課金／消費／戦闘dispatch 0 | Phase 9CとVerified Game Structure claimを未成立のまま維持 |
 | EXP-WR-01 | STEP 0 source policy／Markdown reference | 許可sourceはfull Markdown、GameWithはSummaryOnly参照カード、拒否sourceはLinkOnly／Blocked。出典欠落0、全文残置0、Web由来のverified昇格0 | Web-assisted journeyを無効にし、zero-seed pathだけを維持 |
-| EXP-DATA-01 | privacy path | captureから保存／送信／削除までdata inventory完成 | cloud／recordingを無効 |
+| EXP-DATA-01 | privacy path | captureからローカル処理／保存／削除までdata inventory完成、AI推論目的のnetwork送信経路0 | recordingを無効 |
 | EXP-DIST-01 | packaging identity | tray、autostart、WGC、updateをclean VMで確認。HID・LampArray行はUSB passthrough対応hypervisor（VMware等。Hyper-Vは汎用passthrough非対応）または実機clean環境で確認し、手段を記録する。Phase 8A実施へ割り当てる | MSIX／Sparse／MSIを再裁定 |
 
 G600の「LED 1項目変更」も転送上は154-byte profile全体のwriteになり得る。論理field一つと物理write範囲を混同しない。foreground切替を契機に永続profileを書き換えない。
@@ -1448,7 +1448,7 @@ frozen acceptance datasetはrecognizer、planner、runtimeの品質判定に使�
 - game／region／build／anti-cheat
 - input route
 - policy確認日
-- AI provider／model／network mode
+- ローカルAI provider／model／外部AI送信なし
 - Game Structure revision／verification scope／許可exploration primitive
 - installer／update route
 
@@ -1599,8 +1599,8 @@ Shared Distribution Gateに加えて次を全て要求する。
 2. host process死亡後も所有outputを期限内にreleaseし、再起動後のownership reconcile完了まで次dispatchを禁止。
 3. high-impact actionの未承認dispatch 0。
 4. frame corpusとAI evalが事前固定thresholdを満たし、dataset、model、prompt、parameterを記録。
-5. image保存、cloud送信、削除、provider、costをUIから確認・制御可能。
-6. provider data policyと対象Game Policy Recordがmode別に承認済み。
+5. image保存、削除、ローカルprovider／model、外部AI送信なし、外部AI API費用0をUIから確認可能。
+6. ローカルmodelのlicense／取得元／保存場所と対象Game Policy Recordがmode別に確認済み。
 7. Observe Only、Explore、Teach、Supervised、Verifiedの各modeがcapability gateを迂回できない。
 8. 実game用Verified Stepは同一環境条件の独立live session証拠を持つ。
 
@@ -1617,7 +1617,7 @@ Game Structure Explorer Previewには次を全て要求する。
 3. restart replay、OutcomeUnknown、loop／no-progress停止、budget停止、scope外dispatch拒否が合格。
 4. AIがInput、Persistence、risk確定、verification昇格へ直接到達できない。
 5. candidate／replayed／verified、Known／Novel、frontier、risk、残budget、復帰経路、停止理由をUIで区別する。
-6. provider、vision送信範囲、保存、削除、費用がData Flow Contractと利用者同意に従う。
+6. ローカルprovider／model、vision入力範囲、保存、削除、resource使用量、外部AI送信なし、外部AI API費用0がData Flow Contractに従う。
 
 real gameを対象とするVerified Game Structure claimには、さらに次を要求する。
 
@@ -1693,7 +1693,7 @@ G0ではScreen Graph builderや自動探索loopを先に実装しない。provid
 | hard-crash watchdog | **決定済み（2026-08-16 オーナー裁定）**: watchdog採用は必須（実測確定 2026-08-15）。**uiAccess署名は費用（署名subscription）を理由に不採用**。watchdogの昇格実行も現段階では不採用とし、elevated foreground中の配送・release不能は残留riskとしてSupported matrixの行条件に表示して閉じる。elevated対応の実需要が出た時だけ、昇格watchdog（初回UAC承認のopt-in・証明書不要）を再検討する | EXP-IN-03 実測済み（probe `crash-keystate`・Windows 11 26200・2試行再現）: SendInput key-down は process hard kill（TerminateProcess）後も残留し OS は自動releaseしない（5秒/10秒観測とも残留継続）。別 process からの SendInput key-up で release 成立（通常IL・非elevated foreground 条件）。よって「残留なし実証」ルートは棄却、Supported path は watchdog release が条件。elevated foreground 下の release 可否は EXP-IN-01 の elevated 実測と併せて判定する。証跡: probe-output/crash-keystate-20260815-142715-246.json / -142739-698.json |
 | SendInput acceptance（EXP-IN-01） | **実測完了（2026-08-16）**——受信側観測（probe `sendinput-accept`・test target window の WM_KEYDOWN/KEYUP log と送信列の突合・Windows 11 26200）で両側分類確定: **standard foreground＝Delivered（確認済み）**——単一 key・chord とも完全順序一致（6/6）。**elevated foreground＝Blocked（確認済み）**——target の昇格を TokenElevation で実測・foreground 確認済みの条件で受信ゼロ（UIPI 遮断どおり・API 戻り値は成功のまま）。target game 分類は Phase 7 pilot で個別実測。mouse button 分類は cursor 依存のため未実施 | 証跡: probe-output/sendinput-accept-standard-20260816-014738-596.json / sendinput-accept-elevated-20260816-022736-103.json。含意: elevated foreground 中は配送も release 注入も不能＝Supported matrix の行条件として明示必須。watchdog の昇格実行/uiAccess 署名の採否（上行）はこの結果を材料にオーナー裁定 |
 | WGC以外のbackendを製品化するか | Phase 5開始 | capability matrix |
-| AI vision provider／local model | Phase 9 G0・Exploration Coordinator実装前（Phase 6はprovider未選定のままExitしたため本期限へ更新） | EXP-AI-01／EXP-GS-01、zero-seed visual grounding、unknown棄却、schema、cancel、latency、cost、data policy |
+| AI vision provider／local model | **方式境界決定済み（2026-08-24 オーナー裁定）: 製品runtimeはローカルAIだけとし、OpenAI APIを含む従量課金型の外部AI API、AI推論目的の外部送信、cloud fallbackを不採用。具体provider／modelはPhase 9 G0・Exploration Coordinator実装前に一方式を実測選定する** | EXP-AI-01／EXP-GS-01、zero-seed visual grounding、unknown棄却、schema、cancel、latency、model取得量、storage、memory、外部AI送信0／外部AI API費用0 |
 | exploration pointer／click route | Phase 9 G0・live Explore前 | EXP-GS-04。pointer移動、frame-bound click、back／Escape、scroll、policy許可済みgeneric keyをGameLabと対象gameで個別実測し、一方式を選ぶ |
 | initial real-game discovery | Phase 9C開始 | NIKKE lobby safe sliceのpolicy、capture、visual grounding、input受理、可逆復帰、non-impact scope |
 | public product name | 最初の外部配布前 | trademark、publisher identity |
