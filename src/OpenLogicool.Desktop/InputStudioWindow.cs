@@ -26,7 +26,9 @@ public sealed class InputStudioWindow : Window
     private readonly IResidentApplyIntent? _residentApply;
     private readonly ISerialHidSettingsIntent? _serialHidSettingsIntent;
     private readonly IG13LcdSettingsIntent? _g13LcdSettingsIntent;
+    private readonly IWebResearchIntent? _webResearchIntent;
     private DiagnosticsWindow? _diagnosticsWindow;
+    private GameOperatorWindow? _gameOperatorWindow;
     private DispatcherTimer? _traceTimer;
 
     private WorkspaceScreenSnapshot _snapshot;
@@ -204,7 +206,8 @@ public sealed class InputStudioWindow : Window
         IResidentApplyIntent? residentApply = null,
         IG600OnboardIntent? onboardIntent = null,
         ISerialHidSettingsIntent? serialHidSettingsIntent = null,
-        IG13LcdSettingsIntent? g13LcdSettingsIntent = null)
+        IG13LcdSettingsIntent? g13LcdSettingsIntent = null,
+        IWebResearchIntent? webResearchIntent = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
@@ -212,6 +215,7 @@ public sealed class InputStudioWindow : Window
         _onboardIntent = onboardIntent;
         _serialHidSettingsIntent = serialHidSettingsIntent;
         _g13LcdSettingsIntent = g13LcdSettingsIntent;
+        _webResearchIntent = webResearchIntent;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
 
@@ -282,6 +286,7 @@ public sealed class InputStudioWindow : Window
         {
             _traceTimer?.Stop();
             _diagnosticsWindow?.Close();
+            _gameOperatorWindow?.Close();
         };
     }
 
@@ -569,6 +574,24 @@ public sealed class InputStudioWindow : Window
         else
         {
             _diagnosticsWindow.Activate();
+        }
+    }
+
+    private void OpenGameOperator()
+    {
+        if (_webResearchIntent is null)
+        {
+            return;
+        }
+
+        if (_gameOperatorWindow is null || !_gameOperatorWindow.IsVisible)
+        {
+            _gameOperatorWindow = new GameOperatorWindow(_webResearchIntent) { Owner = this };
+            _gameOperatorWindow.Show();
+        }
+        else
+        {
+            _gameOperatorWindow.Activate();
         }
     }
 
@@ -1107,6 +1130,22 @@ public sealed class InputStudioWindow : Window
         row.Children.Add(_testFieldHint);
         grid.Children.Add(row);
 
+        var right = new StackPanel { Orientation = Orientation.Horizontal };
+        if (_webResearchIntent is not null)
+        {
+            var gameOperatorButton = new Button
+            {
+                Content = "Game Operator",
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Foreground = Theme.Accent,
+                Padding = new Thickness(8, 2, 8, 2),
+            };
+            AutomationProperties.SetName(gameOperatorButton, "Game Operator画面を開く");
+            gameOperatorButton.Click += (_, _) => OpenGameOperator();
+            right.Children.Add(gameOperatorButton);
+        }
+
         var diagnosticsButton = new Button
         {
             Content = "診断",
@@ -1118,8 +1157,9 @@ public sealed class InputStudioWindow : Window
         };
         AutomationProperties.SetName(diagnosticsButton, "診断画面を開く");
         diagnosticsButton.Click += (_, _) => OpenDiagnostics();
-        Grid.SetColumn(diagnosticsButton, 1);
-        grid.Children.Add(diagnosticsButton);
+        right.Children.Add(diagnosticsButton);
+        Grid.SetColumn(right, 1);
+        grid.Children.Add(right);
 
         bar.Child = grid;
         return bar;

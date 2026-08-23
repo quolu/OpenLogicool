@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using OpenLogicool.Capture;
@@ -13,6 +14,7 @@ using OpenLogicool.Devices.G13;
 using OpenLogicool.Devices.G600;
 using OpenLogicool.Domain;
 using OpenLogicool.Host;
+using OpenLogicool.Host.Research;
 using OpenLogicool.Persistence;
 using OpenLogicool.Profiles;
 using OpenLogicool.Playbooks;
@@ -430,6 +432,13 @@ static int Ui(string[] arguments)
         railEntries);
 
     var editorIntents = new HostWorkspaceEditorIntents(connection);
+    using var webResearchClient = new HttpClient();
+    webResearchClient.DefaultRequestHeaders.UserAgent.ParseAdd("OpenLogicool/0.2 STEP0-WebResearch");
+    var webResearchIntent = new HostWebResearchIntent(
+        new SqliteWebReferenceStore(connection),
+        new WebReferenceAcquisitionService(
+            new HttpClientWebReferenceTransport(webResearchClient),
+            new WebReferenceHtmlNormalizer()));
 
     IResidentApplyIntent? residentApply = null;
     if (residentHost is not null && residentStatus is not null)
@@ -463,7 +472,8 @@ static int Ui(string[] arguments)
             residentApply,
             onboardIntent,
             serialHidSettingsIntent,
-            new HostG13LcdSettingsIntent());
+            new HostG13LcdSettingsIntent(),
+            webResearchIntent);
         System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
         if (residentHost is not null)
         {
