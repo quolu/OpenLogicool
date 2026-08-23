@@ -308,6 +308,7 @@ public sealed record WebReferenceDeletionPreview(
     string SourceId,
     IReadOnlyList<string> DocumentIds,
     IReadOnlyList<string> FactIds,
+    IReadOnlyList<string> ContradictionIds,
     long PayloadBytes);
 
 /// <summary>
@@ -320,4 +321,5 @@ public sealed record WebReferenceDeletionTombstone(
     DateTimeOffset DeletedUtc,
     string Reason,
     IReadOnlyList<string> DeletedDocumentIds,
-    IReadOnlyList<string> DeletedFactIds);
+    IReadOnlyList<string> DeletedFactIds,
+    IReadOnlyList<string> DeletedContradictionIds);

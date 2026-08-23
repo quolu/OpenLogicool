@@ -416,6 +416,7 @@ public sealed class WebReferenceContractTests
             "source-1",
             ["document-1"],
             ["fact-1", "fact-2"],
+            ["contradiction-1"],
             8192);
         var tombstone = new WebReferenceDeletionTombstone(
             Schema,
@@ -424,7 +425,8 @@ public sealed class WebReferenceContractTests
             Now,
             "利用者がsourceを削除",
             ["document-1"],
-            ["fact-1", "fact-2"]);
+            ["fact-1", "fact-2"],
+            ["contradiction-1"]);
 
         WebReferenceContractSchema.Validate(preview);
         WebReferenceContractSchema.Validate(tombstone);

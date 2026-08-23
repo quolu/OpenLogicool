@@ -304,6 +304,7 @@ public static class WebReferenceContractSchema
         RequireText(preview.SourceId, "deletion source id");
         RequireDistinctText(preview.DocumentIds, "deletion document ids", allowEmpty: true);
         RequireDistinctText(preview.FactIds, "deletion fact ids", allowEmpty: true);
+        RequireDistinctText(preview.ContradictionIds, "deletion contradiction ids", allowEmpty: true);
         if (preview.PayloadBytes < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(preview), "deletion payload bytesは負にできません。");
@@ -319,6 +320,7 @@ public static class WebReferenceContractSchema
         RequireText(tombstone.Reason, "deletion reason");
         RequireDistinctText(tombstone.DeletedDocumentIds, "deleted document ids", allowEmpty: true);
         RequireDistinctText(tombstone.DeletedFactIds, "deleted fact ids", allowEmpty: true);
+        RequireDistinctText(tombstone.DeletedContradictionIds, "deleted contradiction ids", allowEmpty: true);
     }
 
     public static void Validate(WebReferenceSourceExclusion exclusion)

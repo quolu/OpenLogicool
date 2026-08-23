@@ -72,6 +72,90 @@ public static class InitialSqliteMigrations
                     PRIMARY KEY (run_id, run_sequence)
                 );
                 """),
+            new SqlMigration(
+                7,
+                """
+                CREATE TABLE web_reference_sources (
+                    source_id TEXT PRIMARY KEY,
+                    schema_version TEXT NOT NULL,
+                    policy TEXT NOT NULL,
+                    source_json TEXT NOT NULL,
+                    payload_bytes INTEGER NOT NULL
+                );
+                CREATE TABLE web_reference_documents (
+                    document_id TEXT PRIMARY KEY,
+                    source_id TEXT NOT NULL,
+                    revision_number INTEGER NOT NULL,
+                    parent_document_id TEXT NULL UNIQUE,
+                    schema_version TEXT NOT NULL,
+                    policy TEXT NOT NULL,
+                    document_json TEXT NOT NULL,
+                    payload_bytes INTEGER NOT NULL
+                );
+                CREATE TABLE web_reference_facts (
+                    fact_id TEXT PRIMARY KEY,
+                    revision_number INTEGER NOT NULL,
+                    parent_fact_id TEXT NULL UNIQUE,
+                    schema_version TEXT NOT NULL,
+                    fact_json TEXT NOT NULL,
+                    payload_bytes INTEGER NOT NULL
+                );
+                CREATE TABLE web_reference_fact_sources (
+                    fact_id TEXT NOT NULL,
+                    source_reference_id TEXT NOT NULL,
+                    PRIMARY KEY (fact_id, source_reference_id)
+                );
+                CREATE TABLE web_reference_contradictions (
+                    contradiction_id TEXT PRIMARY KEY,
+                    revision_number INTEGER NOT NULL,
+                    parent_contradiction_id TEXT NULL UNIQUE,
+                    left_fact_id TEXT NOT NULL,
+                    right_fact_id TEXT NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    contradiction_json TEXT NOT NULL,
+                    payload_bytes INTEGER NOT NULL
+                );
+                CREATE TABLE web_reference_contradiction_sources (
+                    contradiction_id TEXT NOT NULL,
+                    source_reference_id TEXT NOT NULL,
+                    PRIMARY KEY (contradiction_id, source_reference_id)
+                );
+                CREATE TABLE web_reference_research_runs (
+                    run_id TEXT NOT NULL,
+                    revision_number INTEGER NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    run_json TEXT NOT NULL,
+                    PRIMARY KEY (run_id, revision_number)
+                );
+                CREATE TABLE web_reference_tombstones (
+                    tombstone_id TEXT PRIMARY KEY,
+                    source_id TEXT NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    tombstone_json TEXT NOT NULL
+                );
+                CREATE TABLE web_reference_exclusions (
+                    exclusion_id TEXT PRIMARY KEY,
+                    schema_version TEXT NOT NULL,
+                    exclusion_json TEXT NOT NULL
+                );
+                CREATE TABLE web_reference_reacquisition_requests (
+                    request_id TEXT PRIMARY KEY,
+                    source_id TEXT NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    request_json TEXT NOT NULL
+                );
+                """),
+            new SqlMigration(
+                8,
+                """
+                CREATE TABLE web_reference_fact_contradictions (
+                    fact_id TEXT NOT NULL,
+                    contradiction_id TEXT NOT NULL,
+                    PRIMARY KEY (fact_id, contradiction_id)
+                );
+                CREATE UNIQUE INDEX ux_web_reference_documents_source_revision
+                ON web_reference_documents (source_id, revision_number);
+                """),
         };
 }
 
