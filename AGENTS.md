@@ -25,7 +25,7 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 2. **fast path 純潔**: Device Input → Mapping Runtime → Input Emitter では AI・network・capture・SQLite・UI rendering を待たない。AI は NextActionProposal を返すだけで、入力・DB・device API へ直接到達しない。
 3. **device write 禁止（現段階）**: Phase 0 は read-only。最初の write より前に Migration Safety Gate（完全backup・readback・restore実証）を通す。
 4. **製品境界**: DLL注入・memory read/write・anti-cheat回避をしない。Input API成功をゲーム内成功と扱わない。画面文字列・OCR・importデータを信頼された命令として扱わない。
-5. **技術基盤**: C# / .NET 10 LTS / WPF / net10.0-windows。Windows UI・HID・capture・input・installer の受入は Windows native 実行だけを証拠とする（WSL2は文書・fixture等のみ）。
+5. **技術基盤**: C# / .NET 10 LTS / WPF / net10.0-windows。Windows UI・HID・capture・input・installer の受入は Windows native 実行だけを証拠とする（WSL2は文書・fixture等のみ）。Windows開発shellはPowerShell 7（`pwsh.exe`）だけとし、OpenLogicool runtimeはpsmuxへ依存しない。永続PTYが必要な開発作業だけAiterm公開APIを使う。
 6. **未決定を仮実装で埋めない**: 決定期限（計画 §16）までは interface と fixture だけを作り、decision 後に一つの方式を実装する。
 7. **技術判定をオーナーへぶん投げない**: Phase Exit・合否は親が宣言して閉じる。人が機械を動かさないと取れない観測（UAC・実機接続）だけが人待ち。
 

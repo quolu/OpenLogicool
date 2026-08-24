@@ -40,7 +40,7 @@ UnverifiedをSupportedとして表示しない。実験失敗を別方式へ黙�
 - 対象architecture: x64を最初の基準とし、ARM64はsupport matrixで別判定する。
 - 永続化: SQLiteとversioned JSON export。
 - Windows API: Raw Input、HID、SendInput、Windows Graphics Captureを第一候補とする。
-- 開発環境: WSL2は文書、domain、fixture等へ利用できるが、Windows UI、HID、capture、input、installerの受入はWindows native実行だけを証拠とする。
+- 開発環境: WSL2は文書、domain、fixture等へ利用できるが、Windows UI、HID、capture、input、installerの受入はWindows native実行だけを証拠とする。Windows開発shellはPowerShell 7（`pwsh.exe`）だけを前提とし、5.1しかなければMicrosoft公式installer／package managerで7を導入してから使う。OpenLogicool runtimeはpsmuxへ依存せず、対話型永続PTYが必要な開発作業だけAiterm公開APIを使う。
 - kernel driver: Phase 0の実測で必要性が成立するまで実装しない。必要と判明した場合は独立した署名・配布計画へ分岐する。
 - package: 開発中はunpackagedを許す。Dynamic Lightingのbackground制御または公開配布の前にMSIX／Sparse Package／MSIを実測して決定する。
 
