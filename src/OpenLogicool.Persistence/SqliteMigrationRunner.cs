@@ -184,6 +184,24 @@ public static class InitialSqliteMigrations
                     UNIQUE (game_id, environment_scope, resulting_revision_id)
                 );
                 """),
+            new SqlMigration(
+                10,
+                """
+                CREATE TABLE learning_route_revisions (
+                    route_id TEXT NOT NULL,
+                    revision_number INTEGER NOT NULL,
+                    version_id TEXT NOT NULL UNIQUE,
+                    parent_version_id TEXT NULL,
+                    game_id TEXT NOT NULL,
+                    environment_scope TEXT NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    document_json TEXT NOT NULL,
+                    PRIMARY KEY (route_id, revision_number),
+                    UNIQUE (route_id, parent_version_id)
+                );
+                CREATE INDEX ix_learning_route_revisions_game_environment
+                ON learning_route_revisions (game_id, environment_scope, route_id);
+                """),
         };
 }
 
