@@ -42,6 +42,7 @@ public sealed class ProjectReferenceDirectionTests
                 "OpenLogicool.Capture",
                 "OpenLogicool.Perception",
                 "OpenLogicool.AI",
+                "OpenLogicool.Exploration",
                 "OpenLogicool.Desktop"),
             ["OpenLogicool.Fakes"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),
         };

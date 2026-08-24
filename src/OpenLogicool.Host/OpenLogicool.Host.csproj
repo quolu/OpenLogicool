@@ -29,6 +29,7 @@
     <ProjectReference Include="..\OpenLogicool.Capture\OpenLogicool.Capture.csproj" />
     <ProjectReference Include="..\OpenLogicool.Perception\OpenLogicool.Perception.csproj" />
     <ProjectReference Include="..\OpenLogicool.AI\OpenLogicool.AI.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Exploration\OpenLogicool.Exploration.csproj" />
     <ProjectReference Include="..\OpenLogicool.Desktop\OpenLogicool.Desktop.csproj" />
   </ItemGroup>
 </Project>

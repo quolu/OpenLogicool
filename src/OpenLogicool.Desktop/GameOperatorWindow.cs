@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace OpenLogicool.Desktop;
 
-/// <summary>Game OperatorのSTEP 0 Web調査画面。</summary>
+/// <summary>Game OperatorのSTEP 0 Web調査と構造探索をまとめた画面。</summary>
 public sealed class GameOperatorWindow : Window
 {
     private sealed record Choice<T>(string Label, T Value)
@@ -30,7 +30,7 @@ public sealed class GameOperatorWindow : Window
         MinHeight = 220,
     };
 
-    public GameOperatorWindow(IWebResearchIntent intent)
+    public GameOperatorWindow(IWebResearchIntent intent, IExplorerIntents? explorerIntents = null)
     {
         ArgumentNullException.ThrowIfNull(intent);
         _workspace = new WebResearchWorkspace(intent);
@@ -63,11 +63,26 @@ public sealed class GameOperatorWindow : Window
         _documents.SelectionChanged += (_, _) => ShowSelectedMarkdown();
         _start.Click += async (_, _) => await StartAsync();
 
-        Content = BuildContent();
+        Content = BuildContent(explorerIntents);
         RefreshDocuments();
     }
 
-    private UIElement BuildContent()
+    private UIElement BuildContent(IExplorerIntents? explorerIntents)
+    {
+        var tabs = new TabControl
+        {
+            Background = Theme.Bg,
+            Foreground = Theme.Text,
+        };
+        tabs.Items.Add(new TabItem { Header = "STEP 0　Web調査", Content = BuildResearchContent() });
+        if (explorerIntents is not null)
+        {
+            tabs.Items.Add(new TabItem { Header = "構造探索", Content = new ExplorerPanel(explorerIntents) });
+        }
+        return tabs;
+    }
+
+    private UIElement BuildResearchContent()
     {
         var root = new Grid { Margin = new Thickness(20) };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
