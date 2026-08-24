@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -43,6 +44,8 @@ public sealed record FoundryVisionResult(
 
 public sealed class FoundryLocalVisionClient : IDisposable
 {
+    public const string PromptRevision = "clickable-visible-labels-v1";
+
     private const string Prompt =
         "Read the image. Find visually clickable controls that contain visible words. " +
         "Copy each control's visible words exactly, preserving case. " +
@@ -105,6 +108,8 @@ public sealed class FoundryLocalVisionClient : IDisposable
     }
 
     public Uri Endpoint => responsesEndpoint;
+    public string ModelId => modelId;
+    public string PromptSha256 => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Prompt)));
 
     public async Task<FoundryVisionResult> ProposeLabelsAsync(
         ReadOnlyMemory<byte> pngBytes,

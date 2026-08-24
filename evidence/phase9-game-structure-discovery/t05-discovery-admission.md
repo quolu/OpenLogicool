@@ -114,7 +114,7 @@ Foundry Local 0.10.3の実際のvision wire contractを公式C# sampleと実測�
 
 NIKKEの密なtileではQwenが同じlabelを反復し、JSONを閉じないまま出力上限へ達する実測があった。Foundry Local 0.10.3は`json_schema`指定をHTTP 200で受理したが、このQwen variantは生成をschemaへ拘束しなかった。adapterはprovider設定やgame固有語で回避せず、`{"labels":[`から始まる厳密な文法、完全なJSON string、同一labelの3回以上の反復、未閉鎖末尾が全て成立する時だけ完全labelを回収する。通常の重複は順序を保って1件へ畳み、`DuplicateLabelsCollapsed`／`TruncatedRepetitionRecovered`を証跡へ残す。それ以外の途中切れ、別schema、散文は`Unknown`のままである。上記NIKKE最終証跡では`DuplicateLabelsCollapsed`が実際に記録された。
 
-VLMとOCRの文字差は、完全一致を優先し、類似度0.85以上かつ次点の物理候補との差0.15以上だけを一意接地する。既知anchorを追跡する場合も正規化長8以上、類似度0.70以上、位置誤差条件を要求する。focused testではVLM `受けける`を同一frame OCR `受け取る`へ接地でき、同程度の候補が2箇所ある場合は`Unknown`になった。特定gameや特定誤字の置換表は持たない。
+VLMとOCRの文字差は、完全一致を優先し、類似度0.85以上かつ次点の物理候補との差0.15以上だけを一意接地する。既知anchorを追跡する場合も正規化長8以上、類似度0.70以上、位置誤差条件を要求する。focused testではVLM `タップして受けける`を同一frame OCR `タップして受け取る`へ接地でき、同程度の候補が2箇所ある場合は`Unknown`になった。特定gameや特定誤字の置換表は持たない。
 
 ## Data Flow
 
