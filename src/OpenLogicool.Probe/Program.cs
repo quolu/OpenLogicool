@@ -92,6 +92,9 @@ return command switch
     "live-discovery-nano-primitives" => OpenLogicool.Probe.LiveDiscoveryNanoPrimitiveSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "live-discovery-nano-coordinate" => OpenLogicool.Probe.LiveDiscoveryNanoCoordinateSmoke.Run(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
     "record" => OpenLogicool.Probe.RawInputRecorder.Run(
         args.Length > 1 ? args[1] : "session",
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output")),

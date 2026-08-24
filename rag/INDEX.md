@@ -3,6 +3,7 @@
 - [Foundry Local 0.10.3 vision wire contract](openlogicool/foundry-local-vision-wire-2026-08-24.md) — Responses APIの`message`＋`image_data`＋`media_type`＋SSE契約、誤経路の実測、不明時no-fallback境界。取得日: 2026-08-24、確度: 高（Microsoft公式sample＋Windows実機）
 
 - [STEP 0 Web Reference Policy（2026-08-24）](openlogicool/step0-web-reference-policy-2026-08-24.md) — GameWith利用規約／robotsとMarkdown保存境界、Web仮説をgame内検証へ従属させる契約
+- [NIKKE日課 STEP 0 SummaryOnly（2026-08-24）](openlogicool/nikke-daily-gamewith-summary-2026-08-24.md) — GameWith日課候補、午前5時更新、通常デイリーとMission Passの分離、game内で確定した入口・基地防御報酬`0/1→1/1→10/100`。取得日: 2026-08-24、確度: Web仮説は参考／game内事実は確認済み
 - [OpenLogicool feasibility research — G13/G600 on Windows](openlogicool/feasibility-2026-08-14.md) — 既存OSS、公開プロトコル、Windows実装境界、ブロッカー、最小実験、推奨試作。取得日: 2026-08-14、確度: 高（実機情報＋一次資料。一部は実機未検証）
 - [Primary-source manifest](openlogicool/raw/source-manifest.md) — 調査に使用した一次資料URL、用途、ライセンス上の扱い。取得日: 2026-08-14、確度: 高
 - [G600 onboard write protocol 公開実装調査](openlogicool/g600-write-protocol-2026-08-15.md) — 公開実装は全員 F3/F4/F5 へ 154-byte 直書き（F6 不使用）、write は settle+retry+fresh handle が要る運用知、incident の原因訂正。取得日: 2026-08-15、確度: 高（一次コード3実装+descriptor）

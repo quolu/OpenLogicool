@@ -1,8 +1,8 @@
 # OpenLogicool 製品・開発計画
 
-- 版: 0.6（2026-08-24 Phase 9 Exit）
+- 版: 0.8（2026-08-24 Phase 10 Exit）
 - 改訂日: 2026-08-24
-- 状態: Phase 0〜9 Exit済み／Game Structure Explorer Preview
+- 状態: Phase 0〜10 Exit済み／NIKKE Daily Drive一件実証
 - 対象: Logicool G13 / G600を統合するWindowsネイティブアプリと、画面認識付き逐次学習プレイブック
 - 比較基準: Logicool ゲームソフトウェア 9.04.49
 - 成立性資料: [G13/G600 Windows成立性調査](../rag/openlogicool/feasibility-2026-08-14.md)
@@ -1339,6 +1339,30 @@ Exit:
 10. 利用者がSTEP 0 source、frontier、risk、budget、復帰経路、検証状態、停止理由を確認し、pause／step／abandonできる。
 
 Phase 9 Exitは「Game Structure Explorer Preview」と対象scopeの「Verified Game Structure」を許すが、Verified Autonomous Playbook、日課完遂、一般game対応を自動的には許さない。
+
+### Phase 10: NIKKE Daily Drive（Exit 2026-08-24）
+
+目的: GameWithの日課情報を未信頼の参考仮説として理解し、NIKKE実画面から日課一覧を発見する。ダイヤを消費しない日課一件をNano Serial HIDだけで実行し、入力成功ではなく画面上の進捗または報酬変化で完了を確認する。
+
+順序:
+
+1. GameWith日課記事をSTEP 0 `SummaryOnly`として取得し、日課候補、更新時刻、画面名称を構造化する。
+2. ロビーから日課一覧への入口をfresh frameへ束縛したNano pointer操作で発見する。
+3. game内一覧の表示を正とし、非ダイヤ日課を一件選ぶ。
+4. 必要なgame内操作をNanoだけで実行し、画面の進捗または報酬変化を再観測する。
+5. 操作後のダイヤ残高が開始時`4,716`を下回らないこと、SendInput 0、Computer Use input dispatch 0、外部AI送信0を確認する。報酬による残高増加は消費ではないため許容し、増加理由を証拠化する。
+
+Exit:
+
+- 日課一覧の入口と一覧画面がgame内証拠で確認済みになる。
+- 非ダイヤ日課一件が完了し、game内の進捗または報酬変化で確認済みになる。
+- ダイヤ消費0を残高差分で確認する。開始`4,716`、終了`4,746`、指揮官レベル489到達報酬`+30`であり、支出は0だった。
+- blind retry、別入力fallback、外部AI API利用が0である。
+- 公開claimは一件の教師付き実証範囲だけとし、全日課、自律運転、一般game対応へ拡張しない。
+
+工程正本は[Phase 10 NIKKE Daily Drive campaign](phase10-nikke-daily-drive-campaign-plan.md)とする。
+
+判定: Exit成立。正しい入口は右上の青い`!`中心、一覧は`MISSION > デイリー`。`基地防御報酬を1回獲得する`を`0/1`から`1/1`へ進めて受領し、ポイントを`0/100`から`10/100`へ更新した。全game入力はNano Serial HID、`まとめて殲滅`未操作、ダイヤ消費0。詳細は[Phase 10 Exit判定](phase10-nikke-daily-drive-exit-assessment.md)。
 
 ### Post-8B capability campaign
 
