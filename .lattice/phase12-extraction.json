@@ -1,0 +1,111 @@
+{
+  "schema": "lattice.todo_extraction.v4",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase12-supervised-macro-runner",
+  "plan_version": "v1",
+  "actor": { "host": "FOX", "session": "phase12-supervised", "agent": "bell-sol" },
+  "recorded_at": "2026-08-24T12:30:33.614Z",
+  "tasks": [
+    {
+      "task_id": "t01-run-contract",
+      "title": "教師付き実行契約",
+      "lane": "A",
+      "design_memo": "Supervised runの状態、step監査、停止理由、pin、表示snapshotをgame非依存contractとして定義する。Confirmed以外では継続できず、未解決Attempt中は次へ進めない不変条件をpure testで固定する。",
+      "narrative_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": { "origin_plan_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md", "origin_line": 38, "source_commit": "6fa75f9afc8becbacac64acdbef24da582f0b17b", "heading_path": ["Lattice task仕様", "t01-run-contract"], "markdown_depth": 3, "parent_task_id": null, "checkbox_state": "absent" },
+      "migration_context": { "external_canonical_ref": "docs/development-plan.md", "carry_over_ref": "docs/phase11-exit-assessment.md", "h_required": false, "condition": null, "evidence_refs": [], "notes": [] }
+    },
+    {
+      "task_id": "t02-runner-core",
+      "title": "決定的runner中核",
+      "lane": "A",
+      "design_memo": "Visual Macro、ObservedScene、AttemptDispatchGateを接続する決定的runnerを実装する。Before監査、arm後の一回dispatch、After監査、停止、完了を一方向状態遷移にし、自動retryを持たない。",
+      "narrative_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": { "origin_plan_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md", "origin_line": 42, "source_commit": "6fa75f9afc8becbacac64acdbef24da582f0b17b", "heading_path": ["Lattice task仕様", "t02-runner-core"], "markdown_depth": 3, "parent_task_id": null, "checkbox_state": "absent" },
+      "migration_context": { "external_canonical_ref": "docs/development-plan.md", "carry_over_ref": "docs/phase11-exit-assessment.md", "h_required": false, "condition": null, "evidence_refs": [], "notes": [] }
+    },
+    {
+      "task_id": "t03-host-nano-adapter",
+      "title": "HostとNanoの接続",
+      "lane": "A",
+      "design_memo": "保存済みrouteとstructureからprogramをpinし、capture、scene同定、Nano Serial HID primitiveをrunnerへ渡すHost境界を実装する。禁止risk、別environment、Nano未接続、stale frameはdispatch前に明示停止する。",
+      "narrative_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": { "origin_plan_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md", "origin_line": 46, "source_commit": "6fa75f9afc8becbacac64acdbef24da582f0b17b", "heading_path": ["Lattice task仕様", "t03-host-nano-adapter"], "markdown_depth": 3, "parent_task_id": null, "checkbox_state": "absent" },
+      "migration_context": { "external_canonical_ref": "docs/development-plan.md", "carry_over_ref": "docs/phase11-exit-assessment.md", "h_required": false, "condition": null, "evidence_refs": [], "notes": [] }
+    },
+    {
+      "task_id": "t04-supervised-ui",
+      "title": "教師付き実行UI",
+      "lane": "A",
+      "design_memo": "学習した操作画面へ教師付き実行面を追加し、現在step、前後監査、送信状態、停止理由、履歴と開始、次の一手、停止を表示する。保存と元に戻すの右下配置を維持する。",
+      "narrative_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": { "origin_plan_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md", "origin_line": 50, "source_commit": "6fa75f9afc8becbacac64acdbef24da582f0b17b", "heading_path": ["Lattice task仕様", "t04-supervised-ui"], "markdown_depth": 3, "parent_task_id": null, "checkbox_state": "absent" },
+      "migration_context": { "external_canonical_ref": "docs/development-plan.md", "carry_over_ref": "docs/phase11-exit-assessment.md", "h_required": false, "condition": null, "evidence_refs": [], "notes": [] }
+    },
+    {
+      "task_id": "t05-focused-tests",
+      "title": "変更直結検証",
+      "lane": "A",
+      "design_memo": "Playbooks、Host、Desktop、Persistenceの変更直結testを実行する。二重command、Before不一致、After不一致、Nano例外、復元、全step完了を含め、Windows buildと実SQLite scenarioを確認する。",
+      "narrative_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": { "origin_plan_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md", "origin_line": 54, "source_commit": "6fa75f9afc8becbacac64acdbef24da582f0b17b", "heading_path": ["Lattice task仕様", "t05-focused-tests"], "markdown_depth": 3, "parent_task_id": null, "checkbox_state": "absent" },
+      "migration_context": { "external_canonical_ref": "docs/development-plan.md", "carry_over_ref": "docs/phase11-exit-assessment.md", "h_required": false, "condition": null, "evidence_refs": [], "notes": [] }
+    },
+    {
+      "task_id": "t06-nikke-live-slice",
+      "title": "NIKKE実ゲーム可逆slice",
+      "lane": "H",
+      "design_memo": "NIKKEの非課金、非消費、可逆sliceを実ゲームで一stepずつ実行する。全入力がNano Serial HIDであること、前後画面が一致すること、SendInput、Computer Use入力、fallbackが0であることを証拠へ残す。",
+      "narrative_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": { "origin_plan_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md", "origin_line": 58, "source_commit": "6fa75f9afc8becbacac64acdbef24da582f0b17b", "heading_path": ["Lattice task仕様", "t06-nikke-live-slice"], "markdown_depth": 3, "parent_task_id": null, "checkbox_state": "absent" },
+      "migration_context": { "external_canonical_ref": "docs/development-plan.md", "carry_over_ref": "docs/phase11-exit-assessment.md", "h_required": true, "condition": "NIKKE本体とNano Serial HIDが使用可能で、非課金、非消費、可逆sliceを実行できること", "evidence_refs": [], "notes": ["ダイヤと希少資源を消費しない"] }
+    },
+    {
+      "task_id": "t07-phase12-exit",
+      "title": "Phase 12 Exit",
+      "lane": "F",
+      "design_memo": "focused test後に関連testを一回、Windows実画面、NIKKE実証、git diffを監査し、Exit判定、claim境界、計画正本を更新して対象path限定commitとpushで閉じる。",
+      "narrative_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": { "origin_plan_ref": "docs/phase12-supervised-macro-runner-campaign-plan.md", "origin_line": 62, "source_commit": "6fa75f9afc8becbacac64acdbef24da582f0b17b", "heading_path": ["Lattice task仕様", "t07-phase12-exit"], "markdown_depth": 3, "parent_task_id": null, "checkbox_state": "absent" },
+      "migration_context": { "external_canonical_ref": "docs/development-plan.md", "carry_over_ref": "docs/phase11-exit-assessment.md", "h_required": false, "condition": null, "evidence_refs": [], "notes": [] }
+    }
+  ],
+  "hard_dependencies": [
+    { "from": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t01-run-contract" }, "to": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t02-runner-core" }, "reason": "実行契約を先に固定する" },
+    { "from": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t02-runner-core" }, "to": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t03-host-nano-adapter" }, "reason": "runner中核をHostへ接続する" },
+    { "from": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t03-host-nano-adapter" }, "to": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t04-supervised-ui" }, "reason": "Host intentをUIへ公開する" },
+    { "from": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t04-supervised-ui" }, "to": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t05-focused-tests" }, "reason": "UIまでのvertical sliceを検証する" },
+    { "from": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t05-focused-tests" }, "to": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t06-nikke-live-slice" }, "reason": "fakeとWindows検証後に実ゲームへ進む" },
+    { "from": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t06-nikke-live-slice" }, "to": { "project_id": "OpenLogicool", "plan_key": "phase12-supervised-macro-runner", "task_id": "t07-phase12-exit" }, "reason": "実ゲーム証拠をExit判定へ束縛する" }
+  ],
+  "joins": [],
+  "extraction_digest": "70cc955ba7cf97875b2dfbcc31ce2a220ea9fbdcbec0f033c465155657bcdd3c"
+}
