@@ -12,6 +12,7 @@
 - 一意一致しない候補、icon-only候補、schema外応答は `Unknown` とし、入力しない。別provider／cloud／生座標へfallbackしない。
 - GameLabではpointer移動、frame-bound click、Escape、F13 key receipt、wheel +120/-120が受信側またはbefore/after画像で成立した。
 - AI推論目的の外部送信0、外部AI API call 0、外部AI API費用0。OpenAI API keyを含む外部AI credentialは使わない。
+- 製品adapterはIP literalのloopback HTTPだけを受理し、proxy／redirectを無効にした単発Responses requestだけを送る。timeout、provider failure、schema外応答は `Unknown` で終了し、自動retry／別provider fallbackをしない。
 
 ## 実測環境
 
@@ -68,6 +69,31 @@ OCRはuser profile language `ja`、`MaxImageDimension=10000`。英字scene label
 
 この環境ではGPU renderingのWPF client領域をWGCで取得すると、非client title barだけ取得できてclientが白くなった。GameLabは実gameではなく決定論的test fieldなので、`RenderOptions.ProcessRenderMode = SoftwareOnly` を設定した。設定後は同じWGC経路でclient描画を取得でき、操作後の画面遷移も観測できた。製品のcapture backendをSoftwareOnlyへ変更するものではない。
 
+## 製品adapterとGameLab read-only実測
+
+Foundry Local 0.10.3の実際のvision wire contractを公式C# sampleと実測で確定した。`/v1/chat/completions`へOpenAI標準の`image_url` data URIを送った試行は、画像を約14,668 text tokenとして扱い57.670秒を要したため不採用とした。`/v1/responses`でも`type: message`を欠くrequestは `Request must contain at least one Chat request message`、非streamingは長さ計算errorになった。黙ってCLIへfallbackせず、公式sampleどおり次の一経路だけを実装した。
+
+- endpoint: `http://127.0.0.1:<daemon-port>/v1/responses`
+- mode: `stream: true` のSSE
+- message: `type: message`／`role: user`
+- image: Foundry固有の `type: input_image`／`image_data`／`media_type: image/png`
+- model ID: `qwen3-vl-2b-instruct-cuda-gpu:2`
+- product boundary: IP literal loopbackだけ、`SocketsHttpHandler.UseProxy=false`、redirect／cookie無効、外部AI keyなし
+
+`live-discovery-observe` をGameLab seed 5へ実走した最終証跡は `probe-output/live-discovery-observe-20260824-115641-763.json`。
+
+| 観測 | 結果 |
+|---|---|
+| WGC frame | 706×473 BGRA8、PNG SHA-256を証跡化 |
+| Windows OCR | `ja`、26ms、`OpenEvent`／`OpenRewards`を各1矩形で取得 |
+| local VLM | 701ms、input 421 token／output 24 token |
+| VLM labels | `OpenEvent`／`OpenRewards` |
+| grounding | 2件とも同一frameのOCR wordへexact／unique一致 |
+| network | Probe／Foundry daemonのListen／Establishedを10ms間隔で観測。接続先は `127.0.0.1`だけ、non-loopback 0 |
+| input | Observe Only、dispatch 0 |
+
+初回実走ではprompt内のschema説明をmodelが逐語コピーし、`visible text label`を候補として返した。形式適合だけでは画面根拠にならないため、このplaceholderをschema境界で拒否し、probe成功条件を「local VLM完了かつ同一frame OCRへ一意groundingされた候補1件以上」に修正した。修正後の上記実測で成立した。
+
 ## Data Flow
 
 - frame、crop、OCR、prompt、responseは利用者端末内だけで処理する。
@@ -92,4 +118,5 @@ NIKKE実測では本体process identity、window mode、locale、window size／D
 - Microsoft Learn, Foundry Local SDK reference: https://learn.microsoft.com/en-us/azure/foundry-local/reference/reference-sdk-current
 - Microsoft Learn, inference SDK integration: https://learn.microsoft.com/en-us/azure/foundry-local/how-to/how-to-integrate-with-inference-sdks
 - Microsoft Foundry Local C# samples: https://github.com/microsoft/Foundry-Local/blob/main/samples/cs/README.md
+- Microsoft Foundry Local C# Responses vision sample: https://github.com/microsoft/Foundry-Local/blob/main/samples/cs/foundry-local-web-server-responses-vision/Program.cs
 - Qwen official model card, Qwen3-VL-2B-Instruct: https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct
