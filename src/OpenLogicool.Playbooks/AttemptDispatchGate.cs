@@ -148,6 +148,19 @@ public sealed class AttemptDispatchGate
     }
 
     /// <summary>
+    /// observationでno-change等の不成立を確定できた時、rejection eventをcommitしてObserving→Rejectedへ進める。
+    /// Input API失敗や観測不能をRejectedへ丸める口ではない。
+    /// </summary>
+    public void CommitRejected(RunEvent rejectionEvent)
+    {
+        var attemptId = RequireAttemptId(rejectionEvent, RunEventPayloadTypes.Rejection);
+        RequireCommittedObservation(rejectionEvent);
+        var next = Get(attemptId).TransitionTo(AttemptState.Rejected, rejectionEvent.ObservationId);
+        _journal.Append(rejectionEvent);
+        _attempts[attemptId] = next;
+    }
+
+    /// <summary>
     /// disarm event を journal へ commit し、DispatchArmed→Disarmed（§6.7・t07）。
     /// Disarmed は「外部入力 API を一度も呼んでいない」と runtime が保証できる場合だけの終端であり、
     /// その保証の判定は AttemptFaultClassifier（partial SendInput では成立しない）が与える。
@@ -210,6 +223,20 @@ public sealed class AttemptDispatchGate
 
                 gate._attempts[attemptEvents.Key] = DurableAttempt.Restore(
                     attemptEvents.Key, AttemptState.Confirmed, confirmation.ObservationId);
+                continue;
+            }
+
+            var rejection = attemptEvents.FirstOrDefault(e => e.PayloadType == RunEventPayloadTypes.Rejection);
+            if (rejection is not null)
+            {
+                if (!HasCommittedObservation(attemptEvents, rejection.ObservationId))
+                {
+                    throw new InvalidOperationException(
+                        $"Attempt '{attemptEvents.Key}' のrejectionはObservation '{rejection.ObservationId}'を束縛するが、同じAttemptのobservation eventがjournalにありません。");
+                }
+
+                gate._attempts[attemptEvents.Key] = DurableAttempt.Restore(
+                    attemptEvents.Key, AttemptState.Rejected, rejection.ObservationId);
                 continue;
             }
 

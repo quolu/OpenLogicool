@@ -28,6 +28,7 @@ public static class StructureEventPayloadTypes
     public const string None = "none";
     public const string Observation = "observed-scene";
     public const string ExplorationProposal = "exploration-proposal";
+    public const string ExplorationApproval = "exploration-approval";
     public const string StructureDelta = "structure-delta-proposal";
     public const string MutationBatch = "structure-mutation-batch";
     public const string TransitionEvidence = "transition-evidence";

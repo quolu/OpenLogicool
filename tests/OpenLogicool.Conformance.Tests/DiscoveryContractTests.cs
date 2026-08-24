@@ -95,6 +95,7 @@ public sealed class DiscoveryContractTests
             true,
             "consent-1",
             "back",
+            new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500, 2, 2, 2),
             ["budget-exhausted", "recovery-lost"]);
         var context = new ExplorationContext(
             ContractSchemaVersions.Revision03,

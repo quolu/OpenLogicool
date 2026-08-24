@@ -113,18 +113,18 @@ public sealed class DurableAttempt
             return new DurableAttempt(AttemptId, next, observationId);
         }
 
-        if (next == AttemptState.Confirmed)
+        if (next is AttemptState.Confirmed or AttemptState.Rejected)
         {
             if (observationId is null)
             {
-                throw new InvalidOperationException($"Attempt '{AttemptId}' を Confirmed にするには同じ Attempt を参照する Observation が必要です（§6.7 契約4）。");
+                throw new InvalidOperationException($"Attempt '{AttemptId}' を {next} にするには同じ Attempt を参照する Observation が必要です（§6.7 契約4）。");
             }
 
             if (ObservationId is not null
                 && !string.Equals(ObservationId, observationId, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    $"Attempt '{AttemptId}' の Confirmed は Observing の Observation '{ObservationId}' と同一でなければなりません（実際: '{observationId}'）。");
+                    $"Attempt '{AttemptId}' の {next} は Observing の Observation '{ObservationId}' と同一でなければなりません（実際: '{observationId}'）。");
             }
 
             return new DurableAttempt(AttemptId, next, observationId);
@@ -132,7 +132,7 @@ public sealed class DurableAttempt
 
         if (observationId is not null)
         {
-            throw new ArgumentException($"ObservationId は Observing と Confirmed への遷移だけが受け取ります（指定先: {next}）。", nameof(observationId));
+            throw new ArgumentException($"ObservationId は Observing と Confirmed／Rejected への遷移だけが受け取ります（指定先: {next}）。", nameof(observationId));
         }
 
         return new DurableAttempt(AttemptId, next, ObservationId);

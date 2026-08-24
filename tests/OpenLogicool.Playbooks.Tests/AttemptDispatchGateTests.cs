@@ -64,7 +64,9 @@ public sealed class AttemptDispatchGateTests
             RunEventActorType.Automation,
             new DateTimeOffset(2026, 8, 19, 0, 0, 0, TimeSpan.Zero),
             new DateTimeOffset(2026, 8, 19, 0, 0, 1, TimeSpan.Zero),
-            observationId ?? (payloadType is "observation" or "confirmation" ? "observation-1" : null),
+            observationId ?? (payloadType is RunEventPayloadTypes.Observation
+                or RunEventPayloadTypes.Confirmation
+                or RunEventPayloadTypes.Rejection ? "observation-1" : null),
             payloadType,
             "{}");
 
@@ -98,6 +100,23 @@ public sealed class AttemptDispatchGateTests
         Assert.Equal(6, store.Events.Count);
         var attempt = gate.Get("attempt-1");
         Assert.Equal(AttemptState.Confirmed, attempt.State);
+        Assert.Equal("observation-1", attempt.ObservationId);
+    }
+
+    [Fact]
+    public void Rejection_commits_a_terminal_attempt_bound_to_the_observation()
+    {
+        var (gate, store) = NewGate();
+        var sequence = PrepareAttempt(gate, "attempt-1", 1);
+
+        gate.ArmThenDispatch(Event(sequence, RunEventPayloadTypes.Dispatch), () => { });
+        gate.CommitReported(Event(sequence + 1, RunEventPayloadTypes.DispatchResult));
+        gate.CommitObserving(Event(sequence + 2, RunEventPayloadTypes.Observation));
+        gate.CommitRejected(Event(sequence + 3, RunEventPayloadTypes.Rejection));
+
+        Assert.Equal(6, store.Events.Count);
+        var attempt = gate.Get("attempt-1");
+        Assert.Equal(AttemptState.Rejected, attempt.State);
         Assert.Equal("observation-1", attempt.ObservationId);
     }
 

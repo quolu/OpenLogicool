@@ -32,7 +32,8 @@ public sealed record StructureDeltaOperation(
     string? RelatedId,
     string? ProposedLabel,
     string? FactType,
-    string? FactValue);
+    string? FactValue,
+    IReadOnlyList<string>? RelatedIds = null);
 
 public sealed record StructureDeltaProposal(
     string SchemaVersion,

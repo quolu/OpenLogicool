@@ -80,8 +80,9 @@ public sealed class RunJournal
             case RunEventPayloadTypes.Observation when runEvent.ObservationId is null:
                 throw new ArgumentException("observation event には ObservationId が必要です。", nameof(runEvent));
             // 確定は Attempt ID と Observation ID を併記した RunEvent だけで成立する（§6.7 契約4）。
-            case RunEventPayloadTypes.Confirmation when runEvent.AttemptId is null || runEvent.ObservationId is null:
-                throw new ArgumentException("confirmation event には AttemptId と ObservationId の併記が必要です（§6.7 契約4）。", nameof(runEvent));
+            case RunEventPayloadTypes.Confirmation or RunEventPayloadTypes.Rejection
+                when runEvent.AttemptId is null || runEvent.ObservationId is null:
+                throw new ArgumentException("confirmation／rejection event には AttemptId と ObservationId の併記が必要です（§6.7 契約4）。", nameof(runEvent));
             case RunEventPayloadTypes.Dispatch when runEvent.AttemptId is null || runEvent.CommandId is null:
                 throw new ArgumentException("dispatch event には AttemptId と CommandId が必要です。", nameof(runEvent));
             case RunEventPayloadTypes.DispatchResult when runEvent.AttemptId is null:

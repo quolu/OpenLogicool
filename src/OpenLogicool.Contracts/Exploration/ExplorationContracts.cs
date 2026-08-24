@@ -8,6 +8,13 @@ public sealed record ExplorationBudget(
     long RemainingInferenceMilliseconds,
     long RemainingElapsedMilliseconds);
 
+public sealed record ExplorationStopPolicy(
+    string SchemaVersion,
+    long MaximumFrameFreshnessMilliseconds,
+    int MaximumRepeatedProbeCount,
+    int MaximumConsecutiveNoProgressCount,
+    int MaximumOscillationCount);
+
 public sealed record ExplorationPolicy(
     string SchemaVersion,
     string PolicyRevisionId,
@@ -21,6 +28,7 @@ public sealed record ExplorationPolicy(
     bool OneStepApprovalRequired,
     string ConsentRevisionId,
     string RecoveryBoundary,
+    ExplorationStopPolicy StopPolicy,
     IReadOnlyList<string> StopConditions);
 
 public sealed record ExplorationContext(

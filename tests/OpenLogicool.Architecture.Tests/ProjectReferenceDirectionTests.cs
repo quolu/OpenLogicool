@@ -26,6 +26,7 @@ public sealed class ProjectReferenceDirectionTests
             ["OpenLogicool.Capture"] = Set("OpenLogicool.Contracts"),
             ["OpenLogicool.Perception"] = Set("OpenLogicool.Contracts"),
             ["OpenLogicool.AI"] = Set("OpenLogicool.Contracts"),
+            ["OpenLogicool.Exploration"] = Set("OpenLogicool.Contracts", "OpenLogicool.Playbooks"),
             ["OpenLogicool.Desktop"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),
             // GUI 起動だけを console subsystem から分離する依存ゼロの入口。
             ["OpenLogicool.Launcher"] = new HashSet<string>(StringComparer.Ordinal),
@@ -112,6 +113,28 @@ public sealed class ProjectReferenceDirectionTests
     }
 
     [Fact]
+    public void Exploration_project_isolated_from_ai_execution_device_storage_and_capture_modules()
+    {
+        var referencesByProject = LoadReferences();
+        var explorationReferences = referencesByProject["OpenLogicool.Exploration"];
+
+        Assert.Equal(Set("OpenLogicool.Contracts", "OpenLogicool.Playbooks"), explorationReferences);
+
+        foreach (var forbiddenReference in new[]
+                 {
+                     "OpenLogicool.AI",
+                     "OpenLogicool.Input",
+                     "OpenLogicool.Devices.G13",
+                     "OpenLogicool.Devices.G600",
+                     "OpenLogicool.Persistence",
+                     "OpenLogicool.Capture",
+                 })
+        {
+            Assert.DoesNotContain(forbiddenReference, explorationReferences);
+        }
+    }
+
+    [Fact]
     public void Package_references_match_module_policy()
     {
         var packageReferencesByProject = LoadPackageReferences();
@@ -122,6 +145,7 @@ public sealed class ProjectReferenceDirectionTests
                      "OpenLogicool.Devices.G13",
                      "OpenLogicool.Devices.G600",
                      "OpenLogicool.Perception",
+                     "OpenLogicool.Exploration",
                      "OpenLogicool.Domain",
                  })
         {

@@ -54,7 +54,22 @@ public sealed class DurableAttemptTests
     }
 
     [Fact]
-    public void Observation_id_is_accepted_only_on_observing_and_confirmed()
+    public void Rejected_binds_the_same_observation_as_observing()
+    {
+        var observing = Armed()
+            .TransitionTo(AttemptState.DispatchReported)
+            .TransitionTo(AttemptState.Observing, "observation-1");
+
+        var rejected = observing.TransitionTo(AttemptState.Rejected, "observation-1");
+
+        Assert.Equal(AttemptState.Rejected, rejected.State);
+        Assert.Equal("observation-1", rejected.ObservationId);
+        Assert.Throws<InvalidOperationException>(
+            () => observing.TransitionTo(AttemptState.Rejected, "observation-2"));
+    }
+
+    [Fact]
+    public void Observation_id_is_accepted_only_on_observing_confirmed_and_rejected()
     {
         var proposed = DurableAttempt.Propose("attempt-1");
 
