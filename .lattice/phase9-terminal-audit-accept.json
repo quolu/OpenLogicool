@@ -1,0 +1,27 @@
+{
+  "schema": "lattice.phase_accept_input.v1",
+  "review_event_digest": "47fbfa6d386f7e585b1ba91b93712ab343be9885e131fc25032499e4954abc22",
+  "decision_evidence": {
+    "anchor_digest": null,
+    "content_digest": "63d1c9d964933348d0dae3a9408347908f1d6be697913e6d08e9d2aef7a3b173",
+    "evidence_id": "ev-phase9-game-structure-discovery-terminal-audit",
+    "git_blob_oid": "8196eac265c3f54bb7930c64f10bc1c8d92ce1a2",
+    "media_type": "text/markdown",
+    "path": "evidence/phase9-game-structure-discovery/terminal-audit.md",
+    "repo_id": "self"
+  },
+  "evidence_slots": [
+    {
+      "slot_id": "terminal-audit",
+      "evidence": {
+        "anchor_digest": null,
+        "content_digest": "63d1c9d964933348d0dae3a9408347908f1d6be697913e6d08e9d2aef7a3b173",
+        "evidence_id": "ev-phase9-game-structure-discovery-terminal-audit",
+        "git_blob_oid": "8196eac265c3f54bb7930c64f10bc1c8d92ce1a2",
+        "media_type": "text/markdown",
+        "path": "evidence/phase9-game-structure-discovery/terminal-audit.md",
+        "repo_id": "self"
+      }
+    }
+  ]
+}

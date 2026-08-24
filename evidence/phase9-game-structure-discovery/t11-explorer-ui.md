@@ -44,3 +44,5 @@ Host testは実SQLiteへcandidate／replayed nodeを保存し、frontier・根�
 ## Windows実画面の扱い
 
 開発版Input Studioの起動とAccessibility tree取得までは成立した。前面のNIKKE保護ウィンドウによりComputer UseがInput Studioをactivateできず、Game Operatorタブを開く入力は送出されなかった。同じ入力を再送せず停止したため、t11単独の画面目視は未確認としてt12実機手番へ持ち越す。これはコード受入を成功扱いする根拠には含めていない。
+
+t13で再実測し、Windows Graphics Captureで開発版Input Studioの実フレームを取得して、フッターの`Game Operator`入口と日本語化済みInput Studio外観を目視した（workspace証拠: `probe-output/live-discovery-nano-primitives-20260824-082043-522-before.png`）。Accessibility treeでは同じ入口を`Game Operator画面を開く`ボタンとして取得した。一方、NIKKE保護ウィンドウの前面保持によりComputer UseのactivateとNano Alt+Tabはどちらも不成立で、fallbackせず停止した。そのためGame Operator内部面の外観目視だけは未確認のままである。Host／DesktopのWindows native testによる全表示値・control操作の受入と、外観目視の根拠を混同しない。

@@ -1,11 +1,11 @@
 # Phase 9 campaign — AI Game Structure Discovery
 
-- status: **active（工程起票中）**
+- status: **complete（Exit成立 2026-08-24）**
 - 起票: 2026-08-24
 - 統括: ベル（親）。実装・反証・相談はpeertable room `OpenLogicool`
 - 実行ToDoの正本: Lattice plan `phase9-game-structure-discovery`
 - 上位正本: [development-plan.md](development-plan.md) §3.6.1、§6.13、§Phase 9
-- 先行: Phase 0〜8B Exit、Serial HID Output Exit。Phase 9実装は未着手
+- 先行: Phase 0〜8B Exit、Serial HID Output Exit。Phase 9は[Exit Assessment](phase9-exit-assessment.md)で成立判定済み
 
 ## 目的
 

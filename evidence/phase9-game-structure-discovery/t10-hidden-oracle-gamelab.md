@@ -47,14 +47,16 @@ blind retryは全scenarioで0、scope外dispatchは0である。
 
 - discovery sessionとreplay sessionが異なること
 - 指定session IDを持つ実在Transition Evidence
+- nodeはTransition Evidenceのbefore／after Observationのstate hypothesisが対象nodeのsignatureに一致すること
+- edgeはcandidate／primitive／outcome／source／destinationが対象edgeと一致すること
 - Candidate→Replayed→Verifiedの一段遷移
 - Verified昇格時はReplayed昇格と異なる独立session
 
-同一session、段飛ばし、存在しないevidenceは昇格せずCandidateを保持する。AIの`StructureDeltaProposal`からReplayed／Verifiedへ昇格する経路は引き続き存在しない。
+同一session、段飛ばし、存在しないevidence、別node／edgeのevidenceは昇格せずCandidateを保持する。AIの`StructureDeltaProposal`からReplayed／Verifiedへ昇格する経路は引き続き存在しない。Factは独立再抽冺evidence contractが未定義なため、node／edge用Transition Evidenceでは昇格しない。
 
 ## focused test
 
-- `OpenLogicool.GameLab.Discovery.Tests`: 9件 green
+- `OpenLogicool.GameLab.Discovery.Tests`: 11件 green（t13の無関係evidence拒否とSupervised再生を含む）
 - `OpenLogicool.Exploration.Tests`: 16件 green
 - `OpenLogicool.GameLab.Tests`: 24件 green
 - `OpenLogicool.Persistence.Tests`: 47件 green

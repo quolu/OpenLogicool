@@ -1,8 +1,8 @@
 # OpenLogicool 製品・開発計画
 
-- 版: 0.5（2026-08-24 STEP 0 Web Reference Research要件を追加）
+- 版: 0.6（2026-08-24 Phase 9 Exit）
 - 改訂日: 2026-08-24
-- 状態: Phase 0〜8B Exit済み／Phase 9要件確定・campaign起票中
+- 状態: Phase 0〜9 Exit済み／Game Structure Explorer Preview
 - 対象: Logicool G13 / G600を統合するWindowsネイティブアプリと、画面認識付き逐次学習プレイブック
 - 比較基準: Logicool ゲームソフトウェア 9.04.49
 - 成立性資料: [G13/G600 Windows成立性調査](../rag/openlogicool/feasibility-2026-08-14.md)
@@ -17,9 +17,9 @@ OpenLogicoolは、次の二つの製品価値を同じアプリで提供する�
 
 両者は同じ意味操作とアプリプロファイルを共有するが、稼働条件とrelease gateを分ける。AI、network、captureが利用不能でもInput Studioは動作しなければならない。Input Studioを完成させるためにGame Operatorを待たず、Game Operatorを急ぐためにG13/G600の低遅延入力経路へAIを混ぜない。
 
-2026-08-23時点でPhase 0〜8BはExit済みであり、Input Studioの両実機fast path、app-first設定、Durable Attempt、capture／perception契約、Game Operator Previewまで成立している。Serial HID Output campaignもExit済みである。一方、現行Game Operatorは既知state／actionまたは開発者作成fixtureを前提とした安全な一手実行基盤であり、ゲーム固有知識が空の状態からAI自身が画面を探索して構造を構築するruntimeではない。
+2026-08-24時点でPhase 0〜9はExit済みであり、Input Studioの両実機fast path、app-first設定、Durable Attempt、capture／perception契約、Game Operator Preview、Game Structure Explorer Previewまで成立している。Serial HID Output campaignもExit済みである。
 
-次の主目標をPhase 9「AI Game Structure Discovery」とする。開発者は対象ゲームのstate、visual target、遷移、recognizer、正解手順を事前投入しない。AIは画面から探索候補を提案し、既存のDurable Attempt境界を通って操作し、前後観測を証拠としてScreen GraphとGame State Factを育てる。AIは入力、risk判定、検証昇格、DB writeを直接行わない。未知ゲームでの初回probeは一手承認から始め、実測済みの低risk・可逆・既知復帰経路内だけをbounded autonomous explorationへ段階解放する。
+Phase 9は、開発者がgame固有state、visual target、遷移、recognizer、正解手順を事前投入しない探索基盤を成立させた。AIは画面から候補を提案するだけで、入力、risk判定、verification昇格、DB writeには直接到達しない。hidden-oracleのVerified graph→別Supervised Runと、NIKKE可逆edgeのReplayedまで確認済み。Game State Fact依存planning、NIKKEのVerified昇格、Verified Autonomous Playbook、日課完遂は未確認である。判定は[Phase 9 Exit Assessment](phase9-exit-assessment.md)を正とする。
 
 ### 0.1 根拠の表記
 
@@ -1281,7 +1281,7 @@ Exit:
 - output ownershipをreconcileするまで再起動後のdispatchを禁止する。
 - Input Studioの既存機能と設定をAI／network障害で損なわない。
 
-### Phase 9: AI Game Structure Discovery（要件確定 2026-08-23・実装未着手）
+### Phase 9: AI Game Structure Discovery（Exit成立 2026-08-24）
 
 目的: game固有state／target／recognizer／遷移／正解手順を開発時に提供せず、AIが安全な画面操作と再観測からGame Structureを構築し、その知識を再起動・別session・task計画へ再利用できる基盤を成立させる。
 

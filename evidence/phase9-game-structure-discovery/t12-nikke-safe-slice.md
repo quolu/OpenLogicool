@@ -7,7 +7,7 @@
 
 NIKKE lobbyの非課金・非消費・非戦闘範囲で、ローカルvisionが発見したframe-bound targetをNano Serial HIDだけで開き、遷移先を観測し、Escapeで戻る可逆edgeを実機で成立させた。別process実行のlive sessionで同じ出発画面と遷移先を再同定し、同じopen→observe→backを再実行できた。
 
-state IDとedge IDはsystem発行の不透明IDであり、`部隊`等の表示文字列をidentity keyにしていない。画面同一性は、独立frame間で一致した2個以上のgrounded anchorと位置から判定した。二つの独立sessionまで成立したため、node 2件と可逆edge 2件のverificationは`Replayed`である。`Verified`へはt13の別Supervised Runを証拠として一段だけ昇格する。
+state IDとedge IDはsystem発行の不透明IDであり、`部隊`等の表示文字列をidentity keyにしていない。画面同一性は、独立frame間で一致した2個以上のgrounded anchorと位置から判定した。二つの独立sessionまで成立したため、node 2件と可逆edge 2件のverificationは`Replayed`である。NIKKEの`Verified`昇格には、さらに独立したlive sessionで出発・到着をそれぞれ2 anchor以上で再同定し、Structure verification authorityを通す必要がある。t13のGameLab Supervised RunをNIKKEの昇格証拠に読み替えない。
 
 機械可読な判定記録は`t12-nikke-safe-slice.json`に保存した。
 
@@ -23,8 +23,13 @@ state IDとedge IDはsystem発行の不透明IDであり、`部隊`等の表示�
 | replay | 遷移先再同定 | `live-discovery-observe-20260824-164202-669.json` | discoveryと`部隊編成`、`CAMPAIGN`が一致 |
 | replay | back | `live-discovery-nano-escape-20260824-164220-566.json` | Escape down/up、画面変化、PASS |
 | replay | lobby帰還確認 | `live-discovery-observe-20260824-164237-584.json` | discoveryと`部隊`、`ロビー`が一致 |
+| additional physical replay | lobbyからopen | `live-discovery-nano-action-20260824-165419-408.json` | 同じ学習済みlocatorをNanoで押下し、画面SHA-256変化 |
+| additional physical replay | 遷移先観測 | `live-discovery-observe-20260824-165432-229.json` | `部隊編成`、`CAMPAIGN`をgrounding |
+| additional physical replay | back | `live-discovery-nano-escape-20260824-165448-888.json` | Escape down/up、画面変化、PASS |
+| additional physical replay | 帰還観測 | `live-discovery-observe-20260824-165502-453.json` | 画面復帰は観測。独立anchorが1個のためverification証拠には不採用 |
 
 このほか、replay開始前に遷移先から戻す独立Escapeを`live-discovery-nano-escape-20260824-164041-820.json`で確認した。
+追加の物理replayはinput routeと画面変化の再現証拠であり、出発・帰還観測が2 anchor規則を満たさないため`Verified`昇格証拠には数えない。
 
 ## 境界
 

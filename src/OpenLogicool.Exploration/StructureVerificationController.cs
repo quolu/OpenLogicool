@@ -1,5 +1,6 @@
 using System.Text.Json;
 using OpenLogicool.Contracts.Exploration;
+using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Shared;
 
 namespace OpenLogicool.Exploration;
@@ -46,6 +47,18 @@ public sealed class StructureVerificationController(
                 || !string.Equals(evidence.ExplorationRunId, request.ReplaySessionId, StringComparison.Ordinal)))
         {
             throw new InvalidOperationException("昇格evidenceは指定した別Exploration sessionのTransition Evidenceでなければなりません。");
+        }
+
+        var observations = events
+            .Where(item => item.PayloadType == StructureEventPayloadTypes.Observation)
+            .Select(item => JsonSerializer.Deserialize<ObservedScene>(item.PayloadJson, Json))
+            .Where(item => item is not null)
+            .ToDictionary(item => item!.ObservationId, item => item!, StringComparer.Ordinal);
+        if (request.EvidenceIds
+            .Select(evidenceId => transitionById[evidenceId])
+            .Any(evidence => !SupportsSubject(current, request.EntityKind, request.SubjectId, evidence, observations)))
+        {
+            throw new InvalidOperationException("昇格evidenceが対象node／edgeの再同定または再遷移を証明していません。");
         }
 
         var priorPromotions = events
@@ -153,4 +166,76 @@ public sealed class StructureVerificationController(
         StructureEntityKind.Fact => revision.StateFacts.Single(item => item.FactId == subjectId).VerificationState,
         _ => throw new ArgumentOutOfRangeException(nameof(entityKind)),
     };
+
+    private static bool SupportsSubject(
+        GameStructureRevision revision,
+        StructureEntityKind entityKind,
+        string subjectId,
+        TransitionEvidence evidence,
+        IReadOnlyDictionary<string, ObservedScene> observations)
+    {
+        if (!string.Equals(evidence.EnvironmentScope, revision.EnvironmentScope, StringComparison.Ordinal)
+            || !observations.TryGetValue(evidence.BeforeObservationId, out var before)
+            || !observations.TryGetValue(evidence.AfterObservationId, out var after))
+        {
+            return false;
+        }
+
+        return entityKind switch
+        {
+            StructureEntityKind.Node => SupportsNode(
+                revision.ScreenGraph.Nodes.Single(item => item.StateId == subjectId),
+                before,
+                after),
+            StructureEntityKind.Edge => SupportsEdge(
+                revision,
+                revision.ScreenGraph.Edges.Single(item => item.EdgeId == subjectId),
+                evidence,
+                before,
+                after),
+            // Factの独立再抽出とTransition Evidenceの結び付けcontractは未定義なので、
+            // node／edge用evidenceによる昇格を許可しない。
+            StructureEntityKind.Fact => false,
+            _ => false,
+        };
+    }
+
+    private static bool SupportsNode(
+        StructureScreenNode node,
+        ObservedScene before,
+        ObservedScene after) =>
+        MatchesNode(node, before) || MatchesNode(node, after);
+
+    private static bool SupportsEdge(
+        GameStructureRevision revision,
+        StructureScreenEdge edge,
+        TransitionEvidence evidence,
+        ObservedScene before,
+        ObservedScene after)
+    {
+        if (!string.Equals(edge.AffordanceCandidateId, evidence.AffordanceCandidateId, StringComparison.Ordinal)
+            || !string.Equals(edge.Primitive, evidence.Primitive, StringComparison.Ordinal)
+            || !edge.OutcomeCounts.Any(item => item.Outcome == evidence.Outcome))
+        {
+            return false;
+        }
+
+        var source = revision.ScreenGraph.Nodes.Single(item => item.StateId == edge.SourceStateId);
+        if (!MatchesNode(source, before))
+        {
+            return false;
+        }
+
+        if (edge.DestinationStateId is null)
+        {
+            return true;
+        }
+
+        var destination = revision.ScreenGraph.Nodes.Single(item => item.StateId == edge.DestinationStateId);
+        return MatchesNode(destination, after);
+    }
+
+    private static bool MatchesNode(StructureScreenNode node, ObservedScene scene) =>
+        scene.StateHypothesisId is not null
+        && node.SceneSignatureIds.Contains(scene.StateHypothesisId, StringComparer.Ordinal);
 }
