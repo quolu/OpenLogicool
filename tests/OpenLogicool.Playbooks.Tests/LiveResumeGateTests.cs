@@ -20,12 +20,16 @@ public sealed class LiveResumeGateTests
     }
 
     [Theory]
-    [InlineData(ObservationStatus.Ambiguous, StateMatchResult.AmbiguousMatch)]
-    [InlineData(ObservationStatus.Unknown, StateMatchResult.InsufficientEvidence)]
-    [InlineData(ObservationStatus.Unavailable, StateMatchResult.InsufficientEvidence)]
-    public void Non_unique_live_observation_never_allows_dispatch(ObservationStatus status, StateMatchResult expectedMatch)
+    [InlineData(CaptureAvailability.Available, StateIdentityStatus.Ambiguous, StateMatchResult.AmbiguousMatch)]
+    [InlineData(CaptureAvailability.Available, StateIdentityStatus.InsufficientEvidence, StateMatchResult.InsufficientEvidence)]
+    [InlineData(CaptureAvailability.Available, StateIdentityStatus.Novel, StateMatchResult.InsufficientEvidence)]
+    [InlineData(CaptureAvailability.Unavailable, StateIdentityStatus.InsufficientEvidence, StateMatchResult.InsufficientEvidence)]
+    public void Non_unique_live_observation_never_allows_dispatch(
+        CaptureAvailability availability,
+        StateIdentityStatus identity,
+        StateMatchResult expectedMatch)
     {
-        var decision = LiveResumeGate.Judge(Binding(), Context(Observation(status: status)), [], "state-menu", 100, 500);
+        var decision = LiveResumeGate.Judge(Binding(), Context(Observation(availability, identity)), [], "state-menu", 100, 500);
 
         Assert.False(decision.DispatchAllowed);
         Assert.Equal(expectedMatch, decision.StateMatch);
@@ -95,24 +99,26 @@ public sealed class LiveResumeGateTests
         new("c:\\games\\nikke.exe", targetWindowId, captureSourceId, inputTargetWindowId, observation);
 
     private static ObservationResult Observation(
-        ObservationStatus status = ObservationStatus.Known,
+        CaptureAvailability availability = CaptureAvailability.Available,
+        StateIdentityStatus identity = StateIdentityStatus.Known,
         string sourceId = "source-recorded",
         long freshnessMs = 10,
         long lastChangeMs = 500) =>
         new(
-            "0.2.0",
+            "0.3.0",
             "observation-live",
             new CapturedFrameReference(
-                "0.2.0", sourceId, CaptureBackend.WindowsGraphicsCapture, 1, 1_000,
+                "0.3.0", sourceId, CaptureBackend.WindowsGraphicsCapture, 1, 1_000,
                 DateTimeOffset.UnixEpoch, 1, freshnessMs, lastChangeMs),
-            status,
-            status is ObservationStatus.Known ? [new StateCandidate("0.2.0", "state-menu", 0.95, [])]
-                : status == ObservationStatus.Ambiguous
-                    ? [new StateCandidate("0.2.0", "state-menu", 0.51, []), new StateCandidate("0.2.0", "state-other", 0.49, [])]
+            availability,
+            identity,
+            identity is StateIdentityStatus.Known ? [new StateCandidate("0.3.0", "state-menu", 0.95, [])]
+                : identity == StateIdentityStatus.Ambiguous
+                    ? [new StateCandidate("0.3.0", "state-menu", 0.51, []), new StateCandidate("0.3.0", "state-other", 0.49, [])]
                     : [],
             "recognizer-live-1",
             freshnessMs,
-            status == ObservationStatus.Unavailable ? "capture-unavailable" : null);
+            availability == CaptureAvailability.Available ? null : "capture-unavailable");
 
     private static RunEvent Event(long sequence, string payloadType, string? observationId) =>
         new(

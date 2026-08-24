@@ -16,7 +16,7 @@ public sealed class ResumeTests
         string? attemptId = null,
         string? observationId = null) =>
         new(
-            "0.1.0",
+            "0.3.0",
             $"event-{sequence}",
             "run-1",
             sequence,
@@ -117,11 +117,12 @@ public sealed class ResumeTests
             "0.1.0",
             observationId,
             new CapturedFrameReference(
-                "0.1.0", "window-1", CaptureBackend.WindowsGraphicsCapture,
+                "0.3.0", "window-1", CaptureBackend.WindowsGraphicsCapture,
                 Sequence: 1, MonotonicMs: 1_000, WallClockUtc: new DateTimeOffset(2026, 8, 19, 0, 0, 0, TimeSpan.Zero),
                 TransformRevision: 1, FreshnessMs: 100, LastChangeMs: 5_000),
-            ObservationStatus.Known,
-            [new StateCandidate("0.1.0", stateId, 0.95, [])],
+            CaptureAvailability.Available,
+            StateIdentityStatus.Known,
+            [new StateCandidate("0.3.0", stateId, 0.95, [])],
             "recognizer-1",
             100,
             null);

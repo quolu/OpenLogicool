@@ -34,7 +34,8 @@ public sealed class RecordedLiveConformanceTests
 
         AssertKnownConformance(recordedObservation, recorded, "fixture.main-menu");
         AssertKnownConformance(liveObservation, live, "self-window");
-        Assert.Equal(ObservationStatus.Unknown, mismatchedObservation.Status);
+        Assert.Equal(CaptureAvailability.Available, mismatchedObservation.CaptureAvailability);
+        Assert.Equal(StateIdentityStatus.InsufficientEvidence, mismatchedObservation.StateIdentity);
         Assert.Empty(mismatchedObservation.StateCandidates);
     }
 
@@ -43,7 +44,8 @@ public sealed class RecordedLiveConformanceTests
         CapturedFrame frame,
         string expectedStateId)
     {
-        Assert.Equal(ObservationStatus.Known, observation.Status);
+        Assert.Equal(CaptureAvailability.Available, observation.CaptureAvailability);
+        Assert.Equal(StateIdentityStatus.Known, observation.StateIdentity);
         Assert.Equal(frame.SourceId, observation.Frame.SourceId);
         Assert.Equal(frame.Backend, observation.Frame.Backend);
         Assert.Equal(frame.Sequence, observation.Frame.Sequence);

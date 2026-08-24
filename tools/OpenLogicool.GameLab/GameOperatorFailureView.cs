@@ -7,7 +7,8 @@ public enum VerificationLevel { Confirmed, StrongInference, Unverified, Unsuppor
 
 public sealed record GameOperatorFailureInput(
     CaptureFault? CaptureFault,
-    ObservationStatus? ObservationStatus,
+    CaptureAvailability? CaptureAvailability,
+    StateIdentityStatus? StateIdentity,
     bool UsesAbsoluteCoordinatesOnly,
     VerificationLevel Verification);
 
@@ -25,7 +26,10 @@ public static class GameOperatorFailureView
             messages.Add(new("画面取得を停止しました", $"{FaultLabel(input.CaptureFault.Kind)}: {input.CaptureFault.Detail}", "対象を確認して再校正してください。別の取得方式へは自動で切り替えません。", input.Verification));
         }
 
-        if (input.ObservationStatus is ObservationStatus.Ambiguous or ObservationStatus.Unknown or ObservationStatus.Unavailable)
+        if (input.CaptureAvailability is CaptureAvailability.Unavailable or CaptureAvailability.Stale
+            || input.StateIdentity is StateIdentityStatus.Novel
+                or StateIdentityStatus.Ambiguous
+                or StateIdentityStatus.InsufficientEvidence)
         {
             messages.Add(new("画面状態を確定できません", "認識結果が自動操作の条件を満たしていません。", "画面と認識条件を確認し、再観測してください。", input.Verification));
         }

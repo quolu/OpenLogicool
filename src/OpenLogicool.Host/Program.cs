@@ -180,11 +180,12 @@ static int CaptureDispatch(string mode, string[] arguments)
 }
 
 static ObservationResult CliObservation(CapturedFrame frame) => new(
-    "0.2.0",
+    "0.3.0",
     "observation:cli",
-    new CapturedFrameReference("0.2.0", frame.SourceId, frame.Backend, frame.Sequence, frame.MonotonicMs, frame.WallClockUtc, frame.TransformRevision, frame.FreshnessMs, frame.LastChangeMs),
-    ObservationStatus.Known,
-    [new StateCandidate("0.2.0", "cli-state", 1, [new EvidenceRegion("0.2.0", "rect", [0d, 0d, 1d, 1d], "cli")])],
+    new CapturedFrameReference("0.3.0", frame.SourceId, frame.Backend, frame.Sequence, frame.MonotonicMs, frame.WallClockUtc, frame.TransformRevision, frame.FreshnessMs, frame.LastChangeMs),
+    CaptureAvailability.Available,
+    StateIdentityStatus.Known,
+    [new StateCandidate("0.3.0", "cli-state", 1, [new EvidenceRegion("0.3.0", "rect", [0d, 0d, 1d, 1d], "cli")])],
     "cli", frame.FreshnessMs, null);
 
 static RunEvent CliEvent(long sequence, string payloadType, RunEventActorType actor = RunEventActorType.Automation) => new(

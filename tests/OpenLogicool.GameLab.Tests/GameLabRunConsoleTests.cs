@@ -52,23 +52,23 @@ public sealed class GameLabRunConsoleTests
     public void Projector_reaches_every_status_of_ux003()
     {
         Assert.Equal(GameLabRunStatus.AwaitingProposal,
-            GameLabStatusProjector.Project(new(false, false, false, null, null, null)));
+            GameLabStatusProjector.Project(new(false, false, false, null, null, null, null)));
         Assert.Equal(GameLabRunStatus.AwaitingApproval,
-            GameLabStatusProjector.Project(new(false, false, false, AttemptState.Proposed, null, null)));
+            GameLabStatusProjector.Project(new(false, false, false, AttemptState.Proposed, null, null, null)));
         Assert.Equal(GameLabRunStatus.Dispatching,
-            GameLabStatusProjector.Project(new(false, false, false, AttemptState.DispatchArmed, null, null)));
+            GameLabStatusProjector.Project(new(false, false, false, AttemptState.DispatchArmed, null, null, null)));
         Assert.Equal(GameLabRunStatus.ConfirmingResult,
-            GameLabStatusProjector.Project(new(false, false, false, AttemptState.Observing, ObservationStatus.Known, null)));
+            GameLabStatusProjector.Project(new(false, false, false, AttemptState.Observing, CaptureAvailability.Available, StateIdentityStatus.Known, null)));
         Assert.Equal(GameLabRunStatus.UserStopped,
-            GameLabStatusProjector.Project(new(true, false, false, AttemptState.Observing, null, null)));
+            GameLabStatusProjector.Project(new(true, false, false, AttemptState.Observing, null, null, null)));
         Assert.Equal(GameLabRunStatus.TargetMismatch,
-            GameLabStatusProjector.Project(new(false, false, true, null, ObservationStatus.Known, null)));
+            GameLabStatusProjector.Project(new(false, false, true, null, CaptureAvailability.Available, StateIdentityStatus.Known, null)));
         Assert.Equal(GameLabRunStatus.Unrecognized,
-            GameLabStatusProjector.Project(new(false, false, false, AttemptState.Observing, ObservationStatus.Unknown, null)));
+            GameLabStatusProjector.Project(new(false, false, false, AttemptState.Observing, CaptureAvailability.Available, StateIdentityStatus.InsufficientEvidence, null)));
         Assert.Equal(GameLabRunStatus.Completed,
-            GameLabStatusProjector.Project(new(false, false, false, null, ObservationStatus.Known, GameLabRunOutcome.Completed)));
+            GameLabStatusProjector.Project(new(false, false, false, null, CaptureAvailability.Available, StateIdentityStatus.Known, GameLabRunOutcome.Completed)));
         Assert.Equal(GameLabRunStatus.Failed,
-            GameLabStatusProjector.Project(new(false, false, false, null, ObservationStatus.Known, GameLabRunOutcome.Failed)));
+            GameLabStatusProjector.Project(new(false, false, false, null, CaptureAvailability.Available, StateIdentityStatus.Known, GameLabRunOutcome.Failed)));
     }
 
     [Fact]
@@ -76,7 +76,8 @@ public sealed class GameLabRunConsoleTests
     {
         // 常時表示（UX-003）: どの組合せでも例外なく必ず1状態が返る。
         var attempts = Enum.GetValues<AttemptState>().Cast<AttemptState?>().Append(null);
-        var observations = Enum.GetValues<ObservationStatus>().Cast<ObservationStatus?>().Append(null);
+        var captureAvailability = Enum.GetValues<CaptureAvailability>().Cast<CaptureAvailability?>().Append(null);
+        var stateIdentity = Enum.GetValues<StateIdentityStatus>().Cast<StateIdentityStatus?>().Append(null);
         var outcomes = new GameLabRunOutcome?[] { null, GameLabRunOutcome.Completed, GameLabRunOutcome.Failed };
         var flags = new[] { false, true };
 
@@ -85,16 +86,17 @@ public sealed class GameLabRunConsoleTests
         foreach (var stopped in flags)
         foreach (var mismatch in flags)
         foreach (var attempt in attempts)
-        foreach (var observation in observations)
+        foreach (var availability in captureAvailability)
+        foreach (var identity in stateIdentity)
         foreach (var outcome in outcomes)
         {
             var status = GameLabStatusProjector.Project(
-                new GameLabStatusInput(paused, stopped, mismatch, attempt, observation, outcome));
+                new GameLabStatusInput(paused, stopped, mismatch, attempt, availability, identity, outcome));
             Assert.True(Enum.IsDefined(status));
             combinations++;
         }
 
-        Assert.Equal(2 * 2 * 2 * 17 * 5 * 3, combinations);
+        Assert.Equal(2 * 2 * 2 * 17 * 4 * 5 * 3, combinations);
     }
 
     [Fact]
@@ -102,7 +104,8 @@ public sealed class GameLabRunConsoleTests
     {
         var stopped = new GameLabStatusInput(
             Paused: false, EmergencyStopped: true, TargetMismatch: true,
-            AttemptState.Observing, ObservationStatus.Unavailable, GameLabRunOutcome.Failed);
+            AttemptState.Observing, CaptureAvailability.Unavailable,
+            StateIdentityStatus.InsufficientEvidence, GameLabRunOutcome.Failed);
 
         Assert.Equal(GameLabRunStatus.UserStopped, GameLabStatusProjector.Project(stopped));
     }
@@ -174,10 +177,10 @@ public sealed class GameLabRunConsoleTests
             1920, 1080, "BGRA8", 96.0, 96.0, 1, 16, 0);
 
         console.ReportAttempt(AttemptState.Observing);
-        console.ReportObservation(source.Observe(frame).Status);
+        console.ReportObservation(source.Observe(frame));
         Assert.Equal(GameLabRunStatus.ConfirmingResult, console.CurrentStatus);
 
-        console.ReportObservation(source.Observe(frame).Status);
+        console.ReportObservation(source.Observe(frame));
         Assert.Equal(GameLabRunStatus.Unrecognized, console.CurrentStatus);
 
         console.ReportTargetMatch(matches: false);

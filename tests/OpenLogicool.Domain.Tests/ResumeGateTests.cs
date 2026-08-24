@@ -8,34 +8,52 @@ namespace OpenLogicool.Domain.Tests;
 public sealed class ResumeGateTests
 {
     private static ObservationResult Observation(
-        ObservationStatus status,
+        StateIdentityStatus stateIdentity,
         IReadOnlyList<StateCandidate> candidates,
+        CaptureAvailability captureAvailability = CaptureAvailability.Available,
         long freshnessMs = 100,
         long lastChangeMs = 5_000,
         string sourceId = "window-1",
-        string? unavailableReason = null) =>
+        string? captureFailureReason = null) =>
         new(
-            "0.1.0",
+            "0.3.0",
             "observation-1",
             new CapturedFrameReference(
-                "0.1.0", sourceId, CaptureBackend.WindowsGraphicsCapture,
+                "0.3.0", sourceId, CaptureBackend.WindowsGraphicsCapture,
                 Sequence: 1, MonotonicMs: 1_000, WallClockUtc: new DateTimeOffset(2026, 8, 19, 0, 0, 0, TimeSpan.Zero),
                 TransformRevision: 1, FreshnessMs: freshnessMs, LastChangeMs: lastChangeMs),
-            status,
+            captureAvailability,
+            stateIdentity,
             candidates,
             "recognizer-1",
             freshnessMs,
-            unavailableReason);
+            captureFailureReason);
 
     private static StateCandidate Candidate(string stateId, double confidence = 0.95) =>
-        new("0.1.0", stateId, confidence, []);
+        new("0.3.0", stateId, confidence, []);
 
     [Theory]
-    [InlineData(ObservationStatus.Unknown)]
-    [InlineData(ObservationStatus.Unavailable)]
-    public void Match_returns_insufficient_evidence_when_the_screen_cannot_be_recognized(ObservationStatus status)
+    [InlineData(CaptureAvailability.Unavailable, StateMatchResult.InsufficientEvidence)]
+    [InlineData(CaptureAvailability.Stale, StateMatchResult.StaleObservation)]
+    public void Match_keeps_capture_failure_separate_from_state_identity(
+        CaptureAvailability availability,
+        StateMatchResult expected)
     {
-        var observation = Observation(status, [], unavailableReason: status == ObservationStatus.Unavailable ? "capture-lost" : null);
+        var observation = Observation(
+            StateIdentityStatus.InsufficientEvidence,
+            [],
+            availability,
+            captureFailureReason: "capture-boundary");
+
+        Assert.Equal(expected, StateMatcher.Match(observation, "state-a", 1_000, 500));
+    }
+
+    [Theory]
+    [InlineData(StateIdentityStatus.InsufficientEvidence)]
+    [InlineData(StateIdentityStatus.Novel)]
+    public void Match_returns_insufficient_evidence_when_the_screen_cannot_be_recognized(StateIdentityStatus stateIdentity)
+    {
+        var observation = Observation(stateIdentity, []);
 
         Assert.Equal(StateMatchResult.InsufficientEvidence, StateMatcher.Match(observation, "state-a", 1_000, 500));
     }
@@ -43,7 +61,7 @@ public sealed class ResumeGateTests
     [Fact]
     public void Match_returns_ambiguous_for_an_ambiguous_observation()
     {
-        var observation = Observation(ObservationStatus.Ambiguous, [Candidate("state-a", 0.51), Candidate("state-b", 0.49)]);
+        var observation = Observation(StateIdentityStatus.Ambiguous, [Candidate("state-a", 0.51), Candidate("state-b", 0.49)]);
 
         Assert.Equal(StateMatchResult.AmbiguousMatch, StateMatcher.Match(observation, "state-a", 1_000, 500));
     }
@@ -51,8 +69,8 @@ public sealed class ResumeGateTests
     [Fact]
     public void Match_returns_unique_match_only_for_the_expected_state()
     {
-        var matching = Observation(ObservationStatus.Known, [Candidate("state-a")]);
-        var other = Observation(ObservationStatus.Known, [Candidate("state-b")]);
+        var matching = Observation(StateIdentityStatus.Known, [Candidate("state-a")]);
+        var other = Observation(StateIdentityStatus.Known, [Candidate("state-b")]);
 
         Assert.Equal(StateMatchResult.UniqueMatch, StateMatcher.Match(matching, "state-a", 1_000, 500));
         Assert.Equal(StateMatchResult.NoMatch, StateMatcher.Match(other, "state-a", 1_000, 500));
@@ -61,7 +79,7 @@ public sealed class ResumeGateTests
     [Fact]
     public void Match_returns_stale_when_the_observation_exceeds_the_freshness_budget()
     {
-        var observation = Observation(ObservationStatus.Known, [Candidate("state-a")], freshnessMs: 2_000);
+        var observation = Observation(StateIdentityStatus.Known, [Candidate("state-a")], freshnessMs: 2_000);
 
         Assert.Equal(StateMatchResult.StaleObservation, StateMatcher.Match(observation, "state-a", 1_000, 500));
     }
@@ -69,7 +87,7 @@ public sealed class ResumeGateTests
     [Fact]
     public void Match_returns_insufficient_evidence_before_the_stability_window_is_met()
     {
-        var observation = Observation(ObservationStatus.Known, [Candidate("state-a")], lastChangeMs: 100);
+        var observation = Observation(StateIdentityStatus.Known, [Candidate("state-a")], lastChangeMs: 100);
 
         Assert.Equal(StateMatchResult.InsufficientEvidence, StateMatcher.Match(observation, "state-a", 1_000, 500));
     }
@@ -77,8 +95,8 @@ public sealed class ResumeGateTests
     [Fact]
     public void Match_rejects_a_known_observation_without_a_single_candidate()
     {
-        var none = Observation(ObservationStatus.Known, []);
-        var two = Observation(ObservationStatus.Known, [Candidate("state-a"), Candidate("state-b")]);
+        var none = Observation(StateIdentityStatus.Known, []);
+        var two = Observation(StateIdentityStatus.Known, [Candidate("state-a"), Candidate("state-b")]);
 
         Assert.Throws<ArgumentException>(() => StateMatcher.Match(none, "state-a", 1_000, 500));
         Assert.Throws<ArgumentException>(() => StateMatcher.Match(two, "state-a", 1_000, 500));

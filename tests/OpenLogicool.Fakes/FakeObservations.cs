@@ -4,19 +4,19 @@ using OpenLogicool.Contracts.Perception;
 namespace OpenLogicool.Fakes;
 
 /// <summary>
-/// 4状態（Known／Ambiguous／Unknown／Unavailable）の fake ObservationResult を決定的に合成する（t06）。
+/// capture可否とstate同定を分離した fake ObservationResult を決定的に合成する（Phase 9 t06）。
 /// Phase 4 の「現在 state」根拠は GameLab oracle とこの fake だけであり、実画面 capture を参照しない。
 /// Perception は Attempt を知らない（§6.7 契約4）——この builder にも AttemptId を受け取る口が無い。
 /// 状態の意味（Known への丸め禁止・Unavailable の理由必須）を破る結果は作れない。
 /// </summary>
 public static class FakeObservations
 {
-    private const string SchemaVersion = "0.1.0";
+    private const string SchemaVersion = "0.3.0";
     public const string RecognizerVersion = "fake-recognizer-1";
 
     public static ObservationResult Known(string observationId, string stateId, long frameSequence = 1) =>
-        Build(observationId, frameSequence, ObservationStatus.Known,
-            [Candidate(stateId, confidence: 0.97)], unavailableReason: null);
+        Build(observationId, frameSequence, CaptureAvailability.Available, StateIdentityStatus.Known,
+            [Candidate(stateId, confidence: 0.97)], captureFailureReason: null);
 
     /// <summary>複数候補の差が小さい観測（§6.9: Known へ丸めない）。</summary>
     public static ObservationResult Ambiguous(string observationId, string firstStateId, string secondStateId, long frameSequence = 1)
@@ -26,31 +26,46 @@ public static class FakeObservations
             throw new ArgumentException("Ambiguous には異なる state 候補が2つ必要です。", nameof(secondStateId));
         }
 
-        return Build(observationId, frameSequence, ObservationStatus.Ambiguous,
-            [Candidate(firstStateId, confidence: 0.51), Candidate(secondStateId, confidence: 0.49)], unavailableReason: null);
+        return Build(observationId, frameSequence, CaptureAvailability.Available, StateIdentityStatus.Ambiguous,
+            [Candidate(firstStateId, confidence: 0.51), Candidate(secondStateId, confidence: 0.49)], captureFailureReason: null);
     }
 
     /// <summary>どの state とも判定できない観測。候補を持たず、Known へ丸めない。</summary>
     public static ObservationResult Unknown(string observationId, long frameSequence = 1) =>
-        Build(observationId, frameSequence, ObservationStatus.Unknown, [], unavailableReason: null);
+        Build(observationId, frameSequence, CaptureAvailability.Available, StateIdentityStatus.InsufficientEvidence, [], captureFailureReason: null);
+
+    /// <summary>captureは成立したが、既知stateに一致しない新規scene hypothesis。</summary>
+    public static ObservationResult Novel(string observationId, long frameSequence = 1) =>
+        Build(observationId, frameSequence, CaptureAvailability.Available, StateIdentityStatus.Novel, [], captureFailureReason: null);
 
     /// <summary>観測そのものが成立しない状態。診断カテゴリの理由が必須。</summary>
     public static ObservationResult Unavailable(string observationId, string reason, long frameSequence = 1)
     {
         if (string.IsNullOrWhiteSpace(reason))
         {
-            throw new ArgumentException("Unavailable には unavailableReason が必要です。", nameof(reason));
+            throw new ArgumentException("Unavailable には captureFailureReason が必要です。", nameof(reason));
         }
 
-        return Build(observationId, frameSequence, ObservationStatus.Unavailable, [], unavailableReason: reason);
+        return Build(observationId, frameSequence, CaptureAvailability.Unavailable, StateIdentityStatus.InsufficientEvidence, [], captureFailureReason: reason);
+    }
+
+    public static ObservationResult Stale(string observationId, string reason, long frameSequence = 1)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new ArgumentException("Stale には captureFailureReason が必要です。", nameof(reason));
+        }
+
+        return Build(observationId, frameSequence, CaptureAvailability.Stale, StateIdentityStatus.InsufficientEvidence, [], reason);
     }
 
     private static ObservationResult Build(
         string observationId,
         long frameSequence,
-        ObservationStatus status,
+        CaptureAvailability captureAvailability,
+        StateIdentityStatus stateIdentity,
         IReadOnlyList<StateCandidate> candidates,
-        string? unavailableReason)
+        string? captureFailureReason)
     {
         if (string.IsNullOrWhiteSpace(observationId))
         {
@@ -70,11 +85,12 @@ public static class FakeObservations
                 TransformRevision: 1,
                 FreshnessMs: 16,
                 LastChangeMs: 0),
-            status,
+            captureAvailability,
+            stateIdentity,
             candidates,
             RecognizerVersion,
             FreshnessMs: 16,
-            unavailableReason);
+            captureFailureReason);
     }
 
     private static StateCandidate Candidate(string stateId, double confidence)

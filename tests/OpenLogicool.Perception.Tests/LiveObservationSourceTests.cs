@@ -8,23 +8,25 @@ namespace OpenLogicool.Perception.Tests;
 public sealed class LiveObservationSourceTests
 {
     [Theory]
-    [InlineData(true, 1, null, ObservationStatus.Known, true)]
-    [InlineData(true, 2, null, ObservationStatus.Ambiguous, false)]
-    [InlineData(false, 1, null, ObservationStatus.Unknown, false)]
-    [InlineData(true, 0, null, ObservationStatus.Unknown, false)]
-    [InlineData(true, 1, "capture-stale", ObservationStatus.Unavailable, false)]
-    public void Recorded_and_live_frames_share_four_state_normalization(
+    [InlineData(true, 1, null, CaptureAvailability.Available, StateIdentityStatus.Known, true)]
+    [InlineData(true, 2, null, CaptureAvailability.Available, StateIdentityStatus.Ambiguous, false)]
+    [InlineData(false, 1, null, CaptureAvailability.Available, StateIdentityStatus.InsufficientEvidence, false)]
+    [InlineData(true, 0, null, CaptureAvailability.Available, StateIdentityStatus.InsufficientEvidence, false)]
+    [InlineData(true, 1, "capture-stale", CaptureAvailability.Unavailable, StateIdentityStatus.InsufficientEvidence, false)]
+    public void Recorded_and_live_frames_separate_capture_and_identity(
         bool calibrated,
         int count,
         string? unavailable,
-        ObservationStatus expected,
+        CaptureAvailability expectedCapture,
+        StateIdentityStatus expectedIdentity,
         bool automatic)
     {
         var source = new LiveObservationSource(new Recognizer("recognizer-5", calibrated, count, unavailable));
 
         var observation = source.Observe(Frame());
 
-        Assert.Equal(expected, observation.Status);
+        Assert.Equal(expectedCapture, observation.CaptureAvailability);
+        Assert.Equal(expectedIdentity, observation.StateIdentity);
         Assert.Equal(automatic, LiveObservationSource.AllowsAutomaticExecution(observation));
     }
 

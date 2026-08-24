@@ -13,29 +13,39 @@ public static class ContractConformanceSuite
             throw new InvalidOperationException("ObservationResult には observationId が必要です（RunEvent からの参照キー）。");
         }
 
-        if (observation.Status == ObservationStatus.Known && observation.StateCandidates.Count == 0)
+        if (observation.CaptureAvailability == CaptureAvailability.Available
+            && observation.CaptureFailureReason is not null)
         {
-            throw new InvalidOperationException("Known ObservationResult には state candidate が必要です。");
+            throw new InvalidOperationException("Available ObservationResult は capture failure reason を持てません。");
         }
 
-        if (observation.Status == ObservationStatus.Ambiguous && observation.StateCandidates.Count < 2)
+        if (observation.CaptureAvailability != CaptureAvailability.Available
+            && string.IsNullOrWhiteSpace(observation.CaptureFailureReason))
         {
-            throw new InvalidOperationException("Ambiguous は複数候補の判別不能を表すため、state candidate が2つ以上必要です。");
+            throw new InvalidOperationException("Unavailable／Stale ObservationResult には capture failure reason が必要です。");
         }
 
-        if (observation.Status == ObservationStatus.Unavailable && observation.StateCandidates.Count > 0)
+        if (observation.CaptureAvailability != CaptureAvailability.Available
+            && (observation.StateIdentity != StateIdentityStatus.InsufficientEvidence
+                || observation.StateCandidates.Count > 0))
         {
-            throw new InvalidOperationException("Unavailable ObservationResult は state candidate を持てません（観測が成立していません）。");
+            throw new InvalidOperationException("Unavailable／Stale ObservationResult はstateを同定できません。");
         }
 
-        if (observation.Status == ObservationStatus.Unavailable && observation.UnavailableReason is null)
+        if (observation.StateIdentity == StateIdentityStatus.Known && observation.StateCandidates.Count != 1)
         {
-            throw new InvalidOperationException("Unavailable ObservationResult には unavailable reason が必要です。");
+            throw new InvalidOperationException("Known ObservationResult には唯一のstate candidateが必要です。");
         }
 
-        if (observation.Status != ObservationStatus.Unavailable && observation.UnavailableReason is not null)
+        if (observation.StateIdentity == StateIdentityStatus.Ambiguous && observation.StateCandidates.Count < 2)
         {
-            throw new InvalidOperationException("unavailable reason は status=Unavailable の時だけ持てます。");
+            throw new InvalidOperationException("Ambiguous はstate candidateを2つ以上保持する必要があります。");
+        }
+
+        if (observation.StateIdentity is StateIdentityStatus.Novel or StateIdentityStatus.InsufficientEvidence
+            && observation.StateCandidates.Count > 0)
+        {
+            throw new InvalidOperationException("Novel／InsufficientEvidence は既知state candidateを持てません。");
         }
 
         if (observation.StateCandidates.Any(candidate => candidate.Confidence < 0 || candidate.Confidence > 1))

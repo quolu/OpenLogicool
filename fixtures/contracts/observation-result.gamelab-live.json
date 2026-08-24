@@ -1,9 +1,9 @@
 {
   "_note": "実測用 fixture。_ で始まる property は provenance 注記であり contract payload ではない。",
-  "schemaVersion": "0.1.0",
+  "schemaVersion": "0.3.0",
   "observationId": "obs-gamelab-20260815-161541-0",
   "frame": {
-    "schemaVersion": "0.1.0",
+    "schemaVersion": "0.3.0",
     "source": "window:GameLab Prototype",
     "backend": "WindowsGraphicsCapture",
     "sequence": 0,
@@ -19,15 +19,16 @@
       "averageLuminance": 123.34793724520273
     }
   },
-  "status": "Known",
+  "captureAvailability": "Available",
+  "stateIdentity": "Known",
   "stateCandidates": [
     {
-      "schemaVersion": "0.1.0",
+      "schemaVersion": "0.3.0",
       "stateId": "state.main-menu",
       "confidence": 0.95,
       "evidenceRegions": [
         {
-          "schemaVersion": "0.1.0",
+          "schemaVersion": "0.3.0",
           "shape": "rect",
           "normalized": [0.1, 0.35, 0.9, 0.65],
           "recognizer": "text.state-label"
@@ -37,7 +38,7 @@
   ],
   "recognizerVersion": "unimplemented-0",
   "freshnessMs": 81,
-  "unavailableReason": null,
+  "captureFailureReason": null,
   "_oracleGroundTruth": {
     "source": "probe-output/gamelab-oracle-7-20260815-161530.jsonl",
     "stateIdAtCapture": "state.main-menu",

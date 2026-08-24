@@ -6,7 +6,8 @@ namespace OpenLogicool.Perception;
 public sealed record FrozenMetricCase(
     CorpusArtifact Artifact,
     CapturedFrame Frame,
-    ObservationStatus ExpectedStatus,
+    CaptureAvailability ExpectedCaptureAvailability,
+    StateIdentityStatus ExpectedStateIdentity,
     bool ExpectedDispatchAllowed);
 
 public sealed record FrozenMetricReport(
@@ -34,8 +35,15 @@ public static class FrozenMetricRunner
         var observations = new LiveObservationSource(recognizer);
         var measured = cases.Select(item => (Item: item, Actual: observations.Observe(item.Frame))).ToArray();
         return new FrozenMetricReport(
-            measured.Count(item => item.Item.ExpectedStatus != ObservationStatus.Known && item.Actual.Status == ObservationStatus.Known),
-            measured.Count(item => item.Item.ExpectedStatus == ObservationStatus.Unknown && item.Actual.Status == ObservationStatus.Known),
+            measured.Count(item =>
+                (item.Item.ExpectedCaptureAvailability != CaptureAvailability.Available
+                    || item.Item.ExpectedStateIdentity != StateIdentityStatus.Known)
+                && item.Actual.CaptureAvailability == CaptureAvailability.Available
+                && item.Actual.StateIdentity == StateIdentityStatus.Known),
+            measured.Count(item =>
+                item.Item.ExpectedStateIdentity == StateIdentityStatus.InsufficientEvidence
+                && item.Actual.CaptureAvailability == CaptureAvailability.Available
+                && item.Actual.StateIdentity == StateIdentityStatus.Known),
             measured.Count(item => !item.Item.ExpectedDispatchAllowed && LiveObservationSource.AllowsAutomaticExecution(item.Actual)));
     }
 }

@@ -16,7 +16,8 @@ public sealed class FixtureFrameRecognizerTests
 
         var observation = new LiveObservationSource(recognizer).Observe(frame);
 
-        Assert.Equal(ObservationStatus.Known, observation.Status);
+        Assert.Equal(CaptureAvailability.Available, observation.CaptureAvailability);
+        Assert.Equal(StateIdentityStatus.Known, observation.StateIdentity);
         Assert.Equal("main-menu", Assert.Single(observation.StateCandidates).StateId);
     }
 
@@ -26,7 +27,8 @@ public sealed class FixtureFrameRecognizerTests
         var frame = Frame("fixture:gamelab-main-menu", [1, 2, 3, 4]);
         var observation = new LiveObservationSource(Recognizer(Rule(frame, calibrated: false, Candidate("main-menu")))).Observe(frame);
 
-        Assert.Equal(ObservationStatus.Unknown, observation.Status);
+        Assert.Equal(CaptureAvailability.Available, observation.CaptureAvailability);
+        Assert.Equal(StateIdentityStatus.InsufficientEvidence, observation.StateIdentity);
         Assert.Empty(observation.StateCandidates);
     }
 
@@ -37,7 +39,8 @@ public sealed class FixtureFrameRecognizerTests
         var observation = new LiveObservationSource(Recognizer(
             Rule(frame, calibrated: true, Candidate("main-menu"), Candidate("settings")))).Observe(frame);
 
-        Assert.Equal(ObservationStatus.Ambiguous, observation.Status);
+        Assert.Equal(CaptureAvailability.Available, observation.CaptureAvailability);
+        Assert.Equal(StateIdentityStatus.Ambiguous, observation.StateIdentity);
         Assert.Equal(2, observation.StateCandidates.Count);
     }
 
@@ -49,7 +52,8 @@ public sealed class FixtureFrameRecognizerTests
 
         var observation = new LiveObservationSource(Recognizer(Rule(enrolled, calibrated: true, Candidate("main-menu")))).Observe(unlisted);
 
-        Assert.Equal(ObservationStatus.Unknown, observation.Status);
+        Assert.Equal(CaptureAvailability.Available, observation.CaptureAvailability);
+        Assert.Equal(StateIdentityStatus.InsufficientEvidence, observation.StateIdentity);
         Assert.Empty(observation.StateCandidates);
     }
 

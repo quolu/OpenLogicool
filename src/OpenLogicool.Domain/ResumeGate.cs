@@ -19,8 +19,9 @@ public enum StateMatchResult
 public static class StateMatcher
 {
     /// <summary>
-    /// ObservationStatus→StateMatchResult の写像:
-    /// Unavailable／Unknown は照合の証拠にならず InsufficientEvidence、Ambiguous は AmbiguousMatch。
+    /// CaptureAvailability／StateIdentityStatus→StateMatchResult の写像:
+    /// Unavailable は照合の証拠にならず InsufficientEvidence、Stale は StaleObservation。
+    /// Novel／InsufficientEvidence は InsufficientEvidence、Ambiguous は AmbiguousMatch。
     /// Known は鮮度予算超過で StaleObservation、安定窓（frame の LastChangeMs）未達で InsufficientEvidence、
     /// その上で唯一候補の StateId が期待と一致した時だけ UniqueMatch、不一致は NoMatch。
     /// </summary>
@@ -47,17 +48,33 @@ public static class StateMatcher
             throw new ArgumentOutOfRangeException(nameof(stabilityWindowMs), "安定窓は正の値で明示します。");
         }
 
-        switch (observation.Status)
+        switch (observation.CaptureAvailability)
         {
-            case ObservationStatus.Unavailable:
-            case ObservationStatus.Unknown:
+            case CaptureAvailability.Unavailable:
                 return StateMatchResult.InsufficientEvidence;
-            case ObservationStatus.Ambiguous:
-                return StateMatchResult.AmbiguousMatch;
-            case ObservationStatus.Known:
+            case CaptureAvailability.Stale:
+                return StateMatchResult.StaleObservation;
+            case CaptureAvailability.Available:
                 break;
             default:
-                throw new ArgumentException($"未知の ObservationStatus '{observation.Status}' です。", nameof(observation));
+                throw new ArgumentException(
+                    $"未知の CaptureAvailability '{observation.CaptureAvailability}' です。",
+                    nameof(observation));
+        }
+
+        switch (observation.StateIdentity)
+        {
+            case StateIdentityStatus.Novel:
+            case StateIdentityStatus.InsufficientEvidence:
+                return StateMatchResult.InsufficientEvidence;
+            case StateIdentityStatus.Ambiguous:
+                return StateMatchResult.AmbiguousMatch;
+            case StateIdentityStatus.Known:
+                break;
+            default:
+                throw new ArgumentException(
+                    $"未知の StateIdentityStatus '{observation.StateIdentity}' です。",
+                    nameof(observation));
         }
 
         if (observation.StateCandidates.Count != 1)

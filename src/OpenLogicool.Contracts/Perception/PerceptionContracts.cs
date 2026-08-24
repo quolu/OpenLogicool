@@ -3,12 +3,19 @@ using System.Text.Json.Serialization;
 
 namespace OpenLogicool.Contracts.Perception;
 
-public enum ObservationStatus
+public enum CaptureAvailability
+{
+    Available,
+    Unavailable,
+    Stale,
+}
+
+public enum StateIdentityStatus
 {
     Known,
+    Novel,
     Ambiguous,
-    Unknown,
-    Unavailable,
+    InsufficientEvidence,
 }
 
 public sealed record CapturedFrameReference(
@@ -42,11 +49,42 @@ public sealed record ObservationResult(
     string SchemaVersion,
     string ObservationId,
     CapturedFrameReference Frame,
-    ObservationStatus Status,
+    CaptureAvailability CaptureAvailability,
+    StateIdentityStatus StateIdentity,
     IReadOnlyList<StateCandidate> StateCandidates,
     string RecognizerVersion,
     long FreshnessMs,
-    string? UnavailableReason);
+    string? CaptureFailureReason);
+
+public sealed record AffordanceLocator(
+    string SchemaVersion,
+    string LocatorType,
+    IReadOnlyList<double> NormalizedBounds,
+    string LocatorRevision);
+
+public sealed record AffordanceCandidate(
+    string SchemaVersion,
+    string CandidateId,
+    string ObservationId,
+    long FrameSequence,
+    long TransformRevision,
+    string TargetWindowSourceId,
+    AffordanceLocator Locator,
+    IReadOnlyList<EvidenceRegion> EvidenceRegions,
+    double Confidence,
+    IReadOnlyList<string> AllowedPrimitives);
+
+public sealed record ObservedScene(
+    string SchemaVersion,
+    string SceneId,
+    string ObservationId,
+    CapturedFrameReference Frame,
+    CaptureAvailability CaptureAvailability,
+    StateIdentityStatus StateIdentity,
+    string? StateHypothesisId,
+    IReadOnlyList<StateCandidate> StateCandidates,
+    IReadOnlyList<AffordanceCandidate> Affordances,
+    string PerceptionVersion);
 
 public interface IObservationSource
 {

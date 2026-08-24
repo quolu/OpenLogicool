@@ -17,7 +17,8 @@ public sealed class GameLabRunConsole
     private bool _emergencyStopped;
     private bool _targetMismatch;
     private AttemptState? _activeAttempt;
-    private ObservationStatus? _latestObservation;
+    private CaptureAvailability? _latestCaptureAvailability;
+    private StateIdentityStatus? _latestStateIdentity;
     private GameLabRunOutcome? _outcome;
 
     /// <summary>即時 pause。外部呼び出し・待機なし（UX-004）。</summary>
@@ -41,8 +42,13 @@ public sealed class GameLabRunConsole
 
     public void ReportAttempt(AttemptState state) => _activeAttempt = state;
 
-    /// <summary>fake Observation の status を報告する（Phase 4 の観測根拠はこれと oracle だけ）。</summary>
-    public void ReportObservation(ObservationStatus status) => _latestObservation = status;
+    /// <summary>fake Observation のcapture可否とstate同定を報告する。</summary>
+    public void ReportObservation(ObservationResult observation)
+    {
+        ArgumentNullException.ThrowIfNull(observation);
+        _latestCaptureAvailability = observation.CaptureAvailability;
+        _latestStateIdentity = observation.StateIdentity;
+    }
 
     /// <summary>再開・対象照合の結果を報告する。判定自体は照合側（t10）が所有する。</summary>
     public void ReportTargetMatch(bool matches) => _targetMismatch = !matches;
@@ -60,7 +66,8 @@ public sealed class GameLabRunConsole
     /// <summary>UX-003: 現在の表示状態。どの内部状態でも必ず1状態が返る。</summary>
     public GameLabRunStatus CurrentStatus =>
         GameLabStatusProjector.Project(new GameLabStatusInput(
-            _paused, _emergencyStopped, _targetMismatch, _activeAttempt, _latestObservation, _outcome));
+            _paused, _emergencyStopped, _targetMismatch, _activeAttempt,
+            _latestCaptureAvailability, _latestStateIdentity, _outcome));
 }
 
 /// <summary>実行履歴の閲覧1行（APP-010）。journal の相関情報の要約で、payload 本文は運ばない。</summary>

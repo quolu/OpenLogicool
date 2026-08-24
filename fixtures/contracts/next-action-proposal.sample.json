@@ -10,7 +10,7 @@
     "budgetRemaining": {
       "schemaVersion": "0.1.0",
       "proposals": 18,
-      "costUsd": 0.42
+      "inferenceMs": 420
     }
   },
   "mode": "VerifiedRun",

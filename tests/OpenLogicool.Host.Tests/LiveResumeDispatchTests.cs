@@ -17,17 +17,20 @@ namespace OpenLogicool.Host.Tests;
 public sealed class LiveResumeDispatchTests
 {
     [Theory]
-    [InlineData(ObservationStatus.Ambiguous)]
-    [InlineData(ObservationStatus.Unknown)]
-    [InlineData(ObservationStatus.Unavailable)]
-    public void Non_unique_or_unavailable_observation_never_reaches_external_input(ObservationStatus status)
+    [InlineData(CaptureAvailability.Available, StateIdentityStatus.Ambiguous)]
+    [InlineData(CaptureAvailability.Available, StateIdentityStatus.InsufficientEvidence)]
+    [InlineData(CaptureAvailability.Available, StateIdentityStatus.Novel)]
+    [InlineData(CaptureAvailability.Unavailable, StateIdentityStatus.InsufficientEvidence)]
+    public void Non_unique_or_unavailable_observation_never_reaches_external_input(
+        CaptureAvailability availability,
+        StateIdentityStatus identity)
     {
         var frame = Frame();
         var (dispatch, gate) = NewDispatch(frame);
         var called = 0;
 
         var allowed = dispatch.TryResumeStepOnce(
-            Binding(frame), Context(Observation(frame, status)), [], "state-menu", 100, 100,
+            Binding(frame), Context(Observation(frame, availability, identity)), [], "state-menu", 100, 100,
             Event(3), () => called++);
 
         Assert.False(allowed);
@@ -79,11 +82,15 @@ public sealed class LiveResumeDispatchTests
     private static LiveResumeContext Context(ObservationResult observation, string? inputTarget = "window:self") =>
         new("self-window.exe", "window:self", observation.Frame.SourceId, inputTarget, observation);
 
-    private static ObservationResult Observation(CapturedFrame frame, ObservationStatus status) => new(
-        "0.2.0", "observation-test", new CapturedFrameReference("0.2.0", frame.SourceId, frame.Backend, 1, 1_000, DateTimeOffset.UnixEpoch, 1, 0, 100),
-        status,
-        status == ObservationStatus.Ambiguous ? [Candidate("state-menu"), Candidate("other")] : [],
-        "test", 0, status == ObservationStatus.Unavailable ? "capture-unavailable" : null);
+    private static ObservationResult Observation(
+        CapturedFrame frame,
+        CaptureAvailability availability,
+        StateIdentityStatus identity) => new(
+        "0.3.0", "observation-test", new CapturedFrameReference("0.3.0", frame.SourceId, frame.Backend, 1, 1_000, DateTimeOffset.UnixEpoch, 1, 0, 100),
+        availability,
+        identity,
+        identity == StateIdentityStatus.Ambiguous ? [Candidate("state-menu"), Candidate("other")] : [],
+        "test", 0, availability == CaptureAvailability.Available ? null : "capture-unavailable");
 
     private static FixtureFrameRule Rule(CapturedFrame frame) => new(frame.SourceId, frame.Width, frame.Height, frame.PixelFormat,
         Convert.ToHexString(SHA256.HashData(frame.Pixels!.Bgra8.Span)), true, [Candidate("self-window")]);

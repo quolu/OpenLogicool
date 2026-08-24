@@ -16,7 +16,7 @@ public interface IFrameRecognizer
 }
 
 /// <summary>
-/// recorded と live のどちらの frame も、同じ ObservationResult の4状態へ正規化する。
+/// recorded と live のどちらの frame も、capture可否とstate同定を分離した ObservationResult へ正規化する。
 /// Attempt は Playbooks の RunEvent が所有するため、ここでは扱わない。
 /// </summary>
 public sealed class LiveObservationSource(IFrameRecognizer recognizer) : IObservationSource
@@ -31,16 +31,19 @@ public sealed class LiveObservationSource(IFrameRecognizer recognizer) : IObserv
             ?? throw new InvalidOperationException("Recognizer が認識結果を返しませんでした。");
         Validate(recognized);
 
-        var status = StatusOf(recognized);
-        var candidates = status is ObservationStatus.Known or ObservationStatus.Ambiguous
+        var captureAvailability = recognized.UnavailableReason is null
+            ? CaptureAvailability.Available
+            : CaptureAvailability.Unavailable;
+        var stateIdentity = StateIdentityOf(recognized);
+        var candidates = stateIdentity is StateIdentityStatus.Known or StateIdentityStatus.Ambiguous
             ? recognized.Candidates
             : [];
 
         return new ObservationResult(
-            "0.2.0",
+            "0.3.0",
             $"observation:{frame.SourceId}:{frame.Sequence}:{Interlocked.Increment(ref sequence)}",
             new CapturedFrameReference(
-                "0.2.0",
+                "0.3.0",
                 frame.SourceId,
                 frame.Backend,
                 frame.Sequence,
@@ -49,31 +52,33 @@ public sealed class LiveObservationSource(IFrameRecognizer recognizer) : IObserv
                 frame.TransformRevision,
                 frame.FreshnessMs,
                 frame.LastChangeMs),
-            status,
+            captureAvailability,
+            stateIdentity,
             candidates,
             recognized.RecognizerVersion,
             frame.FreshnessMs,
-            status == ObservationStatus.Unavailable ? recognized.UnavailableReason : null);
+            captureAvailability == CaptureAvailability.Unavailable ? recognized.UnavailableReason : null);
     }
 
     public static bool AllowsAutomaticExecution(ObservationResult observation) =>
-        observation.Status == ObservationStatus.Known;
+        observation.CaptureAvailability == CaptureAvailability.Available
+        && observation.StateIdentity == StateIdentityStatus.Known;
 
-    private static ObservationStatus StatusOf(RecognitionResult result)
+    private static StateIdentityStatus StateIdentityOf(RecognitionResult result)
     {
         if (result.UnavailableReason is not null)
         {
-            return ObservationStatus.Unavailable;
+            return StateIdentityStatus.InsufficientEvidence;
         }
 
         if (!result.IsCalibrated || result.Candidates.Count == 0)
         {
-            return ObservationStatus.Unknown;
+            return StateIdentityStatus.InsufficientEvidence;
         }
 
         return result.Candidates.Count == 1
-            ? ObservationStatus.Known
-            : ObservationStatus.Ambiguous;
+            ? StateIdentityStatus.Known
+            : StateIdentityStatus.Ambiguous;
     }
 
     private static void Validate(RecognitionResult result)
@@ -130,7 +135,9 @@ public sealed class ObservationStabilityWindow
     {
         ArgumentNullException.ThrowIfNull(observation);
 
-        if (observation.Status != ObservationStatus.Known || observation.StateCandidates.Count != 1)
+        if (observation.CaptureAvailability != CaptureAvailability.Available
+            || observation.StateIdentity != StateIdentityStatus.Known
+            || observation.StateCandidates.Count != 1)
         {
             firstKnown = null;
             return false;

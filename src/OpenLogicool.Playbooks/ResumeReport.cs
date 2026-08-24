@@ -20,7 +20,8 @@ public sealed record ResumeReportView(
     string? LastConfirmedObservationId,
     string? LastConfirmedStateId,
     string CurrentObservationId,
-    ObservationStatus CurrentObservationStatus,
+    CaptureAvailability CurrentCaptureAvailability,
+    StateIdentityStatus CurrentStateIdentity,
     string? CurrentStateId,
     ResumeStateDifference Difference,
     string AdoptedVersionId,
@@ -69,7 +70,8 @@ public static class ResumeReport
             lastConfirmedStateId = confirmedStateId;
         }
 
-        var currentStateId = currentObservation.Status == ObservationStatus.Known
+        var currentStateId = currentObservation.CaptureAvailability == CaptureAvailability.Available
+            && currentObservation.StateIdentity == StateIdentityStatus.Known
             && currentObservation.StateCandidates.Count == 1
             ? currentObservation.StateCandidates[0].StateId
             : null;
@@ -96,7 +98,8 @@ public static class ResumeReport
             lastConfirmedObservationId,
             lastConfirmedStateId,
             currentObservation.ObservationId,
-            currentObservation.Status,
+            currentObservation.CaptureAvailability,
+            currentObservation.StateIdentity,
             currentStateId,
             difference,
             adoptedVersionId,

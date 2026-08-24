@@ -50,7 +50,8 @@ public sealed record GameLabStatusInput(
     bool EmergencyStopped,
     bool TargetMismatch,
     AttemptState? ActiveAttempt,
-    ObservationStatus? LatestObservation,
+    CaptureAvailability? LatestCaptureAvailability,
+    StateIdentityStatus? LatestStateIdentity,
     GameLabRunOutcome? Outcome);
 
 /// <summary>
@@ -74,7 +75,10 @@ public static class GameLabStatusProjector
             return GameLabRunStatus.TargetMismatch;
         }
 
-        if (input.LatestObservation is ObservationStatus.Unknown or ObservationStatus.Unavailable)
+        if (input.LatestCaptureAvailability is CaptureAvailability.Unavailable or CaptureAvailability.Stale
+            || input.LatestStateIdentity is StateIdentityStatus.Novel
+                or StateIdentityStatus.Ambiguous
+                or StateIdentityStatus.InsufficientEvidence)
         {
             return GameLabRunStatus.Unrecognized;
         }
