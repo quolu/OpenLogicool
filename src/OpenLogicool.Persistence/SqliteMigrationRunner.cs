@@ -156,6 +156,34 @@ public static class InitialSqliteMigrations
                 CREATE UNIQUE INDEX ux_web_reference_documents_source_revision
                 ON web_reference_documents (source_id, revision_number);
                 """),
+            new SqlMigration(
+                9,
+                """
+                CREATE TABLE structure_events (
+                    game_id TEXT NOT NULL,
+                    environment_scope TEXT NOT NULL,
+                    event_sequence INTEGER NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    event_id TEXT NOT NULL UNIQUE,
+                    parent_revision_id TEXT NULL,
+                    resulting_revision_id TEXT NOT NULL,
+                    event_kind TEXT NOT NULL,
+                    actor TEXT NOT NULL,
+                    correlation_id TEXT NOT NULL,
+                    causation_id TEXT NOT NULL,
+                    observation_id TEXT NULL,
+                    proposal_id TEXT NULL,
+                    attempt_id TEXT NULL,
+                    evidence_ids_json TEXT NOT NULL,
+                    payload_type TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    outcome TEXT NULL,
+                    occurred_utc TEXT NOT NULL,
+                    persisted_utc TEXT NOT NULL,
+                    PRIMARY KEY (game_id, environment_scope, event_sequence),
+                    UNIQUE (game_id, environment_scope, resulting_revision_id)
+                );
+                """),
         };
 }
 

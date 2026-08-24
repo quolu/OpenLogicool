@@ -121,13 +121,15 @@ public sealed class DiscoveryContractTests
             "structure-1",
             "structure-0",
             1,
-            new ScreenGraph(
+            new StructureScreenGraph(
                 ContractSchemaVersions.Revision03,
                 "graph-1",
                 [],
                 [],
+                [],
                 "env-1"),
             [fact],
+            [],
             "env-1",
             DateTimeOffset.UnixEpoch);
 

@@ -82,14 +82,19 @@ public sealed record GameStateFact(
     double Confidence,
     string ValidityScope,
     string ResetScope,
-    StructureVerificationState VerificationState);
+    StructureVerificationState VerificationState,
+    string? EnvironmentScope = null,
+    string? CreatedRevisionId = null,
+    string? UpdatedRevisionId = null,
+    bool Retired = false);
 
 public sealed record GameStructureRevision(
     string SchemaVersion,
     string RevisionId,
     string? ParentRevisionId,
     long ThroughEvidenceSequence,
-    ScreenGraph ScreenGraph,
+    StructureScreenGraph ScreenGraph,
     IReadOnlyList<GameStateFact> StateFacts,
+    IReadOnlyList<StructureDispatchProjection> Dispatches,
     string EnvironmentScope,
     DateTimeOffset CreatedUtc);
