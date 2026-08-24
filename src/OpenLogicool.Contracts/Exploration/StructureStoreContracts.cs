@@ -12,6 +12,7 @@ public enum StructureEventKind
     OutcomeRecorded,
     DeltaAccepted,
     MutationApplied,
+    VerificationAccepted,
     CorrectionApplied,
     ManualInterventionRecorded,
 }
@@ -32,6 +33,7 @@ public static class StructureEventPayloadTypes
     public const string StructureDelta = "structure-delta-proposal";
     public const string MutationBatch = "structure-mutation-batch";
     public const string TransitionEvidence = "transition-evidence";
+    public const string StructureVerification = "structure-verification";
 }
 
 public sealed record StructureEventDraft(

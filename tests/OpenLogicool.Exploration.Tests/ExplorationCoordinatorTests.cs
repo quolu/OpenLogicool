@@ -60,6 +60,27 @@ public sealed class ExplorationCoordinatorTests
     }
 
     [Fact]
+    public void Coordinator_synchronizes_an_external_structure_commit_only_between_probes()
+    {
+        var fixture = Fixture(oneStepApproval: false);
+        var scene = Scene("observation-before", 1, "state-a");
+        fixture.Coordinator.CommitObservation(scene, Time(1));
+        var previous = fixture.Coordinator.CurrentStructureRevisionId;
+        _ = fixture.StructureStore.Append(
+            Draft("external-observation", StructureEventKind.ObservationRecorded, [scene.ObservationId]),
+            previous,
+            Time(2));
+
+        var synchronized = fixture.Coordinator.SynchronizeStructureRevision();
+
+        Assert.NotEqual(previous, synchronized);
+        Assert.Equal(fixture.StructureStore.LoadRevision("game-1", "env-1").RevisionId, synchronized);
+
+        _ = fixture.Coordinator.Propose(Admission(fixture, scene, "proposal-1"), Time(3));
+        Assert.Throws<InvalidOperationException>(() => fixture.Coordinator.SynchronizeStructureRevision());
+    }
+
+    [Fact]
     public void Stale_frame_scope_violation_and_prohibited_risk_never_create_an_attempt()
     {
         AssertRejected(

@@ -113,3 +113,16 @@ public sealed record StructureDeltaCommitRequest(
     string CausationId,
     DateTimeOffset OccurredUtc,
     DateTimeOffset PersistedUtc);
+
+public sealed record StructureVerificationRequest(
+    string SchemaVersion,
+    StructureEntityKind EntityKind,
+    string SubjectId,
+    StructureVerificationState RequestedState,
+    string DiscoverySessionId,
+    string ReplaySessionId,
+    IReadOnlyList<string> EvidenceIds,
+    string CorrelationId,
+    string CausationId,
+    DateTimeOffset OccurredUtc,
+    DateTimeOffset PersistedUtc);

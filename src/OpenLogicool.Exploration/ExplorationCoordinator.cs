@@ -79,6 +79,19 @@ public sealed class ExplorationCoordinator
     public ExplorationStopReason StopReason => stopReason;
     public bool HasActiveProbe => active is not null;
 
+    public string SynchronizeStructureRevision()
+    {
+        if (active is not null)
+        {
+            throw new InvalidOperationException("active probeの途中でStructure revisionを差し替えられません。");
+        }
+
+        currentStructureRevisionId = structureStore
+            .LoadRevision(binding.GameId, binding.EnvironmentScope)
+            .RevisionId;
+        return currentStructureRevisionId;
+    }
+
     public void CommitObservation(ObservedScene scene, DateTimeOffset persistedUtc)
     {
         ValidateScene(scene);
@@ -341,7 +354,8 @@ public sealed class ExplorationCoordinator
             binding.EnvironmentScope,
             report.DispatchMonotonicMilliseconds,
             report.ObservationCompletedMonotonicMilliseconds,
-            report.RecordedUtc);
+            report.RecordedUtc,
+            binding.ExplorationRunId);
         AppendStructure(
             StructureEventKind.OutcomeRecorded,
             StructureEventActor.Controller,
@@ -536,13 +550,21 @@ public sealed class ExplorationCoordinator
 
     private void ValidateOutcome(ActiveProbe probe, ExplorationOutcomeReport report)
     {
+        var requiresStableAvailableObservation = report.Outcome is
+            ExplorationOutcomeKind.Destination
+            or ExplorationOutcomeKind.Novel
+            or ExplorationOutcomeKind.NoChange
+            or ExplorationOutcomeKind.Ambiguous;
         if (!string.Equals(report.SchemaVersion, ContractSchemaVersions.Revision03, StringComparison.Ordinal)
             || !probe.Admission.Proposal.AllowedOutcomes.Contains(report.Outcome)
             || !string.Equals(report.AfterScene.Frame.SourceId, policy.TargetWindowSourceId, StringComparison.Ordinal)
             || report.AfterScene.Frame.Sequence <= probe.Admission.Context.CurrentScene.Frame.Sequence
-            || report.AfterScene.CaptureAvailability != CaptureAvailability.Available && report.Outcome != ExplorationOutcomeKind.Unavailable
-            || report.StableFramesObserved < probe.Admission.Proposal.WaitCondition.StableFrames
-            || report.StableMillisecondsObserved < probe.Admission.Proposal.WaitCondition.MinimumStableMilliseconds)
+            || requiresStableAvailableObservation
+                && (report.AfterScene.CaptureAvailability != CaptureAvailability.Available
+                    || report.StableFramesObserved < probe.Admission.Proposal.WaitCondition.StableFrames
+                    || report.StableMillisecondsObserved < probe.Admission.Proposal.WaitCondition.MinimumStableMilliseconds)
+            || report.Outcome == ExplorationOutcomeKind.Unavailable
+                && report.AfterScene.CaptureAvailability == CaptureAvailability.Available)
         {
             stopReason = ExplorationStopReason.StabilityInsufficient;
             throw new InvalidOperationException("after Observationまたは安定窓がproposal契約を満たしません。");

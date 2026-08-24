@@ -70,7 +70,8 @@ public sealed record TransitionEvidence(
     string EnvironmentScope,
     long DispatchMonotonicMilliseconds,
     long ObservationCompletedMonotonicMilliseconds,
-    DateTimeOffset RecordedUtc);
+    DateTimeOffset RecordedUtc,
+    string? ExplorationRunId = null);
 
 public enum StructureVerificationState
 {
