@@ -30,7 +30,10 @@ public sealed class GameOperatorWindow : Window
         MinHeight = 220,
     };
 
-    public GameOperatorWindow(IWebResearchIntent intent, IExplorerIntents? explorerIntents = null)
+    public GameOperatorWindow(
+        IWebResearchIntent intent,
+        IExplorerIntents? explorerIntents = null,
+        ILearningRouteIntents? learningRouteIntents = null)
     {
         ArgumentNullException.ThrowIfNull(intent);
         _workspace = new WebResearchWorkspace(intent);
@@ -63,21 +66,27 @@ public sealed class GameOperatorWindow : Window
         _documents.SelectionChanged += (_, _) => ShowSelectedMarkdown();
         _start.Click += async (_, _) => await StartAsync();
 
-        Content = BuildContent(explorerIntents);
+        Content = BuildContent(explorerIntents, learningRouteIntents);
         RefreshDocuments();
     }
 
-    private UIElement BuildContent(IExplorerIntents? explorerIntents)
+    private UIElement BuildContent(
+        IExplorerIntents? explorerIntents,
+        ILearningRouteIntents? learningRouteIntents)
     {
         var tabs = new TabControl
         {
             Background = Theme.Bg,
             Foreground = Theme.Text,
         };
-        tabs.Items.Add(new TabItem { Header = "STEP 0　Web調査", Content = BuildResearchContent() });
+        tabs.Items.Add(new TabItem { Header = "STEP 0　Web調査", Content = BuildResearchContent(), MinWidth = 130 });
         if (explorerIntents is not null)
         {
-            tabs.Items.Add(new TabItem { Header = "構造探索", Content = new ExplorerPanel(explorerIntents) });
+            tabs.Items.Add(new TabItem { Header = "構造探索", Content = new ExplorerPanel(explorerIntents), MinWidth = 130 });
+        }
+        if (learningRouteIntents is not null)
+        {
+            tabs.Items.Add(new TabItem { Header = "学習した操作", Content = new LearningRoutePanel(learningRouteIntents), MinWidth = 130 });
         }
         return tabs;
     }

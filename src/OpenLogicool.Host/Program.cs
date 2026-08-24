@@ -441,6 +441,7 @@ static int Ui(string[] arguments)
             new HttpClientWebReferenceTransport(webResearchClient),
             new WebReferenceHtmlNormalizer()));
     var explorerIntents = new HostExplorerIntents(connection);
+    var learningRouteIntents = new HostLearningRouteIntents(connection);
 
     IResidentApplyIntent? residentApply = null;
     if (residentHost is not null && residentStatus is not null)
@@ -476,7 +477,8 @@ static int Ui(string[] arguments)
             serialHidSettingsIntent,
             new HostG13LcdSettingsIntent(),
             webResearchIntent,
-            explorerIntents);
+            explorerIntents,
+            learningRouteIntents);
         System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
         if (residentHost is not null)
         {

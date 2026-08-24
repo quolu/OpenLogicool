@@ -14,4 +14,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\OpenLogicool.Playbooks\OpenLogicool.Playbooks.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\fixtures\knowledge\nikke-daily-phase10.v1.json"
+          Link="fixtures\knowledge\nikke-daily-phase10.v1.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

@@ -1,0 +1,110 @@
+{
+  "SchemaVersion": "0.3.0",
+  "RecordId": "nikke-daily-phase10-20260824",
+  "GameId": "nikke-global-jp",
+  "EnvironmentScope": "windows11-26200/ja/2720x1197/dpi96/nikke-pc-20260824",
+  "Goal": "ダイヤを消費せず、基地防御報酬の日課を一件完了して受領する",
+  "InputRoute": "nano-serial-hid",
+  "ProhibitedRiskTags": [
+    "spend-premium-currency",
+    "spend-rare-resource",
+    "spend-real-money"
+  ],
+  "Steps": [
+    {
+      "StepId": "open-daily-mission",
+      "SourceLabel": "ロビー",
+      "ActionLabel": "click",
+      "TargetHint": "右上の青い!中心。2026-08-24環境の観測座標は(0.902, 0.122)だが、実行時はvisual locatorで再同定する",
+      "ExpectedOutcomeLabel": "MISSION > デイリー、初期進捗0/100",
+      "StructureEdgeId": null,
+      "EvidenceReferences": [
+        "probe-output/live-discovery-nano-coordinate-20260824-183202-938.json",
+        "probe-output/live-discovery-observe-20260824-183245-867.json"
+      ],
+      "EvidenceLevel": "GameObserved"
+    },
+    {
+      "StepId": "jump-to-outpost",
+      "SourceLabel": "MISSION > デイリー",
+      "ActionLabel": "click",
+      "TargetHint": "基地防御報酬を1回獲得する の すぐに移動",
+      "ExpectedOutcomeLabel": "前哨基地",
+      "StructureEdgeId": null,
+      "EvidenceReferences": [
+        "docs/phase10-nikke-daily-drive-exit-assessment.md"
+      ],
+      "EvidenceLevel": "GameObserved"
+    },
+    {
+      "StepId": "open-defense",
+      "SourceLabel": "前哨基地",
+      "ActionLabel": "click",
+      "TargetHint": "右下100%",
+      "ExpectedOutcomeLabel": "前哨基地の防衛",
+      "StructureEdgeId": null,
+      "EvidenceReferences": [
+        "docs/phase10-nikke-daily-drive-exit-assessment.md"
+      ],
+      "EvidenceLevel": "GameObserved"
+    },
+    {
+      "StepId": "claim-defense-reward",
+      "SourceLabel": "前哨基地の防衛",
+      "ActionLabel": "click",
+      "TargetHint": "通常の報酬獲得。まとめて殲滅は選ばない",
+      "ExpectedOutcomeLabel": "基地防御報酬が0/1から1/1。指揮官レベル489報酬として30ダイヤ増加",
+      "StructureEdgeId": null,
+      "EvidenceReferences": [
+        "docs/phase10-nikke-daily-drive-exit-assessment.md"
+      ],
+      "EvidenceLevel": "GameObserved"
+    },
+    {
+      "StepId": "claim-daily-points",
+      "SourceLabel": "MISSION > デイリー、基地防御報酬1/1",
+      "ActionLabel": "click",
+      "TargetHint": "基地防御報酬の受取",
+      "ExpectedOutcomeLabel": "10ポイントを獲得、進捗10/100",
+      "StructureEdgeId": null,
+      "EvidenceReferences": [
+        "probe-output/live-discovery-nano-coordinate-20260824-184030-553.json",
+        "probe-output/live-discovery-observe-20260824-184120-103.json"
+      ],
+      "EvidenceLevel": "GameObserved"
+    }
+  ],
+  "NegativeExamples": [
+    {
+      "ExampleId": "red-n-submenu",
+      "TargetHint": "ロビー右上の赤いN",
+      "ObservedDestination": "SUB MENU",
+      "Reason": "日課入口ではない",
+      "EvidenceReferences": ["docs/phase10-nikke-daily-drive-exit-assessment.md"]
+    },
+    {
+      "ExampleId": "mission-pass-list",
+      "TargetHint": "MISSION PASS左のリスト",
+      "ObservedDestination": "Pass切替リスト",
+      "Reason": "日課入口ではない",
+      "EvidenceReferences": ["docs/phase10-nikke-daily-drive-exit-assessment.md"]
+    },
+    {
+      "ExampleId": "operation-small-exclamation",
+      "TargetHint": "作戦右端の小さい!",
+      "ObservedDestination": "フィールド",
+      "Reason": "日課入口ではない",
+      "EvidenceReferences": ["docs/phase10-nikke-daily-drive-exit-assessment.md"]
+    }
+  ],
+  "OutcomeFacts": [
+    "日課進捗0/100から10/100を画面確認",
+    "ダイヤ4716から4746。報酬+30であり消費0",
+    "全入力はNano Serial HID。SendInput 0、Computer Use input dispatch 0、fallbackなし"
+  ],
+  "SourceReferences": [
+    "rag/openlogicool/nikke-daily-gamewith-summary-2026-08-24.md",
+    "docs/phase10-nikke-daily-drive-exit-assessment.md"
+  ],
+  "CreatedUtc": "2026-08-24T00:00:00Z"
+}

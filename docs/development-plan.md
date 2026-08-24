@@ -1,6 +1,6 @@
 # OpenLogicool 製品・開発計画
 
-- 版: 0.8（2026-08-24 Phase 10 Exit）
+- 版: 0.9（2026-08-24 Phase 11 Exit）
 - 改訂日: 2026-08-24
 - 状態: Phase 0〜10 Exit済み／NIKKE Daily Drive一件実証
 - 対象: Logicool G13 / G600を統合するWindowsネイティブアプリと、画面認識付き逐次学習プレイブック
@@ -1389,6 +1389,12 @@ Exit:
 工程正本は[Phase 10 NIKKE Daily Drive campaign](phase10-nikke-daily-drive-campaign-plan.md)とする。
 
 判定: Exit成立。正しい入口は右上の青い`!`中心、一覧は`MISSION > デイリー`。`基地防御報酬を1回獲得する`を`0/1`から`1/1`へ進めて受領し、ポイントを`0/100`から`10/100`へ更新した。全game入力はNano Serial HID、`まとめて殲滅`未操作、ダイヤ消費0。詳細は[Phase 10 Exit判定](phase10-nikke-daily-drive-exit-assessment.md)。
+
+### Phase 11: Learning Console／Verified Macro（Exit 2026-08-24）
+
+目的: Phase 9／10で得たGame Structureと操作知識を、利用者が読める操作列として確認・訂正・版管理し、AIを常時呼ばない検証付きVisual Macroへ変換する。
+
+判定: Exit成立。Game Operatorへ「学習した操作」タブを追加し、3ペイン編集、理由付きappend-only revision、元に戻す、Supervised／Verifiedを分離したmacro compile、AIなしのbefore／after監査、NIKKE知識のgame非依存importを成立させた。Windows実画面の初回目視で見つけた暗色背景上の可読性とタブ省略も修正した。変更直結focused testは20件green。公開claimは学習コンソールと検証付きマクロ生成までで、NIKKE実ゲームdispatchと全日課無人完遂は含めない。詳細は[Phase 11 Exit判定](phase11-exit-assessment.md)。工程正本はLattice plan `phase11-learning-console`。
 
 ### Post-8B capability campaign
 

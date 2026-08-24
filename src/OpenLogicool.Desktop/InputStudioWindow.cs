@@ -28,6 +28,7 @@ public sealed class InputStudioWindow : Window
     private readonly IG13LcdSettingsIntent? _g13LcdSettingsIntent;
     private readonly IWebResearchIntent? _webResearchIntent;
     private readonly IExplorerIntents? _explorerIntents;
+    private readonly ILearningRouteIntents? _learningRouteIntents;
     private DiagnosticsWindow? _diagnosticsWindow;
     private GameOperatorWindow? _gameOperatorWindow;
     private DispatcherTimer? _traceTimer;
@@ -209,7 +210,8 @@ public sealed class InputStudioWindow : Window
         ISerialHidSettingsIntent? serialHidSettingsIntent = null,
         IG13LcdSettingsIntent? g13LcdSettingsIntent = null,
         IWebResearchIntent? webResearchIntent = null,
-        IExplorerIntents? explorerIntents = null)
+        IExplorerIntents? explorerIntents = null,
+        ILearningRouteIntents? learningRouteIntents = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
@@ -219,6 +221,7 @@ public sealed class InputStudioWindow : Window
         _g13LcdSettingsIntent = g13LcdSettingsIntent;
         _webResearchIntent = webResearchIntent;
         _explorerIntents = explorerIntents;
+        _learningRouteIntents = learningRouteIntents;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
 
@@ -589,7 +592,10 @@ public sealed class InputStudioWindow : Window
 
         if (_gameOperatorWindow is null || !_gameOperatorWindow.IsVisible)
         {
-            _gameOperatorWindow = new GameOperatorWindow(_webResearchIntent, _explorerIntents) { Owner = this };
+            _gameOperatorWindow = new GameOperatorWindow(
+                _webResearchIntent,
+                _explorerIntents,
+                _learningRouteIntents) { Owner = this };
             _gameOperatorWindow.Show();
         }
         else
