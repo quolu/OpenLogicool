@@ -218,7 +218,7 @@ Screen Graphは観測された画面と遷移の事実を所有する。Learning
 8. local observationから操作前stateと期待destinationをAIなしで監査できる。
 9. `Confirmed`以外では次stepをdispatchせず、blind retryしない。
 10. Phase 10 NIKKE知識をコード内専用分岐ではなくimport可能データとして保持できる。
-11. Desktop／Host／Playbooks／Persistenceのfocused testと実SQLite UI scenarioがgreenになる。
+11. Desktop／Host／Playbooks／Persistenceの変更直結focused testと実SQLite UI scenarioがWindows nativeでgreenになる。既存CIの拡張、cross-platform matrix、変更と無関係な全test反復は行わない。
 12. 公開claimは学習コンソールと検証付きマクロ生成の成立範囲に限定し、NIKKE全日課の無人完遂へ拡張しない。
 
 ## 9. 非目標
@@ -229,6 +229,8 @@ Screen Graphは観測された画面と遷移の事実を所有する。Learning
 - 期待画面不一致時の自動再送
 - 利用者訂正だけによるVerified昇格
 - 一般gameでの自律成功claim
+- Linux／macOS対応、cross-platform CI、clean VM配布試験
+- 完成前の意匠磨き込み、animation、細部のvisual polish
 
 ## 10. 既知の罠
 
@@ -242,4 +244,4 @@ Screen Graphは観測された画面と遷移の事実を所有する。Learning
 
 ## 11. 実装順
 
-実装は、route／Visual Macroのpure契約とfocused test、SQLite revision store、Host intent、Desktop 3ペイン、実SQLite scenario、決定的監査、NIKKE knowledge import、最終回帰の順で進める。工程状態と完了証拠はLattice plan `phase11-learning-console`だけを正本とする。
+実装は、route／Visual Macroのpure契約とfocused test、SQLite revision store、Host intent、Desktop 3ペイン、実SQLite scenario、決定的監査、NIKKE knowledge import、関連Windows testの最終確認の順で進める。CI追加や全platform matrixは行わず、完成後の別段階で必要性を実測して判断する。工程状態と完了証拠はLattice plan `phase11-learning-console`だけを正本とする。
