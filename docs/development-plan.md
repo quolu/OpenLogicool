@@ -266,6 +266,23 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | GS-020 | R4 | UIは現在のstructure revision、Known／Novel、frontier、提案probe、risk／承認理由、残budget、復帰経路、停止理由、candidate／replayed／verifiedを表示し、利用者がpause、step、abandon、evidence確認を行える |
 | GS-021 | R4 | 利用者はnode label、同一性、merge／split、edge帰属、fact値の誤りを訂正できる。訂正はactor=userのappend-only Structure Eventと新revisionを作り、旧証拠を削除せず、verifiedへの自動昇格根拠にしない |
 
+### 3.6.2 学習コンソール／検証付きマクロ
+
+詳細設計と受入の正本は[Game Operator 学習コンソール／検証付きマクロ設計](game-operator-learning-console.md)とする。
+
+| ID | Release | 要件 |
+|---|---|---|
+| LC-001 | R4 | AIが実行済み／実行予定の操作列を、before画面、target、primitive、期待結果、実結果、根拠段階、riskを持つstepとして常時表示する |
+| LC-002 | R4 | 利用者はstepを追加、削除、並べ替え、差替えし、修正指示と理由を付けた新route revisionとして保存／undoできる。旧revisionは保持する |
+| LC-003 | R4 | AI案と利用者案を別revisionとして比較し、利用者訂正だけではVerifiedへ昇格しない |
+| LC-004 | R4 | Screen Graph、Learning Route、Playbook／Visual Macroを別成果物とし、一つのStructureから複数goal routeを作れる |
+| LC-005 | R4 | route compilerは同一environment、edge連続性、locator、destination、risk、verificationを検証し、一部成功や黙ったedge補完を行わない |
+| LC-006 | R4 | 既知routeはAIなしでローカルrecognizer→Nano入力→期待画面／Game State Fact監査を行い、Confirmed以外では次stepをdispatchしない |
+| LC-007 | R4 | AIは未知画面、曖昧target、期待結果不一致、game update、経路最適化時だけ修復案を返し、停止済みRunへ新revisionとして提示する |
+| LC-008 | R4 | 固定座標を唯一根拠にせず、画像特徴、OCR、配置関係、locator revisionから対象を再同定する |
+| LC-009 | R4 | hard policyはrouteより上位で、AI案とroute編集から変更できない。禁止risk候補はdispatch前に棄却する |
+| LC-010 | R4 | 通常実行は外部AI APIとcloud fallbackを必要とせず、外部AI送信0、外部AI API費用0を維持する |
+
 ### 3.7 UX／Operations
 
 | ID | Release | 要件 |
@@ -432,6 +449,15 @@ Hardware Maintenanceは保守面であり、通常のゲーム設定flowへ出�
 4. 訂正は新Playbook versionを作り、確定済み履歴を残す。
 5. 再開時に現在Observationと候補stateを示す。
 6. UniqueMatchだけ自動再開できる。曖昧なら利用者が状態指定、再観察、手順修正、終了を選ぶ。
+
+#### Journey D2: 学習ルートを直して検証付きマクロへする
+
+1. 探索で得たedge列を操作stepとして表示し、AIが押した対象と期待結果を利用者が確認する。
+2. 利用者はより短いedge列、対象差替え、不要step削除、修正指示を新route revisionへ保存する。
+3. compilerがStructure revision、edge連続性、locator、risk、verificationを検証する。
+4. candidate／replayedを含むrouteはSupervised、全Verified routeだけをVerified実行へ変換する。
+5. happy pathはAIを呼ばず、各stepの操作前stateと期待destinationをローカル観測で監査する。
+6. 期待結果不一致では再送せず停止し、AI修復または利用者訂正へ戻す。
 
 #### Journey E: 障害診断
 
