@@ -1,0 +1,144 @@
+{
+  "SchemaVersion": "1.0.0",
+  "Probe": "live-discovery-nano-action",
+  "CapturedAtUtc": "2026-08-24T04:41:06.8698876+00:00",
+  "Observation": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-observe-20260824-134029-330.json",
+  "Label": "\u30BF\u30C3\u30D7\u3057\u3066\u53D7\u3051\u3051\u308B",
+  "Target": {
+    "ProcessId": 44756,
+    "ProcessName": "nikke",
+    "WindowTitle": "NIKKE",
+    "CaptureRect": {
+      "Left": 3,
+      "Top": 1,
+      "Right": 2723,
+      "Bottom": 1198
+    },
+    "Dpi": 96
+  },
+  "Nano": {
+    "Port": "COM8",
+    "FirmwareVersion": "SerialHidSemanticVersion { Major = 1, Minor = 1, Patch = 0 }",
+    "Capabilities": "0x000F",
+    "Route": "NanoSerialHid",
+    "Fallback": "None",
+    "AltTabCount": 0,
+    "FirstMove": {
+      "Start": {
+        "X": 1362,
+        "Y": 780
+      },
+      "Target": {
+        "X": 1362,
+        "Y": 778
+      },
+      "End": {
+        "X": 1362,
+        "Y": 780
+      },
+      "DeltaCount": 0
+    },
+    "CorrectionMove": null,
+    "Click": "Left down/up; matching ACK per state",
+    "AllUp": true
+  },
+  "Before": {
+    "CapturedAtUtc": "2026-08-24T04:41:05.0193541+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "50b6918d963a441ed4e993fa94bfe5a9394416a5f09056cf66548a50b003f0e7",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-044105-019-before-focus.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 17,
+    "OcrText": "\u30BF \u30C3 \u30D7 \u3057 \u3066 \u53D7 \u3051 \u53D6 \u308B",
+    "Candidate": {
+      "Label": "\u30BF\u30C3\u30D7\u3057\u3066\u53D7\u3051\u3051\u308B",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "\u30BF\u30C3\u30D7\u3057\u3066\u53D7\u3051\u53D6\u308B",
+        "X": 1276,
+        "Y": 767.75,
+        "Width": 166.5,
+        "Height": 18.5
+      },
+      "RecognizerLanguage": "ja",
+      "MatchKind": "FuzzyUnique",
+      "Similarity": 0.8888888888888888,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": null,
+    "TrackingVisionNonLoopback": false
+  },
+  "ClickFrame": {
+    "CapturedAtUtc": "2026-08-24T04:41:05.6237787+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "a3dad15fb089723de5830a871fa60d401c33828972e8bc655ab041d31b2e6ba1",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-044105-623-click-frame.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 15,
+    "OcrText": "\u30BF \u30C3 \u30D7 \u3057 \u3066 \u53D7 \u3051 \u53D6 \u308B",
+    "Candidate": {
+      "Label": "\u30BF\u30C3\u30D7\u3057\u3066\u53D7\u3051\u3051\u308B",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "\u30BF\u30C3\u30D7\u3057\u3066\u53D7\u3051\u53D6\u308B",
+        "X": 1276,
+        "Y": 767.75,
+        "Width": 166.5,
+        "Height": 18.5
+      },
+      "RecognizerLanguage": "ja",
+      "MatchKind": "FuzzyUnique",
+      "Similarity": 0.8888888888888888,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": null,
+    "TrackingVisionNonLoopback": false
+  },
+  "After": {
+    "CapturedAtUtc": "2026-08-24T04:41:06.2004896+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "813138aa76ce0b3a646b6f84994ab78bf748b082273f95ae13e7df4aeef6995d",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-044106-200-after.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 23,
+    "OcrText": "",
+    "Candidate": {
+      "Label": "\u30BF\u30C3\u30D7\u3057\u3066\u53D7\u3051\u3051\u308B",
+      "Status": "Unknown",
+      "MatchCount": 0,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": {
+      "Status": "Completed",
+      "Failure": "None",
+      "FailureDetail": null,
+      "Labels": [
+        "SNO FLA"
+      ],
+      "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: [\n    \u0022SNO FLA\u0022\n  ]\n}\n\u0060\u0060\u0060",
+      "ElapsedMs": 604,
+      "RequestBytes": 173269,
+      "InputTokens": 181,
+      "OutputTokens": 20
+    },
+    "TrackingVisionNonLoopback": false
+  },
+  "ExpectLabelAbsent": true,
+  "Input": {
+    "DispatchRoute": "NanoSerialHid only",
+    "SendInputDispatchCount": 0,
+    "ComputerUseDispatchCount": 0,
+    "ExternalAiTransmissionCount": 0,
+    "ExternalAiApiCostUsd": 0
+  },
+  "Passed": true
+}

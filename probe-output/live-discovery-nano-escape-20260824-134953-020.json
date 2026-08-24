@@ -1,0 +1,86 @@
+{
+  "SchemaVersion": "1.0.0",
+  "Probe": "live-discovery-nano-escape",
+  "CapturedAtUtc": "2026-08-24T04:49:53.0191417+00:00",
+  "Observation": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-observe-20260824-134903-803.json",
+  "Label": "\u652F\u7D66\u5831\u916C",
+  "Nano": {
+    "Port": "COM8",
+    "FirmwareVersion": "SerialHidSemanticVersion { Major = 1, Minor = 1, Patch = 0 }",
+    "Capabilities": "0x000F",
+    "Route": "NanoSerialHid",
+    "Fallback": "None",
+    "AltTabCount": 0,
+    "Escape": "down/up; matching ACK per state",
+    "AllUp": true
+  },
+  "Before": {
+    "CapturedAtUtc": "2026-08-24T04:49:32.3724504+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "8ae091fdabfb9da7e9e6e79aba55c2075623aa07a7b4724fc474ec031477ded8",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-044932-372-escape-fresh.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 15,
+    "OcrText": "\u652F \u7D66 \u5831 \u916C",
+    "Candidate": {
+      "Label": "\u652F\u7D66\u5831\u916C",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "\u652F\u7D66\u5831\u916C",
+        "X": 1322,
+        "Y": 697.25,
+        "Width": 74.75,
+        "Height": 18.25
+      },
+      "RecognizerLanguage": "ja",
+      "MatchKind": "ExactUnique",
+      "Similarity": 1,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": null,
+    "TrackingVisionNonLoopback": false
+  },
+  "After": {
+    "CapturedAtUtc": "2026-08-24T04:49:32.9510322+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "f6334d8054e7c9a81885f618ae1f723dc618808e6c4143bdadda77cfb50f2f78",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-044932-951-after.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 5,
+    "OcrText": "",
+    "Candidate": {
+      "Label": "\u652F\u7D66\u5831\u916C",
+      "Status": "Unknown",
+      "MatchCount": 0,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": {
+      "Status": "Unknown",
+      "Failure": "Timeout",
+      "FailureDetail": "Foundry Local vision\u304C20000ms\u4EE5\u5185\u306B\u5B8C\u4E86\u3057\u307E\u305B\u3093\u3067\u3057\u305F\u3002",
+      "Labels": [],
+      "RawOutput": "",
+      "ElapsedMs": 20013,
+      "RequestBytes": 74942,
+      "InputTokens": null,
+      "OutputTokens": null
+    },
+    "TrackingVisionNonLoopback": false
+  },
+  "Policy": "reward/resource claim was not clicked; Escape only",
+  "Input": {
+    "DispatchRoute": "NanoSerialHid only",
+    "SendInputDispatchCount": 0,
+    "ComputerUseDispatchCount": 0,
+    "ExternalAiTransmissionCount": 0,
+    "ExternalAiApiCostUsd": 0
+  },
+  "Passed": true
+}

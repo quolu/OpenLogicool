@@ -31,8 +31,9 @@ host request sequenceは`1..65535`。`65535`の次は`1`であり、`0`は相関
 | `05` | HEARTBEAT | なし |
 | `06` | ACK | なし |
 | `07` | FAULT | fault code 1 byte＋offending kind 1 byte |
+| `08` | MOUSE_DELTA | relative X 1 byte＋relative Y 1 byte＋wheel 1 byte |
 
-version tripletはmajor、minor、patchを各`uint8`で表す。capability bitは`0x0001=Keyboard6Kro`、`0x0002=MouseButtons`、`0x0004=LeaseRelease`。未知bitを要求されたfirmwareはREADYで黙って落とさず`UnsupportedCapability`を返す。v1 READYはprotocol version `01`、max normal keys `06`、初期lease `150`を返す。
+version tripletはmajor、minor、patchを各`uint8`で表す。capability bitは`0x0001=Keyboard6Kro`、`0x0002=MouseButtons`、`0x0004=LeaseRelease`、`0x0008=RelativeMouse`。未知bitを要求されたfirmwareはREADYで黙って落とさず`UnsupportedCapability`を返す。READYのcapabilityはfirmwareが持つ全bitではなく、HELLOで要求され成立したsubsetだけを返す。これにより旧hostが新firmwareの未知bitを受け取らない。v1 READYはprotocol version `01`、max normal keys `06`、初期lease `150`を返す。
 
 ## SET_STATE payload
 
@@ -45,6 +46,18 @@ version tripletはmajor、minor、patchを各`uint8`で表す。capability bit�
 payloadはedgeでなく現在押下中の完全stateである。通常key slotは`0x04..0xDF`だけを受理し、`0x01..0x03`のrollover code、`0xE0..0xE7`のmodifier usage、`0xE8..0xFF`の予約usageを拒否する。modifierはoffset 0だけへ置く。通常keyの7個目を切り捨て、rollover errorに変換、先頭6個だけ送出してはならない。hostはframeを作る前に全checkpointを拒否する。mouse maskのbit5〜7は0固定。
 
 firmwareは検証済みSET_STATE全体をkeyboard reportとmouse button reportへ適用した後だけACKする。適用途中のreportをACKしてはならない。ALL_UPは両reportをall-upへ適用した後だけACKする。HEARTBEATのACKはlease更新成立を表す。
+
+## MOUSE_DELTA payload
+
+| offset | 幅 | field |
+|---:|---:|---|
+| 0 | 1 | relative X、two's-complement `int8` |
+| 1 | 1 | relative Y、two's-complement `int8` |
+| 2 | 1 | wheel、two's-complement `int8` |
+
+3 fieldはHID descriptorのlogical rangeに合わせてそれぞれ`-127..127`とし、`0x80`（`-128`）を拒否する。MOUSE_DELTAは保持stateではない。firmwareは最後に成立したSET_STATEのmouse button maskを保持し、そのmaskとdeltaを一つのmouse reportとして送る。keyboard reportは送らない。button maskの書き手はSET_STATE／ALL_UP／lease releaseだけであり、MOUSE_DELTA payloadへ重複させない。
+
+MOUSE_DELTAは検証済みかつexpected sequenceの時だけ1回適用し、sequenceとleaseを更新してからACKする。hostはACK timeout、FAULT、破損応答で同じdeltaを再送しない。ACK喪失時は適用0回または1回の`outcome unknown`であり、再接続後にcursorと画面を再観測するまで続行しない。SendInputや別deviceへfallbackしない。
 
 ## Fault code
 
@@ -65,6 +78,8 @@ FAULTは失敗したrequestと同じsequenceを使い、HID stateを変更しな
 ## Stateとlease
 
 hostはresolved outputごとの参照数を持ち、同じkeyをG13とG600が保持しても片方のupだけではsnapshotから外さない。down群またはup群をtentative stateへ適用し、SET_STATEのACK後だけcommitted stateへ進める。対応downのないup、変換不能usage、6KRO超過は送信前faultである。
+
+Game Operatorがrelative pointerを使うsessionはHELLOで`0x000F`を要求する。keyboard／buttonだけの既存sessionは`0x0007`を要求できる。旧firmwareは`0x000F`を`UnsupportedCapability`で拒否し、hostは再flashが必要な明示faultとして止める。
 
 chordの同方向edge群は1 snapshot。有限sequenceはdown群とup群をcheckpointに分け、各checkpointを順番にSET_STATE→ACK→commitする。keyboardとmouseが同じcheckpointにあれば1 payloadで確定する。
 

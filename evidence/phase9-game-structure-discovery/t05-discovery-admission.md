@@ -2,7 +2,7 @@
 
 取得日: 2026-08-24
 対象: Phase 9 G0 / EXP-GS-01 / EXP-GS-04
-状態: **GameLab成立。NIKKE lobbyの実画面確認待ち。**
+状態: **GameLab成立。NIKKE lobby safe sliceもNano経由で全5 primitiveの画面または受信側観測が成立。**
 
 ## 結論
 
@@ -11,6 +11,8 @@
 - click座標は同一frameの `Windows.Media.Ocr` が返した文字矩形へ、意味ラベルが一意一致した場合だけ固定する。
 - 一意一致しない候補、icon-only候補、schema外応答は `Unknown` とし、入力しない。別provider／cloud／生座標へfallbackしない。
 - GameLabではpointer移動、frame-bound click、Escape、F13 key receipt、wheel +120/-120が受信側またはbefore/after画像で成立した。
+- NIKKEではNanoだけを使い、relative pointer、frame-bound click、Escapeを画面before／afterで成立させた。scrollとgeneric F13もNIKKE前面の管理者hookで全eventを`IsInjected=false`として受信した。別routeへfallbackしない。
+- OCR誤りは個別文字列の置換表で直さない。正規化Levenshtein類似度、次点の物理候補との差、同一frameのanchor近傍だけで一意性を判定し、曖昧なら入力しない。
 - AI推論目的の外部送信0、外部AI API call 0、外部AI API費用0。OpenAI API keyを含む外部AI credentialは使わない。
 - 製品adapterはIP literalのloopback HTTPだけを受理し、proxy／redirectを無効にした単発Responses requestだけを送る。timeout、provider failure、schema外応答は `Unknown` で終了し、自動retry／別provider fallbackをしない。
 
@@ -26,7 +28,7 @@
 | model cache | `%USERPROFILE%\.foundry\cache\models` |
 | capture | Windows Graphics Capture |
 | geometry recognizer | `Windows.Media.Ocr` |
-| input route | standard integrity `SendInput` |
+| input route | GameLab: standard integrity `SendInput` / NIKKE: Nano Serial HID firmware 1.1.0 |
 
 ## ローカルprovider比較
 
@@ -65,6 +67,22 @@ result: `probe-output/discovery-admission-smoke-20260824-081417-131.json`
 
 OCRはuser profile language `ja`、`MaxImageDimension=10000`。英字scene labelへ混入するCJK OCR noiseを期待ラベルの文字体系で除き、上下に重なるword矩形からvisual lineを再構成したうえで完全一致した。親scene `state.main-menu`を子scene `state.main-menu.event-popup`へ部分一致させないこともfocused smokeで確認した。
 
+## NIKKE実画面・Nano入力実測
+
+対象はNIKKE本体process `44756`、window title `NIKKE`、capture 2720×1197、DPI 96、Windows 11 build 26200、日本語表示。入力は全てCOM8のSparkFun Pro Micro firmware 1.1.0、Serial HID capability `0x000F`を使用した。`SendInputDispatchCount=0`、`ComputerUseDispatchCount=0`、fallbackなしである。
+
+| primitive | 判定 | 実測 |
+|---|---|---|
+| relative pointer | 確認済み | closed-loopでcursorをOCR矩形内へ移動。Windows hookでもrelative moveをnon-injectedとして確認（`serial-hid-direct-smoke-20260824-130711-633.json`） |
+| frame-bound click | 確認済み | fresh WGC→OCR再接地→矩形内pointer確認→Nano left down/up→画面変化。`TOUCH`、無償報酬受取2件で成立（`live-discovery-nano-action-20260824-133344-807.json`、`134017-087.json`、`134106-870.json`） |
+| back／Escape | 確認済み | Nano Esc down/upで報酬popupとNEW CHAPTER popupが消えた（`live-discovery-nano-escape-20260824-134453-628.json`、`134953-020.json`） |
+| scroll | 確認済み | NIKKE前面の管理者hookでphysical wheel `+120/-120`を順序どおり受信、`IsInjected=false`、injected 0（`live-discovery-nano-primitives-20260824-142515-542.json`） |
+| policy generic key F13 | 確認済み | NIKKE前面の管理者hookでF13 down/upを順序どおり受信、`IsInjected=false`、injected 0（同上） |
+
+`live-discovery-observe-20260824-140858-183.json`ではNIKKEの部隊編成画面をWGC取得し、Windows OCR `ja` とQwen3-VLを同一frameに適用した。local VLMは `部隊編成`、`CAMPAIGN` 等を返し、両者をOCR矩形へ一意接地した。6 tileすべて完了、推論接続は`127.0.0.1`だけ、non-loopback 0、外部AI送信0、API key 0、外部AI API費用0だった。
+
+NIKKE前面での標準権限hook観測は対象の昇格境界に遮られて0件だったため、オーナー承認のUACで受信probeだけを管理者起動した。管理者probeはPASSし、NIKKE前面を維持したままF13 down/up、wheel `+120/-120`を完全順序で受信し、全eventが`IsInjected=false`、injected event 0だった。昇格したのは観測probeだけで、入力dispatchはNano Serial HIDのままである。
+
 ### WPF test fieldのcapture条件
 
 この環境ではGPU renderingのWPF client領域をWGCで取得すると、非client title barだけ取得できてclientが白くなった。GameLabは実gameではなく決定論的test fieldなので、`RenderOptions.ProcessRenderMode = SoftwareOnly` を設定した。設定後は同じWGC経路でclient描画を取得でき、操作後の画面遷移も観測できた。製品のcapture backendをSoftwareOnlyへ変更するものではない。
@@ -94,6 +112,10 @@ Foundry Local 0.10.3の実際のvision wire contractを公式C# sampleと実測�
 
 初回実走ではprompt内のschema説明をmodelが逐語コピーし、`visible text label`を候補として返した。形式適合だけでは画面根拠にならないため、このplaceholderをschema境界で拒否し、probe成功条件を「local VLM完了かつ同一frame OCRへ一意groundingされた候補1件以上」に修正した。修正後の上記実測で成立した。
 
+NIKKEの密なtileではQwenが同じlabelを反復し、JSONを閉じないまま出力上限へ達する実測があった。Foundry Local 0.10.3は`json_schema`指定をHTTP 200で受理したが、このQwen variantは生成をschemaへ拘束しなかった。adapterはprovider設定やgame固有語で回避せず、`{"labels":[`から始まる厳密な文法、完全なJSON string、同一labelの3回以上の反復、未閉鎖末尾が全て成立する時だけ完全labelを回収する。通常の重複は順序を保って1件へ畳み、`DuplicateLabelsCollapsed`／`TruncatedRepetitionRecovered`を証跡へ残す。それ以外の途中切れ、別schema、散文は`Unknown`のままである。上記NIKKE最終証跡では`DuplicateLabelsCollapsed`が実際に記録された。
+
+VLMとOCRの文字差は、完全一致を優先し、類似度0.85以上かつ次点の物理候補との差0.15以上だけを一意接地する。既知anchorを追跡する場合も正規化長8以上、類似度0.70以上、位置誤差条件を要求する。focused testではVLM `受けける`を同一frame OCR `受け取る`へ接地でき、同程度の候補が2箇所ある場合は`Unknown`になった。特定gameや特定誤字の置換表は持たない。
+
 ## Data Flow
 
 - frame、crop、OCR、prompt、responseは利用者端末内だけで処理する。
@@ -103,15 +125,14 @@ Foundry Local 0.10.3の実際のvision wire contractを公式C# sampleと実測�
 
 ## NIKKE policy admission
 
-2026-08-24取得の現行公式EULA §7(b)／§7(c)のautomation禁止と本人アカウントのBAN riskを記録した。セキュリティrisk 0を受入条件とし、この条件を満たせない方式は採用しない。課金／資源消費／戦闘／競争／対人影響もG0 safe sliceでは0とする。オーナーは本人アカウントBAN riskだけを承知して開発継続を裁定したため、Observe／Assist／ExploreをNIKKE lobby safe sliceに限って許可し、Autoは拒否する。技術的成立をpublisher許可の証拠にはしない。記録は `docs/game-policy/nikke-global-jp-2026-08-24.md`。
+2026-08-24取得の現行公式EULA §7(b)／§7(c)のautomation禁止と本人アカウントのBAN riskを記録した。セキュリティrisk 0を受入条件とし、この条件を満たせない方式は採用しない。課金、game resource消費、戦闘、競争、対人影響はG0 safe sliceで0とする。オーナー裁定により、無償で受け取れる資源は全件取得対象に変更し、この実測でも30日報酬をNano経由で受け取った。オーナーは本人アカウントBAN riskだけを承知して開発継続を裁定したため、Observe／Assist／ExploreをNIKKE lobby safe sliceに限って許可し、Autoは拒否する。技術的成立をpublisher許可の証拠にはしない。記録は `docs/game-policy/nikke-global-jp-2026-08-24.md`。
 
-## 未成立と次の実測
+## 分類と持ち越し
 
-- NIKKE lobbyのcapture継続、visual grounding、pointer移動、非課金・非消費・非戦闘の可逆click、Escape、scrollは未確認。
-- NIKKE実測が成立するまでEXP-GS-04全体とt05を完了扱いにしない。
+- EXP-GS-01はNIKKE実画面を含め成立。provider、grounding、Data Flowを選定済みとする。
+- EXP-GS-04は各primitiveをroute別に確認済み。NIKKEのpointer／click／Escapeは画面before／after、scroll／generic F13は管理者hookのreceiver-side受信で成立した。F13／wheel固有のgame semantic effectはこのadmission条件に含めず、別routeへfallbackしない。
 - icon-only affordanceは現時点でUnsupported。別の決定論的local region proposalが実証されるまで入力しない。
-
-NIKKE実測では本体process identity、window mode、locale、window size／DPI、WGC pixel format、HDR、overlay、OCR recognizer language／MaxImageDimension、Qwen variant／CUDA／warm latency、推論中のFoundry listenerがloopbackだけであること、NIKKE＋WGC＋model同時VRAMを記録する。GameLabのSoftwareOnly設定と3-frame結果をNIKKEへ移して成立扱いにしない。
+- NIKKEの別session再同定・可逆edge再遷移はEXP-GS-05／Phase 9Cで行う。t05のprovider／primitive admissionへ混ぜない。
 
 ## 一次資料
 

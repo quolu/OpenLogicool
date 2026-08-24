@@ -103,6 +103,20 @@ bool OpenLogicoolHid_::Apply(
   return true;
 }
 
+bool OpenLogicoolHid_::ApplyMouseDelta(
+    uint8_t mouseButtons,
+    int8_t deltaX,
+    int8_t deltaY,
+    int8_t wheel) {
+  const MouseReport mouse = {
+      static_cast<uint8_t>(mouseButtons & 0x1F),
+      deltaX,
+      deltaY,
+      wheel,
+  };
+  return HID().SendReport(kMouseReportId, &mouse, sizeof(mouse)) >= 0;
+}
+
 bool OpenLogicoolHid_::AllUp() {
   const KeyboardReport keyboard = {0, 0, {0, 0, 0, 0, 0, 0}};
   const MouseReport mouse = {0, 0, 0, 0};

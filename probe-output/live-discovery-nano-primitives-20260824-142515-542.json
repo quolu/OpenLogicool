@@ -1,0 +1,126 @@
+{
+  "SchemaVersion": "1.0.0",
+  "Probe": "live-discovery-nano-primitives",
+  "CapturedAtUtc": "2026-08-24T05:25:15.5413651+00:00",
+  "Target": {
+    "ProcessId": 44756,
+    "ProcessName": "nikke",
+    "WindowTitle": "NIKKE",
+    "CaptureRect": {
+      "Left": 3,
+      "Top": 1,
+      "Right": 2723,
+      "Bottom": 1198
+    },
+    "Dpi": 96,
+    "ForegroundAfterDispatch": true
+  },
+  "Nano": {
+    "Port": "COM8",
+    "FirmwareVersion": "SerialHidSemanticVersion { Major = 1, Minor = 1, Patch = 0 }",
+    "Capabilities": "0x000F",
+    "Route": "NanoSerialHid",
+    "Fallback": "None",
+    "AltTabCount": 0,
+    "F13": "down/up; matching ACK per state",
+    "WheelUpAck": 5,
+    "WheelDownAck": 6,
+    "AllUp": true
+  },
+  "Receiver": {
+    "Surface": "Windows low-level keyboard/mouse hooks",
+    "Expected": [
+      {
+        "Kind": "key",
+        "Edge": "down",
+        "Code": 124,
+        "IsInjected": false,
+        "StopwatchTicks": 0
+      },
+      {
+        "Kind": "key",
+        "Edge": "up",
+        "Code": 124,
+        "IsInjected": false,
+        "StopwatchTicks": 0
+      },
+      {
+        "Kind": "mouse",
+        "Edge": "wheel",
+        "Code": 120,
+        "IsInjected": false,
+        "StopwatchTicks": 0
+      },
+      {
+        "Kind": "mouse",
+        "Edge": "wheel",
+        "Code": -120,
+        "IsInjected": false,
+        "StopwatchTicks": 0
+      }
+    ],
+    "Observed": [
+      {
+        "Kind": "key",
+        "Edge": "down",
+        "Code": 124,
+        "IsInjected": false,
+        "StopwatchTicks": 132832367377
+      },
+      {
+        "Kind": "key",
+        "Edge": "up",
+        "Code": 124,
+        "IsInjected": false,
+        "StopwatchTicks": 132832383503
+      },
+      {
+        "Kind": "mouse",
+        "Edge": "wheel",
+        "Code": 120,
+        "IsInjected": false,
+        "StopwatchTicks": 132832407402
+      },
+      {
+        "Kind": "mouse",
+        "Edge": "wheel",
+        "Code": -120,
+        "IsInjected": false,
+        "StopwatchTicks": 132832440837
+      }
+    ],
+    "Injected": [],
+    "ExactSequenceObserved": true,
+    "Failure": null,
+    "AllObservedEventsArePhysical": true
+  },
+  "Screen": {
+    "Before": {
+      "CapturedAtUtc": "2026-08-24T05:25:15.2695115+00:00",
+      "Width": 2720,
+      "Height": 1197,
+      "Sha256": "3e95650a62277709bdc5c5c4349db2a705ba137b1145eec51fa21be26c95aedf",
+      "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-primitives-20260824-052515-269-before.png"
+    },
+    "After": {
+      "CapturedAtUtc": "2026-08-24T05:25:15.5395881+00:00",
+      "Width": 2720,
+      "Height": 1197,
+      "Sha256": "fd4a2d149b003e0a9ba73d2916168b34f7cecca71c3253874b415dbdfbe8c7a3",
+      "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-primitives-20260824-052515-539-after.png"
+    }
+  },
+  "Classification": {
+    "GenericKey": "Windows receiver accepted physical F13 while NIKKE was foreground",
+    "Scroll": "Windows receiver accepted physical wheel \u002B120/-120 while NIKKE was foreground",
+    "GameEffect": "Unverified; this probe makes no in-game outcome claim"
+  },
+  "Input": {
+    "DispatchRoute": "NanoSerialHid only",
+    "SendInputDispatchCount": 0,
+    "ComputerUseDispatchCount": 0,
+    "ExternalAiTransmissionCount": 0,
+    "ExternalAiApiCostUsd": 0
+  },
+  "Passed": true
+}

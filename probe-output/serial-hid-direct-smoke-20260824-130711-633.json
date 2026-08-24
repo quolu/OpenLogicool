@@ -1,0 +1,193 @@
+{
+  "schema": "openlogicool.serial-hid.direct-smoke.v1",
+  "capturedAtUtc": "2026-08-24T04:07:11.3726731Z",
+  "machine": "FOX",
+  "deviceInstanceId": "USB\\VID_1B4F\u0026PID_9206\\HIDFG",
+  "transientPort": "COM8",
+  "firmwareVersion": "1.1.0",
+  "capabilities": "0x000F",
+  "leaseMilliseconds": 150,
+  "helloReady": true,
+  "keyObserved": true,
+  "chordObserved": true,
+  "mouseObserved": true,
+  "relativeMouseObserved": true,
+  "cursorBefore": {
+    "x": 1167,
+    "y": 1412
+  },
+  "cursorAfter": {
+    "x": 1192,
+    "y": 1430
+  },
+  "sequenceObserved": true,
+  "allUpObserved": true,
+  "leaseReleaseObserved": true,
+  "leaseReleaseElapsedMilliseconds": 149.3585,
+  "powerCycleAttempted": false,
+  "powerCycleDisconnectObserved": false,
+  "powerCycleReconnectObserved": false,
+  "powerCycleAllUpObserved": false,
+  "powerCycleUnexpectedDownEvents": [],
+  "events": [
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 124,
+      "isInjected": false,
+      "stopwatchTicks": 85993355763
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 124,
+      "isInjected": false,
+      "stopwatchTicks": 85993379703
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 162,
+      "isInjected": false,
+      "stopwatchTicks": 85993393931
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 125,
+      "isInjected": false,
+      "stopwatchTicks": 85993409143
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 162,
+      "isInjected": false,
+      "stopwatchTicks": 85993427070
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 125,
+      "isInjected": false,
+      "stopwatchTicks": 85993441226
+    },
+    {
+      "kind": "mouse",
+      "edge": "down",
+      "code": 4,
+      "isInjected": false,
+      "stopwatchTicks": 85993470127
+    },
+    {
+      "kind": "mouse",
+      "edge": "up",
+      "code": 4,
+      "isInjected": false,
+      "stopwatchTicks": 85993493085
+    },
+    {
+      "kind": "mouse",
+      "edge": "down",
+      "code": 1,
+      "isInjected": false,
+      "stopwatchTicks": 85993516093
+    },
+    {
+      "kind": "mouse",
+      "edge": "move",
+      "code": 0,
+      "isInjected": false,
+      "stopwatchTicks": 85993523042
+    },
+    {
+      "kind": "mouse",
+      "edge": "wheel",
+      "code": 120,
+      "isInjected": false,
+      "stopwatchTicks": 85993525892
+    },
+    {
+      "kind": "mouse",
+      "edge": "up",
+      "code": 1,
+      "isInjected": false,
+      "stopwatchTicks": 85993552998
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 126,
+      "isInjected": false,
+      "stopwatchTicks": 85993562299
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 126,
+      "isInjected": false,
+      "stopwatchTicks": 85993583636
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 162,
+      "isInjected": false,
+      "stopwatchTicks": 85993602332
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 127,
+      "isInjected": false,
+      "stopwatchTicks": 85993611827
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 162,
+      "isInjected": false,
+      "stopwatchTicks": 85993625030
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 127,
+      "isInjected": false,
+      "stopwatchTicks": 85993631976
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 128,
+      "isInjected": false,
+      "stopwatchTicks": 85993644666
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 128,
+      "isInjected": false,
+      "stopwatchTicks": 85993666721
+    },
+    {
+      "kind": "key",
+      "edge": "down",
+      "code": 129,
+      "isInjected": false,
+      "stopwatchTicks": 85993765430
+    },
+    {
+      "kind": "key",
+      "edge": "up",
+      "code": 129,
+      "isInjected": false,
+      "stopwatchTicks": 85995263058
+    }
+  ],
+  "injectedEvents": [],
+  "observerWasForeground": true,
+  "foregroundAcquiredByNano": true,
+  "passed": true,
+  "error": null
+}

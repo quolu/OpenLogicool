@@ -1,0 +1,86 @@
+{
+  "SchemaVersion": "1.0.0",
+  "Probe": "live-discovery-nano-escape",
+  "CapturedAtUtc": "2026-08-24T04:44:53.6277915+00:00",
+  "Observation": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-observe-20260824-134433-523.json",
+  "Label": "\u30A4\u30D9\u30F3\u30C8\u306E\u304A\u77E5\u3089\u305B",
+  "Nano": {
+    "Port": "COM8",
+    "FirmwareVersion": "SerialHidSemanticVersion { Major = 1, Minor = 1, Patch = 0 }",
+    "Capabilities": "0x000F",
+    "Route": "NanoSerialHid",
+    "Fallback": "None",
+    "AltTabCount": 0,
+    "Escape": "down/up; matching ACK per state",
+    "AllUp": true
+  },
+  "Before": {
+    "CapturedAtUtc": "2026-08-24T04:44:52.6213769+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "9b16fb4a614ff0eb06b7a894d2d9e06cec950d8f93ab78c45439eb5badbab483",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-044452-621-escape-fresh.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 18,
+    "OcrText": "0 \u30A4 \u30D9 \u30F3 \u30C8 \u306E \u304A \u77E5 \u3089 \u305B",
+    "Candidate": {
+      "Label": "\u30A4\u30D9\u30F3\u30C8\u306E\u304A\u77E5\u3089\u305B",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "\u30A4\u30D9\u30F3\u30C8\u306E\u304A\u77E5\u3089\u305B",
+        "X": 1127,
+        "Y": 217.25,
+        "Width": 186.75,
+        "Height": 19.5
+      },
+      "RecognizerLanguage": "ja",
+      "MatchKind": "TrackedFuzzyUnique",
+      "Similarity": 1,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": null,
+    "TrackingVisionNonLoopback": false
+  },
+  "After": {
+    "CapturedAtUtc": "2026-08-24T04:44:53.1910465+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "e57dc19b0093981fd40315c24150f6eada54d0d385289a004c5f7920e5e3f502",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-044453-191-after.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 2,
+    "OcrText": "",
+    "Candidate": {
+      "Label": "\u30A4\u30D9\u30F3\u30C8\u306E\u304A\u77E5\u3089\u305B",
+      "Status": "Unknown",
+      "MatchCount": 0,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": {
+      "Status": "Completed",
+      "Failure": "None",
+      "FailureDetail": null,
+      "Labels": [],
+      "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: []\n}\n\u0060\u0060\u0060",
+      "ElapsedMs": 384,
+      "RequestBytes": 83858,
+      "InputTokens": 204,
+      "OutputTokens": 11
+    },
+    "TrackingVisionNonLoopback": false
+  },
+  "Policy": "reward/resource claim was not clicked; Escape only",
+  "Input": {
+    "DispatchRoute": "NanoSerialHid only",
+    "SendInputDispatchCount": 0,
+    "ComputerUseDispatchCount": 0,
+    "ExternalAiTransmissionCount": 0,
+    "ExternalAiApiCostUsd": 0
+  },
+  "Passed": true
+}

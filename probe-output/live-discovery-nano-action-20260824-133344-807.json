@@ -1,0 +1,144 @@
+{
+  "SchemaVersion": "1.0.0",
+  "Probe": "live-discovery-nano-action",
+  "CapturedAtUtc": "2026-08-24T04:33:44.8060905+00:00",
+  "Observation": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-observe-20260824-131752-883.json",
+  "Label": "TOUCH TO CONTINUE",
+  "Target": {
+    "ProcessId": 44756,
+    "ProcessName": "nikke",
+    "WindowTitle": "NIKKE",
+    "CaptureRect": {
+      "Left": 3,
+      "Top": 1,
+      "Right": 2723,
+      "Bottom": 1198
+    },
+    "Dpi": 96
+  },
+  "Nano": {
+    "Port": "COM8",
+    "FirmwareVersion": "SerialHidSemanticVersion { Major = 1, Minor = 1, Patch = 0 }",
+    "Capabilities": "0x000F",
+    "Route": "NanoSerialHid",
+    "Fallback": "None",
+    "AltTabCount": 0,
+    "FirstMove": {
+      "Start": {
+        "X": 1428,
+        "Y": 1077
+      },
+      "Target": {
+        "X": 1362,
+        "Y": 995
+      },
+      "End": {
+        "X": 1363,
+        "Y": 997
+      },
+      "DeltaCount": 17
+    },
+    "CorrectionMove": null,
+    "Click": "Left down/up; matching ACK per state",
+    "AllUp": true
+  },
+  "Before": {
+    "CapturedAtUtc": "2026-08-24T04:33:42.5993716+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "4526e494c436b48e78e6b291f29dd045a845987521c67675e842cbd8ea6cae41",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-043342-599-before-focus.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 21,
+    "OcrText": "TOUCH TO CONTINUE",
+    "Candidate": {
+      "Label": "TOUCH TO CONTINUE",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "TOUCHTOCONTINUE",
+        "X": 1237.5,
+        "Y": 984.25,
+        "Width": 242.75,
+        "Height": 18.75
+      },
+      "RecognizerLanguage": "ja",
+      "MatchKind": "ExactUnique",
+      "Similarity": 1,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": null,
+    "TrackingVisionNonLoopback": false
+  },
+  "ClickFrame": {
+    "CapturedAtUtc": "2026-08-24T04:33:43.7069335+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "a0b3e7405c643659250097c21d1677fb52a84553258942f660af7f366227a267",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-043343-706-click-frame.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 19,
+    "OcrText": "TOUCH TO CONTINIJE",
+    "Candidate": {
+      "Label": "TOUCH TO CONTINUE",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "TOUCHTOCONTINIJE",
+        "X": 1237.5,
+        "Y": 984.75,
+        "Width": 242.75,
+        "Height": 19
+      },
+      "RecognizerLanguage": "ja",
+      "MatchKind": "FuzzyUnique",
+      "Similarity": 0.875,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": null,
+    "TrackingVisionNonLoopback": false
+  },
+  "After": {
+    "CapturedAtUtc": "2026-08-24T04:33:44.2644167+00:00",
+    "FrameWidth": 2720,
+    "FrameHeight": 1197,
+    "Sha256": "b25ab352c66d20c9c3bde896289a3837269ad9f48c4a153c12ff37ec39a5e7af",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-nano-20260824-043344-264-after.png",
+    "OcrLanguage": "ja",
+    "OcrElapsedMs": 6,
+    "OcrText": "",
+    "Candidate": {
+      "Label": "TOUCH TO CONTINUE",
+      "Status": "Unknown",
+      "MatchCount": 0,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    "TrackingVision": {
+      "Status": "Completed",
+      "Failure": "None",
+      "FailureDetail": null,
+      "Labels": [
+        "Click me"
+      ],
+      "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: [\u0022Click me\u0022]\n}\n\u0060\u0060\u0060",
+      "ElapsedMs": 500,
+      "RequestBytes": 13861,
+      "InputTokens": 191,
+      "OutputTokens": 14
+    },
+    "TrackingVisionNonLoopback": false
+  },
+  "ExpectLabelAbsent": true,
+  "Input": {
+    "DispatchRoute": "NanoSerialHid only",
+    "SendInputDispatchCount": 0,
+    "ComputerUseDispatchCount": 0,
+    "ExternalAiTransmissionCount": 0,
+    "ExternalAiApiCostUsd": 0
+  },
+  "Passed": true
+}

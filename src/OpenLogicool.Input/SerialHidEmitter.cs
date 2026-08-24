@@ -20,6 +20,7 @@ public enum SerialHidSessionFaultKind
     UnexpectedResponse,
     FirmwareFault,
     Unavailable,
+    UnsupportedCapability,
 }
 
 /// <summary>Serial HID sessionを継続できない明示fault。</summary>
@@ -80,7 +81,7 @@ public sealed class SerialHidProtocolSession
         ISerialHidFrameExchange exchange,
         SerialHidSemanticVersion hostVersion,
         TimeSpan requestTimeout,
-        SerialHidCapability requestedCapabilities = SerialHidProtocolV1.AllCapabilities)
+        SerialHidCapability requestedCapabilities = SerialHidProtocolV1.BaselineCapabilities)
     {
         ArgumentNullException.ThrowIfNull(exchange);
         if (requestTimeout <= TimeSpan.Zero)
@@ -155,6 +156,29 @@ public sealed class SerialHidProtocolSession
         {
             ThrowIfUnavailable();
             return ExchangeCore(SerialHidMessageKind.Heartbeat, [], SerialHidMessageKind.Ack).Sequence;
+        }
+    }
+
+    /// <summary>
+    /// 相対mouse reportを一度だけ要求する。ACKが失われた場合は適用済みか不明のままterminal faultとし、
+    /// 同じdeltaを再送しない。
+    /// </summary>
+    public ushort SendMouseDelta(sbyte deltaX, sbyte deltaY, sbyte wheel)
+    {
+        lock (_gate)
+        {
+            ThrowIfUnavailable();
+            if ((ReadyInfo.Capabilities & SerialHidCapability.RelativeMouse) == 0)
+            {
+                throw new SerialHidSessionFaultException(
+                    SerialHidSessionFaultKind.UnsupportedCapability,
+                    "Serial HID sessionはRelativeMouse capabilityを交渉していません。再flashまたは対応sessionが必要です。");
+            }
+
+            return ExchangeCore(
+                SerialHidMessageKind.MouseDelta,
+                [unchecked((byte)deltaX), unchecked((byte)deltaY), unchecked((byte)wheel)],
+                SerialHidMessageKind.Ack).Sequence;
         }
     }
 

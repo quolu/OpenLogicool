@@ -1,0 +1,55 @@
+{
+  "SchemaVersion": "1.0.0",
+  "Probe": "discovery-admission-smoke",
+  "Target": "GameLab Prototype",
+  "Seed": 5,
+  "Grounding": {
+    "Recognizer": "Windows.Media.Ocr",
+    "TargetLabel": "OpenEvent",
+    "TargetBox": {
+      "X": 245,
+      "Y": 426,
+      "Width": 77,
+      "Height": 15
+    },
+    "ScreenPoint": {
+      "X": 627,
+      "Y": 778
+    },
+    "InitialOcrMs": 26,
+    "RecognizerLanguage": "ja",
+    "MaxImageDimension": 10000
+  },
+  "Routes": {
+    "PointerMove": {
+      "Status": "Confirmed",
+      "Evidence": "cursor readback (627,778)"
+    },
+    "LeftClick": {
+      "Status": "Confirmed",
+      "Evidence": "\u753A GameLab P \u300C ototype \u30ED state. main-menu. event-popup ClosePopup"
+    },
+    "EscapeBack": {
+      "Status": "Confirmed",
+      "Evidence": "\u753A GameLab P \u300C ototype state.main \u30ED -menu OpenEvent OpenRewards"
+    },
+    "GenericKey": {
+      "Status": "Confirmed",
+      "Evidence": "GameLab receiver receipt key:F13"
+    },
+    "Scroll": {
+      "Status": "Confirmed",
+      "Evidence": "GameLab receiver receipts wheel:\u002B120/-120"
+    }
+  },
+  "ReceiverReceipts": [
+    "{\u0022route\u0022:\u0022window\u0022,\u0022value\u0022:\u0022rendered\u0022,\u0022monotonicMs\u0022:63943015}",
+    "{\u0022route\u0022:\u0022button\u0022,\u0022value\u0022:\u0022OpenEvent\u0022,\u0022monotonicMs\u0022:63943546}",
+    "{\u0022route\u0022:\u0022key\u0022,\u0022value\u0022:\u0022Escape\u0022,\u0022monotonicMs\u0022:63943609}",
+    "{\u0022route\u0022:\u0022key\u0022,\u0022value\u0022:\u0022F13\u0022,\u0022monotonicMs\u0022:63943671}",
+    "{\u0022route\u0022:\u0022wheel\u0022,\u0022value\u0022:\u0022120\u0022,\u0022monotonicMs\u0022:63943718}",
+    "{\u0022route\u0022:\u0022wheel\u0022,\u0022value\u0022:\u0022-120\u0022,\u0022monotonicMs\u0022:63943781}"
+  ],
+  "ExternalAiTransmissionCount": 0,
+  "ExternalAiApiCostUsd": 0
+}

@@ -1,0 +1,872 @@
+{
+  "SchemaVersion": "1.0.0",
+  "Probe": "live-discovery-observe",
+  "CapturedAtUtc": "2026-08-24T05:08:53.3284127+00:00",
+  "Target": {
+    "ProcessId": 44756,
+    "ProcessName": "nikke",
+    "ProcessPath": null,
+    "PathReadStatus": "Unknown: Win32Exception",
+    "WindowTitle": "NIKKE",
+    "WindowRect": {
+      "Left": -4,
+      "Top": 1,
+      "Right": 2730,
+      "Bottom": 1205
+    },
+    "CaptureRect": {
+      "Left": 3,
+      "Top": 1,
+      "Right": 2723,
+      "Bottom": 1198
+    },
+    "Dpi": 96
+  },
+  "Frame": {
+    "SourceId": "window:live-discovery:44756",
+    "Sequence": 1,
+    "Width": 2720,
+    "Height": 1197,
+    "PixelFormat": "B8G8R8A8_UNorm",
+    "DpiX": 96,
+    "DpiY": 96,
+    "ColorSpace": "Unknown",
+    "Rotation": "Unknown",
+    "TransformRevision": 1,
+    "FreshnessMs": 0,
+    "LastChangeMs": 0,
+    "Sha256": "5ee70850808c5bc436de896460b7269c334ecf5d1f2b33c7009ebabfdda928d9",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-frame-20260824-050853-328.png"
+  },
+  "Ocr": {
+    "Recognizer": "Windows.Media.Ocr",
+    "InputScale": 2,
+    "InputWidth": 5440,
+    "InputHeight": 2394,
+    "InputLocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-frame-20260824-050853-328.ocr2x.png",
+    "RecognizerLanguage": "ja",
+    "MaxImageDimension": 10000,
+    "ElapsedMs": 145,
+    "Text": "0 N IKKE 0 4 \u5341 [ \u3044 ) 21906 K \u90E8 \u968A \u7DE8 \u6210 CAMPAIGN \u30AD \u30E3 \u30F3 \u30DA \u30FC \u30F3 \u306B \u7DE8 \u6210 \u3055 \u308C \u305F \u90E8 \u968A \u3092 \u78BA \u8A8D \u3067 \u304D \u307E \u3059 6 \u8ABF 3 0 \u3002 xSC \u5E78 \u4E00 \u3007 \u6703 \u2193 \u81EA \u52D5 \u7DE8 \u6210 \u30ED \u30D3 \u30FC \u30A4 \u30F3 \u3079 \u30F3 \u30C8 \u30EA \u968A \u54E1 \u52DF \u96C6",
+    "VisualLines": [
+      "0NIKKE",
+      "\u90E8\u968A\u7DE8\u62104\u5341[\u3044)21906K0",
+      "CAMPAIGN",
+      "\u30AD\u30E3\u30F3\u30DA\u30FC\u30F3\u306B\u7DE8\u6210\u3055\u308C\u305F\u90E8\u968A\u3092\u78BA\u8A8D\u3067\u304D\u307E\u3059",
+      "6\u8ABF3",
+      "0xSC",
+      "\u3002",
+      "\u5E78\u4E00\u3007",
+      "\u6703\u2193\u81EA\u52D5\u7DE8\u6210",
+      "\u30ED\u30D3\u30FC\u30A4\u30F3\u3079\u30F3\u30C8\u30EA\u968A\u54E1\u52DF\u96C6"
+    ],
+    "Words": [
+      {
+        "Text": "0",
+        "X": 8.5,
+        "Y": 6.5,
+        "Width": 16.5,
+        "Height": 16.5
+      },
+      {
+        "Text": "N",
+        "X": 30.5,
+        "Y": 10.5,
+        "Width": 7.5,
+        "Height": 9.5
+      },
+      {
+        "Text": "IKKE",
+        "X": 39.5,
+        "Y": 10.5,
+        "Width": 22.5,
+        "Height": 9.5
+      },
+      {
+        "Text": "0",
+        "X": 2639.5,
+        "Y": 52.5,
+        "Width": 14.5,
+        "Height": 14.5
+      },
+      {
+        "Text": "4",
+        "X": 1267,
+        "Y": 63,
+        "Width": 8,
+        "Height": 18.5
+      },
+      {
+        "Text": "\u5341",
+        "X": 1303.5,
+        "Y": 64.5,
+        "Width": 14.5,
+        "Height": 15
+      },
+      {
+        "Text": "[",
+        "X": 1353.5,
+        "Y": 62,
+        "Width": 2,
+        "Height": 21
+      },
+      {
+        "Text": "\u3044",
+        "X": 1355.5,
+        "Y": 59,
+        "Width": 27.5,
+        "Height": 27
+      },
+      {
+        "Text": ")",
+        "X": 1383.5,
+        "Y": 59,
+        "Width": 6,
+        "Height": 27
+      },
+      {
+        "Text": "21906",
+        "X": 1437.5,
+        "Y": 63,
+        "Width": 35,
+        "Height": 18.5
+      },
+      {
+        "Text": "K",
+        "X": 1478,
+        "Y": 63,
+        "Width": 7.5,
+        "Height": 18.5
+      },
+      {
+        "Text": "\u90E8",
+        "X": 20,
+        "Y": 64.5,
+        "Width": 15,
+        "Height": 15.5
+      },
+      {
+        "Text": "\u968A",
+        "X": 36.5,
+        "Y": 65,
+        "Width": 14.5,
+        "Height": 15
+      },
+      {
+        "Text": "\u7DE8",
+        "X": 52,
+        "Y": 64.5,
+        "Width": 15,
+        "Height": 15
+      },
+      {
+        "Text": "\u6210",
+        "X": 68,
+        "Y": 64.5,
+        "Width": 15.5,
+        "Height": 15.5
+      },
+      {
+        "Text": "CAMPAIGN",
+        "X": 1256,
+        "Y": 122.5,
+        "Width": 205.5,
+        "Height": 28
+      },
+      {
+        "Text": "\u30AD",
+        "X": 1213.5,
+        "Y": 170.5,
+        "Width": 12.5,
+        "Height": 13.5
+      },
+      {
+        "Text": "\u30E3",
+        "X": 1228.5,
+        "Y": 173,
+        "Width": 10.5,
+        "Height": 11
+      },
+      {
+        "Text": "\u30F3",
+        "X": 1242.5,
+        "Y": 171.5,
+        "Width": 11.5,
+        "Height": 12
+      },
+      {
+        "Text": "\u30DA",
+        "X": 1255.5,
+        "Y": 170.5,
+        "Width": 13,
+        "Height": 11
+      },
+      {
+        "Text": "\u30FC",
+        "X": 1269.5,
+        "Y": 176,
+        "Width": 12.5,
+        "Height": 2.5
+      },
+      {
+        "Text": "\u30F3",
+        "X": 1284.5,
+        "Y": 171.5,
+        "Width": 11.5,
+        "Height": 12
+      },
+      {
+        "Text": "\u306B",
+        "X": 1298,
+        "Y": 171,
+        "Width": 12,
+        "Height": 12.5
+      },
+      {
+        "Text": "\u7DE8",
+        "X": 1311,
+        "Y": 171,
+        "Width": 13,
+        "Height": 13
+      },
+      {
+        "Text": "\u6210",
+        "X": 1325,
+        "Y": 170.5,
+        "Width": 13.5,
+        "Height": 13.5
+      },
+      {
+        "Text": "\u3055",
+        "X": 1340.5,
+        "Y": 170.5,
+        "Width": 10.5,
+        "Height": 13.5
+      },
+      {
+        "Text": "\u308C",
+        "X": 1353.5,
+        "Y": 170.5,
+        "Width": 13,
+        "Height": 13.5
+      },
+      {
+        "Text": "\u305F",
+        "X": 1367.5,
+        "Y": 170.5,
+        "Width": 12.5,
+        "Height": 13
+      },
+      {
+        "Text": "\u90E8",
+        "X": 1381.5,
+        "Y": 170.5,
+        "Width": 12.5,
+        "Height": 13.5
+      },
+      {
+        "Text": "\u968A",
+        "X": 1395.5,
+        "Y": 170.5,
+        "Width": 13,
+        "Height": 13.5
+      },
+      {
+        "Text": "\u3092",
+        "X": 1410.5,
+        "Y": 170.5,
+        "Width": 11,
+        "Height": 13.5
+      },
+      {
+        "Text": "\u78BA",
+        "X": 1423,
+        "Y": 170.5,
+        "Width": 13,
+        "Height": 13.5
+      },
+      {
+        "Text": "\u8A8D",
+        "X": 1437.5,
+        "Y": 171,
+        "Width": 13,
+        "Height": 13
+      },
+      {
+        "Text": "\u3067",
+        "X": 1451.5,
+        "Y": 171.5,
+        "Width": 12.5,
+        "Height": 12.5
+      },
+      {
+        "Text": "\u304D",
+        "X": 1466.5,
+        "Y": 170.5,
+        "Width": 10.5,
+        "Height": 13.5
+      },
+      {
+        "Text": "\u307E",
+        "X": 1480.5,
+        "Y": 170.5,
+        "Width": 10.5,
+        "Height": 13
+      },
+      {
+        "Text": "\u3059",
+        "X": 1493.5,
+        "Y": 170.5,
+        "Width": 12.5,
+        "Height": 13.5
+      },
+      {
+        "Text": "6",
+        "X": 1397.5,
+        "Y": 284.5,
+        "Width": 8.5,
+        "Height": 23.5
+      },
+      {
+        "Text": "\u8ABF",
+        "X": 1407,
+        "Y": 284.5,
+        "Width": 23,
+        "Height": 26
+      },
+      {
+        "Text": "3",
+        "X": 1431,
+        "Y": 284.5,
+        "Width": 9,
+        "Height": 23.5
+      },
+      {
+        "Text": "0",
+        "X": 1115,
+        "Y": 339,
+        "Width": 32,
+        "Height": 32.5
+      },
+      {
+        "Text": "\u3002",
+        "X": 1119.5,
+        "Y": 381.5,
+        "Width": 18.5,
+        "Height": 14.5
+      },
+      {
+        "Text": "xSC",
+        "X": 1223.5,
+        "Y": 347.5,
+        "Width": 18.5,
+        "Height": 12.5
+      },
+      {
+        "Text": "\u5E78",
+        "X": 1404,
+        "Y": 899.5,
+        "Width": 19,
+        "Height": 22.5
+      },
+      {
+        "Text": "\u4E00",
+        "X": 1447.5,
+        "Y": 901.5,
+        "Width": 2,
+        "Height": 19.5
+      },
+      {
+        "Text": "\u3007",
+        "X": 1472.5,
+        "Y": 899.5,
+        "Width": 23.5,
+        "Height": 22.5
+      },
+      {
+        "Text": "\u6703",
+        "X": 1504.5,
+        "Y": 965,
+        "Width": 15.5,
+        "Height": 27.5
+      },
+      {
+        "Text": "\u2193",
+        "X": 1521,
+        "Y": 964.5,
+        "Width": 15,
+        "Height": 27.5
+      },
+      {
+        "Text": "\u81EA",
+        "X": 1549.5,
+        "Y": 967.5,
+        "Width": 15.5,
+        "Height": 20
+      },
+      {
+        "Text": "\u52D5",
+        "X": 1569,
+        "Y": 968,
+        "Width": 18.5,
+        "Height": 19.5
+      },
+      {
+        "Text": "\u7DE8",
+        "X": 1589.5,
+        "Y": 968,
+        "Width": 19.5,
+        "Height": 19.5
+      },
+      {
+        "Text": "\u6210",
+        "X": 1610.5,
+        "Y": 968,
+        "Width": 20,
+        "Height": 19
+      },
+      {
+        "Text": "\u30ED",
+        "X": 1333,
+        "Y": 1146.5,
+        "Width": 14.5,
+        "Height": 14.5
+      },
+      {
+        "Text": "\u30D3",
+        "X": 1353,
+        "Y": 1143.5,
+        "Width": 15,
+        "Height": 17.5
+      },
+      {
+        "Text": "\u30FC",
+        "X": 1369.5,
+        "Y": 1152,
+        "Width": 17.5,
+        "Height": 3
+      },
+      {
+        "Text": "\u30A4",
+        "X": 1418.5,
+        "Y": 1144.5,
+        "Width": 15.5,
+        "Height": 17.5
+      },
+      {
+        "Text": "\u30F3",
+        "X": 1438.5,
+        "Y": 1145.5,
+        "Width": 16.5,
+        "Height": 16
+      },
+      {
+        "Text": "\u3079",
+        "X": 1456.5,
+        "Y": 1144.5,
+        "Width": 18,
+        "Height": 14.5
+      },
+      {
+        "Text": "\u30F3",
+        "X": 1477,
+        "Y": 1145.5,
+        "Width": 16,
+        "Height": 16
+      },
+      {
+        "Text": "\u30C8",
+        "X": 1499.5,
+        "Y": 1144.5,
+        "Width": 11,
+        "Height": 17.5
+      },
+      {
+        "Text": "\u30EA",
+        "X": 1516.5,
+        "Y": 1144.5,
+        "Width": 11.5,
+        "Height": 17.5
+      },
+      {
+        "Text": "\u968A",
+        "X": 1552.5,
+        "Y": 1144.5,
+        "Width": 17.5,
+        "Height": 18
+      },
+      {
+        "Text": "\u54E1",
+        "X": 1572,
+        "Y": 1144.5,
+        "Width": 16.5,
+        "Height": 18
+      },
+      {
+        "Text": "\u52DF",
+        "X": 1591,
+        "Y": 1144.5,
+        "Width": 17,
+        "Height": 18
+      },
+      {
+        "Text": "\u96C6",
+        "X": 1609.5,
+        "Y": 1144.5,
+        "Width": 17.5,
+        "Height": 18
+      }
+    ]
+  },
+  "Vision": {
+    "Runtime": "Microsoft Foundry Local 0.10.3",
+    "Model": "qwen3-vl-2b-instruct-cuda-gpu:2",
+    "ProviderEndpoint": "http://127.0.0.1:59899",
+    "InputMode": "overlapping original-scale tiles",
+    "TileWidth": 640,
+    "TileHeight": 560,
+    "TileOverlap": 64,
+    "TileCount": 6,
+    "Status": "Completed",
+    "Failure": "None",
+    "FailureDetail": null,
+    "Normalization": "DuplicateLabelsCollapsed",
+    "Labels": [
+      "\u90E8\u968A\u7DE8\u6210",
+      "01",
+      "CAMPAIGN",
+      "02",
+      "03",
+      "04",
+      "05",
+      "X",
+      "\u30D7\u30EC\u30FC\u30AB",
+      "401",
+      "\u30DF\u30F3\u30C8",
+      "\u30EA\u30B9\u30BF\u30EB\u30CA",
+      "\u81EA\u52D5\u7DE8\u6210"
+    ],
+    "RawOutput": "",
+    "ElapsedMs": 4466,
+    "RequestBytes": 1267258,
+    "InputTokens": 2784,
+    "OutputTokens": 173
+  },
+  "VisionTiles": [
+    {
+      "Index": 0,
+      "X": 0,
+      "Y": 0,
+      "Width": 640,
+      "Height": 560,
+      "Sha256": "f093b77406d740111854ea3794954b5e7d9aed1606193a8695301daa2b39eb3c",
+      "Status": "Completed",
+      "Failure": "None",
+      "FailureDetail": null,
+      "Normalization": "None",
+      "Labels": [
+        "\u90E8\u968A\u7DE8\u6210"
+      ],
+      "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: [\n    \u0022\u90E8\u968A\u7DE8\u6210\u0022\n  ]\n}\n\u0060\u0060\u0060",
+      "ElapsedMs": 638,
+      "RequestBytes": 17923,
+      "InputTokens": 464,
+      "OutputTokens": 20
+    },
+    {
+      "Index": 1,
+      "X": 576,
+      "Y": 0,
+      "Width": 640,
+      "Height": 560,
+      "Sha256": "363115f1994558a2e10a3fda6f6252d1dc318ffc5cd32de34cd1ebd7ec1e215a",
+      "Status": "Completed",
+      "Failure": "None",
+      "FailureDetail": null,
+      "Normalization": "None",
+      "Labels": [
+        "01"
+      ],
+      "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: [\n    \u002201\u0022\n  ]\n}\n\u0060\u0060\u0060",
+      "ElapsedMs": 572,
+      "RequestBytes": 92684,
+      "InputTokens": 464,
+      "OutputTokens": 18
+    },
+    {
+      "Index": 2,
+      "X": 1152,
+      "Y": 0,
+      "Width": 640,
+      "Height": 560,
+      "Sha256": "5f4a56d2e1192192b9489947ce56499fdc995ef113ab684369fdc4c258a9e258",
+      "Status": "Completed",
+      "Failure": "None",
+      "FailureDetail": null,
+      "Normalization": "None",
+      "Labels": [
+        "CAMPAIGN",
+        "01",
+        "02",
+        "03",
+        "04",
+        "05"
+      ],
+      "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: [\n    \u0022CAMPAIGN\u0022,\n    \u002201\u0022,\n    \u002202\u0022,\n    \u002203\u0022,\n    \u002204\u0022,\n    \u002205\u0022\n  ]\n}\n\u0060\u0060\u0060",
+      "ElapsedMs": 1040,
+      "RequestBytes": 376845,
+      "InputTokens": 464,
+      "OutputTokens": 44
+    },
+    {
+      "Index": 4,
+      "X": 2080,
+      "Y": 0,
+      "Width": 640,
+      "Height": 560,
+      "Sha256": "c04266c68d56d2116ea53b79171cf1596f43a50c7beb6e7dc380f24013609b04",
+      "Status": "Completed",
+      "Failure": "None",
+      "FailureDetail": null,
+      "Normalization": "None",
+      "Labels": [
+        "X"
+      ],
+      "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: [\n    \u0022X\u0022\n  ]\n}\n\u0060\u0060\u0060",
+      "ElapsedMs": 498,
+      "RequestBytes": 18776,
+      "InputTokens": 464,
+      "OutputTokens": 17
+    },
+    {
+      "Index": 7,
+      "X": 1152,
+      "Y": 496,
+      "Width": 640,
+      "Height": 560,
+      "Sha256": "9cbf8cf6a1def40e95ac1bf84886d23436dc02884e73557c439582f16234b1bc",
+      "Status": "Completed",
+      "Failure": "None",
+      "FailureDetail": null,
+      "Normalization": "DuplicateLabelsCollapsed",
+      "Labels": [
+        "\u30D7\u30EC\u30FC\u30AB",
+        "401",
+        "\u30DF\u30F3\u30C8",
+        "\u30EA\u30B9\u30BF\u30EB\u30CA",
+        "\u81EA\u52D5\u7DE8\u6210"
+      ],
+      "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: [\n    \u0022\u30D7\u30EC\u30FC\u30AB\u0022,\n    \u0022401\u0022,\n    \u0022\u30DF\u30F3\u30C8\u0022,\n    \u0022401\u0022,\n    \u0022\u30EA\u30B9\u30BF\u30EB\u30CA\u0022,\n    \u0022401\u0022,\n    \u0022\u81EA\u52D5\u7DE8\u6210\u0022\n  ]\n}\n\u0060\u0060\u0060",
+      "ElapsedMs": 1179,
+      "RequestBytes": 396499,
+      "InputTokens": 464,
+      "OutputTokens": 55
+    },
+    {
+      "Index": 12,
+      "X": 1152,
+      "Y": 637,
+      "Width": 640,
+      "Height": 560,
+      "Sha256": "aba7c1259b42f2ddaf7e2e9f9f05e52218aba2fdaca11856becda43d6410c5e7",
+      "Status": "Completed",
+      "Failure": "None",
+      "FailureDetail": null,
+      "Normalization": "None",
+      "Labels": [
+        "\u81EA\u52D5\u7DE8\u6210"
+      ],
+      "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: [\n    \u0022\u81EA\u52D5\u7DE8\u6210\u0022\n  ]\n}\n\u0060\u0060\u0060",
+      "ElapsedMs": 539,
+      "RequestBytes": 364531,
+      "InputTokens": 464,
+      "OutputTokens": 19
+    }
+  ],
+  "GroundedCandidates": [
+    {
+      "Label": "\u90E8\u968A\u7DE8\u6210",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "\u90E8\u968A\u7DE8\u6210",
+        "X": 20,
+        "Y": 64.5,
+        "Width": 63.5,
+        "Height": 15.5
+      },
+      "RecognizerLanguage": "ja",
+      "MatchKind": "ExactUnique",
+      "Similarity": 1,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "01",
+      "Status": "Unknown",
+      "MatchCount": 4,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "CAMPAIGN",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "CAMPAIGN",
+        "X": 1256,
+        "Y": 122.5,
+        "Width": 205.5,
+        "Height": 28
+      },
+      "RecognizerLanguage": "ja",
+      "MatchKind": "ExactUnique",
+      "Similarity": 1,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "02",
+      "Status": "Unknown",
+      "MatchCount": 4,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "03",
+      "Status": "Unknown",
+      "MatchCount": 7,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "04",
+      "Status": "Unknown",
+      "MatchCount": 8,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "05",
+      "Status": "Unknown",
+      "MatchCount": 4,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "X",
+      "Status": "Unknown",
+      "MatchCount": 0,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "\u30D7\u30EC\u30FC\u30AB",
+      "Status": "Unknown",
+      "MatchCount": 0,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "401",
+      "Status": "Unknown",
+      "MatchCount": 0,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "\u30DF\u30F3\u30C8",
+      "Status": "Unknown",
+      "MatchCount": 4,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "\u30EA\u30B9\u30BF\u30EB\u30CA",
+      "Status": "Unknown",
+      "MatchCount": 0,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    },
+    {
+      "Label": "\u81EA\u52D5\u7DE8\u6210",
+      "Status": "Unknown",
+      "MatchCount": 17,
+      "Box": null,
+      "RecognizerLanguage": null,
+      "MatchKind": null,
+      "Similarity": null,
+      "Rule": "same-frame OCR span: exact unique; similarity \u003E= 0.85 with runner-up margin \u003E= 0.15; or anchored tracking \u003E= 0.70"
+    }
+  ],
+  "Network": {
+    "StructuralBoundary": "IP literal loopback HTTP only; proxy disabled; redirect disabled",
+    "ObservedProcessIds": [
+      42472,
+      25628
+    ],
+    "Connections": [
+      {
+        "ProcessId": 25628,
+        "State": "Listen",
+        "LocalAddress": "127.0.0.1",
+        "LocalPort": 59899,
+        "RemoteAddress": "0.0.0.0",
+        "RemotePort": 0
+      },
+      {
+        "ProcessId": 25628,
+        "State": "Established",
+        "LocalAddress": "127.0.0.1",
+        "LocalPort": 59899,
+        "RemoteAddress": "127.0.0.1",
+        "RemotePort": 61726
+      },
+      {
+        "ProcessId": 42472,
+        "State": "Established",
+        "LocalAddress": "127.0.0.1",
+        "LocalPort": 61726,
+        "RemoteAddress": "127.0.0.1",
+        "RemotePort": 59899
+      }
+    ],
+    "NonLoopbackEstablishedCount": 0,
+    "HasNonLoopbackEstablished": false,
+    "ExternalAiTransmissionCount": 0,
+    "ExternalAiApiKeyCount": 0,
+    "ExternalAiApiCostUsd": 0
+  },
+  "Input": {
+    "DispatchCount": 0,
+    "Status": "ObserveOnly"
+  }
+}

@@ -7,7 +7,7 @@
   },
   "vectors": [
     {
-      "name": "hello-all-capabilities",
+      "name": "hello-baseline-capabilities",
       "kind": "Hello",
       "sequence": 4660,
       "payloadHex": "01 00 00 07 00",
@@ -54,6 +54,13 @@
       "sequence": 4662,
       "payloadHex": "03 03",
       "frameHex": "4F 4C 01 07 36 12 02 00 03 03 20 1B"
+    },
+    {
+      "name": "mouse-delta-positive-negative-wheel",
+      "kind": "MouseDelta",
+      "sequence": 4664,
+      "payloadHex": "7F 81 01",
+      "frameHex": "4F 4C 01 08 38 12 03 00 7F 81 01 F3 02"
     }
   ]
 }

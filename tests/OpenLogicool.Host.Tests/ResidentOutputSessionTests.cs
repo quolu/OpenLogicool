@@ -21,6 +21,29 @@ public sealed class ResidentOutputSessionTests
     }
 
     [Fact]
+    public void Pointer_session_negotiates_relative_mouse_and_keeps_protocol_available_with_heartbeat()
+    {
+        var exchange = new FakeExchange();
+        using var session = new SerialHidResidentOutputSession(
+            exchange,
+            new SerialHidSemanticVersion(1, 1, 0),
+            TimeSpan.FromMilliseconds(80),
+            TimeSpan.FromMilliseconds(10),
+            SerialHidProtocolV1.AllCapabilities);
+
+        session.Start();
+        Assert.True(SpinWait.SpinUntil(
+            () => exchange.RequestKinds().Contains(SerialHidMessageKind.Heartbeat),
+            TimeSpan.FromSeconds(1)));
+        session.Protocol.SendMouseDelta(3, -2, 1);
+
+        Assert.Equal(SerialHidProtocolV1.AllCapabilities, session.Protocol.ReadyInfo.Capabilities);
+        Assert.Contains(SerialHidMessageKind.Heartbeat, exchange.RequestKinds());
+        Assert.Contains(SerialHidMessageKind.MouseDelta, exchange.RequestKinds());
+        Assert.Null(session.BackgroundFailure);
+    }
+
+    [Fact]
     public void Handled_stop_releases_owned_state_then_all_up_ack_then_closes_transport()
     {
         var exchange = new FakeExchange();
@@ -130,7 +153,7 @@ public sealed class ResidentOutputSessionTests
                 return SerialHidProtocolV1.Encode(
                     SerialHidMessageKind.Ready,
                     request.Sequence,
-                    [1, 0, 0, 1, 7, 0, 6, 150, 0]);
+                    [1, 1, 0, 1, request.Payload[3], request.Payload[4], 6, 150, 0]);
             }
 
             return SerialHidProtocolV1.Encode(SerialHidMessageKind.Ack, request.Sequence, []);

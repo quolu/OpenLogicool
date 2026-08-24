@@ -22,6 +22,35 @@ internal static class WindowsOcrSmoke
 
     private static async Task<int> RunAsync(string imagePath)
     {
+        var snapshot = await RecognizeImageAsync(imagePath);
+        var file = await StorageFile.GetFileFromPathAsync(imagePath);
+        using var stream = await file.OpenAsync(FileAccessMode.Read);
+        var decoder = await BitmapDecoder.CreateAsync(stream);
+        Console.WriteLine(JsonSerializer.Serialize(new
+        {
+            Probe = "windows-ocr-smoke",
+            Image = imagePath,
+            Width = decoder.PixelWidth,
+            Height = decoder.PixelHeight,
+            snapshot.RecognizerLanguage,
+            snapshot.MaxImageDimension,
+            snapshot.ElapsedMs,
+            snapshot.Text,
+            snapshot.VisualLines,
+            snapshot.Words,
+        }));
+        return 0;
+    }
+
+    internal static async Task<WindowsOcrSnapshot> RecognizeImageAsync(
+        string imagePath,
+        double coordinateScale = 1)
+    {
+        if (coordinateScale <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(coordinateScale));
+        }
+
         var file = await StorageFile.GetFileFromPathAsync(imagePath);
         using var stream = await file.OpenAsync(FileAccessMode.Read);
         var decoder = await BitmapDecoder.CreateAsync(stream);
@@ -31,25 +60,28 @@ internal static class WindowsOcrSmoke
         var engine = OcrEngine.TryCreateFromUserProfileLanguages();
         if (engine is null)
         {
-            Console.Error.WriteLine("Windows OCR engine is unavailable.");
-            return 2;
+            throw new InvalidOperationException("Windows OCR engine is unavailable.");
         }
 
         var snapshot = await RecognizeAsync(engine, bitmap);
-        Console.WriteLine(JsonSerializer.Serialize(new
+        if (coordinateScale == 1)
         {
-            Probe = "windows-ocr-smoke",
-            Image = imagePath,
-            Width = bitmap.PixelWidth,
-            Height = bitmap.PixelHeight,
-            snapshot.RecognizerLanguage,
-            snapshot.MaxImageDimension,
-            snapshot.ElapsedMs,
-            snapshot.Text,
-            snapshot.VisualLines,
-            snapshot.Words,
-        }));
-        return 0;
+            return snapshot;
+        }
+
+        var mappedWords = snapshot.Words
+            .Select(word => new WindowsOcrWord(
+                word.Text,
+                word.X / coordinateScale,
+                word.Y / coordinateScale,
+                word.Width / coordinateScale,
+                word.Height / coordinateScale))
+            .ToArray();
+        return snapshot with
+        {
+            VisualLines = BuildVisualLines(mappedWords),
+            Words = mappedWords,
+        };
     }
 
     internal static async Task<WindowsOcrSnapshot> RecognizeFrameAsync(CapturedFrame frame)

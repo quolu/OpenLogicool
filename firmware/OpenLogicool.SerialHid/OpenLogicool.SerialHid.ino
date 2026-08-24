@@ -3,16 +3,18 @@
 
 #include "OpenLogicoolHid.h"
 #include "FirmwareLease.h"
+#include "FirmwareMouseState.h"
 #include "ProtocolV1.h"
 
 using openlogicool::OpenLogicoolHid;
 using openlogicool::FirmwareLease;
+using openlogicool::FirmwareMouseState;
 using namespace openlogicool::protocol_v1;
 
 namespace {
 
 constexpr uint8_t kFirmwareVersionMajor = 1;
-constexpr uint8_t kFirmwareVersionMinor = 0;
+constexpr uint8_t kFirmwareVersionMinor = 1;
 constexpr uint8_t kFirmwareVersionPatch = 0;
 
 uint8_t inputFrame[kMaxFrameLength];
@@ -23,6 +25,7 @@ bool releasePending = false;
 bool usbWasConfigured = false;
 uint16_t lastAcceptedSequence = 0;
 FirmwareLease lease;
+FirmwareMouseState mouseState;
 
 void ResetReader() {
   inputLength = 0;
@@ -33,6 +36,7 @@ void ResetProtocolState() {
   protocolReady = false;
   lease.Reset();
   lastAcceptedSequence = 0;
+  mouseState.Reset();
   ResetReader();
 }
 
@@ -83,7 +87,8 @@ void ProcessHello(const FrameView& frame) {
     return;
   }
   const uint16_t requestedCapabilities = ReadUInt16LittleEndian(frame.payload + 3);
-  if ((requestedCapabilities & ~kSupportedCapabilities) != 0) {
+  uint16_t negotiatedCapabilities = 0;
+  if (!TryNegotiateCapabilities(requestedCapabilities, negotiatedCapabilities)) {
     SendFault(FaultCode::UnsupportedCapability, frame.sequence, static_cast<uint8_t>(frame.kind));
     return;
   }
@@ -108,7 +113,7 @@ void ProcessHello(const FrameView& frame) {
       0,
       0,
   };
-  WriteUInt16LittleEndian(ready + 4, kSupportedCapabilities);
+  WriteUInt16LittleEndian(ready + 4, negotiatedCapabilities);
   WriteUInt16LittleEndian(ready + 7, kLeaseMilliseconds);
   SendFrame(MessageKind::Ready, frame.sequence, ready, sizeof(ready));
 }
@@ -119,6 +124,26 @@ void ProcessSetState(const FrameView& frame) {
     return;
   }
   if (!OpenLogicoolHid.Apply(frame.payload[0], frame.payload + 1, frame.payload[7])) {
+    EnterFailClosedRelease();
+    SendFault(FaultCode::InternalFault, frame.sequence, static_cast<uint8_t>(frame.kind));
+    return;
+  }
+  mouseState.CommitButtons(frame.payload[7]);
+  lastAcceptedSequence = frame.sequence;
+  ArmLease();
+  SendAck(frame.sequence);
+}
+
+void ProcessMouseDelta(const FrameView& frame) {
+  if (!IsValidMouseDeltaPayload(frame.payload, frame.payloadLength)) {
+    SendFault(FaultCode::InvalidPayload, frame.sequence, static_cast<uint8_t>(frame.kind));
+    return;
+  }
+  if (!OpenLogicoolHid.ApplyMouseDelta(
+          mouseState.Buttons(),
+          static_cast<int8_t>(frame.payload[0]),
+          static_cast<int8_t>(frame.payload[1]),
+          static_cast<int8_t>(frame.payload[2]))) {
     EnterFailClosedRelease();
     SendFault(FaultCode::InternalFault, frame.sequence, static_cast<uint8_t>(frame.kind));
     return;
@@ -137,6 +162,7 @@ void ProcessAllUp(const FrameView& frame) {
     SendFault(FaultCode::InternalFault, frame.sequence, static_cast<uint8_t>(frame.kind));
     return;
   }
+  mouseState.Reset();
   lastAcceptedSequence = frame.sequence;
   ArmLease();
   SendAck(frame.sequence);
@@ -184,6 +210,9 @@ void ProcessFrame(const uint8_t* bytes, uint16_t length) {
       return;
     case MessageKind::Heartbeat:
       ProcessHeartbeat(frame);
+      return;
+    case MessageKind::MouseDelta:
+      ProcessMouseDelta(frame);
       return;
     default:
       SendFault(FaultCode::UnknownMessage, frame.sequence, static_cast<uint8_t>(frame.kind));

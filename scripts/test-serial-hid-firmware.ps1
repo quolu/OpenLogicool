@@ -36,7 +36,7 @@ try {
     $vectorsPath = Join-Path $firmwareInclude 'protocol-v1-golden-vectors.json'
     $vectors = Get-Content -Raw -LiteralPath $vectorsPath | ConvertFrom-Json
     $kindByName = @{
-        Hello = 1; Ready = 2; SetState = 3; AllUp = 4; Heartbeat = 5; Ack = 6; Fault = 7
+        Hello = 1; Ready = 2; SetState = 3; AllUp = 4; Heartbeat = 5; Ack = 6; Fault = 7; MouseDelta = 8
     }
     foreach ($vector in $vectors.vectors) {
         $compactFrame = [string]$vector.frameHex -replace '\s', ''
@@ -57,7 +57,11 @@ try {
     if ($LASTEXITCODE -ne 0 -or $faults -ne 'faults|ok|checksum|version') {
         throw "firmware decoder fault classification failed: $faults"
     }
-    Write-Output "Firmware native tests: $($vectors.vectors.Count) golden vectors, checksum/version faults, lease 150ms"
+    $mouseDelta = (& $executable mouse-delta).Trim()
+    if ($LASTEXITCODE -ne 0 -or $mouseDelta -ne 'mouse-delta|ok|range|negotiation') {
+        throw "firmware mouse delta contract failed: $mouseDelta"
+    }
+    Write-Output "Firmware native tests: $($vectors.vectors.Count) golden vectors, checksum/version faults, lease 150ms, mouse delta negotiation"
 }
 finally {
     if (Test-Path -LiteralPath $temporaryDirectory) {

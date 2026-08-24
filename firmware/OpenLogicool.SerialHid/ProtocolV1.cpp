@@ -28,7 +28,7 @@ uint16_t ComputeCrc(const uint8_t* data, uint16_t length) {
 
 bool IsKnownMessageKind(uint8_t rawKind) {
   return rawKind >= static_cast<uint8_t>(MessageKind::Hello) &&
-         rawKind <= static_cast<uint8_t>(MessageKind::Fault);
+         rawKind <= static_cast<uint8_t>(MessageKind::MouseDelta);
 }
 
 bool IsValidSetStatePayload(const uint8_t* payload, uint16_t length) {
@@ -50,6 +50,18 @@ bool IsValidSetStatePayload(const uint8_t* payload, uint16_t length) {
     previous = usage;
   }
 
+  return true;
+}
+
+bool IsValidMouseDeltaPayload(const uint8_t* payload, uint16_t length) {
+  return length == 3 && payload[0] != 0x80 && payload[1] != 0x80 && payload[2] != 0x80;
+}
+
+bool TryNegotiateCapabilities(uint16_t requested, uint16_t& negotiated) {
+  if ((requested & ~kSupportedCapabilities) != 0) {
+    return false;
+  }
+  negotiated = requested;
   return true;
 }
 

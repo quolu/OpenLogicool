@@ -8,7 +8,7 @@ public sealed class SerialHidEmitterTests
     private static readonly TimeSpan Timeout = TimeSpan.FromMilliseconds(80);
 
     [Fact]
-    public void Connect_sends_hello_and_accepts_matching_ready_contract()
+    public void Default_connect_preserves_baseline_capability_contract()
     {
         var exchange = new ScriptedExchange(Ready);
 
@@ -21,9 +21,60 @@ public sealed class SerialHidEmitterTests
         Assert.Equal(SerialHidMessageKind.Hello, hello.Kind);
         Assert.Equal((ushort)1, hello.Sequence);
         Assert.Equal([2, 3, 4, 7, 0], hello.Payload);
-        Assert.Equal(new SerialHidSemanticVersion(1, 0, 2), session.ReadyInfo.FirmwareVersion);
-        Assert.Equal(SerialHidProtocolV1.AllCapabilities, session.ReadyInfo.Capabilities);
+        Assert.Equal(new SerialHidSemanticVersion(1, 1, 0), session.ReadyInfo.FirmwareVersion);
+        Assert.Equal(SerialHidProtocolV1.BaselineCapabilities, session.ReadyInfo.Capabilities);
         Assert.Equal((ushort)150, session.ReadyInfo.LeaseMilliseconds);
+    }
+
+    [Fact]
+    public void Pointer_session_requests_relative_capability_and_sends_signed_delta_once()
+    {
+        var exchange = new ScriptedExchange(Ready, Ack);
+        var session = SerialHidProtocolSession.Connect(
+            exchange,
+            new SerialHidSemanticVersion(1, 1, 0),
+            Timeout,
+            SerialHidProtocolV1.AllCapabilities);
+
+        var sequence = session.SendMouseDelta(127, -127, 1);
+
+        var hello = SerialHidProtocolV1.Decode(exchange.Requests[0]);
+        Assert.Equal([1, 1, 0, 0x0F, 0], hello.Payload);
+        var delta = SerialHidProtocolV1.Decode(exchange.Requests[1]);
+        Assert.Equal(SerialHidMessageKind.MouseDelta, delta.Kind);
+        Assert.Equal([0x7F, 0x81, 0x01], delta.Payload);
+        Assert.Equal((ushort)2, sequence);
+    }
+
+    [Fact]
+    public void Mouse_delta_requires_capability_before_wire()
+    {
+        var exchange = new ScriptedExchange(Ready);
+        var session = Connect(exchange);
+
+        var fault = Assert.Throws<SerialHidSessionFaultException>(() => session.SendMouseDelta(1, 0, 0));
+
+        Assert.Equal(SerialHidSessionFaultKind.UnsupportedCapability, fault.Kind);
+        Assert.Single(exchange.Requests);
+        Assert.Null(session.TerminalFault);
+    }
+
+    [Fact]
+    public void Mouse_delta_timeout_is_terminal_outcome_unknown_and_never_retried()
+    {
+        var exchange = new ScriptedExchange(Ready, _ => throw new TimeoutException("fake timeout"));
+        var session = SerialHidProtocolSession.Connect(
+            exchange,
+            new SerialHidSemanticVersion(1, 1, 0),
+            Timeout,
+            SerialHidProtocolV1.AllCapabilities);
+
+        var fault = Assert.Throws<SerialHidSessionFaultException>(() => session.SendMouseDelta(5, -3, 0));
+        var unavailable = Assert.Throws<SerialHidSessionFaultException>(() => session.SendMouseDelta(5, -3, 0));
+
+        Assert.Equal(SerialHidSessionFaultKind.Timeout, fault.Kind);
+        Assert.Equal(SerialHidSessionFaultKind.Unavailable, unavailable.Kind);
+        Assert.Equal(2, exchange.Requests.Count);
     }
 
     [Fact]
@@ -223,8 +274,13 @@ public sealed class SerialHidEmitterTests
     private static MappedOutputEdge Down(string output) => new(output, PhysicalInputEdge.Down);
     private static MappedOutputEdge Up(string output) => new(output, PhysicalInputEdge.Up);
 
-    private static byte[] Ready(byte[] request) =>
-        ReadyWithCapabilities(request, SerialHidProtocolV1.AllCapabilities);
+    private static byte[] Ready(byte[] request)
+    {
+        var hello = SerialHidProtocolV1.Decode(request);
+        return ReadyWithCapabilities(
+            request,
+            (SerialHidCapability)System.Buffers.Binary.BinaryPrimitives.ReadUInt16LittleEndian(hello.Payload.AsSpan(3)));
+    }
 
     private static byte[] ReadyWithCapabilities(byte[] request, SerialHidCapability capabilities)
     {
@@ -232,7 +288,7 @@ public sealed class SerialHidEmitterTests
         return SerialHidProtocolV1.Encode(
             SerialHidMessageKind.Ready,
             frame.Sequence,
-            [1, 0, 2, SerialHidProtocolV1.Version, (byte)capabilities, (byte)((ushort)capabilities >> 8), 6, 150, 0]);
+            [1, 1, 0, SerialHidProtocolV1.Version, (byte)capabilities, (byte)((ushort)capabilities >> 8), 6, 150, 0]);
     }
 
     private static byte[] Ack(byte[] request)

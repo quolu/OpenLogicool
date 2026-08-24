@@ -8,6 +8,7 @@ public enum SerialHidCapability : ushort
     Keyboard6Kro = 0x0001,
     MouseButtons = 0x0002,
     LeaseRelease = 0x0004,
+    RelativeMouse = 0x0008,
 }
 
 public enum SerialHidMessageKind : byte
@@ -19,6 +20,7 @@ public enum SerialHidMessageKind : byte
     Heartbeat = 0x05,
     Ack = 0x06,
     Fault = 0x07,
+    MouseDelta = 0x08,
 }
 
 public enum SerialHidFaultCode : byte
@@ -61,11 +63,14 @@ public static class SerialHidProtocolV1
     public const int CrcLength = 2;
     public const int MaximumPayloadLength = 32;
     public const int SetStatePayloadLength = 8;
+    public const int MouseDeltaPayloadLength = 3;
     public const ushort FirstRequestSequence = 1;
     public const ushort LeaseMilliseconds = 150;
     public const byte MaximumNormalKeys = 6;
-    public const SerialHidCapability AllCapabilities =
+    public const SerialHidCapability BaselineCapabilities =
         SerialHidCapability.Keyboard6Kro | SerialHidCapability.MouseButtons | SerialHidCapability.LeaseRelease;
+    public const SerialHidCapability AllCapabilities =
+        BaselineCapabilities | SerialHidCapability.RelativeMouse;
 
     public static ushort NextRequestSequence(ushort current) =>
         current is 0 or ushort.MaxValue ? FirstRequestSequence : (ushort)(current + 1);
@@ -170,6 +175,7 @@ public static class SerialHidProtocolV1
             SerialHidMessageKind.Heartbeat => 0,
             SerialHidMessageKind.Ack => 0,
             SerialHidMessageKind.Fault => 2,
+            SerialHidMessageKind.MouseDelta => MouseDeltaPayloadLength,
             _ => throw Fault(SerialHidFaultCode.UnknownMessage, sequence, rawKind, $"message kind 0x{rawKind:X2} は未対応です。"),
         };
 
@@ -185,6 +191,10 @@ public static class SerialHidProtocolV1
         if (kind == SerialHidMessageKind.SetState)
         {
             ValidateSetState(payload, sequence, rawKind);
+        }
+        else if (kind == SerialHidMessageKind.MouseDelta)
+        {
+            ValidateMouseDelta(payload, sequence, rawKind);
         }
         else if (kind == SerialHidMessageKind.Hello)
         {
@@ -205,6 +215,18 @@ public static class SerialHidProtocolV1
                  && !Enum.IsDefined(typeof(SerialHidFaultCode), payload[0]))
         {
             throw Fault(SerialHidFaultCode.InvalidPayload, sequence, rawKind, "FAULT codeが未定義です。");
+        }
+    }
+
+    private static void ValidateMouseDelta(ReadOnlySpan<byte> payload, ushort sequence, byte rawKind)
+    {
+        if (payload.IndexOf((byte)0x80) >= 0)
+        {
+            throw Fault(
+                SerialHidFaultCode.InvalidPayload,
+                sequence,
+                rawKind,
+                "MOUSE_DELTAのdx、dy、wheelはそれぞれ-127..127でなければなりません。");
         }
     }
 

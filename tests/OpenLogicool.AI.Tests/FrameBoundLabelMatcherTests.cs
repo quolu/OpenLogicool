@@ -37,4 +37,13 @@ public sealed class FrameBoundLabelMatcherTests
         Assert.False(FrameBoundLabelMatcher.Equals("Open Event", "open-event"));
         Assert.False(FrameBoundLabelMatcher.Equals("EventShop", "Event"));
     }
+
+    [Fact]
+    public void OCRの少数誤読を正規化Levenshtein類似度で測る()
+    {
+        Assert.Equal(1, FrameBoundLabelMatcher.Similarity("TOUCH TO CONTINUE", "touch to continue"));
+        Assert.True(FrameBoundLabelMatcher.Similarity("TOIJCHTOCONTINUE", "TOUCH TO CONTINUE") >= 0.85);
+        Assert.True(FrameBoundLabelMatcher.Similarity("ログアウト", "TOUCH TO CONTINUE") < 0.5);
+        Assert.Equal(0, FrameBoundLabelMatcher.Similarity("OpenEvent", "!!!"));
+    }
 }

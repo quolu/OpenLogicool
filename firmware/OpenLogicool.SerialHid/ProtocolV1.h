@@ -13,7 +13,7 @@ constexpr uint16_t kHeaderLength = 8;
 constexpr uint16_t kCrcLength = 2;
 constexpr uint16_t kMaxFrameLength = kHeaderLength + kMaxPayloadLength + kCrcLength;
 constexpr uint16_t kLeaseMilliseconds = 150;
-constexpr uint16_t kSupportedCapabilities = 0x0007;
+constexpr uint16_t kSupportedCapabilities = 0x000F;
 constexpr uint8_t kMaxNormalKeys = 6;
 
 enum class MessageKind : uint8_t {
@@ -24,6 +24,7 @@ enum class MessageKind : uint8_t {
   Heartbeat = 0x05,
   Ack = 0x06,
   Fault = 0x07,
+  MouseDelta = 0x08,
 };
 
 enum class FaultCode : uint8_t {
@@ -50,6 +51,8 @@ void WriteUInt16LittleEndian(uint8_t* destination, uint16_t value);
 uint16_t ComputeCrc(const uint8_t* data, uint16_t length);
 bool IsKnownMessageKind(uint8_t rawKind);
 bool IsValidSetStatePayload(const uint8_t* payload, uint16_t length);
+bool IsValidMouseDeltaPayload(const uint8_t* payload, uint16_t length);
+bool TryNegotiateCapabilities(uint16_t requested, uint16_t& negotiated);
 
 bool DecodeFrame(
     const uint8_t* frame,

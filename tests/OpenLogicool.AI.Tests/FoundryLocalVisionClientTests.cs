@@ -39,6 +39,7 @@ public sealed class FoundryLocalVisionClientTests
 
         Assert.Equal(FoundryVisionStatus.Completed, result.Status);
         Assert.Equal(["OpenEvent"], result.Labels);
+        Assert.Equal(FoundryVisionNormalization.None, result.Normalization);
         Assert.Equal(12, result.InputTokens);
         Assert.Equal(6, result.OutputTokens);
         Assert.Equal("http://127.0.0.1:5000/v1/responses", observedUri!.AbsoluteUri);
@@ -47,6 +48,7 @@ public sealed class FoundryLocalVisionClientTests
         Assert.Contains("\"type\":\"input_image\"", observedBody, StringComparison.Ordinal);
         Assert.Contains("\"image_data\":\"AQID\"", observedBody, StringComparison.Ordinal);
         Assert.Contains("\"media_type\":\"image/png\"", observedBody, StringComparison.Ordinal);
+        Assert.Contains("Each label must appear at most once. Never repeat a label.", observedBody, StringComparison.Ordinal);
         Assert.DoesNotContain("image_url", observedBody, StringComparison.Ordinal);
     }
 
@@ -73,6 +75,63 @@ public sealed class FoundryLocalVisionClientTests
 
         Assert.Equal(FoundryVisionStatus.Unknown, result.Status);
         Assert.Equal(FoundryVisionFailure.InvalidResponse, result.Failure);
+        Assert.Empty(result.Labels);
+    }
+
+    [Fact]
+    public async Task ExactDuplicateLabelsAreCollapsedAsOneSemanticCandidate()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"labels\\\":[\\\"お知らせ\\\",\\\"お知らせ\\\"]}\"}");
+
+        var result = await client.ProposeLabelsAsync(new byte[] { 1 });
+
+        Assert.Equal(FoundryVisionStatus.Completed, result.Status);
+        Assert.Equal(["お知らせ"], result.Labels);
+        Assert.Equal(FoundryVisionNormalization.DuplicateLabelsCollapsed, result.Normalization);
+    }
+
+    [Fact]
+    public async Task TruncatedExactRepetitionIsRecoveredAndReported()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"```json\\n{\\\"labels\\\":[\\\"NIKKE\\\",\\\"401\\\",\\\"401\\\",\\\"401\\\",\\\"40\"}");
+
+        var result = await client.ProposeLabelsAsync(new byte[] { 1 });
+
+        Assert.Equal(FoundryVisionStatus.Completed, result.Status);
+        Assert.Equal(["NIKKE", "401"], result.Labels);
+        Assert.Equal(
+            FoundryVisionNormalization.DuplicateLabelsCollapsed
+                | FoundryVisionNormalization.TruncatedRepetitionRecovered,
+            result.Normalization);
+    }
+
+    [Fact]
+    public async Task TruncatedResponseWithoutProvenRepetitionRemainsUnknown()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"labels\\\":[\\\"Open\\\",\\\"Setti\"}");
+
+        var result = await client.ProposeLabelsAsync(new byte[] { 1 });
+
+        Assert.Equal(FoundryVisionStatus.Unknown, result.Status);
+        Assert.Equal(FoundryVisionFailure.InvalidResponse, result.Failure);
+        Assert.Equal(FoundryVisionNormalization.None, result.Normalization);
+        Assert.Empty(result.Labels);
+    }
+
+    [Fact]
+    public async Task WrongSchemaWithRepetitionRemainsUnknown()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"label_list\\\":[\\\"401\\\",\\\"401\\\",\\\"401\\\"\"}");
+
+        var result = await client.ProposeLabelsAsync(new byte[] { 1 });
+
+        Assert.Equal(FoundryVisionStatus.Unknown, result.Status);
+        Assert.Equal(FoundryVisionFailure.InvalidResponse, result.Failure);
+        Assert.Equal(FoundryVisionNormalization.None, result.Normalization);
         Assert.Empty(result.Labels);
     }
 

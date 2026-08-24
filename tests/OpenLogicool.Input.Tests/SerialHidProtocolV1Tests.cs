@@ -104,6 +104,22 @@ public sealed class SerialHidProtocolV1Tests
     }
 
     [Fact]
+    public void Mouse_delta_is_additive_v1_message_and_rejects_minus_128()
+    {
+        var payload = new byte[] { 0x7F, 0x81, 0x01 };
+        var frame = SerialHidProtocolV1.Encode(SerialHidMessageKind.MouseDelta, 0x1234, payload);
+        var decoded = SerialHidProtocolV1.Decode(frame);
+
+        Assert.Equal(SerialHidProtocolV1.Version, decoded.Version);
+        Assert.Equal(SerialHidMessageKind.MouseDelta, decoded.Kind);
+        Assert.Equal(payload, decoded.Payload);
+
+        var fault = Assert.Throws<SerialHidProtocolException>(() =>
+            SerialHidProtocolV1.Encode(SerialHidMessageKind.MouseDelta, 1, [0x80, 0, 0]));
+        Assert.Equal(SerialHidFaultCode.InvalidPayload, fault.FaultCode);
+    }
+
+    [Fact]
     public void Sequence_zero_is_reserved_for_uncorrelated_fault()
     {
         var request = Assert.Throws<SerialHidProtocolException>(

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "FirmwareLease.h"
+#include "FirmwareMouseState.h"
 #include "ProtocolV1.h"
 
 using namespace openlogicool;
@@ -91,11 +92,36 @@ int Faults() {
   return 0;
 }
 
+int MouseDelta() {
+  const uint8_t valid[] = {0x7F, 0x81, 0x01};
+  const uint8_t invalidX[] = {0x80, 0x00, 0x00};
+  if (!IsValidMouseDeltaPayload(valid, sizeof(valid)) ||
+      IsValidMouseDeltaPayload(invalidX, sizeof(invalidX)) ||
+      IsValidMouseDeltaPayload(valid, 2)) {
+    return 30;
+  }
+
+  uint16_t negotiated = 0;
+  if (!TryNegotiateCapabilities(0x0007, negotiated) || negotiated != 0x0007 ||
+      !TryNegotiateCapabilities(0x000F, negotiated) || negotiated != 0x000F ||
+      TryNegotiateCapabilities(0x0010, negotiated)) {
+    return 31;
+  }
+  FirmwareMouseState mouseState;
+  mouseState.CommitButtons(0x01);
+  if (mouseState.Buttons() != 0x01) return 32;
+  mouseState.Reset();
+  if (mouseState.Buttons() != 0x00) return 33;
+  std::printf("mouse-delta|ok|range|negotiation\n");
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
   if (argc == 3 && std::strcmp(argv[1], "decode") == 0) return Decode(argv[2]);
   if (argc == 2 && std::strcmp(argv[1], "lease") == 0) return Lease();
   if (argc == 2 && std::strcmp(argv[1], "faults") == 0) return Faults();
+  if (argc == 2 && std::strcmp(argv[1], "mouse-delta") == 0) return MouseDelta();
   return 1;
 }

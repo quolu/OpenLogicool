@@ -100,6 +100,7 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
     private readonly SerialHidSemanticVersion _hostVersion;
     private readonly TimeSpan _requestTimeout;
     private readonly TimeSpan _heartbeatInterval;
+    private readonly SerialHidCapability _requestedCapabilities;
     private readonly ManualResetEventSlim _heartbeatStop = new(false);
     private Thread? _heartbeatThread;
     private SerialHidProtocolSession? _protocol;
@@ -114,7 +115,8 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
         ISerialHidFrameExchange exchange,
         SerialHidSemanticVersion hostVersion,
         TimeSpan requestTimeout,
-        TimeSpan? heartbeatInterval = null)
+        TimeSpan? heartbeatInterval = null,
+        SerialHidCapability requestedCapabilities = SerialHidProtocolV1.BaselineCapabilities)
     {
         ArgumentNullException.ThrowIfNull(exchange);
         if (requestTimeout <= TimeSpan.Zero)
@@ -134,6 +136,7 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
         _hostVersion = hostVersion;
         _requestTimeout = requestTimeout;
         _heartbeatInterval = interval;
+        _requestedCapabilities = requestedCapabilities;
     }
 
     internal SerialHidResidentOutputSession(
@@ -154,12 +157,16 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
         _hostVersion = default;
         _requestTimeout = default;
         _heartbeatInterval = heartbeatInterval;
+        _requestedCapabilities = connectedProtocol.ReadyInfo.Capabilities;
     }
 
     public ResidentOutputRoute Route => ResidentOutputRoute.SerialHid;
 
     public IOutputEmitter Emitter =>
         _emitter ?? throw new InvalidOperationException("Serial HID output sessionは未起動です。");
+
+    public SerialHidProtocolSession Protocol =>
+        _protocol ?? throw new InvalidOperationException("Serial HID output sessionは未起動です。");
 
     public Exception? BackgroundFailure => Volatile.Read(ref _backgroundFailure);
 
@@ -170,7 +177,11 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
             throw new InvalidOperationException("Serial HID output sessionは一度しか起動できません。");
         }
 
-        _protocol ??= SerialHidProtocolSession.Connect(_exchange, _hostVersion, _requestTimeout);
+        _protocol ??= SerialHidProtocolSession.Connect(
+            _exchange,
+            _hostVersion,
+            _requestTimeout,
+            _requestedCapabilities);
         _emitter = new SerialHidEmitter(_protocol);
         _started = true;
         _heartbeatThread = new Thread(HeartbeatWorker)

@@ -1,9 +1,9 @@
 # Serial HID Output 運用・復旧手順
 
 - 対象: OpenLogicool Input Studio の USB出力（Serial HID v1）
-- 確認済み環境: Windows 11 build 26200 / x64、SparkFun Pro Micro ATmega32U4 5V / 16MHz、firmware 1.0.0
+- 確認済み環境: Windows 11 build 26200 / x64、SparkFun Pro Micro ATmega32U4 5V / 16MHz、firmware 1.1.0
 - device identity: `USB\VID_1B4F&PID_9206\HIDFG`
-- protocol: v1、keyboard 6KRO、mouse button 5個、firmware lease 150ms
+- protocol: v1、keyboard 6KRO、mouse button 5個、relative pointer／wheel、firmware lease 150ms
 
 ## 通常運用
 
@@ -21,7 +21,7 @@
 dotnet run --project src/OpenLogicool.Host/OpenLogicool.Host.csproj -- ui --resident
 ```
 
-Serial HID v1は通常キー同時6個までである。7個以上の同時押し、マウス移動・ホイール、音量などの特殊キーには対応しない。対応外の割り当ては部分送出せず、明示faultで停止する。
+Serial HID v1は通常キー同時6個までである。relative pointer／wheelはfirmware 1.1.0の`MOUSE_DELTA`で扱う。7個以上の同時押し、音量などのconsumer controlには対応しない。対応外の割り当ては部分送出せず、明示faultで停止する。
 
 ## 正常終了
 
@@ -44,11 +44,11 @@ baselineが無い、またはbyte一致を確認できない場合は成功扱�
 
 ## firmware再flash
 
-repo内のfirmware 1.0.0を再flashする場合:
+repo内のfirmware 1.1.0を再flashする場合:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-serial-hid.ps1
-pwsh -NoProfile -File scripts/flash-serial-hid.ps1 -DeviceInstanceId 'USB\VID_1B4F&PID_9206\HIDFG'
+pwsh -NoProfile -File scripts/flash-serial-hid.ps1 -ExpectedDeviceInstanceId 'USB\VID_1B4F&PID_9206\HIDFG'
 ```
 
 flash scriptはexact target identity、固定toolchain、upload verify、CDC＋keyboard＋mouseの再列挙を検証する。自動bootloader捕捉が失敗した場合だけ、Pro Microをdouble-resetしてCaterina bootloaderを開く。targetが一意に決まらない状態ではflashしない。
@@ -61,16 +61,18 @@ flash scriptはexact target identity、固定toolchain、upload verify、CDC＋k
 |---|---|---|
 | firmware build／flash／再列挙 | 確認済み | 固定toolchain、Pro Micro 5V / 16MHz |
 | G13／G600 key・mouse button・chord・finite sequence | 確認済み | 同一Serial HID経路 |
+| relative pointer／wheel | 確認済み | firmware 1.1.0、Windows hookでnon-injected move／wheelを観測 |
 | layer／profile／app-first切替／保存後再起動 | 確認済み | FOX reference machine |
 | handled stop／hard kill release | 確認済み | 250ms以内 |
 | dispatch latency | 確認済み | 200 edge、p99 3.425ms、max 12.902ms |
 | drop／wrong release／stuck | 確認済み | 0／0／0 |
 | NIKKEのG13 G1→Esc | 確認済み | 1回押下に1回反応した単一観測だけ |
 | Windows低レベルhookでのNIKKE前面中Esc | 未確認 | hookは未観測。ACKやgame反応と混同しない |
+| NIKKE前面中F13／wheelの管理者hook受信 | 確認済み | 完全順序、全event `IsInjected=false`、injected 0 |
 | 他game／他anti-cheat／長時間運用 | 未確認 | 一般対応を名乗らない |
 | Windows 10／ARM64／別board | 未確認 | reference machine外 |
 | raw USB report byteの独立capture | 未確認 | ACK／Windows HID観測で代用しない |
-| NKRO、mouse移動、wheel、consumer control | 非対応 | Serial HID v1の固定境界 |
+| NKRO、consumer control | 非対応 | Serial HID v1の固定境界 |
 | LCD、LGS applet、power mode | 未確認 | 本campaignの対象外 |
 
 製品全体の公開claimは引き続き`Partial LGS Replacement`である。Serial HIDの成立を、LGS全機能parity、全game対応、または利用規約上の許可へ拡張しない。

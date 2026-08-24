@@ -1,0 +1,206 @@
+{
+  "SchemaVersion": "1.0.0",
+  "Probe": "live-discovery-observe",
+  "CapturedAtUtc": "2026-08-24T02:56:40.9445759+00:00",
+  "Target": {
+    "ProcessId": 32324,
+    "ProcessName": "OpenLogicool.GameLab.Prototype",
+    "ProcessPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\src\\OpenLogicool.GameLab.Prototype\\bin\\Debug\\net10.0-windows\\OpenLogicool.GameLab.Prototype.exe",
+    "PathReadStatus": "Confirmed",
+    "WindowTitle": "GameLab Prototype",
+    "WindowRect": {
+      "Left": 78,
+      "Top": 78,
+      "Right": 798,
+      "Bottom": 558
+    },
+    "Dpi": 96
+  },
+  "Frame": {
+    "SourceId": "window:live-discovery:32324",
+    "Sequence": 1,
+    "Width": 706,
+    "Height": 473,
+    "PixelFormat": "B8G8R8A8_UNorm",
+    "DpiX": 96,
+    "DpiY": 96,
+    "ColorSpace": "Unknown",
+    "Rotation": "Unknown",
+    "TransformRevision": 1,
+    "FreshnessMs": 0,
+    "LastChangeMs": 0,
+    "Sha256": "c64900003025cd4a9d8008ebad934b20868bf1dff7f79fba6c08bdad121ec965",
+    "LocalPath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\live-discovery-frame-20260824-025640-944.png"
+  },
+  "Ocr": {
+    "Recognizer": "Windows.Media.Ocr",
+    "RecognizerLanguage": "ja",
+    "MaxImageDimension": 10000,
+    "ElapsedMs": 26,
+    "Text": "\u753A GameLab P \u300C ototype state.main \u30ED -menu OpenEvent OpenRewards",
+    "VisualLines": [
+      "\u753AGameLabP\u300Cototype\u30ED",
+      "state.main-menu",
+      "OpenEventOpenRewards"
+    ],
+    "Words": [
+      {
+        "Text": "\u753A",
+        "X": 9,
+        "Y": 8,
+        "Width": 15,
+        "Height": 13
+      },
+      {
+        "Text": "GameLab",
+        "X": 31,
+        "Y": 11,
+        "Width": 49,
+        "Height": 9
+      },
+      {
+        "Text": "P",
+        "X": 85,
+        "Y": 11,
+        "Width": 5,
+        "Height": 9
+      },
+      {
+        "Text": "\u300C",
+        "X": 92,
+        "Y": 14,
+        "Width": 3,
+        "Height": 6
+      },
+      {
+        "Text": "ototype",
+        "X": 95,
+        "Y": 12,
+        "Width": 41,
+        "Height": 11
+      },
+      {
+        "Text": "state.main",
+        "X": 170,
+        "Y": 194,
+        "Width": 221,
+        "Height": 36
+      },
+      {
+        "Text": "\u30ED",
+        "X": 631,
+        "Y": 10,
+        "Width": 10,
+        "Height": 10
+      },
+      {
+        "Text": "-menu",
+        "X": 397,
+        "Y": 205,
+        "Width": 137,
+        "Height": 25
+      },
+      {
+        "Text": "OpenEvent",
+        "X": 245,
+        "Y": 426,
+        "Width": 77,
+        "Height": 15
+      },
+      {
+        "Text": "OpenRewards",
+        "X": 364,
+        "Y": 425,
+        "Width": 97,
+        "Height": 16
+      }
+    ]
+  },
+  "Vision": {
+    "Runtime": "Microsoft Foundry Local 0.10.3",
+    "Model": "qwen3-vl-2b-instruct-cuda-gpu:2",
+    "ProviderEndpoint": "http://127.0.0.1:59899",
+    "Status": "Completed",
+    "Failure": "None",
+    "FailureDetail": null,
+    "Labels": [
+      "OpenEvent",
+      "OpenRewards"
+    ],
+    "RawOutput": "\u0060\u0060\u0060json\n{\n  \u0022labels\u0022: [\n    \u0022OpenEvent\u0022,\n    \u0022OpenRewards\u0022\n  ]\n}\n\u0060\u0060\u0060",
+    "ElapsedMs": 701,
+    "RequestBytes": 25019,
+    "InputTokens": 421,
+    "OutputTokens": 24
+  },
+  "GroundedCandidates": [
+    {
+      "Label": "OpenEvent",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "OpenEvent",
+        "X": 245,
+        "Y": 426,
+        "Width": 77,
+        "Height": 15
+      },
+      "Rule": "same-frame exact unique OCR word"
+    },
+    {
+      "Label": "OpenRewards",
+      "Status": "Grounded",
+      "MatchCount": 1,
+      "Box": {
+        "Text": "OpenRewards",
+        "X": 364,
+        "Y": 425,
+        "Width": 97,
+        "Height": 16
+      },
+      "Rule": "same-frame exact unique OCR word"
+    }
+  ],
+  "Network": {
+    "StructuralBoundary": "IP literal loopback HTTP only; proxy disabled; redirect disabled",
+    "ObservedProcessIds": [
+      42680,
+      25628
+    ],
+    "Connections": [
+      {
+        "ProcessId": 25628,
+        "State": "Listen",
+        "LocalAddress": "127.0.0.1",
+        "LocalPort": 59899,
+        "RemoteAddress": "0.0.0.0",
+        "RemotePort": 0
+      },
+      {
+        "ProcessId": 25628,
+        "State": "Established",
+        "LocalAddress": "127.0.0.1",
+        "LocalPort": 59899,
+        "RemoteAddress": "127.0.0.1",
+        "RemotePort": 49825
+      },
+      {
+        "ProcessId": 42680,
+        "State": "Established",
+        "LocalAddress": "127.0.0.1",
+        "LocalPort": 49825,
+        "RemoteAddress": "127.0.0.1",
+        "RemotePort": 59899
+      }
+    ],
+    "NonLoopbackEstablishedCount": 0,
+    "HasNonLoopbackEstablished": false,
+    "ExternalAiTransmissionCount": 0,
+    "ExternalAiApiKeyCount": 0,
+    "ExternalAiApiCostUsd": 0
+  },
+  "Input": {
+    "DispatchCount": 0,
+    "Status": "ObserveOnly"
+  }
+}

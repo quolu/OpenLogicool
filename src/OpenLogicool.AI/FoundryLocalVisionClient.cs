@@ -21,10 +21,19 @@ public enum FoundryVisionFailure
     InvalidResponse,
 }
 
+[Flags]
+public enum FoundryVisionNormalization
+{
+    None = 0,
+    DuplicateLabelsCollapsed = 1,
+    TruncatedRepetitionRecovered = 2,
+}
+
 public sealed record FoundryVisionResult(
     FoundryVisionStatus Status,
     FoundryVisionFailure Failure,
     string? FailureDetail,
+    FoundryVisionNormalization Normalization,
     IReadOnlyList<string> Labels,
     string RawOutput,
     long ElapsedMs,
@@ -38,6 +47,7 @@ public sealed class FoundryLocalVisionClient : IDisposable
         "Read the image. Find visually clickable controls that contain visible words. " +
         "Copy each control's visible words exactly, preserving case. " +
         "Return a JSON object whose only property is named labels and whose value is an array of those copied strings. " +
+        "Each label must appear at most once. Never repeat a label. " +
         "If no such controls exist, return {\"labels\":[]}. " +
         "Never output the phrase 'visible text label'. " +
         "Do not output coordinates, descriptions, non-interactive text, or markdown.";
@@ -214,6 +224,7 @@ public sealed class FoundryLocalVisionClient : IDisposable
                     FoundryVisionStatus.Unknown,
                     FoundryVisionFailure.Provider,
                     providerFailure,
+                    FoundryVisionNormalization.None,
                     [],
                     output.ToString(),
                     started.ElapsedMilliseconds,
@@ -228,6 +239,7 @@ public sealed class FoundryLocalVisionClient : IDisposable
                     FoundryVisionStatus.Unknown,
                     FoundryVisionFailure.Provider,
                     "Foundry Local streamがresponse.completedより前に終了しました。",
+                    FoundryVisionNormalization.None,
                     [],
                     output.ToString(),
                     started.ElapsedMilliseconds,
@@ -236,12 +248,17 @@ public sealed class FoundryLocalVisionClient : IDisposable
                     outputTokens);
             }
 
-            if (!TryParseLabels(output.ToString(), out var labels, out var validationError))
+            if (!TryParseLabels(
+                output.ToString(),
+                out var labels,
+                out var normalization,
+                out var validationError))
             {
                 return new FoundryVisionResult(
                     FoundryVisionStatus.Unknown,
                     FoundryVisionFailure.InvalidResponse,
                     validationError,
+                    FoundryVisionNormalization.None,
                     [],
                     output.ToString(),
                     started.ElapsedMilliseconds,
@@ -254,6 +271,7 @@ public sealed class FoundryLocalVisionClient : IDisposable
                 FoundryVisionStatus.Completed,
                 FoundryVisionFailure.None,
                 null,
+                normalization,
                 labels,
                 output.ToString(),
                 started.ElapsedMilliseconds,
@@ -299,6 +317,7 @@ public sealed class FoundryLocalVisionClient : IDisposable
             FoundryVisionStatus.Unknown,
             failure,
             detail,
+            FoundryVisionNormalization.None,
             [],
             string.Empty,
             started.ElapsedMilliseconds,
@@ -332,9 +351,11 @@ public sealed class FoundryLocalVisionClient : IDisposable
     private static bool TryParseLabels(
         string rawOutput,
         out IReadOnlyList<string> labels,
+        out FoundryVisionNormalization normalization,
         out string? error)
     {
         labels = [];
+        normalization = FoundryVisionNormalization.None;
         error = null;
         var json = StripCodeFence(rawOutput);
         try
@@ -352,6 +373,7 @@ public sealed class FoundryLocalVisionClient : IDisposable
 
             var result = new List<string>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
+            var duplicateCollapsed = false;
             foreach (var element in labelArray.EnumerateArray())
             {
                 if (element.ValueKind != JsonValueKind.String
@@ -368,23 +390,177 @@ public sealed class FoundryLocalVisionClient : IDisposable
                     return false;
                 }
 
-                if (!seen.Add(label))
+                if (seen.Add(label))
                 {
-                    error = $"vision responseに重複label '{label}' があります。";
-                    return false;
+                    result.Add(label);
                 }
-
-                result.Add(label);
+                else
+                {
+                    duplicateCollapsed = true;
+                }
             }
 
             labels = result;
+            normalization = duplicateCollapsed
+                ? FoundryVisionNormalization.DuplicateLabelsCollapsed
+                : FoundryVisionNormalization.None;
             return true;
         }
         catch (JsonException ex)
         {
+            if (TryRecoverTruncatedRepetitionLabels(json, out labels))
+            {
+                normalization = FoundryVisionNormalization.DuplicateLabelsCollapsed
+                    | FoundryVisionNormalization.TruncatedRepetitionRecovered;
+                return true;
+            }
             error = ex.Message;
             return false;
         }
+    }
+
+    private static bool TryRecoverTruncatedRepetitionLabels(
+        string json,
+        out IReadOnlyList<string> labels)
+    {
+        labels = [];
+        var index = 0;
+        SkipWhitespace(json, ref index);
+        if (!Consume(json, ref index, '{'))
+        {
+            return false;
+        }
+        SkipWhitespace(json, ref index);
+        if (!TryReadJsonString(json, ref index, out var propertyName, out _)
+            || propertyName != "labels")
+        {
+            return false;
+        }
+        SkipWhitespace(json, ref index);
+        if (!Consume(json, ref index, ':'))
+        {
+            return false;
+        }
+        SkipWhitespace(json, ref index);
+        if (!Consume(json, ref index, '['))
+        {
+            return false;
+        }
+
+        var completeLabels = new List<string>();
+        var expectsValue = true;
+        while (true)
+        {
+            SkipWhitespace(json, ref index);
+            if (index >= json.Length)
+            {
+                break;
+            }
+            if (expectsValue)
+            {
+                if (!TryReadJsonString(json, ref index, out var label, out var incomplete))
+                {
+                    if (incomplete)
+                    {
+                        break;
+                    }
+                    return false;
+                }
+                if (string.IsNullOrWhiteSpace(label)
+                    || string.Equals(label, "visible text label", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                completeLabels.Add(label.Trim());
+                expectsValue = false;
+                continue;
+            }
+            if (!Consume(json, ref index, ','))
+            {
+                return false;
+            }
+            expectsValue = true;
+        }
+
+        if (completeLabels.Count == 0
+            || completeLabels.GroupBy(label => label, StringComparer.Ordinal).Max(group => group.Count()) < 3)
+        {
+            return false;
+        }
+
+        labels = completeLabels.Distinct(StringComparer.Ordinal).ToArray();
+        return true;
+    }
+
+    private static bool TryReadJsonString(
+        string json,
+        ref int index,
+        out string value,
+        out bool incomplete)
+    {
+        value = string.Empty;
+        incomplete = false;
+        if (index >= json.Length || json[index] != '"')
+        {
+            return false;
+        }
+
+        var start = index++;
+        var escaped = false;
+        for (; index < json.Length; index++)
+        {
+            var character = json[index];
+            if (character < 0x20)
+            {
+                return false;
+            }
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+            if (character == '\\')
+            {
+                escaped = true;
+                continue;
+            }
+            if (character != '"')
+            {
+                continue;
+            }
+
+            index++;
+            try
+            {
+                value = JsonSerializer.Deserialize<string>(json[start..index]) ?? string.Empty;
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        incomplete = true;
+        return false;
+    }
+
+    private static void SkipWhitespace(string value, ref int index)
+    {
+        while (index < value.Length && char.IsWhiteSpace(value[index]))
+        {
+            index++;
+        }
+    }
+
+    private static bool Consume(string value, ref int index, char expected)
+    {
+        if (index >= value.Length || value[index] != expected)
+        {
+            return false;
+        }
+        index++;
+        return true;
     }
 
     private static string StripCodeFence(string value)
@@ -397,8 +573,12 @@ public sealed class FoundryLocalVisionClient : IDisposable
 
         var firstNewline = trimmed.IndexOf('\n');
         var lastFence = trimmed.LastIndexOf("```", StringComparison.Ordinal);
-        return firstNewline >= 0 && lastFence > firstNewline
+        if (firstNewline < 0)
+        {
+            return trimmed;
+        }
+        return lastFence > firstNewline
             ? trimmed[(firstNewline + 1)..lastFence].Trim()
-            : trimmed;
+            : trimmed[(firstNewline + 1)..].Trim();
     }
 }

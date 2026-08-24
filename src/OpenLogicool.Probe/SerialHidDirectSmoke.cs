@@ -43,6 +43,7 @@ internal static class SerialHidDirectSmoke
                     && result.KeyObserved
                     && result.ChordObserved
                     && result.MouseObserved
+                    && result.RelativeMouseObserved
                     && result.SequenceObserved
                     && result.AllUpObserved
                     && result.LeaseReleaseObserved
@@ -51,6 +52,8 @@ internal static class SerialHidDirectSmoke
             finally
             {
                 result.Events = observer.Events.ToArray();
+                result.InjectedEvents = observer.InjectedEvents.ToArray();
+                result.ObserverWasForeground = observer.WasForegroundAtReady || observer.IsForeground;
             }
         }
         catch (Exception exception)
@@ -70,8 +73,9 @@ internal static class SerialHidDirectSmoke
         using var exchange = new ProbeSerialPortFrameExchange(port);
         var session = SerialHidProtocolSession.Connect(
             exchange,
-            new SerialHidSemanticVersion(1, 0, 0),
-            TimeSpan.FromMilliseconds(300));
+            new SerialHidSemanticVersion(1, 1, 0),
+            TimeSpan.FromMilliseconds(300),
+            SerialHidProtocolV1.AllCapabilities);
         result.HelloReady = true;
         result.FirmwareVersion = $"{session.ReadyInfo.FirmwareVersion.Major}.{session.ReadyInfo.FirmwareVersion.Minor}.{session.ReadyInfo.FirmwareVersion.Patch}";
         result.Capabilities = $"0x{(ushort)session.ReadyInfo.Capabilities:X4}";
@@ -79,6 +83,20 @@ internal static class SerialHidDirectSmoke
 
         session.SendAllUp();
         var emitter = new SerialHidEmitter(session);
+
+        if (!observer.IsForeground)
+        {
+            var focusMarker = observer.Count;
+            emitter.Emit([Down("Mouse:Left")]);
+            emitter.Emit([Up("Mouse:Left")]);
+            observer.WaitFor(
+                [Event("mouse", "down", 0x01), Event("mouse", "up", 0x01)],
+                focusMarker,
+                TimeSpan.FromSeconds(2));
+            observer.WaitForForeground(TimeSpan.FromSeconds(2));
+            observer.Clear();
+            result.ForegroundAcquiredByNano = true;
+        }
 
         EmitAndWait(emitter, observer,
             [Down("Key:F13")], [Event("key", "down", 0x7C)]);
@@ -99,6 +117,25 @@ internal static class SerialHidDirectSmoke
         EmitAndWait(emitter, observer,
             [Up("Mouse:Middle")], [Event("mouse", "up", 0x04)]);
         result.MouseObserved = true;
+
+        var pointerMarker = observer.Count;
+        var cursorBefore = observer.CursorPosition;
+        emitter.Emit([Down("Mouse:Left")]);
+        session.SendMouseDelta(20, 15, 1);
+        emitter.Emit([Up("Mouse:Left")]);
+        observer.WaitFor(
+            [
+                Event("mouse", "down", 0x01),
+                Event("mouse", "move", 0),
+                Event("mouse", "wheel", 120),
+                Event("mouse", "up", 0x01),
+            ],
+            pointerMarker,
+            TimeSpan.FromSeconds(2));
+        var cursorAfter = observer.CursorPosition;
+        result.RelativeMouseObserved = cursorAfter.X > cursorBefore.X && cursorAfter.Y > cursorBefore.Y;
+        result.CursorBefore = new CursorEvidence(cursorBefore.X, cursorBefore.Y);
+        result.CursorAfter = new CursorEvidence(cursorAfter.X, cursorAfter.Y);
 
         EmitAndWaitGroups(emitter, observer,
             [Down("Key:F15"), Up("Key:F15"), Down("Key:LCtrl"), Down("Key:F16"), Up("Key:F16"), Up("Key:LCtrl")],
@@ -352,8 +389,13 @@ internal sealed class HidObservationWindow : IDisposable
     private const uint WmKeyUp = 0x0101;
     private const uint WmSysKeyDown = 0x0104;
     private const uint WmSysKeyUp = 0x0105;
+    private const uint WmMouseMove = 0x0200;
+    private const uint WmLButtonDown = 0x0201;
+    private const uint WmLButtonUp = 0x0202;
     private const uint WmMButtonDown = 0x0207;
     private const uint WmMButtonUp = 0x0208;
+    private const uint WmMouseWheel = 0x020A;
+    private const uint WsExTopmost = 0x00000008;
     private const uint WsOverlappedWindow = 0x00CF0000;
     private const uint WsVisible = 0x10000000;
     private readonly ConcurrentQueue<ObservedHidEvent> _events = new();
@@ -367,6 +409,7 @@ internal sealed class HidObservationWindow : IDisposable
     private IntPtr _window;
     private IntPtr _keyboardHook;
     private IntPtr _mouseHook;
+    private bool _wasForegroundAtReady;
 
     private HidObservationWindow()
     {
@@ -377,6 +420,19 @@ internal sealed class HidObservationWindow : IDisposable
     public IReadOnlyList<ObservedHidEvent> Events => _events.ToArray();
     public IReadOnlyList<ObservedHidEvent> InjectedEvents => _injectedEvents.ToArray();
     public int Count => _events.Count;
+    public bool WasForegroundAtReady => _wasForegroundAtReady;
+    public bool IsForeground => GetForegroundWindow() == _window;
+    public (int X, int Y) CursorPosition
+    {
+        get
+        {
+            if (!GetCursorPos(out var point))
+            {
+                throw new InvalidOperationException($"GetCursorPos failed: {Marshal.GetLastWin32Error()}");
+            }
+            return (point.X, point.Y);
+        }
+    }
 
     public static HidObservationWindow Start()
     {
@@ -393,6 +449,20 @@ internal sealed class HidObservationWindow : IDisposable
     {
         while (_events.TryDequeue(out _)) { }
         while (_injectedEvents.TryDequeue(out _)) { }
+    }
+
+    public void WaitForForeground(TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            if (IsForeground)
+            {
+                return;
+            }
+            Thread.Sleep(20);
+        }
+        throw new TimeoutException("Nanoの物理クリック後もHID観測窓が前面になりませんでした。");
     }
 
     public void WaitFor(IReadOnlyList<ObservedHidEvent> expected, int fromIndex, TimeSpan timeout)
@@ -519,7 +589,11 @@ internal sealed class HidObservationWindow : IDisposable
         {
             throw new InvalidOperationException($"RegisterClassEx failed: {Marshal.GetLastWin32Error()}");
         }
-        _window = CreateWindowEx(0, className, "OpenLogicool Serial HID direct smoke",
+        if (!GetCursorPos(out var cursor))
+        {
+            throw new InvalidOperationException($"GetCursorPos failed: {Marshal.GetLastWin32Error()}");
+        }
+        _window = CreateWindowEx(WsExTopmost, className, "OpenLogicool Serial HID direct smoke",
             WsOverlappedWindow | WsVisible, 100, 100, 420, 180,
             IntPtr.Zero, IntPtr.Zero, windowClass.Instance, IntPtr.Zero);
         if (_window == IntPtr.Zero)
@@ -534,9 +608,11 @@ internal sealed class HidObservationWindow : IDisposable
         {
             throw new InvalidOperationException($"SetWindowsHookEx failed: {Marshal.GetLastWin32Error()}");
         }
-        SetForegroundWindow(_window);
-        SetFocus(_window);
-        SetCursorPos(260, 190);
+        if (!SetWindowPos(_window, new IntPtr(-1), cursor.X - 210, cursor.Y - 90, 420, 180, 0x0040))
+        {
+            throw new InvalidOperationException($"SetWindowPos failed: {Marshal.GetLastWin32Error()}");
+        }
+        _wasForegroundAtReady = GetForegroundWindow() == _window;
         _ready.Set();
         while (GetMessage(out var message, IntPtr.Zero, 0, 0) > 0)
         {
@@ -576,14 +652,31 @@ internal sealed class HidObservationWindow : IDisposable
 
     private IntPtr MouseHook(int code, IntPtr wParam, IntPtr lParam)
     {
-        if (code >= 0 && (unchecked((uint)wParam) is WmMButtonDown or WmMButtonUp))
+        if (code >= 0)
         {
+            var message = unchecked((uint)wParam);
             var data = Marshal.PtrToStructure<MouseHookData>(lParam);
-            var edge = unchecked((uint)wParam) == WmMButtonDown ? "down" : "up";
             var injected = (data.Flags & 0x01) != 0;
-            var observed = new ObservedHidEvent("mouse", edge, 0x04, injected, Stopwatch.GetTimestamp());
-            (injected ? _injectedEvents : _events).Enqueue(observed);
-            _changed.Set();
+            ObservedHidEvent? observed = message switch
+            {
+                WmMouseMove => new("mouse", "move", 0, injected, Stopwatch.GetTimestamp()),
+                WmLButtonDown => new("mouse", "down", 0x01, injected, Stopwatch.GetTimestamp()),
+                WmLButtonUp => new("mouse", "up", 0x01, injected, Stopwatch.GetTimestamp()),
+                WmMButtonDown => new("mouse", "down", 0x04, injected, Stopwatch.GetTimestamp()),
+                WmMButtonUp => new("mouse", "up", 0x04, injected, Stopwatch.GetTimestamp()),
+                WmMouseWheel => new(
+                    "mouse",
+                    "wheel",
+                    unchecked((short)(data.MouseData >> 16)),
+                    injected,
+                    Stopwatch.GetTimestamp()),
+                _ => null,
+            };
+            if (observed is not null)
+            {
+                (injected ? _injectedEvents : _events).Enqueue(observed);
+                _changed.Set();
+            }
         }
         return CallNextHookEx(_mouseHook, code, wParam, lParam);
     }
@@ -612,6 +705,13 @@ internal sealed class HidObservationWindow : IDisposable
         public uint Flags;
         public uint Time;
         public nuint ExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -670,18 +770,26 @@ internal sealed class HidObservationWindow : IDisposable
     [DllImport("user32.dll")]
     private static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetForegroundWindow(IntPtr window);
-    [DllImport("user32.dll")]
-    private static extern IntPtr SetFocus(IntPtr window);
-    [DllImport("user32.dll")]
+    private static extern bool SetWindowPos(
+        IntPtr window,
+        IntPtr insertAfter,
+        int x,
+        int y,
+        int width,
+        int height,
+        uint flags);
+    [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetCursorPos(int x, int y);
+    private static extern bool GetCursorPos(out NativePoint point);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr GetModuleHandle(string? moduleName);
 }
 
 public sealed record ObservedHidEvent(string Kind, string Edge, int Code, bool IsInjected, long StopwatchTicks);
+public sealed record CursorEvidence(int X, int Y);
 
 internal sealed class DirectSmokeResult
 {
@@ -697,6 +805,9 @@ internal sealed class DirectSmokeResult
     public bool KeyObserved { get; set; }
     public bool ChordObserved { get; set; }
     public bool MouseObserved { get; set; }
+    public bool RelativeMouseObserved { get; set; }
+    public CursorEvidence? CursorBefore { get; set; }
+    public CursorEvidence? CursorAfter { get; set; }
     public bool SequenceObserved { get; set; }
     public bool AllUpObserved { get; set; }
     public bool LeaseReleaseObserved { get; set; }
@@ -707,6 +818,9 @@ internal sealed class DirectSmokeResult
     public bool PowerCycleAllUpObserved { get; set; }
     public IReadOnlyList<ObservedHidEvent> PowerCycleUnexpectedDownEvents { get; set; } = [];
     public IReadOnlyList<ObservedHidEvent> Events { get; set; } = [];
+    public IReadOnlyList<ObservedHidEvent> InjectedEvents { get; set; } = [];
+    public bool ObserverWasForeground { get; set; }
+    public bool ForegroundAcquiredByNano { get; set; }
     public bool Passed { get; set; }
     public string? Error { get; set; }
 }
