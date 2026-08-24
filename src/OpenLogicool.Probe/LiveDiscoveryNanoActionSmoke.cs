@@ -72,9 +72,11 @@ internal static class LiveDiscoveryNanoActionSmoke
             label,
             outputDirectory,
             expectLabelAbsent: true,
+            fresh.Sha256,
             fresh.Candidate.Box,
             TimeSpan.FromSeconds(10));
-        var passed = after.Candidate.Status != "Grounded";
+        var screenChanged = !string.Equals(fresh.Sha256, after.Sha256, StringComparison.Ordinal);
+        var passed = EvaluateOutcome(fresh.Sha256, after.Sha256, expectLabelAbsent: true, after.Candidate.Status);
 
         var evidence = new
         {
@@ -96,6 +98,8 @@ internal static class LiveDiscoveryNanoActionSmoke
             },
             Before = fresh.ToEvidence(),
             After = after.ToEvidence(),
+            ScreenChanged = screenChanged,
+            OutcomeRule = "screen changed and target label absent",
             Policy = "Escape only; no pointer dispatch",
             Input = new
             {
@@ -178,10 +182,16 @@ internal static class LiveDiscoveryNanoActionSmoke
             label,
             outputDirectory,
             expectLabelAbsent,
+            clickFrame.Sha256,
             clickFrame.Candidate.Box,
             TimeSpan.FromSeconds(20));
 
-        var passed = !expectLabelAbsent || after.Candidate?.Status != "Grounded";
+        var screenChanged = !string.Equals(clickFrame.Sha256, after.Sha256, StringComparison.Ordinal);
+        var passed = EvaluateOutcome(
+            clickFrame.Sha256,
+            after.Sha256,
+            expectLabelAbsent,
+            after.Candidate.Status);
         var evidence = new
         {
             SchemaVersion = "1.0.0",
@@ -214,6 +224,10 @@ internal static class LiveDiscoveryNanoActionSmoke
             ClickFrame = clickFrame.ToEvidence(),
             After = after.ToEvidence(),
             ExpectLabelAbsent = expectLabelAbsent,
+            ScreenChanged = screenChanged,
+            OutcomeRule = expectLabelAbsent
+                ? "screen changed and target label absent"
+                : "screen changed",
             Input = new
             {
                 DispatchRoute = "NanoSerialHid only",
@@ -276,6 +290,14 @@ internal static class LiveDiscoveryNanoActionSmoke
 
         return candidates[0].Box;
     }
+
+    internal static bool EvaluateOutcome(
+        string beforeSha256,
+        string afterSha256,
+        bool expectLabelAbsent,
+        string targetStatus) =>
+        !string.Equals(beforeSha256, afterSha256, StringComparison.Ordinal)
+        && (!expectLabelAbsent || !string.Equals(targetStatus, "Grounded", StringComparison.Ordinal));
 
     internal static int FocusTargetWithNano(nint targetWindow, SerialHidEmitter emitter)
     {
@@ -401,6 +423,7 @@ internal static class LiveDiscoveryNanoActionSmoke
         string label,
         string outputDirectory,
         bool expectLabelAbsent,
+        string beforeSha256,
         WindowsOcrWord? anchor,
         TimeSpan timeout)
     {
@@ -410,7 +433,11 @@ internal static class LiveDiscoveryNanoActionSmoke
         {
             await Task.Delay(300);
             last = await CaptureAndGroundAsync(target, label, outputDirectory, "after", anchor);
-            if (!expectLabelAbsent || last.Candidate.Status != "Grounded")
+            if (EvaluateOutcome(
+                beforeSha256,
+                last.Sha256,
+                expectLabelAbsent,
+                last.Candidate.Status))
             {
                 return last;
             }

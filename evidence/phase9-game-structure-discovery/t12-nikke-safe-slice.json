@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameId": "nikke-global-jp",
+  "environmentScope": "windows11-ja/nikke-live-2026-08-24",
+  "scope": {
+    "location": "lobby navigation only",
+    "purchase": 0,
+    "resourceConsumption": 0,
+    "combat": 0,
+    "accountMutation": 0
+  },
+  "identityRule": "Two or more independently grounded anchors with matching text and normalized position; labels are evidence and never identity keys.",
+  "states": [
+    {
+      "stateId": "state:1fc3da39-8282-4e63-8540-2d0907ea143b",
+      "verification": "Replayed",
+      "discoveryEvidence": "live-discovery-observe-20260824-135015-905.json",
+      "replayEvidence": "live-discovery-observe-20260824-164057-992.json",
+      "returnEvidence": "live-discovery-observe-20260824-164237-584.json",
+      "sharedAnchors": ["ロビー", "隊員募集"],
+      "returnedSharedAnchors": ["部隊", "ロビー"]
+    },
+    {
+      "stateId": "state:9be8c993-356d-4ea6-844c-23dd69b29faf",
+      "verification": "Replayed",
+      "discoveryEvidence": "live-discovery-observe-20260824-140858-183.json",
+      "replayEvidence": "live-discovery-observe-20260824-164202-669.json",
+      "sharedAnchors": ["部隊編成", "CAMPAIGN"]
+    }
+  ],
+  "edges": [
+    {
+      "edgeId": "edge:f02cf22e-8654-4573-8f5b-b7d6959d0b8d",
+      "sourceStateId": "state:1fc3da39-8282-4e63-8540-2d0907ea143b",
+      "destinationStateId": "state:9be8c993-356d-4ea6-844c-23dd69b29faf",
+      "primitive": "frame-bound pointer click",
+      "reversible": true,
+      "verification": "Replayed",
+      "discoveryEvidence": "live-discovery-nano-action-20260824-135058-072.json",
+      "replayEvidence": "live-discovery-nano-action-20260824-164149-734.json"
+    },
+    {
+      "edgeId": "edge:ecb89192-e870-48ff-ae1a-729de680598a",
+      "sourceStateId": "state:9be8c993-356d-4ea6-844c-23dd69b29faf",
+      "destinationStateId": "state:1fc3da39-8282-4e63-8540-2d0907ea143b",
+      "primitive": "Escape",
+      "reversible": true,
+      "verification": "Replayed",
+      "discoveryEvidence": "live-discovery-nano-escape-20260824-164041-820.json",
+      "replayEvidence": "live-discovery-nano-escape-20260824-164220-566.json"
+    }
+  ],
+  "frameEvidence": [
+    {"file":"live-discovery-observe-20260824-135015-905.json","sha256":"e8a8eaba54b1f17202909d0a246410c5d0b2dc313aeb119778a0117ba29b57aa"},
+    {"file":"live-discovery-observe-20260824-140858-183.json","sha256":"5ee70850808c5bc436de896460b7269c334ecf5d1f2b33c7009ebabfdda928d9"},
+    {"file":"live-discovery-observe-20260824-164057-992.json","sha256":"7efc8fb0cce845344b75f91977615b18b28ccfafefa59a514bf1d695444586e8"},
+    {"file":"live-discovery-observe-20260824-164202-669.json","sha256":"26906ee2d4ba2d2574c3d79a110326f2eb2671520f6b5e591f89d5851aa5b8fa"},
+    {"file":"live-discovery-observe-20260824-164237-584.json","sha256":"3d259886310e0f1269f0d67e0fe68e1dda9e6689350facb1227da47ca1ca317f"}
+  ],
+  "input": {
+    "route": "NanoSerialHid",
+    "firmwareVersion": "1.1.0",
+    "fallback": "None",
+    "sendInputDispatchCount": 0,
+    "computerUseDispatchCount": 0
+  },
+  "aiDataFlow": {
+    "provider": "Microsoft Foundry Local / qwen3-vl-2b-instruct-cuda-gpu:2",
+    "nonLoopbackEstablishedCount": 0,
+    "externalAiTransmissionCount": 0,
+    "externalAiApiKeyCount": 0,
+    "externalAiApiCostUsd": 0
+  },
+  "legacyProbeFinding": {
+    "file": "live-discovery-nano-action-20260824-135058-072.json",
+    "recordedPassed": false,
+    "cause": "The caller requested label absence for a persistent navigation label.",
+    "rawScreenTransition": {
+      "beforeSha256": "e547e7be6be4aaba6dd4933b3bd724729eeca74115fffce56b5401a0260a68eb",
+      "afterSha256": "b419c1c8495b96ff26768b22d0f4900a35f91dcc0bc8f1cdcdfda7f8a10229a2"
+    },
+    "resolution": "The probe now waits for a screen transition and makes label absence an optional additional condition. Destination evidence, not API return, decides the transition."
+  },
+  "result": "Passed"
+}

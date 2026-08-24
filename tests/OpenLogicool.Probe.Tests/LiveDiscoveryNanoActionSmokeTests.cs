@@ -46,6 +46,27 @@ public sealed class LiveDiscoveryNanoActionSmokeTests
         }
     }
 
+    [Theory]
+    [InlineData("before", "after", false, "Grounded", true)]
+    [InlineData("same", "same", false, "Unknown", false)]
+    [InlineData("before", "after", true, "Grounded", false)]
+    [InlineData("before", "after", true, "Unknown", true)]
+    public void OutcomeRequiresScreenTransitionAndOptionalLabelAbsence(
+        string before,
+        string after,
+        bool expectLabelAbsent,
+        string targetStatus,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            LiveDiscoveryNanoActionSmoke.EvaluateOutcome(
+                before,
+                after,
+                expectLabelAbsent,
+                targetStatus));
+    }
+
     private static string WriteObservation(object[] candidates)
     {
         var path = Path.Combine(Path.GetTempPath(), $"openlogicool-pinned-{Guid.NewGuid():N}.json");
