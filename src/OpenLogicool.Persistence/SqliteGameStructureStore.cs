@@ -19,9 +19,25 @@ public sealed class SqliteGameStructureStore(SqliteConnection connection) : IGam
         string? expectedParentRevisionId,
         DateTimeOffset persistedUtc)
     {
-        ValidateDraft(draft);
-
         using var transaction = connection.BeginTransaction();
+        var structureEvent = Append(draft, expectedParentRevisionId, persistedUtc, transaction);
+        transaction.Commit();
+        return structureEvent;
+    }
+
+    internal StructureEvent Append(
+        StructureEventDraft draft,
+        string? expectedParentRevisionId,
+        DateTimeOffset persistedUtc,
+        SqliteTransaction transaction)
+    {
+        ValidateDraft(draft);
+        ArgumentNullException.ThrowIfNull(transaction);
+        if (!ReferenceEquals(transaction.Connection, connection))
+        {
+            throw new ArgumentException("transactionはこのStructure storeのconnectionに属していません。", nameof(transaction));
+        }
+
         var (lastSequence, parentRevisionId) = ReadHead(draft.GameId, draft.EnvironmentScope, transaction);
         if (!string.Equals(expectedParentRevisionId, parentRevisionId, StringComparison.Ordinal))
         {
@@ -89,7 +105,6 @@ public sealed class SqliteGameStructureStore(SqliteConnection connection) : IGam
         command.Parameters.AddWithValue("$occurredUtc", Format(structureEvent.OccurredUtc));
         command.Parameters.AddWithValue("$persistedUtc", Format(structureEvent.PersistedUtc));
         command.ExecuteNonQuery();
-        transaction.Commit();
         return structureEvent;
     }
 

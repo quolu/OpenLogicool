@@ -1,0 +1,118 @@
+{
+  "SchemaVersion": "0.3.0",
+  "PackageId": "nikke-supervised-safe-slice-20260824",
+  "GameId": "nikke-global-jp",
+  "EnvironmentScope": "windows11-ja/nikke-live-2026-08-24",
+  "SceneProfile": {
+    "SchemaVersion": "0.3.0",
+    "ProfileId": "scene-profile:nikke-safe-slice",
+    "ProfileVersion": "scene-profile:nikke-safe-slice:v1",
+    "GameId": "nikke-global-jp",
+    "EnvironmentScope": "windows11-ja/nikke-live-2026-08-24",
+    "ProcessName": "nikke",
+    "WindowTitle": "NIKKE",
+    "MaximumFrameFreshnessMilliseconds": 500,
+    "NormalizedPositionTolerance": 0.03,
+    "States": [
+      {
+        "StateId": "state:1fc3da39-8282-4e63-8540-2d0907ea143b",
+        "SignatureVersion": "signature:nikke:lobby:v1",
+        "Anchors": [
+          { "Text": "ロビー", "NormalizedBounds": [0.48989, 0.955305, 0.020037, 0.015038], "EvidenceId": "live-discovery-observe-20260824-164057-992.json" },
+          { "Text": "隊員募集", "NormalizedBounds": [0.570772, 0.95614, 0.02739, 0.015038], "EvidenceId": "live-discovery-observe-20260824-164057-992.json" }
+        ],
+        "Affordances": [
+          {
+            "CandidateId": "affordance:nikke:lobby:squad",
+            "LocatorRevision": "locator:nikke:lobby:squad:v1",
+            "Text": "部隊",
+            "NormalizedBounds": [0.450919, 0.95614, 0.013419, 0.015038],
+            "AllowedPrimitives": ["click"],
+            "EvidenceIds": ["live-discovery-nano-action-20260824-164149-734.json"]
+          }
+        ],
+        "EvidenceIds": ["live-discovery-observe-20260824-135015-905.json", "live-discovery-observe-20260824-164057-992.json"]
+      },
+      {
+        "StateId": "state:9be8c993-356d-4ea6-844c-23dd69b29faf",
+        "SignatureVersion": "signature:nikke:squad:v1",
+        "SupersedesStateIds": ["state:1fc3da39-8282-4e63-8540-2d0907ea143b"],
+        "Anchors": [
+          { "Text": "部隊編成", "NormalizedBounds": [0.007353, 0.053885, 0.023346, 0.012949], "EvidenceId": "live-discovery-observe-20260824-164202-669.json" },
+          { "Text": "CAMPAIGN", "NormalizedBounds": [0.461765, 0.102339, 0.075551, 0.023392], "EvidenceId": "live-discovery-observe-20260824-164202-669.json" }
+        ],
+        "Affordances": [],
+        "EvidenceIds": ["live-discovery-observe-20260824-140858-183.json", "live-discovery-observe-20260824-164202-669.json"]
+      }
+    ],
+    "EvidenceIds": ["evidence/phase9-game-structure-discovery/t12-nikke-safe-slice.json"]
+  },
+  "Nodes": [
+    {
+      "SchemaVersion": "0.3.0",
+      "StateId": "state:1fc3da39-8282-4e63-8540-2d0907ea143b",
+      "EnvironmentScope": "windows11-ja/nikke-live-2026-08-24",
+      "SceneSignatureIds": ["signature:nikke:lobby:v1"],
+      "VariantStateIds": [],
+      "EvidenceIds": ["live-discovery-observe-20260824-164057-992.json"],
+      "ProvisionalLabel": "ロビー",
+      "VerificationState": "Replayed"
+    },
+    {
+      "SchemaVersion": "0.3.0",
+      "StateId": "state:9be8c993-356d-4ea6-844c-23dd69b29faf",
+      "EnvironmentScope": "windows11-ja/nikke-live-2026-08-24",
+      "SceneSignatureIds": ["signature:nikke:squad:v1"],
+      "VariantStateIds": [],
+      "EvidenceIds": ["live-discovery-observe-20260824-164202-669.json"],
+      "ProvisionalLabel": "部隊編成",
+      "VerificationState": "Replayed"
+    }
+  ],
+  "Edges": [
+    {
+      "SchemaVersion": "0.3.0",
+      "EdgeId": "edge:f02cf22e-8654-4573-8f5b-b7d6959d0b8d",
+      "SourceStateId": "state:1fc3da39-8282-4e63-8540-2d0907ea143b",
+      "DestinationStateId": "state:9be8c993-356d-4ea6-844c-23dd69b29faf",
+      "SourceHypothesisId": null,
+      "AffordanceCandidateId": "affordance:nikke:lobby:squad",
+      "LocatorRevision": "locator:nikke:lobby:squad:v1",
+      "Primitive": "click",
+      "Guard": "supervised",
+      "RiskTags": [],
+      "Reversible": true,
+      "BeforeObservationId": "observation:nikke:lobby",
+      "AfterObservationId": "observation:nikke:squad",
+      "WaitCondition": { "SchemaVersion": "0.3.0", "StableFrames": 2, "MinimumStableMilliseconds": 300, "TimeoutMilliseconds": 10000 },
+      "OutcomeCounts": [{ "Outcome": "Destination", "Count": 2 }],
+      "EvidenceIds": ["live-discovery-nano-action-20260824-164149-734.json"],
+      "VerificationState": "Replayed"
+    },
+    {
+      "SchemaVersion": "0.3.0",
+      "EdgeId": "edge:ecb89192-e870-48ff-ae1a-729de680598a",
+      "SourceStateId": "state:9be8c993-356d-4ea6-844c-23dd69b29faf",
+      "DestinationStateId": "state:1fc3da39-8282-4e63-8540-2d0907ea143b",
+      "SourceHypothesisId": null,
+      "AffordanceCandidateId": "affordance:nikke:squad:escape",
+      "LocatorRevision": "locator:nikke:squad:escape:v1",
+      "Primitive": "Escape",
+      "Guard": "supervised",
+      "RiskTags": [],
+      "Reversible": true,
+      "BeforeObservationId": "observation:nikke:squad",
+      "AfterObservationId": "observation:nikke:lobby:return",
+      "WaitCondition": { "SchemaVersion": "0.3.0", "StableFrames": 2, "MinimumStableMilliseconds": 300, "TimeoutMilliseconds": 10000 },
+      "OutcomeCounts": [{ "Outcome": "Destination", "Count": 2 }],
+      "EvidenceIds": ["live-discovery-nano-escape-20260824-164220-566.json"],
+      "VerificationState": "Replayed"
+    }
+  ],
+  "RouteId": "learning:nikke-safe-slice",
+  "Goal": "ロビーから部隊編成を開き、ロビーへ戻る",
+  "RouteEdgeIds": ["edge:f02cf22e-8654-4573-8f5b-b7d6959d0b8d", "edge:ecb89192-e870-48ff-ae1a-729de680598a"],
+  "ProhibitedRiskTags": ["spend-premium-currency", "spend-rare-resource", "spend-real-money"],
+  "EvidenceIds": ["evidence/phase9-game-structure-discovery/t12-nikke-safe-slice.json"],
+  "CreatedUtc": "2026-08-24T00:00:00Z"
+}

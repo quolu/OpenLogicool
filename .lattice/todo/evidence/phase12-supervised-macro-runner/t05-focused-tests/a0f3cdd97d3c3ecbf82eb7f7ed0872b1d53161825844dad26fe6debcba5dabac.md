@@ -1,0 +1,1 @@
+変更関連6 projectを直列実行し全479件green: Playbooks 166、Host 144、Desktop 92、Perception 19、Persistence 50、Architecture 8。二重command、Before再観測不一致、After不一致、Nano例外、OutcomeUnknown restart、atomic rollback、resource解放、全step完了を含む。temp実SQLiteへNIKKE package import成功、再openしたWindows native UIで2 step表示。途中のmigration期待とpublic overload逸脱は機能別に修正し再実行green。

@@ -15,9 +15,10 @@ public sealed record RunEventTally(
     long Skips,
     long Abandons,
     long VersionSwitches,
-    long Disarms)
+    long Disarms,
+    long RuntimeUnavailable)
 {
-    public static RunEventTally Empty { get; } = new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    public static RunEventTally Empty { get; } = new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     public RunEventTally Increment(string payloadType) => payloadType switch
     {
@@ -33,6 +34,7 @@ public sealed record RunEventTally(
         RunEventPayloadTypes.Abandon => this with { Abandons = checked(Abandons + 1) },
         RunEventPayloadTypes.VersionSwitch => this with { VersionSwitches = checked(VersionSwitches + 1) },
         RunEventPayloadTypes.Disarm => this with { Disarms = checked(Disarms + 1) },
+        RunEventPayloadTypes.RuntimeUnavailable => this with { RuntimeUnavailable = checked(RuntimeUnavailable + 1) },
         _ => throw new ArgumentException($"payload type '{payloadType}' は journal の閉集合にありません（PB-006）。", nameof(payloadType)),
     };
 }

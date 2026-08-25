@@ -1,3 +1,6 @@
+using OpenLogicool.Contracts.Perception;
+using OpenLogicool.Contracts.Playbooks;
+
 namespace OpenLogicool.Desktop;
 
 public sealed record LearningRouteScopeOption(string GameId, string EnvironmentScope)
@@ -60,6 +63,37 @@ public interface ILearningRouteIntents
     LearningRouteScreenSnapshot Undo(string gameId, string environmentScope, string routeId, string currentVersionId);
 
     LearningRouteScreenSnapshot Compile(string gameId, string environmentScope, string routeId, string currentVersionId);
+}
+
+/// <summary>教師付きマクロを一手ずつ実行する画面のHost境界。</summary>
+public interface ISupervisedMacroIntents
+{
+    SupervisedMacroRunSnapshot Start(
+        string gameId,
+        string environmentScope,
+        string routeId,
+        string routeVersionId);
+
+    SupervisedMacroRunSnapshot Next();
+
+    SupervisedMacroRunSnapshot Stop();
+}
+
+/// <summary>
+/// Hostが所有しない実環境境界。Observeは現在frameからObservedSceneを返し、DispatchNanoは
+/// 指定stepをNano Serial HIDだけで一回送信する。API戻り値は成功判定に使わない。
+/// </summary>
+public interface ISupervisedMacroRuntimePort
+{
+    void Pin(VisualMacroProgram program);
+
+    ObservedScene ObserveBefore(VisualMacroStep step);
+
+    void DispatchNano(VisualMacroStep step, ObservedScene beforeScene);
+
+    SupervisedMacroTransitionObservation ObserveAfter(
+        VisualMacroStep step,
+        ObservedScene beforeScene);
 }
 
 /// <summary>学習ルート画面の入力検証とHost intent発行を担う。</summary>

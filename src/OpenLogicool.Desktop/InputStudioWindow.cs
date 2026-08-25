@@ -29,6 +29,8 @@ public sealed class InputStudioWindow : Window
     private readonly IWebResearchIntent? _webResearchIntent;
     private readonly IExplorerIntents? _explorerIntents;
     private readonly ILearningRouteIntents? _learningRouteIntents;
+    private readonly ISupervisedMacroIntents? _supervisedMacroIntents;
+    private readonly string? _supervisedUnavailableReason;
     private DiagnosticsWindow? _diagnosticsWindow;
     private GameOperatorWindow? _gameOperatorWindow;
     private DispatcherTimer? _traceTimer;
@@ -211,7 +213,9 @@ public sealed class InputStudioWindow : Window
         IG13LcdSettingsIntent? g13LcdSettingsIntent = null,
         IWebResearchIntent? webResearchIntent = null,
         IExplorerIntents? explorerIntents = null,
-        ILearningRouteIntents? learningRouteIntents = null)
+        ILearningRouteIntents? learningRouteIntents = null,
+        ISupervisedMacroIntents? supervisedMacroIntents = null,
+        string? supervisedUnavailableReason = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
@@ -222,6 +226,8 @@ public sealed class InputStudioWindow : Window
         _webResearchIntent = webResearchIntent;
         _explorerIntents = explorerIntents;
         _learningRouteIntents = learningRouteIntents;
+        _supervisedMacroIntents = supervisedMacroIntents;
+        _supervisedUnavailableReason = supervisedUnavailableReason;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
 
@@ -595,7 +601,9 @@ public sealed class InputStudioWindow : Window
             _gameOperatorWindow = new GameOperatorWindow(
                 _webResearchIntent,
                 _explorerIntents,
-                _learningRouteIntents) { Owner = this };
+                _learningRouteIntents,
+                _supervisedMacroIntents,
+                _supervisedUnavailableReason) { Owner = this };
             _gameOperatorWindow.Show();
         }
         else

@@ -78,7 +78,7 @@ public sealed class RunJournalTests
                 commandId: "command-1",
                 observationId: "observation-1",
                 nodeOrTransitionId: "node-1",
-                actorType: payloadType == RunEventPayloadTypes.Disarm
+                actorType: payloadType is RunEventPayloadTypes.Disarm or RunEventPayloadTypes.RuntimeUnavailable
                     ? RunEventActorType.System
                     : ControlPayloadTypes.Contains(payloadType, StringComparer.Ordinal)
                         ? RunEventActorType.User

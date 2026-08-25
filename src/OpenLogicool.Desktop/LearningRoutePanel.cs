@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using OpenLogicool.Contracts.Playbooks;
 
 namespace OpenLogicool.Desktop;
 
@@ -7,6 +8,8 @@ namespace OpenLogicool.Desktop;
 internal sealed class LearningRoutePanel : UserControl
 {
     private readonly LearningRouteWorkspace workspace;
+    private readonly ISupervisedMacroIntents? runIntents;
+    private readonly string? runUnavailableReason;
     private readonly ComboBox scopes = new() { MinWidth = 320, DisplayMemberPath = nameof(LearningRouteScopeOption.DisplayLabel) };
     private readonly ListBox available = new() { MinHeight = 260, DisplayMemberPath = nameof(LearningRouteEdgeItem.DisplayLabel) };
     private readonly ListBox steps = new() { MinHeight = 260, DisplayMemberPath = nameof(LearningRouteStepItem.DisplayLabel) };
@@ -19,12 +22,21 @@ internal sealed class LearningRoutePanel : UserControl
     private readonly Button save = Button("保存");
     private readonly Button undo = Button("元に戻す");
     private readonly Button compile = Button("検証付きマクロを生成");
+    private readonly Button startRun = Button("教師付きで開始");
+    private readonly Button nextRun = Button("次の一手");
+    private readonly Button stopRun = Button("停止");
+    private readonly TextBlock runState = new() { TextWrapping = TextWrapping.Wrap };
     private LearningRouteScreenSnapshot? snapshot;
     private List<LearningRouteStepItem> draftSteps = [];
 
-    public LearningRoutePanel(ILearningRouteIntents intents)
+    public LearningRoutePanel(
+        ILearningRouteIntents intents,
+        ISupervisedMacroIntents? runIntents = null,
+        string? runUnavailableReason = null)
     {
         workspace = new LearningRouteWorkspace(intents);
+        this.runIntents = runIntents;
+        this.runUnavailableReason = runUnavailableReason;
         Background = Theme.Bg;
         Foreground = Theme.Text;
         Content = Build();
@@ -34,6 +46,9 @@ internal sealed class LearningRoutePanel : UserControl
         save.Click += (_, _) => Save();
         undo.Click += (_, _) => Undo();
         compile.Click += (_, _) => Compile();
+        startRun.Click += (_, _) => StartRun();
+        nextRun.Click += (_, _) => NextRun();
+        stopRun.Click += (_, _) => StopRun();
 
         var options = workspace.ListScopes();
         scopes.ItemsSource = options;
@@ -118,6 +133,12 @@ internal sealed class LearningRoutePanel : UserControl
         reason.Children.Add(instruction);
         reason.Children.Add(macroState);
         macroState.Margin = new Thickness(0, 6, 0, 0);
+        var runButtons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
+        runButtons.Children.Add(startRun);
+        runButtons.Children.Add(nextRun);
+        runButtons.Children.Add(stopRun);
+        reason.Children.Add(runButtons);
+        reason.Children.Add(runState);
         reason.Children.Add(status);
         footer.Children.Add(reason);
         var footerButtons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom };
@@ -169,6 +190,56 @@ internal sealed class LearningRoutePanel : UserControl
         {
             TryUpdate(() => workspace.Compile(scope, snapshot));
         }
+    }
+
+    private void StartRun()
+    {
+        if (runIntents is null || snapshot?.RouteId is null || snapshot.VersionId is null)
+        {
+            return;
+        }
+        TryRun(() => runIntents.Start(
+            snapshot.GameId,
+            snapshot.EnvironmentScope,
+            snapshot.RouteId,
+            snapshot.VersionId));
+    }
+
+    private void NextRun()
+    {
+        if (runIntents is not null)
+        {
+            TryRun(runIntents.Next);
+        }
+    }
+
+    private void StopRun()
+    {
+        if (runIntents is not null)
+        {
+            TryRun(runIntents.Stop);
+        }
+    }
+
+    private void TryRun(Func<SupervisedMacroRunSnapshot> action)
+    {
+        try
+        {
+            RenderRun(action());
+        }
+        catch (Exception exception)
+        {
+            status.Text = exception.Message;
+        }
+    }
+
+    private void RenderRun(SupervisedMacroRunSnapshot value)
+    {
+        var view = SupervisedMacroRunPresenter.Project(value, draftSteps);
+        runState.Text = view.Text;
+        startRun.IsEnabled = view.CanStart;
+        nextRun.IsEnabled = view.CanDispatch;
+        stopRun.IsEnabled = view.CanStop;
     }
 
     private void Add()
@@ -276,6 +347,13 @@ internal sealed class LearningRoutePanel : UserControl
         save.IsEnabled = snapshot is not null;
         undo.IsEnabled = snapshot?.CanUndo == true;
         compile.IsEnabled = !string.IsNullOrWhiteSpace(snapshot?.VersionId);
+        startRun.IsEnabled = runIntents is not null && !string.IsNullOrWhiteSpace(snapshot?.VersionId);
+        nextRun.IsEnabled = false;
+        stopRun.IsEnabled = false;
+        if (runIntents is null)
+        {
+            runState.Text = runUnavailableReason ?? "教師付き実行の実環境接続は利用できません。";
+        }
     }
 
     private static Border Card(string heading, UIElement content)

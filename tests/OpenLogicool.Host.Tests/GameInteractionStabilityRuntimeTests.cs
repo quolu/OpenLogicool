@@ -188,6 +188,27 @@ public sealed class GameInteractionStabilityRuntimeTests
         Assert.Contains("観測処理", result.FailureReason, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Final_in_flight_timeout_keeps_uncontradicted_continuous_stability()
+    {
+        var runtime = new GameInteractionStabilityRuntime(
+            new StableThenHangingObservationRuntime(),
+            new SystemGameInteractionClock(),
+            TimeSpan.FromMilliseconds(10));
+
+        var result = await runtime.WaitStableAsync(
+            Scene("before", 1, 0.1),
+            new ExplorationWaitCondition(
+                ContractSchemaVersions.Revision03,
+                2,
+                0,
+                80));
+
+        Assert.Equal(GameInteractionStabilityStatus.Stable, result.Status);
+        Assert.NotNull(result.StableScene);
+        Assert.True(result.StableFramesObserved >= 2);
+    }
+
     private sealed class FakeClock : IGameInteractionClock
     {
         public long ElapsedMilliseconds { get; private set; }
@@ -250,6 +271,38 @@ public sealed class GameInteractionStabilityRuntimeTests
             ObservationResult observation,
             CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("unreachable");
+    }
+
+    private sealed class StableThenHangingObservationRuntime : IGameObservationRuntime
+    {
+        private int calls;
+        private ObservedScene? current;
+
+        public async ValueTask<ObservationResult> ObserveAsync(
+            CancellationToken cancellationToken = default)
+        {
+            calls++;
+            if (calls > 2)
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+            current = Scene($"stable-{calls}", calls + 1, 0.1, "設定");
+            return new ObservationResult(
+                ContractSchemaVersions.Revision03,
+                current.ObservationId,
+                current.Frame,
+                current.CaptureAvailability,
+                current.StateIdentity,
+                current.StateCandidates,
+                current.PerceptionVersion,
+                current.Frame.FreshnessMs,
+                null);
+        }
+
+        public ValueTask<ObservedScene> DiscoverTargetsAsync(
+            ObservationResult observation,
+            CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(current!);
     }
 
     private static ObservedScene Scene(

@@ -4,7 +4,8 @@ namespace OpenLogicool.Contracts.Playbooks;
 /// journal に保存できる RunEvent の payload type 閉集合（PB-006）。
 /// 観測・提案・承認・dispatch・結果・確定・訂正・手動介入の8種（t03）に、
 /// run 制御の skip・abandon・version-switch の3種（PB-007・§6.8・t05）と
-/// explorationの観測済み不成立を表すrejectionとfault解決のdisarm（§6.7）を加えた13種だけを受け入れ、
+/// explorationの観測済み不成立を表すrejection、fault解決のdisarm（§6.7）、入力前の実行環境不成立を
+/// 表すruntime-unavailableを加えた14種だけを受け入れ、
 /// 未知の種別は保存せず拒否する。pause／resume は durable な進行効果を持たないため journal 対象外
 /// （再起動後に自動で走り出す経路が存在せず、記録すべき「進行の変更」が無い）。
 /// </summary>
@@ -19,6 +20,7 @@ public static class RunEventPayloadTypes
     public const string Rejection = "rejection";
     public const string Correction = "correction";
     public const string ManualIntervention = "manual-intervention";
+    public const string RuntimeUnavailable = "runtime-unavailable";
 
     /// <summary>手順1個を実行せず飛ばした記録（§6.8「skipを別eventにする」）。NodeOrTransitionId 必須。</summary>
     public const string Skip = "skip";
@@ -40,7 +42,7 @@ public static class RunEventPayloadTypes
     public const string Disarm = "disarm";
 
     public static IReadOnlyList<string> All { get; } =
-        [Observation, Proposal, Approval, Dispatch, DispatchResult, Confirmation, Rejection, Correction, ManualIntervention, Skip, Abandon, VersionSwitch, Disarm];
+        [Observation, Proposal, Approval, Dispatch, DispatchResult, Confirmation, Rejection, Correction, ManualIntervention, RuntimeUnavailable, Skip, Abandon, VersionSwitch, Disarm];
 
     public static bool IsKnown(string payloadType) => All.Contains(payloadType, StringComparer.Ordinal);
 }

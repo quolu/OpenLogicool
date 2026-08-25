@@ -85,13 +85,23 @@ public sealed class GameInteractionStabilityRuntime(
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                return Result(
-                    GameInteractionStabilityStatus.TimedOut,
-                    observations,
-                    null,
-                    window,
-                    clock.ElapsedMilliseconds - started,
-                    "観測処理がtimeoutを超えました。");
+                return lastStable is not null
+                    ? Result(
+                        GameInteractionStabilityStatus.Stable,
+                        observations,
+                        lastStable,
+                        window,
+                        clock.ElapsedMilliseconds - started,
+                        null,
+                        lastStableFrames,
+                        lastStableMilliseconds)
+                    : Result(
+                        GameInteractionStabilityStatus.TimedOut,
+                        observations,
+                        null,
+                        window,
+                        clock.ElapsedMilliseconds - started,
+                        "観測処理がtimeoutを超えました。");
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {

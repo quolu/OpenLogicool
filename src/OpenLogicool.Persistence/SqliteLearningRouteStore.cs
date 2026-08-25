@@ -12,9 +12,21 @@ public sealed class SqliteLearningRouteStore(SqliteConnection connection) : ILea
 
     public LearningRouteRevision Append(LearningRouteDraft draft)
     {
-        ValidateDraft(draft);
-
         using var transaction = connection.BeginTransaction();
+        var revision = Append(draft, transaction);
+        transaction.Commit();
+        return revision;
+    }
+
+    internal LearningRouteRevision Append(LearningRouteDraft draft, SqliteTransaction transaction)
+    {
+        ValidateDraft(draft);
+        ArgumentNullException.ThrowIfNull(transaction);
+        if (!ReferenceEquals(transaction.Connection, connection))
+        {
+            throw new ArgumentException("transactionはこのLearning Route storeのconnectionに属していません。", nameof(transaction));
+        }
+
         var (lastNumber, actualParent) = ReadHead(draft.RouteId, transaction);
         if (!string.Equals(draft.ParentVersionId, actualParent, StringComparison.Ordinal))
         {
@@ -60,7 +72,6 @@ public sealed class SqliteLearningRouteStore(SqliteConnection connection) : ILea
         command.Parameters.AddWithValue("$schemaVersion", revision.SchemaVersion);
         command.Parameters.AddWithValue("$documentJson", JsonSerializer.Serialize(revision, Json));
         command.ExecuteNonQuery();
-        transaction.Commit();
         return revision;
     }
 

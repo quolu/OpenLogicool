@@ -33,7 +33,9 @@ public sealed class GameOperatorWindow : Window
     public GameOperatorWindow(
         IWebResearchIntent intent,
         IExplorerIntents? explorerIntents = null,
-        ILearningRouteIntents? learningRouteIntents = null)
+        ILearningRouteIntents? learningRouteIntents = null,
+        ISupervisedMacroIntents? supervisedMacroIntents = null,
+        string? supervisedUnavailableReason = null)
     {
         ArgumentNullException.ThrowIfNull(intent);
         _workspace = new WebResearchWorkspace(intent);
@@ -66,13 +68,19 @@ public sealed class GameOperatorWindow : Window
         _documents.SelectionChanged += (_, _) => ShowSelectedMarkdown();
         _start.Click += async (_, _) => await StartAsync();
 
-        Content = BuildContent(explorerIntents, learningRouteIntents);
+        Content = BuildContent(
+            explorerIntents,
+            learningRouteIntents,
+            supervisedMacroIntents,
+            supervisedUnavailableReason);
         RefreshDocuments();
     }
 
     private UIElement BuildContent(
         IExplorerIntents? explorerIntents,
-        ILearningRouteIntents? learningRouteIntents)
+        ILearningRouteIntents? learningRouteIntents,
+        ISupervisedMacroIntents? supervisedMacroIntents,
+        string? supervisedUnavailableReason)
     {
         var tabs = new TabControl
         {
@@ -86,7 +94,15 @@ public sealed class GameOperatorWindow : Window
         }
         if (learningRouteIntents is not null)
         {
-            tabs.Items.Add(new TabItem { Header = "学習した操作", Content = new LearningRoutePanel(learningRouteIntents), MinWidth = 130 });
+            tabs.Items.Add(new TabItem
+            {
+                Header = "学習した操作",
+                Content = new LearningRoutePanel(
+                    learningRouteIntents,
+                    supervisedMacroIntents,
+                    supervisedUnavailableReason),
+                MinWidth = 130,
+            });
         }
         return tabs;
     }

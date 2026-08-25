@@ -1,3 +1,4 @@
+using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Playbooks;
 
@@ -6,11 +7,72 @@ namespace OpenLogicool.Playbooks;
 /// <summary>ObservedSceneだけを使って各stepの前後画面を判定する。AI・dispatch・retryは行わない。</summary>
 public static class VisualMacroAuditor
 {
-    public static VisualMacroAuditResult AuditBefore(VisualMacroStep step, ObservedScene scene) =>
-        Audit(step, scene, VisualMacroAuditPhase.Before, step.SourceStateId);
+    public static VisualMacroAuditResult AuditBefore(VisualMacroStep step, ObservedScene scene)
+    {
+        var result = Audit(step, scene, VisualMacroAuditPhase.Before, step.SourceStateId);
+        return result.Status == VisualMacroAuditStatus.Confirmed && !HasRequiredTarget(step, scene)
+            ? result with
+            {
+                Status = VisualMacroAuditStatus.Ambiguous,
+                Message = "fresh frameで操作対象を一意に確認できません。",
+            }
+            : result;
+    }
 
     public static VisualMacroAuditResult AuditAfter(VisualMacroStep step, ObservedScene scene) =>
         Audit(step, scene, VisualMacroAuditPhase.After, step.DestinationStateId);
+
+    public static VisualMacroAuditResult AuditTransition(
+        VisualMacroStep step,
+        SupervisedMacroTransitionObservation transition)
+    {
+        ArgumentNullException.ThrowIfNull(step);
+        ArgumentNullException.ThrowIfNull(transition);
+        var final = transition.FinalScene;
+        return transition.Comparison.Judgement switch
+        {
+            GameTransitionJudgement.Moved => new VisualMacroAuditResult(
+                step.Sequence,
+                VisualMacroAuditPhase.After,
+                step.DestinationStateId,
+                final!.ObservationId,
+                VisualMacroAuditStatus.Confirmed,
+                transition.DestinationMatched
+                    ? "画面遷移と保存済みdestinationの一致を確認しました。"
+                    : "画面遷移を確認しました。destination IDは診断上不一致です。"),
+            GameTransitionJudgement.Stayed => new VisualMacroAuditResult(
+                step.Sequence,
+                VisualMacroAuditPhase.After,
+                step.DestinationStateId,
+                final!.ObservationId,
+                VisualMacroAuditStatus.UnexpectedState,
+                "10秒観測しても画面遷移を確認できませんでした。"),
+            _ => new VisualMacroAuditResult(
+                step.Sequence,
+                VisualMacroAuditPhase.After,
+                step.DestinationStateId,
+                final!.ObservationId,
+                VisualMacroAuditStatus.Ambiguous,
+                "操作後の画面遷移を確定できませんでした。"),
+        };
+    }
+
+    public static bool HasRequiredTarget(VisualMacroStep step, ObservedScene scene)
+    {
+        ArgumentNullException.ThrowIfNull(step);
+        ArgumentNullException.ThrowIfNull(scene);
+        if (step.Primitive is not ("click" or "frame-bound pointer click"))
+        {
+            return true;
+        }
+        return scene.Affordances.Count(candidate =>
+            candidate.CandidateId == step.AffordanceCandidateId
+            && candidate.ObservationId == scene.ObservationId
+            && candidate.FrameSequence == scene.Frame.Sequence
+            && candidate.TransformRevision == scene.Frame.TransformRevision
+            && candidate.TargetWindowSourceId == scene.Frame.SourceId
+            && candidate.AllowedPrimitives.Contains(step.Primitive, StringComparer.Ordinal)) == 1;
+    }
 
     private static VisualMacroAuditResult Audit(
         VisualMacroStep step,

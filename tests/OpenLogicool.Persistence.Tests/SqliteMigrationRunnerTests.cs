@@ -13,7 +13,7 @@ public sealed class SqliteMigrationRunnerTests
 
         new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
 
-        Assert.Equal(new long[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, ReadMigrationNumbers(connection));
+        Assert.Equal(Enumerable.Range(1, 11).Select(number => (long)number), ReadMigrationNumbers(connection));
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public sealed class SqliteMigrationRunnerTests
         runner.Apply(connection);
         runner.Apply(connection);
 
-        Assert.Equal(new long[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, ReadMigrationNumbers(connection));
+        Assert.Equal(Enumerable.Range(1, 11).Select(number => (long)number), ReadMigrationNumbers(connection));
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public sealed class SqliteMigrationRunnerTests
 
         new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
 
-        Assert.Equal(new long[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 }, ReadMigrationNumbers(connection));
+        Assert.Equal(Enumerable.Range(1, 11).Select(number => (long)number), ReadMigrationNumbers(connection));
         using var command = connection.CreateCommand();
         command.CommandText =
             "SELECT COUNT(*) FROM pragma_index_list('web_reference_documents') WHERE name = 'ux_web_reference_documents_source_revision';";
@@ -46,6 +46,12 @@ public sealed class SqliteMigrationRunnerTests
         Assert.Equal(1L, command.ExecuteScalar());
         command.CommandText =
             "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'structure_events';";
+        Assert.Equal(1L, command.ExecuteScalar());
+        command.CommandText =
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'learning_route_revisions';";
+        Assert.Equal(1L, command.ExecuteScalar());
+        command.CommandText =
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'learned_scene_profiles';";
         Assert.Equal(1L, command.ExecuteScalar());
     }
 

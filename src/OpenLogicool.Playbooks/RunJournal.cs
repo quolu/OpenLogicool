@@ -102,6 +102,9 @@ public sealed class RunJournal
             case RunEventPayloadTypes.Disarm when runEvent.ActorType != RunEventActorType.System:
                 throw new ArgumentException(
                     "disarm event の ActorType は System だけです（runtime の保証判定の記録）。", nameof(runEvent));
+            case RunEventPayloadTypes.RuntimeUnavailable when runEvent.ActorType != RunEventActorType.System:
+                throw new ArgumentException(
+                    "runtime-unavailable event の ActorType は System だけです。", nameof(runEvent));
             default:
                 break;
         }

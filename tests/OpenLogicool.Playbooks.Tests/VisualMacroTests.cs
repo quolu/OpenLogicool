@@ -59,6 +59,19 @@ public sealed class VisualMacroTests
         Assert.Equal(expected == VisualMacroAuditStatus.Confirmed, result.CanContinue);
     }
 
+    [Fact]
+    public void Audit_before_click_requires_the_frame_bound_target_from_the_same_observation()
+    {
+        var step = Assert.Single(VisualMacroCompiler.Compile(Route(), Revision(), []).Steps);
+
+        var result = VisualMacroAuditor.AuditBefore(
+            step,
+            Scene(CaptureAvailability.Available, StateIdentityStatus.Known, "state:source", includeTarget: false));
+
+        Assert.Equal(VisualMacroAuditStatus.Ambiguous, result.Status);
+        Assert.False(result.CanContinue);
+    }
+
     private static LearningRouteRevision Route() => new(
         ContractSchemaVersions.Revision03,
         "route-1",
@@ -125,7 +138,8 @@ public sealed class VisualMacroTests
     private static ObservedScene Scene(
         CaptureAvailability availability,
         StateIdentityStatus identity,
-        string? hypothesis) => new(
+        string? hypothesis,
+        bool includeTarget = true) => new(
         ContractSchemaVersions.Revision03,
         "scene-1",
         "observation-1",
@@ -143,6 +157,18 @@ public sealed class VisualMacroTests
         identity,
         hypothesis,
         [],
-        [],
+        includeTarget
+            ? [new AffordanceCandidate(
+                ContractSchemaVersions.Revision03,
+                "affordance:daily",
+                "observation-1",
+                1,
+                1,
+                "window-1",
+                new AffordanceLocator(ContractSchemaVersions.Revision03, "ocr-normalized-rect", [0.1, 0.1, 0.1, 0.1], "locator:v1"),
+                [],
+                1,
+                ["click"])]
+            : [],
         "perception:v1");
 }

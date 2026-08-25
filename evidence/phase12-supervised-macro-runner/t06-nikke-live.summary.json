@@ -1,0 +1,49 @@
+{
+  "SchemaVersion": "summary-1",
+  "DerivedFrom": "probe-output/supervised-macro-live-20260825-192745-622.json",
+  "DerivedFromSha256": "59a2814ac8dbd5e6be26172c7e5e6bfe755b5f435bc4bb06fd5e0bb85a1b472e",
+  "DerivedFromLength": 845826,
+  "RunId": "macro-run:2e738eda571c4afe92989441c8a9ec08",
+  "Mode": "OwnerDelegatedAutomation",
+  "GameId": "nikke-global-jp",
+  "EnvironmentScope": "windows11-ja/nikke-live-2026-08-24",
+  "RouteId": "learning:nikke-safe-slice",
+  "RouteVersionId": "route:89ce3a9c37144cdb5bc876e4c103150a3eb284c76af9f8af6e7b45738fc670ed",
+  "TerminalState": "Completed",
+  "TotalSteps": 2,
+  "FocusAltTabCount": 0,
+  "DispatchCount": 2,
+  "DispatchReportedCount": 2,
+  "ConfirmationCount": 2,
+  "ApprovalActors": ["Automation", "Automation"],
+  "SendInputDispatchCount": 0,
+  "ComputerUseDispatchCount": 0,
+  "RetryCount": 0,
+  "FallbackCount": 0,
+  "Transitions": [
+    {
+      "Step": 1,
+      "StabilityStatus": "Stable",
+      "ObservationCount": 24,
+      "StableFramesObserved": 23,
+      "StableMillisecondsObserved": 8907,
+      "ElapsedMilliseconds": 10221,
+      "Judgement": "Moved",
+      "FinalStateId": "state:9be8c993-356d-4ea6-844c-23dd69b29faf",
+      "DestinationMatched": true
+    },
+    {
+      "Step": 2,
+      "StabilityStatus": "Stable",
+      "ObservationCount": 19,
+      "StableFramesObserved": 12,
+      "StableMillisecondsObserved": 8822,
+      "ElapsedMilliseconds": 10101,
+      "Judgement": "Moved",
+      "FinalStateId": "state:1fc3da39-8282-4e63-8540-2d0907ea143b",
+      "DestinationMatched": true
+    }
+  ],
+  "FinalStateId": "state:1fc3da39-8282-4e63-8540-2d0907ea143b",
+  "Passed": true
+}
