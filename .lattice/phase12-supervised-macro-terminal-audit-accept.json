@@ -1,0 +1,27 @@
+{
+  "schema": "lattice.phase_accept_input.v1",
+  "review_event_digest": "c727d08c7f360f25a4422b795996535cbee9befd3b88f352d6d2887213204ac6",
+  "decision_evidence": {
+    "anchor_digest": null,
+    "content_digest": "624ff9ed7d4af355c9a5a5bcd1573b6de10f6e51f35ab8e2f6c84dc97c67afe2",
+    "evidence_id": "ev-phase12-supervised-macro-terminal-audit",
+    "git_blob_oid": "a0fa6ea1dcfa0c50c9fc2779f3d559427ca077b9",
+    "media_type": "text/markdown",
+    "path": "docs/phase12-supervised-macro-runner-exit-assessment.md",
+    "repo_id": "self"
+  },
+  "evidence_slots": [
+    {
+      "slot_id": "terminal-audit",
+      "evidence": {
+        "anchor_digest": null,
+        "content_digest": "624ff9ed7d4af355c9a5a5bcd1573b6de10f6e51f35ab8e2f6c84dc97c67afe2",
+        "evidence_id": "ev-phase12-supervised-macro-terminal-audit",
+        "git_blob_oid": "a0fa6ea1dcfa0c50c9fc2779f3d559427ca077b9",
+        "media_type": "text/markdown",
+        "path": "docs/phase12-supervised-macro-runner-exit-assessment.md",
+        "repo_id": "self"
+      }
+    }
+  ]
+}
