@@ -71,6 +71,13 @@ public sealed record AffordanceLocator(
     IReadOnlyList<double> NormalizedBounds,
     string LocatorRevision);
 
+public sealed record VisualPatchSignature(
+    string SchemaVersion,
+    int SampleWidth,
+    int SampleHeight,
+    string LumaBase64,
+    string Sha256);
+
 public sealed record AffordanceCandidate(
     string SchemaVersion,
     string CandidateId,
@@ -83,7 +90,12 @@ public sealed record AffordanceCandidate(
     double Confidence,
     IReadOnlyList<string> AllowedPrimitives,
     string? SemanticKind = null,
-    string? SemanticLabel = null);
+    string? SemanticLabel = null,
+    VisualPatchSignature? VisualPatch = null,
+    IReadOnlyList<string>? KeyTokens = null,
+    int? VerticalScrollSteps = null,
+    int? HorizontalScrollSteps = null,
+    IReadOnlyList<double>? DragDestinationNormalized = null);
 
 public sealed record ObservedScene(
     string SchemaVersion,

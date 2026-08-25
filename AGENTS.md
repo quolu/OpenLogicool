@@ -28,6 +28,7 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 5. **技術基盤**: C# / .NET 10 LTS / WPF / net10.0-windows。Windows UI・HID・capture・input・installer の受入は Windows native 実行だけを証拠とする（WSL2は文書・fixture等のみ）。Windows開発shellはPowerShell 7（`pwsh.exe`）だけとし、OpenLogicool runtimeはpsmuxへ依存しない。永続PTYが必要な開発作業だけAiterm公開APIを使う。
 6. **未決定を仮実装で埋めない**: 決定期限（計画 §16）までは interface と fixture だけを作り、decision 後に一つの方式を実装する。
 7. **技術判定をオーナーへぶん投げない**: Phase Exit・合否は親が宣言して閉じる。人が機械を動かさないと取れない観測（UAC・実機接続）だけが人待ち。
+8. **Game Operatorのボタン探索・OCR裁定（オーナー裁定 2026-08-25）**: ボタンをAIで探すのは、現在ページに保存済みボタンがない時と、保存済みボタンを実行して10秒観測しても正常遷移しなかった時だけとする。AI座標・OCR文字列の差だけで候補を誤りと判定せず、送出後の画面遷移で判定する。全OCR照合は正規化と軽い文字距離を使い、完全一致を要求しない。後の観測でより自然なOCR文字列が得られた時は、StateId・ActionId・座標・遷移・旧証拠を維持して保存文字列を更新する。
 
 ## 開発運用
 

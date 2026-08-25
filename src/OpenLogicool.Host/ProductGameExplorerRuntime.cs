@@ -141,6 +141,11 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     private readonly ExplorationPolicy policy;
     private readonly bool gamePolicyAllowsExplore;
     private readonly ExplorationWaitCondition interactionWaitCondition;
+    private readonly string interactionOperation;
+    private readonly IReadOnlyList<string>? interactionKeyTokens;
+    private readonly int? interactionVerticalScrollSteps;
+    private readonly int? interactionHorizontalScrollSteps;
+    private readonly IReadOnlyList<double>? interactionDragDestination;
     private readonly TimeProvider time;
     private readonly SemaphoreSlim execution = new(1, 1);
     private readonly HashSet<string> tried = new(StringComparer.Ordinal);
@@ -163,10 +168,15 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         IProductExplorationCoordinator coordinator,
         IExplorationCandidateRiskPolicy riskPolicy,
         ExplorationPolicy policy,
-        bool gamePolicyAllowsExplore,
-        TimeProvider? timeProvider = null,
-        ExplorationWaitCondition? interactionWaitCondition = null,
-        IIncrementalKnownScreenIndex? knownScreenIndex = null)
+    bool gamePolicyAllowsExplore,
+    TimeProvider? timeProvider = null,
+    ExplorationWaitCondition? interactionWaitCondition = null,
+    IIncrementalKnownScreenIndex? knownScreenIndex = null,
+    string interactionOperation = GameInteractionOperations.Click,
+    IReadOnlyList<string>? interactionKeyTokens = null,
+    int? interactionVerticalScrollSteps = null,
+    int? interactionHorizontalScrollSteps = null,
+    IReadOnlyList<double>? interactionDragDestination = null)
     {
         GameId = gameId;
         EnvironmentScope = policy.EnvironmentScope;
@@ -185,7 +195,26 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             ContractSchemaVersions.Revision03,
             3,
             300,
-            5_000);
+            10_000);
+        if (!GameInteractionOperations.InputOperations.Contains(interactionOperation, StringComparer.Ordinal))
+        {
+            throw new ArgumentOutOfRangeException(nameof(interactionOperation));
+        }
+        if (interactionOperation == GameInteractionOperations.KeyTap
+            && (interactionKeyTokens is null || interactionKeyTokens.Count == 0)
+            || interactionOperation == GameInteractionOperations.Scroll
+                && interactionVerticalScrollSteps.GetValueOrDefault() == 0
+                && interactionHorizontalScrollSteps.GetValueOrDefault() == 0
+            || interactionOperation == GameInteractionOperations.Drag
+                && interactionDragDestination is not { Count: 2 })
+        {
+            throw new ArgumentException("操作種別に必要なKeyTap／Scroll／Drag parameterがありません。");
+        }
+        this.interactionOperation = interactionOperation;
+        this.interactionKeyTokens = interactionKeyTokens;
+        this.interactionVerticalScrollSteps = interactionVerticalScrollSteps;
+        this.interactionHorizontalScrollSteps = interactionHorizontalScrollSteps;
+        this.interactionDragDestination = interactionDragDestination;
         time = timeProvider ?? TimeProvider.System;
     }
 
@@ -234,6 +263,38 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         cancellationToken.ThrowIfCancellationRequested();
         return ValueTask.FromResult(actions.Click(target, RequireCurrentObservation()));
     }
+
+    private ValueTask<GameInteractionDispatchReceipt> DispatchOperationAsync(
+        string operation,
+        GameInteractionTargetBinding target,
+        CancellationToken cancellationToken) => operation switch
+        {
+            GameInteractionOperations.Hover => HoverAsync(target, cancellationToken),
+            GameInteractionOperations.Click => ClickAsync(target, cancellationToken),
+            GameInteractionOperations.KeyTap => KeyTapAsync(
+                new GameInteractionKeyTapRequest(
+                    ContractSchemaVersions.Revision03,
+                    target.ObservationId,
+                    target.FrameSequence,
+                    target.TransformRevision,
+                    target.TargetWindowSourceId,
+                    interactionKeyTokens!),
+                cancellationToken),
+            GameInteractionOperations.Scroll => ScrollAsync(
+                new GameInteractionScrollRequest(
+                    ContractSchemaVersions.Revision03,
+                    target,
+                    interactionVerticalScrollSteps.GetValueOrDefault(),
+                    interactionHorizontalScrollSteps.GetValueOrDefault()),
+                cancellationToken),
+            GameInteractionOperations.Drag => DragAsync(
+                new GameInteractionDragRequest(
+                    ContractSchemaVersions.Revision03,
+                    target,
+                    interactionDragDestination!),
+                cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(operation)),
+        };
 
     public ValueTask<GameInteractionDispatchReceipt> KeyTapAsync(
         GameInteractionKeyTapRequest request,
@@ -374,9 +435,19 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 stopReasonLabel = decision.Detail;
                 return Result(ProductGameExplorerStepStatus.AdmissionStopped, decision.Detail, before, target);
             }
+            var sourceSamples = await CaptureSourceSamplesAsync(before, cancellationToken).ConfigureAwait(false);
+            currentObservation = observed;
+            var indexedTarget = target with
+            {
+                AllowedPrimitives = [interactionOperation],
+                KeyTokens = interactionKeyTokens,
+                VerticalScrollSteps = interactionVerticalScrollSteps,
+                HorizontalScrollSteps = interactionHorizontalScrollSteps,
+                DragDestinationNormalized = interactionDragDestination,
+            };
             _ = knownScreenIndex?.RememberControl(
-                before,
-                target,
+                sourceSamples,
+                indexedTarget,
                 $"control:{before.ObservationId}:{target.CandidateId}");
             var attemptId = coordinator.GetActiveAttemptId(proposal.ProposalId);
             GameInteractionDispatchReceipt? dispatch = null;
@@ -384,7 +455,10 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             {
                 coordinator.Dispatch(proposal.ProposalId, () =>
                 {
-                    dispatch = ClickAsync(GameInteractionTargetBinding.From(target), cancellationToken)
+                    dispatch = DispatchOperationAsync(
+                            interactionOperation,
+                            GameInteractionTargetBinding.From(target),
+                            cancellationToken)
                         .AsTask().GetAwaiter().GetResult();
                     if (dispatch.Status == GameInteractionDispatchStatus.DispatchFailed)
                     {
@@ -439,11 +513,11 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 policy.PolicyRevisionId));
             if (learned.Evidence is not null)
             {
-                if (learned.Evidence.Outcome != ExplorationOutcomeKind.OutcomeUnknown)
+                if (comparison.Judgement == GameTransitionJudgement.Moved)
                 {
                     _ = knownScreenIndex?.RememberDestination(
-                        before,
-                        target,
+                        sourceSamples,
+                        indexedTarget,
                         waited.Observations
                             .Where(scene => GameSceneSemanticComparer.StableEquivalent(
                                 GameSceneSemanticComparer.Signature(scene),
@@ -481,10 +555,34 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         }
     }
 
+    private async ValueTask<IReadOnlyList<ObservedScene>> CaptureSourceSamplesAsync(
+        ObservedScene before,
+        CancellationToken cancellationToken)
+    {
+        if (knownScreenIndex is null)
+        {
+            return [before];
+        }
+        var samples = new List<ObservedScene> { before };
+        for (var index = 0; index < 2; index++)
+        {
+            await Task.Delay(150, cancellationToken).ConfigureAwait(false);
+            var observed = await ObserveAsync(cancellationToken).ConfigureAwait(false);
+            var sample = await DiscoverTargetsAsync(observed, cancellationToken).ConfigureAwait(false);
+            if (!string.Equals(sample.Frame.SourceId, before.Frame.SourceId, StringComparison.Ordinal)
+                || sample.Frame.TransformRevision != before.Frame.TransformRevision)
+            {
+                throw new InvalidOperationException("送出前のsourceページが安定していないため操作を開始しません。");
+            }
+            samples.Add(sample);
+        }
+        return samples;
+    }
+
     private (AffordanceCandidate Candidate, ExplorationCandidateRiskDecision Risk)? Select(ObservedScene scene)
     {
         foreach (var candidate in scene.Affordances
-                     .Where(candidate => candidate.AllowedPrimitives.Contains(GameInteractionOperations.Click, StringComparer.Ordinal)))
+                     .Where(candidate => candidate.AllowedPrimitives.Contains(interactionOperation, StringComparer.Ordinal)))
         {
             if (tried.Contains(ProbeKey(scene, candidate)))
             {
@@ -512,7 +610,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             scene.ObservationId,
             structureRevisionId,
             candidate.CandidateId,
-            GameInteractionOperations.Click,
+            interactionOperation,
             $"probe:{GameSceneSemanticComparer.TargetKey(candidate)}",
             [
                 ExplorationOutcomeKind.Destination,

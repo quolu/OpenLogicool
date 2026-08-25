@@ -43,7 +43,87 @@ public sealed class KnownScreenActionRuntimeTests
         Assert.True(result.DestinationMatched);
     }
 
-    private static LearnedSceneProfileDocument Profile() => new(
+    [Fact]
+    public async Task Saved_hover_without_transition_is_not_accepted()
+    {
+        var store = new ProfileStore(Profile(GameInteractionOperations.Hover, "state-a"));
+        var before = Scene("state-a", 1, includeAction: true, GameInteractionOperations.Hover);
+        var after = Scene("state-a", 2, includeAction: true, GameInteractionOperations.Hover);
+        var device = new RecordingDevice();
+        var runtime = new KnownScreenActionRuntime(
+            new ObservationRuntime(before),
+            new NanoGameInteractionActions(device, new Mapper()),
+            new Stability(after),
+            new GameTransitionJudge(),
+            store,
+            "nikke",
+            "env",
+            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 60_000),
+            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            gamePolicyAllowsExecute: true);
+
+        var result = await runtime.ExecuteKnownAsync("action-a");
+
+        Assert.Equal(1, device.HoverCount);
+        Assert.Equal(0, device.ClickCount);
+        Assert.Equal(GameTransitionJudgement.Stayed, result.Comparison.Judgement);
+        Assert.False(result.DestinationMatched);
+        Assert.Equal(0, result.AiCallCount);
+    }
+
+    [Theory]
+    [InlineData(GameInteractionOperations.KeyTap)]
+    [InlineData(GameInteractionOperations.Scroll)]
+    [InlineData(GameInteractionOperations.Drag)]
+    public async Task Executes_saved_non_click_operation_once_without_ai(string operation)
+    {
+        var profile = Profile(operation) with
+        {
+            States =
+            [
+                State("state-a", [OperationSignature(operation)]),
+                State("state-b", []),
+            ],
+        };
+        var device = new RecordingDevice();
+        var runtime = new KnownScreenActionRuntime(
+            new ObservationRuntime(Scene("state-a", 1, includeAction: true, operation)),
+            new NanoGameInteractionActions(device, new Mapper()),
+            new Stability(Scene("state-b", 2, includeAction: false, operation)),
+            new GameTransitionJudge(),
+            new ProfileStore(profile),
+            "nikke",
+            "env",
+            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 60_000),
+            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            gamePolicyAllowsExecute: true);
+
+        var result = await runtime.ExecuteKnownAsync("action-a");
+
+        Assert.Equal(0, result.AiCallCount);
+        Assert.Equal(GameTransitionJudgement.Moved, result.Comparison.Judgement);
+        Assert.True(result.DestinationMatched);
+        Assert.Equal(operation == GameInteractionOperations.KeyTap ? 1 : 0, device.KeyTapCount);
+        Assert.Equal(operation == GameInteractionOperations.Scroll ? 1 : 0, device.ScrollCount);
+        Assert.Equal(operation == GameInteractionOperations.Drag ? 1 : 0, device.DragCount);
+    }
+
+    private static LearnedAffordanceSignature OperationSignature(string operation) => new(
+        "action-a",
+        "locator-a",
+        "アリーナ",
+        [0.4, 0.4, 0.1, 0.05],
+        [operation],
+        ["evidence-a"],
+        "state-b",
+        KeyTokens: operation == GameInteractionOperations.KeyTap ? ["Key:Esc"] : null,
+        VerticalScrollSteps: operation == GameInteractionOperations.Scroll ? -3 : null,
+        HorizontalScrollSteps: operation == GameInteractionOperations.Scroll ? 0 : null,
+        DragDestinationNormalized: operation == GameInteractionOperations.Drag ? [0.7, 0.7] : null);
+
+    private static LearnedSceneProfileDocument Profile(
+        string operation = GameInteractionOperations.Click,
+        string destinationStateId = "state-b") => new(
         ContractSchemaVersions.Revision03,
         "profile-1",
         "known-screen-index-v1",
@@ -59,9 +139,9 @@ public sealed class KnownScreenActionRuntimeTests
                 "locator-a",
                 "アリーナ",
                 [0.4, 0.4, 0.1, 0.05],
-                [GameInteractionOperations.Click],
+                [operation],
                 ["evidence-a"],
-                "state-b")]),
+                destinationStateId)]),
             State("state-b", []),
         ],
         ["evidence-a", "evidence-b"]);
@@ -78,7 +158,11 @@ public sealed class KnownScreenActionRuntimeTests
             affordances,
             [$"evidence-{stateId}"]);
 
-    private static ObservedScene Scene(string stateId, long sequence, bool includeAction)
+    private static ObservedScene Scene(
+        string stateId,
+        long sequence,
+        bool includeAction,
+        string operation = GameInteractionOperations.Click)
     {
         var observationId = $"observation-{sequence}";
         var frame = new CapturedFrameReference(
@@ -105,7 +189,7 @@ public sealed class KnownScreenActionRuntimeTests
                 "locator-a"),
             [new EvidenceRegion(ContractSchemaVersions.Revision03, "rect", [0.4, 0.4, 0.1, 0.05], "ocr")],
             1,
-            [GameInteractionOperations.Click],
+            [operation],
             "text",
             "アリーナ");
         return new ObservedScene(
@@ -170,11 +254,15 @@ public sealed class KnownScreenActionRuntimeTests
     private sealed class RecordingDevice : INanoGameInputDevice
     {
         public int ClickCount { get; private set; }
-        public string Hover(SerialHidCursorPoint target) => throw new NotSupportedException();
+        public int HoverCount { get; private set; }
+        public int KeyTapCount { get; private set; }
+        public int ScrollCount { get; private set; }
+        public int DragCount { get; private set; }
+        public string Hover(SerialHidCursorPoint target) { HoverCount++; return "hover"; }
         public string Click(SerialHidCursorPoint target) { ClickCount++; return "click"; }
-        public string KeyTap(IReadOnlyList<string> keys) => throw new NotSupportedException();
-        public string Scroll(SerialHidCursorPoint target, int verticalSteps, int horizontalSteps) => throw new NotSupportedException();
-        public string Drag(SerialHidCursorPoint start, SerialHidCursorPoint destination) => throw new NotSupportedException();
+        public string KeyTap(IReadOnlyList<string> keys) { KeyTapCount++; return "key-tap"; }
+        public string Scroll(SerialHidCursorPoint target, int verticalSteps, int horizontalSteps) { ScrollCount++; return "scroll"; }
+        public string Drag(SerialHidCursorPoint start, SerialHidCursorPoint destination) { DragCount++; return "drag"; }
     }
 
     private sealed class Mapper : IGameInteractionCoordinateMapper

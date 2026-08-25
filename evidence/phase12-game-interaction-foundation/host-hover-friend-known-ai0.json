@@ -1,0 +1,34 @@
+{
+  "Mode": "execute",
+  "ProductHostEntry": true,
+  "ActionId": "known-action:f0be61ccdad26b5bdb6f1f4de26c7ec75d64b81644c396e6ee9a59e02951661b",
+  "SourceStateId": "known-screen:588aca3c2881b13aea736b6523d4d0362e1986cbf29c535448e3c85d90875e5c",
+  "ExpectedDestinationStateId": "known-screen:defc91ce5ff821ff2003ba680415e30190e86ae8390a4cc686c9a6dd839128d5",
+  "ObservedDestinationStateId": "known-screen:588aca3c2881b13aea736b6523d4d0362e1986cbf29c535448e3c85d90875e5c",
+  "DestinationMatched": false,
+  "AiCallCount": 0,
+  "Dispatch": {
+    "SchemaVersion": "0.3.0",
+    "Operation": "hover",
+    "Status": "Dispatched",
+    "ObservationId": "observation:window:game-index:27492:2:f3b6d7d5c7fe41689c8a8e632f397bff",
+    "TargetWindowSourceId": "window:game-index:27492",
+    "Route": "NanoSerialHid",
+    "DispatchCount": 1,
+    "StartedUtc": "2026-08-25T06:18:57.0702993+00:00",
+    "CompletedUtc": "2026-08-25T06:18:57.4435201+00:00",
+    "CandidateId": "known-action:f0be61ccdad26b5bdb6f1f4de26c7ec75d64b81644c396e6ee9a59e02951661b",
+    "TransportReceiptId": "pointer:1365,61-\u003E2482,1096;deltas:24",
+    "FailureReason": null
+  },
+  "Comparison": {
+    "SchemaVersion": "0.3.0",
+    "BeforeObservationId": "observation:window:game-index:27492:2:f3b6d7d5c7fe41689c8a8e632f397bff",
+    "AfterObservationId": "observation:window:game-index:27492:10:8d577f9dfa054686bc6eb893f6d4d8bb",
+    "Judgement": "Stayed",
+    "ChangedRegions": [],
+    "Reasons": [
+      "state\u5019\u88DC\u3068actionable structure\u304C\u540C\u4E00"
+    ]
+  }
+}

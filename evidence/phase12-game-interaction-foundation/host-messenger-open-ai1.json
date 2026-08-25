@@ -1,0 +1,53 @@
+{
+  "Mode": "discover",
+  "ProductHostEntry": true,
+  "Status": "Learned",
+  "Detail": "outcome:OutcomeUnknown",
+  "Dispatch": {
+    "SchemaVersion": "0.3.0",
+    "Operation": "click",
+    "Status": "Dispatched",
+    "ObservationId": "observation:window:game-index:27492:2:1",
+    "TargetWindowSourceId": "window:game-index:27492",
+    "Route": "NanoSerialHid",
+    "DispatchCount": 1,
+    "StartedUtc": "2026-08-25T06:52:41.2849788+00:00",
+    "CompletedUtc": "2026-08-25T06:52:41.7865314+00:00",
+    "CandidateId": "affordance:observation:window:game-index:27492:2:1:1",
+    "TransportReceiptId": "pointer:2511,400-\u003E572,344;deltas:32;mouse-left-down-up",
+    "FailureReason": null
+  },
+  "Comparison": {
+    "SchemaVersion": "0.3.0",
+    "BeforeObservationId": "observation:window:game-index:27492:2:1",
+    "AfterObservationId": null,
+    "Judgement": "Undetermined",
+    "ChangedRegions": [],
+    "Reasons": [
+      "stability:TimedOut"
+    ]
+  },
+  "Target": "Messenger",
+  "TargetBounds": [
+    0.12,
+    0.26,
+    0.18,
+    0.05
+  ],
+  "VisionStatus": "Completed",
+  "VisionFailure": "None",
+  "VisionFailureDetail": null,
+  "VisionRawResponse": "{\n  \u0022controls\u0022: [\n    {\n      \u0022kind\u0022: \u0022text\u0022,\n      \u0022label\u0022: \u0022Messenger\u0022,\n      \u0022x\u0022: 0.12,\n      \u0022y\u0022: 0.26,\n      \u0022width\u0022: 0.18,\n      \u0022height\u0022: 0.05\n    }\n  ]\n}",
+  "Goal": "Messenger\u3092\u958B\u304F",
+  "Operation": "click",
+  "IncludeVisualTargets": true,
+  "RediscoveryStarted": true,
+  "RediscoveryReason": "\u73FE\u5728\u30DA\u30FC\u30B8\u7528\u306E\u4FDD\u5B58\u6E08\u307F\u30DC\u30BF\u30F3\u30C7\u30FC\u30BF\u304C\u3042\u308A\u307E\u305B\u3093\u3002",
+  "ActionId": "known-action:b7d43cb1f70a4ba527e637701177e0141afe6c8091430989f0701dbc25a195f9",
+  "DestinationStateId": null,
+  "IndexedStateCount": 1,
+  "IndexedActionCount": 1,
+  "ExplorerRuntimeConnected": true,
+  "AiCallCount": 1,
+  "Database": "C:\\Users\\kite_\\AppData\\Local\\Temp\\openlogicool-messenger-4fd16c380b6d47368b883f0ad1249dae.db"
+}

@@ -131,6 +131,36 @@ public sealed class ProductGameExplorerRuntimeTests
         Assert.Equal(0, stability.Calls);
     }
 
+    [Theory]
+    [InlineData(GameInteractionOperations.KeyTap)]
+    [InlineData(GameInteractionOperations.Scroll)]
+    [InlineData(GameInteractionOperations.Drag)]
+    public async Task Product_step_dispatches_non_click_operation_and_learns_transition(string operation)
+    {
+        var before = Scene("before", 1, "一覧", 0.1, operation);
+        var after = Scene("after", 2, "移動後", 0.7, operation);
+        var device = new Device();
+        var runtime = Runtime(
+            new ObservationRuntime([before]),
+            new StabilityWaiter(after),
+            new Coordinator(),
+            device,
+            new Learner(),
+            new StructureCommitter(),
+            gamePolicyAllowsExplore: true,
+            operation: operation,
+            keyTokens: operation == GameInteractionOperations.KeyTap ? ["Key:Esc"] : null,
+            verticalSteps: operation == GameInteractionOperations.Scroll ? -3 : null,
+            dragDestination: operation == GameInteractionOperations.Drag ? [0.7, 0.7] : null);
+
+        var result = await runtime.ExecuteNextAsync();
+
+        Assert.Equal(ProductGameExplorerStepStatus.Learned, result.Status);
+        Assert.Equal(GameTransitionJudgement.Moved, result.Comparison!.Judgement);
+        Assert.Equal([operation], device.Calls);
+        Assert.Equal(operation, result.Dispatch!.Operation);
+    }
+
     private static ProductGameExplorerRuntime Runtime(
         IGameObservationRuntime observation,
         IGameInteractionStabilityWaiter stability,
@@ -138,7 +168,11 @@ public sealed class ProductGameExplorerRuntimeTests
         Device device,
         Learner learning,
         StructureCommitter structure,
-        bool gamePolicyAllowsExplore)
+        bool gamePolicyAllowsExplore,
+        string operation = GameInteractionOperations.Click,
+        IReadOnlyList<string>? keyTokens = null,
+        int? verticalSteps = null,
+        IReadOnlyList<double>? dragDestination = null)
     {
         var actions = new NanoGameInteractionActions(device, new Mapper());
         return new ProductGameExplorerRuntime(
@@ -153,7 +187,12 @@ public sealed class ProductGameExplorerRuntimeTests
             DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
             Policy(),
             gamePolicyAllowsExplore,
-            TimeProvider.System);
+            TimeProvider.System,
+            interactionOperation: operation,
+            interactionKeyTokens: keyTokens,
+            interactionVerticalScrollSteps: verticalSteps,
+            interactionHorizontalScrollSteps: operation == GameInteractionOperations.Scroll ? 0 : null,
+            interactionDragDestination: dragDestination);
     }
 
     private static ExplorationPolicy Policy() => new(
@@ -163,7 +202,7 @@ public sealed class ProductGameExplorerRuntimeTests
         "window:game",
         "nikke:test",
         "safe-menu",
-        [GameInteractionOperations.Click],
+        GameInteractionOperations.InputOperations,
         ["purchase", "paid-resource", "rare-resource", "gacha", "delete", "account-change"],
         new ExplorationBudget(ContractSchemaVersions.Revision03, 10, 60_000, 60_000),
         true,
@@ -346,7 +385,12 @@ public sealed class ProductGameExplorerRuntimeTests
         public SerialHidCursorPoint MapNormalized(IReadOnlyList<double> normalizedPoint) => new(300, 400);
     }
 
-    private static ObservedScene Scene(string id, long sequence, string label, double x) => new(
+    private static ObservedScene Scene(
+        string id,
+        long sequence,
+        string label,
+        double x,
+        string operation = GameInteractionOperations.Click) => new(
         ContractSchemaVersions.Revision03,
         $"scene-{id}",
         id,
@@ -382,7 +426,7 @@ public sealed class ProductGameExplorerRuntimeTests
                 [x, 0.2, 0.1, 0.1],
                 "foundry-local")],
             0.5,
-            [GameInteractionOperations.Hover, GameInteractionOperations.Click],
+            [operation],
             "text",
             label)],
         "foundry-local-controls");

@@ -25,6 +25,7 @@ public static class GameSceneSemanticComparer
             .Order(StringComparer.Ordinal)
             .ToArray();
         var affordances = scene.Affordances
+            .Where(candidate => !string.Equals(candidate.SemanticKind, "probe-target", StringComparison.Ordinal))
             .Select(TargetKey)
             .Order(StringComparer.Ordinal)
             .ToArray();

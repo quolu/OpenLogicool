@@ -65,8 +65,8 @@ public interface ILocalLabelDiscoveryProvider
 /// </summary>
 public sealed class FoundryLocalDiscoveryVisionProvider : ILocalLabelDiscoveryProvider
 {
-    private const double MinimumFuzzySimilarity = 0.85;
-    private const double MinimumFuzzyMargin = 0.15;
+    private const double MinimumFuzzySimilarity = 0.55;
+    private const double MinimumFuzzyMargin = 0.08;
     private readonly FoundryLocalVisionClient client;
 
     public FoundryLocalDiscoveryVisionProvider(FoundryLocalVisionClient client)
@@ -190,7 +190,10 @@ public sealed class FoundryLocalDiscoveryVisionProvider : ILocalLabelDiscoveryPr
                 request.LocatorRevision),
             [item.Region.EvidenceRegion],
             Confidence(label: item.Label, observed: item.Region.Text),
-            request.AllowedPrimitives.Contains("click", StringComparer.Ordinal) ? ["click"] : [],
+            request.AllowedPrimitives
+                .Where(operation => GameInteractionOperations.InputOperations.Contains(operation, StringComparer.Ordinal))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray(),
             "text",
             item.Label))
             .ToArray();
@@ -264,7 +267,7 @@ public sealed class FoundryLocalDiscoveryVisionProvider : ILocalLabelDiscoveryPr
                 ExplorationOutcomeKind.Fault,
                 ExplorationOutcomeKind.OutcomeUnknown,
             ],
-            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 3, 300, 5_000),
+            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 3, 300, 10_000),
             ["capture-unavailable", "stale-transform", "budget-exhausted", "recovery-lost"]);
 
     private static void Validate(LocalVisionSceneRequest request, ReadOnlyMemory<byte> pngBytes)

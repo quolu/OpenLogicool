@@ -77,7 +77,7 @@ internal sealed record FoundryVisionRawResponse(
 public sealed class FoundryLocalVisionClient : IDisposable
 {
     public const string PromptRevision = "clickable-visible-labels-v2";
-    public const string ControlsPromptRevision = "clickable-controls-v2";
+    public const string ControlsPromptRevision = "clickable-controls-v3";
 
     private const string Prompt =
         "Read the image. Find visually clickable controls that contain visible words. " +
@@ -165,6 +165,8 @@ public sealed class FoundryLocalVisionClient : IDisposable
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(BuildLabelsPrompt(candidateLabels, targetIntent))));
     public string ControlsPromptSha256 =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(ControlsPrompt)));
+    public string ControlsPromptSha256For(string? targetIntent) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(BuildControlsPrompt(targetIntent))));
 
     public async Task<FoundryVisionResult> ProposeLabelsAsync(
         ReadOnlyMemory<byte> pngBytes,
@@ -287,8 +289,18 @@ public sealed class FoundryLocalVisionClient : IDisposable
     public async Task<FoundryVisionControlsResult> ProposeControlsAsync(
         ReadOnlyMemory<byte> pngBytes,
         CancellationToken cancellationToken = default)
+        => await ProposeControlsAsync(pngBytes, null, cancellationToken).ConfigureAwait(false);
+
+    public async Task<FoundryVisionControlsResult> ProposeControlsAsync(
+        ReadOnlyMemory<byte> pngBytes,
+        string? targetIntent,
+        CancellationToken cancellationToken = default)
     {
-        var raw = await SendVisionAsync(ControlsPrompt, 1_500, pngBytes, cancellationToken).ConfigureAwait(false);
+        var raw = await SendVisionAsync(
+            BuildControlsPrompt(targetIntent),
+            1_500,
+            pngBytes,
+            cancellationToken).ConfigureAwait(false);
         if (raw.Status != FoundryVisionStatus.Completed)
         {
             return ControlsFromRaw(raw, []);
@@ -307,8 +319,28 @@ public sealed class FoundryLocalVisionClient : IDisposable
                 raw.OutputTokens,
                 FoundryVisionNormalization.None);
         }
+        if (!string.IsNullOrWhiteSpace(targetIntent) && controls.Count > 1)
+        {
+            controls = controls.Take(1).ToArray();
+            normalization |= FoundryVisionNormalization.OutputLimitApplied;
+        }
         return ControlsFromRaw(raw, controls, normalization);
     }
+
+    private static string BuildControlsPrompt(string? targetIntent) =>
+        string.IsNullOrWhiteSpace(targetIntent)
+            ? ControlsPrompt
+            : "The current goal is: " + targetIntent.Trim()
+              + ". Inspect the image and return exactly one visible clickable control that directly advances this goal. "
+              + "The control may contain text, be icon-only, or be an image button. "
+              + "Return one JSON object whose only property is controls. controls must be an array. "
+              + "The one item must have exactly kind, label, x, y, width, and height. "
+              + "kind must be text or icon. For a text control, label must copy its visible words exactly. "
+              + "For an icon-only or image control, label must be the shortest exact substring copied from the current goal that names the control. "
+              + "x, y, width, and height must be numbers from 0 to 1 relative to the full image and describe the clickable bounds. "
+              + "Do not return a merely clickable control that does not advance the current goal. "
+              + "Do not include decorative images, characters, backgrounds, status text, explanations, or markdown. "
+              + "If no visible control directly advances the goal, return {\"controls\":[]}.";
 
     private async Task<FoundryVisionRawResponse> SendVisionAsync(
         string prompt,

@@ -888,6 +888,14 @@ input API成功、AIの予想一致、単一frame、利用者の口頭成功だ�
 
 Structure Event StoreとRun Journalは相関IDを共有するが別source of truthとする。Run Journalは一回の実行履歴、Structure Event Storeは複数Runを横断する知識の証拠履歴を所有する。SQLite実装は同じfileを使えても、retention、migration、訂正意味を混ぜない。
 
+##### 6.13.3.1 増分ボタン索引とOCR更新契約（オーナー裁定 2026-08-25）
+
+ボタン探索を起動できる条件は、(1) 現在ページに目的へ使える保存済みボタン情報がない時、(2) 保存済みボタンをAIなしで実行し、10秒間の再観測でも正常な画面遷移を確認できなかった時、の二つだけである。保存済みボタンで正常遷移した時はAIを呼ばず、そのactionとdestinationを再利用する。
+
+AIが返したlabel／座標とOCR結果の差、単一frameの見た目、事前の文字完全一致だけでボタン情報を誤りと判定しない。risk／window／transform／frame-boundの入力境界を通過した候補は一回送出し、最低10秒の`WaitStable`と再観測後の`Compare`が`Moved`を示した時だけdestinationを確定する。10秒以内に遷移しなければdestination未確定のまま残し、その結果だけを再探索条件(2)に使う。
+
+全OCR照合はUnicode正規化、位置許容差、軽い編集距離による類似度で行い、完全一致を正解条件にしない。類似する同一anchor／controlについて後の観測からより自然な文字列が得られた時は、StateId、ActionId、座標、遷移、旧文字列とevidence履歴を維持したまま現在表示文字列を置き換える。OCR生値は観測evidenceとして改変しない。
+
 #### 6.13.4 自律度、risk、停止
 
 探索開始時の既定は一手承認である。次をすべて満たすfrontierだけ、利用者が許可したRun内で自動probeへ移せる。

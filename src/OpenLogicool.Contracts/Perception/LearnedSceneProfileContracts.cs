@@ -3,7 +3,8 @@ namespace OpenLogicool.Contracts.Perception;
 public sealed record LearnedSceneAnchor(
     string Text,
     IReadOnlyList<double> NormalizedBounds,
-    string EvidenceId);
+    string EvidenceId,
+    IReadOnlyList<string>? PreviousTexts = null);
 
 public sealed record LearnedAffordanceSignature(
     string CandidateId,
@@ -12,7 +13,13 @@ public sealed record LearnedAffordanceSignature(
     IReadOnlyList<double> NormalizedBounds,
     IReadOnlyList<string> AllowedPrimitives,
     IReadOnlyList<string> EvidenceIds,
-    string? DestinationStateId = null);
+    string? DestinationStateId = null,
+    VisualPatchSignature? VisualPatch = null,
+    IReadOnlyList<string>? KeyTokens = null,
+    int? VerticalScrollSteps = null,
+    int? HorizontalScrollSteps = null,
+    IReadOnlyList<double>? DragDestinationNormalized = null,
+    IReadOnlyList<string>? PreviousTexts = null);
 
 public sealed record LearnedStateSceneSignature(
     string StateId,
@@ -78,9 +85,11 @@ public static class LearnedSceneProfileValidator
         || string.IsNullOrWhiteSpace(state.StateId)
         || string.IsNullOrWhiteSpace(state.SignatureVersion)
         || state.Anchors is null
-        || state.Anchors.Count < 2
+        || state.Anchors.Count == 1
+        || state.Anchors.Count == 0 && !state.Affordances.Any(affordance => affordance.VisualPatch is not null)
         || state.Anchors.Any(anchor => string.IsNullOrWhiteSpace(anchor.Text)
             || string.IsNullOrWhiteSpace(anchor.EvidenceId)
+            || anchor.PreviousTexts is not null && anchor.PreviousTexts.Any(string.IsNullOrWhiteSpace)
             || !ValidBounds(anchor.NormalizedBounds))
         || state.Anchors.Select(anchor => Normalize(anchor.Text)).Distinct(StringComparer.Ordinal).Count() != state.Anchors.Count
         || state.Affordances is null
@@ -92,9 +101,32 @@ public static class LearnedSceneProfileValidator
             || affordance.AllowedPrimitives.Count == 0
             || affordance.AllowedPrimitives.Any(string.IsNullOrWhiteSpace)
             || affordance.EvidenceIds is null
-            || affordance.EvidenceIds.Count == 0)
+            || affordance.EvidenceIds.Count == 0
+            || affordance.PreviousTexts is not null && affordance.PreviousTexts.Any(string.IsNullOrWhiteSpace)
+            || InvalidOperationParameters(affordance))
         || state.EvidenceIds is null
         || state.EvidenceIds.Count == 0;
+
+    private static bool InvalidOperationParameters(LearnedAffordanceSignature affordance)
+    {
+        var operation = affordance.AllowedPrimitives.Count == 1
+            ? affordance.AllowedPrimitives[0]
+            : null;
+        return operation == "key-tap"
+                && (affordance.KeyTokens is null
+                    || affordance.KeyTokens.Count == 0
+                    || affordance.KeyTokens.Any(string.IsNullOrWhiteSpace))
+            || operation == "scroll"
+                && affordance.VerticalScrollSteps.GetValueOrDefault() == 0
+                && affordance.HorizontalScrollSteps.GetValueOrDefault() == 0
+            || operation == "drag"
+                && !ValidPoint(affordance.DragDestinationNormalized);
+    }
+
+    private static bool ValidPoint(IReadOnlyList<double>? point) =>
+        point is { Count: 2 }
+        && point.All(double.IsFinite)
+        && point.All(value => value is >= 0 and <= 1);
 
     private static bool ValidBounds(IReadOnlyList<double>? bounds) =>
         bounds is { Count: 4 }

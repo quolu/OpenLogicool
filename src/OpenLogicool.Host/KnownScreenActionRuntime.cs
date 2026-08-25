@@ -2,6 +2,7 @@ using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Exploration;
+using OpenLogicool.Perception;
 
 namespace OpenLogicool.Host;
 
@@ -60,17 +61,67 @@ public sealed class KnownScreenActionRuntime(
         {
             throw new InvalidOperationException($"現在のrisk policyが既知actionを禁止しました: {string.Join(',', risk.RiskTags)}");
         }
-        if (!signature.AllowedPrimitives.Contains(GameInteractionOperations.Click, StringComparer.Ordinal))
+        var operation = signature.AllowedPrimitives.SingleOrDefault()
+            ?? throw new InvalidOperationException("既知actionの操作種別が一意ではありません。");
+        if (!GameInteractionOperations.InputOperations.Contains(operation, StringComparer.Ordinal))
         {
-            throw new InvalidOperationException("既知actionはClickではありません。");
+            throw new InvalidOperationException("既知actionの操作種別は未対応です。");
         }
-        var dispatch = actions.Click(GameInteractionTargetBinding.From(target), observed);
+        var binding = GameInteractionTargetBinding.From(target);
+        var dispatch = operation switch
+        {
+            GameInteractionOperations.Hover => actions.Hover(binding, observed),
+            GameInteractionOperations.Click => actions.Click(binding, observed),
+            GameInteractionOperations.KeyTap => actions.KeyTap(
+                new GameInteractionKeyTapRequest(
+                    ContractSchemaVersions.Revision03,
+                    observed.ObservationId,
+                    observed.Frame.Sequence,
+                    observed.Frame.TransformRevision,
+                    observed.Frame.SourceId,
+                    signature.KeyTokens ?? throw new InvalidOperationException("KeyTap索引にkey tokenがありません。")),
+                observed),
+            GameInteractionOperations.Scroll => actions.Scroll(
+                new GameInteractionScrollRequest(
+                    ContractSchemaVersions.Revision03,
+                    binding,
+                    signature.VerticalScrollSteps.GetValueOrDefault(),
+                    signature.HorizontalScrollSteps.GetValueOrDefault()),
+                observed),
+            GameInteractionOperations.Drag => actions.Drag(
+                new GameInteractionDragRequest(
+                    ContractSchemaVersions.Revision03,
+                    binding,
+                    signature.DragDestinationNormalized
+                        ?? throw new InvalidOperationException("Drag索引に移動先がありません。")),
+                observed),
+            _ => throw new InvalidOperationException("既知actionの操作種別は未対応です。"),
+        };
         var waited = await stability.WaitStableAsync(before, waitCondition, cancellationToken).ConfigureAwait(false);
         var comparison = judge.Compare(before, waited);
+        if (operation == GameInteractionOperations.Hover
+            && signature.VisualPatch is not null
+            && observation is ILastCapturedFrameProvider frameProvider
+            && frameProvider.LastFrame is { } lastFrame
+            && !VisualPatchMatcher.Matches(signature.VisualPatch, lastFrame, signature.NormalizedBounds))
+        {
+            comparison = new GameTransitionComparison(
+                ContractSchemaVersions.Revision03,
+                before.ObservationId,
+                waited.StableScene?.ObservationId,
+                GameTransitionJudgement.Moved,
+                [new EvidenceRegion(
+                    ContractSchemaVersions.Revision03,
+                    "rect",
+                    signature.NormalizedBounds,
+                    "visual-patch-hover-change")],
+                ["保存済みtarget patchがhover後に変化"]);
+        }
         var observedDestination = waited.StableScene?.StateHypothesisId;
-        var matched = signature.DestinationStateId is null
-            ? comparison.Judgement != GameTransitionJudgement.Undetermined
-            : string.Equals(signature.DestinationStateId, observedDestination, StringComparison.Ordinal);
+        var matched = comparison.Judgement == GameTransitionJudgement.Moved
+            && (operation is GameInteractionOperations.Hover or GameInteractionOperations.Scroll or GameInteractionOperations.Drag
+                || signature.DestinationStateId is null
+                || string.Equals(signature.DestinationStateId, observedDestination, StringComparison.Ordinal));
         return new KnownScreenActionExecutionResult(
             actionId,
             state.StateId,

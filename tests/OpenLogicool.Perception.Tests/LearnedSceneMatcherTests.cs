@@ -107,6 +107,106 @@ public sealed class LearnedSceneMatcherTests
         Assert.Equal("state:lobby", scene.StateHypothesisId);
     }
 
+    [Fact]
+    public void Visual_affordance_patch_identifies_state_when_ocr_anchors_are_unstable()
+    {
+        var frame = PixelFrame(40);
+        var bounds = new[] { 0.55, 0.55, 0.20, 0.20 };
+        var patch = VisualPatchMatcher.Capture(frame, bounds);
+        var state = Profile().States[0] with
+        {
+            Anchors =
+            [
+                new LearnedSceneAnchor("壊れたOCR一", [0.1, 0.1, 0.1, 0.03], "e1"),
+                new LearnedSceneAnchor("壊れたOCR二", [0.8, 0.1, 0.1, 0.03], "e2"),
+            ],
+            Affordances =
+            [
+                new LearnedAffordanceSignature(
+                    "affordance:image", "locator:image:v1", "画像", bounds, ["click"], ["e3"],
+                    VisualPatch: patch),
+            ],
+        };
+        var profile = Profile() with { States = [state] };
+
+        var scene = LearnedSceneMatcher.Match(
+            profile,
+            frame,
+            new OcrFrameSnapshot("windows-ocr:v1", "ja", []));
+
+        Assert.Equal(StateIdentityStatus.Known, scene.StateIdentity);
+        Assert.Equal(state.StateId, scene.StateHypothesisId);
+        Assert.Equal("visual", Assert.Single(scene.Affordances).SemanticKind);
+    }
+
+    [Fact]
+    public void Different_visual_patch_does_not_identify_state_when_ocr_anchors_are_missing()
+    {
+        var baseline = PixelFrame(20);
+        var bounds = new[] { 0.55, 0.55, 0.20, 0.20 };
+        var state = Profile().States[0] with
+        {
+            Affordances =
+            [
+                new LearnedAffordanceSignature(
+                    "affordance:image", "locator:image:v1", "画像", bounds, ["click"], ["e3"],
+                    VisualPatch: VisualPatchMatcher.Capture(baseline, bounds)),
+            ],
+        };
+        var profile = Profile() with { States = [state] };
+
+        var scene = LearnedSceneMatcher.Match(
+            profile,
+            PixelFrame(220),
+            new OcrFrameSnapshot("windows-ocr:v1", "ja", []));
+
+        Assert.Equal(StateIdentityStatus.Novel, scene.StateIdentity);
+        Assert.Empty(scene.Affordances);
+    }
+
+    [Fact]
+    public void Cleaner_similar_ocr_replaces_saved_text_without_changing_ids_or_history()
+    {
+        var original = Profile();
+        var state = original.States[0] with
+        {
+            Anchors =
+            [
+                new LearnedSceneAnchor("前哨%地", [0.50, 0.89, 0.06, 0.03], "old-anchor"),
+                original.States[0].Anchors[1],
+            ],
+            Affordances =
+            [
+                original.States[0].Affordances[0] with { Text = "部%隊" },
+            ],
+        };
+        var profile = original with
+        {
+            States = [state],
+            EvidenceIds = original.EvidenceIds.Append("old-anchor").ToArray(),
+        };
+        var ocr = new OcrFrameSnapshot(
+            "windows-ocr:v1", "ja",
+            [
+                new OcrWordBox("前哨基地", 500, 890, 60, 30),
+                new OcrWordBox("隊員募集", 640, 890, 90, 30),
+                new OcrWordBox("部隊", 440, 890, 50, 30),
+            ]);
+
+        var refined = LearnedSceneMatcher.RefineText(profile, Frame(), ocr);
+
+        var refinedState = Assert.Single(refined.States);
+        Assert.Equal(state.StateId, refinedState.StateId);
+        Assert.Equal("前哨基地", refinedState.Anchors[0].Text);
+        Assert.Contains("前哨%地", refinedState.Anchors[0].PreviousTexts!);
+        var action = Assert.Single(refinedState.Affordances);
+        Assert.Equal("affordance:squad", action.CandidateId);
+        Assert.Equal("部隊", action.Text);
+        Assert.Contains("部%隊", action.PreviousTexts!);
+        Assert.Contains("old-anchor", refined.EvidenceIds);
+        Assert.Contains(refined.EvidenceIds, id => id.StartsWith("ocr-refine:", StringComparison.Ordinal));
+    }
+
     private static LearnedSceneProfileDocument Profile() => new(
         "0.3.0", "profile:1", "profile:v1", "game", "env", "game", "Game", 500, 0.04,
         [new LearnedStateSceneSignature(
@@ -123,4 +223,15 @@ public sealed class LearnedSceneMatcherTests
     private static CapturedFrame Frame() => new(
         "0.2.0", "window:game", CaptureBackend.WindowsGraphicsCapture, 1, 1000,
         DateTimeOffset.UnixEpoch, 1000, 1000, "B8G8R8A8_UNorm", 96, 96, 1, 0, 0);
+
+    private static CapturedFrame PixelFrame(byte value)
+    {
+        const int width = 100;
+        const int height = 100;
+        var pixels = Enumerable.Repeat(value, width * height * 4).ToArray();
+        return new CapturedFrame(
+            "0.3.0", "window:game", CaptureBackend.WindowsGraphicsCapture, 1, 1_000,
+            DateTimeOffset.UnixEpoch, width, height, "B8G8R8A8_UNorm", 96, 96, 1, 0, 0,
+            Pixels: new FramePixels(pixels, width * 4));
+    }
 }

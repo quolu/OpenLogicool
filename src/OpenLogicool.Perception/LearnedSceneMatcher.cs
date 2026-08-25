@@ -14,6 +14,74 @@ public sealed record OcrFrameSnapshot(
 /// <summary>学習済みanchorをfresh OCRへ照合するpure recognizer。状態名やgame固有文字列はdataから受け取る。</summary>
 public static class LearnedSceneMatcher
 {
+    public static LearnedSceneProfileDocument RefineText(
+        LearnedSceneProfileDocument profile,
+        CapturedFrame frame,
+        OcrFrameSnapshot ocr)
+    {
+        LearnedSceneProfileValidator.Validate(profile);
+        var spans = BuildSpans(ocr.Words);
+        var evidenceId = $"ocr-refine:{frame.SourceId}:{frame.Sequence}";
+        var changed = false;
+        var states = profile.States.Select(state =>
+        {
+            var stateChanged = false;
+            var anchors = state.Anchors.Select(anchor =>
+            {
+                var observed = UniqueAt(anchor.Text, anchor.NormalizedBounds, spans, frame,
+                    profile.NormalizedPositionTolerance);
+                if (observed is null || !OcrTextMatcher.PreferObserved(anchor.Text, observed.Text))
+                {
+                    return anchor;
+                }
+                stateChanged = true;
+                return anchor with
+                {
+                    Text = observed.Text,
+                    EvidenceId = evidenceId,
+                    PreviousTexts = AppendPrevious(anchor.PreviousTexts, anchor.Text),
+                };
+            }).ToArray();
+            var affordances = state.Affordances.Select(affordance =>
+            {
+                var observed = UniqueAt(affordance.Text, affordance.NormalizedBounds, spans, frame,
+                    profile.NormalizedPositionTolerance);
+                if (observed is null || !OcrTextMatcher.PreferObserved(affordance.Text, observed.Text))
+                {
+                    return affordance;
+                }
+                stateChanged = true;
+                return affordance with
+                {
+                    Text = observed.Text,
+                    EvidenceIds = affordance.EvidenceIds.Append(evidenceId).Distinct(StringComparer.Ordinal).ToArray(),
+                    PreviousTexts = AppendPrevious(affordance.PreviousTexts, affordance.Text),
+                };
+            }).ToArray();
+            if (!stateChanged)
+            {
+                return state;
+            }
+            changed = true;
+            return state with
+            {
+                Anchors = anchors,
+                Affordances = affordances,
+                EvidenceIds = state.EvidenceIds.Append(evidenceId).Distinct(StringComparer.Ordinal).ToArray(),
+            };
+        }).ToArray();
+        return changed
+            ? profile with
+            {
+                States = states,
+                EvidenceIds = profile.EvidenceIds.Append(evidenceId).Distinct(StringComparer.Ordinal).ToArray(),
+            }
+            : profile;
+    }
+
+    private static IReadOnlyList<string> AppendPrevious(IReadOnlyList<string>? previous, string value) =>
+        (previous ?? []).Append(value).Distinct(StringComparer.Ordinal).ToArray();
+
     public static ObservedScene Match(
         LearnedSceneProfileDocument profile,
         CapturedFrame frame,
@@ -75,17 +143,41 @@ public static class LearnedSceneMatcher
         CapturedFrame frame,
         double tolerance)
     {
+        if (state.Anchors.Count == 0)
+        {
+            return MatchStateByVisualAffordances(state, frame);
+        }
         var matches = new List<OcrWordBox>();
         foreach (var anchor in state.Anchors)
         {
             var match = UniqueAt(anchor.Text, anchor.NormalizedBounds, spans, frame, tolerance);
             if (match is null)
             {
-                return null;
+                return MatchStateByVisualAffordances(state, frame);
             }
             matches.Add(match);
         }
         return new StateMatch(state, matches);
+    }
+
+    private static StateMatch? MatchStateByVisualAffordances(
+        LearnedStateSceneSignature state,
+        CapturedFrame frame)
+    {
+        var visual = state.Affordances
+            .Where(affordance => affordance.VisualPatch is not null)
+            .ToArray();
+        if (visual.Length == 0
+            || visual.Any(affordance => !VisualPatchMatcher.Matches(
+                affordance.VisualPatch!,
+                frame,
+                affordance.NormalizedBounds)))
+        {
+            return null;
+        }
+        return new StateMatch(
+            state,
+            visual.Select(affordance => Box(affordance.NormalizedBounds, frame, affordance.Text)).ToArray());
     }
 
     private static IReadOnlyList<AffordanceCandidate> MatchAffordances(
@@ -98,7 +190,11 @@ public static class LearnedSceneMatcher
         .Select(signature => new
         {
             Signature = signature,
-            Match = UniqueAt(signature.Text, signature.NormalizedBounds, spans, frame, tolerance),
+            Match = signature.VisualPatch is null
+                ? UniqueAt(signature.Text, signature.NormalizedBounds, spans, frame, tolerance)
+                : VisualPatchMatcher.Matches(signature.VisualPatch, frame, signature.NormalizedBounds)
+                    ? Box(signature.NormalizedBounds, frame, signature.Text)
+                    : null,
         })
         .Where(item => item.Match is not null)
         .Select(item => new AffordanceCandidate(
@@ -116,9 +212,17 @@ public static class LearnedSceneMatcher
             [Region(item.Match!, frame, recognizerVersion)],
             1,
             item.Signature.AllowedPrimitives.ToArray(),
-            "text",
+            item.Signature.VisualPatch is null ? "text" : "visual",
             item.Signature.Text))
         .ToArray();
+
+    private static OcrWordBox Box(IReadOnlyList<double> bounds, CapturedFrame frame, string text) =>
+        new(
+            text,
+            bounds[0] * frame.Width,
+            bounds[1] * frame.Height,
+            bounds[2] * frame.Width,
+            bounds[3] * frame.Height);
 
     private static OcrWordBox? UniqueAt(
         string text,
@@ -127,10 +231,29 @@ public static class LearnedSceneMatcher
         CapturedFrame frame,
         double tolerance)
     {
-        var normalized = Normalize(text);
-        var matches = spans.Where(span => string.Equals(Normalize(span.Text), normalized, StringComparison.Ordinal)
-            && PositionMatches(expected, span, frame, tolerance)).ToArray();
-        return matches.Length == 1 ? matches[0] : null;
+        var ranked = spans
+            .Where(span => PositionMatches(expected, span, frame, tolerance))
+            .Select(span => new
+            {
+                Span = span,
+                Similarity = OcrTextMatcher.Similarity(text, span.Text),
+                Distance = PositionDistance(expected, span, frame),
+            })
+            .Where(item => item.Similarity >= OcrTextMatcher.DefaultMinimumSimilarity)
+            .OrderByDescending(item => item.Similarity)
+            .ThenBy(item => item.Distance)
+            .ToArray();
+        if (ranked.Length == 0)
+        {
+            return null;
+        }
+        if (ranked.Length > 1
+            && ranked[0].Similarity - ranked[1].Similarity < 0.08
+            && Math.Abs(ranked[0].Distance - ranked[1].Distance) < 0.01)
+        {
+            return null;
+        }
+        return ranked[0].Span;
     }
 
     private static bool PositionMatches(
@@ -146,6 +269,17 @@ public static class LearnedSceneMatcher
         var actualCenterY = bounds[1] + bounds[3] / 2;
         return Math.Abs(expectedCenterX - actualCenterX) <= tolerance
             && Math.Abs(expectedCenterY - actualCenterY) <= tolerance;
+    }
+
+    private static double PositionDistance(
+        IReadOnlyList<double> expected,
+        OcrWordBox actual,
+        CapturedFrame frame)
+    {
+        var bounds = NormalizeBounds(actual, frame);
+        var x = expected[0] + expected[2] / 2 - (bounds[0] + bounds[2] / 2);
+        var y = expected[1] + expected[3] / 2 - (bounds[1] + bounds[3] / 2);
+        return Math.Sqrt(x * x + y * y);
     }
 
     private static IReadOnlyList<OcrWordBox> BuildSpans(IReadOnlyList<OcrWordBox> words)
@@ -192,9 +326,6 @@ public static class LearnedSceneMatcher
         }
         return results;
     }
-
-    private static string Normalize(string value) =>
-        string.Concat(value.Where(character => !char.IsWhiteSpace(character))).ToUpperInvariant();
 
     private static double[] NormalizeBounds(OcrWordBox box, CapturedFrame frame) =>
         [box.X / frame.Width, box.Y / frame.Height, box.Width / frame.Width, box.Height / frame.Height];

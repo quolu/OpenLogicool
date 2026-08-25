@@ -202,6 +202,19 @@ public static class InitialSqliteMigrations
                 CREATE INDEX ix_learning_route_revisions_game_environment
                 ON learning_route_revisions (game_id, environment_scope, route_id);
                 """),
+            new SqlMigration(
+                11,
+                """
+                CREATE TABLE learned_scene_profiles (
+                    game_id TEXT NOT NULL,
+                    environment_scope TEXT NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    profile_id TEXT NOT NULL UNIQUE,
+                    profile_version TEXT NOT NULL,
+                    document_json TEXT NOT NULL,
+                    PRIMARY KEY (game_id, environment_scope)
+                );
+                """),
         };
 }
 

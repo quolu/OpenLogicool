@@ -21,7 +21,11 @@ public sealed class SqliteLearnedSceneProfileStoreTests
 
         var restored = Assert.IsType<LearnedSceneProfileDocument>(store.Load("game", "env"));
         Assert.Equal("v2", restored.ProfileVersion);
-        Assert.Equal(2, Assert.Single(restored.States).Anchors.Count);
+        var state = Assert.Single(restored.States);
+        Assert.Equal(2, state.Anchors.Count);
+        var action = Assert.Single(state.Affordances);
+        Assert.Equal(-3, action.VerticalScrollSteps);
+        Assert.Equal(0, action.HorizontalScrollSteps);
     }
 
     private static LearnedSceneProfileDocument Document(string version) => new(
@@ -31,5 +35,10 @@ public sealed class SqliteLearnedSceneProfileStoreTests
             [
                 new LearnedSceneAnchor("A", [0.1, 0.1, 0.1, 0.1], "e1"),
                 new LearnedSceneAnchor("B", [0.8, 0.8, 0.1, 0.1], "e2"),
-            ], [], ["e1", "e2"])], ["e1", "e2"]);
+            ],
+            [new LearnedAffordanceSignature(
+                "scroll-action", "locator:v1", "一覧", [0.2, 0.2, 0.5, 0.5], ["scroll"], ["e3"],
+                VerticalScrollSteps: -3,
+                HorizontalScrollSteps: 0)],
+            ["e1", "e2", "e3"])], ["e1", "e2", "e3"]);
 }

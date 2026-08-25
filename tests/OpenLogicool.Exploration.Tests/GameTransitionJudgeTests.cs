@@ -78,6 +78,43 @@ public sealed class GameTransitionJudgeTests
     }
 
     [Fact]
+    public void Probe_target_animation_does_not_count_as_page_transition()
+    {
+        var beforeBase = Scene("before", 1, "ロビー", 0.2);
+        var afterBase = Scene("after", 2, "ロビー", 0.2);
+        var before = beforeBase with
+        {
+            Affordances =
+            [
+                .. beforeBase.Affordances,
+                beforeBase.Affordances[0] with
+                {
+                    CandidateId = "probe-before",
+                    SemanticKind = "probe-target",
+                    SemanticLabel = "点滅前",
+                },
+            ],
+        };
+        var after = afterBase with
+        {
+            Affordances =
+            [
+                .. afterBase.Affordances,
+                afterBase.Affordances[0] with
+                {
+                    CandidateId = "probe-after",
+                    SemanticKind = "probe-target",
+                    SemanticLabel = "点滅後",
+                },
+            ],
+        };
+
+        var comparison = new GameTransitionJudge().Compare(before, Stable(after));
+
+        Assert.Equal(GameTransitionJudgement.Stayed, comparison.Judgement);
+    }
+
+    [Fact]
     public void Partial_detection_is_equivalent_when_the_smaller_semantic_set_is_mostly_contained()
     {
         var smaller = new GameSceneSemanticSignature(

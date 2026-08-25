@@ -6,11 +6,17 @@ using OpenLogicool.Contracts.Capture;
 using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Shared;
+using OpenLogicool.Perception;
 using Windows.Graphics.Imaging;
 using Windows.Media.Ocr;
 using Windows.Security.Cryptography;
 
 namespace OpenLogicool.Host;
+
+public interface ILocalAiCallCounter
+{
+    int AiCallCount { get; }
+}
 
 public sealed record WindowsGameOcrWord(
     string Text,
@@ -288,9 +294,16 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
     ILocalControlDiscoveryProvider provider,
     IWindowsGameOcrRecognizer ocr,
     IGameFramePngEncoder pngEncoder,
-    Func<string> structureRevisionId) : IProductGameTargetDiscovery
+    Func<string> structureRevisionId,
+    string? targetIntent = null,
+    string interactionOperation = GameInteractionOperations.Click) : IProductGameTargetDiscovery, ILocalAiCallCounter
 {
-    private const int MaximumVisionDimension = 640;
+    private const int MaximumVisionDimension = 1280;
+    private int discoveryCount;
+    private int aiCallCount;
+    private IReadOnlyList<AffordanceCandidate> initialTargets = [];
+
+    public int AiCallCount => Volatile.Read(ref aiCallCount);
 
     public async ValueTask<ObservedScene> DiscoverAsync(
         ObservationResult observation,
@@ -300,8 +313,13 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
         ArgumentNullException.ThrowIfNull(observation);
         ArgumentNullException.ThrowIfNull(frame);
         var ocrResult = await ocr.RecognizeAsync(frame, cancellationToken).ConfigureAwait(false);
-        var png = pngEncoder.Encode(frame, MaximumVisionDimension);
         var textRegions = WindowsGameOcrSpanBuilder.Build(ocrResult, frame.Width, frame.Height);
+        if (Interlocked.Increment(ref discoveryCount) > 1)
+        {
+            return LocalTargetTrackingSceneBuilder.Build(observation, frame, textRegions, initialTargets);
+        }
+        var png = pngEncoder.Encode(frame, MaximumVisionDimension);
+        Interlocked.Increment(ref aiCallCount);
         var request = new LocalVisionSceneRequest(
             ContractSchemaVersions.Revision03,
             $"scene:{observation.ObservationId}",
@@ -314,30 +332,236 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
             $"locator:{observation.ObservationId}",
             textRegions,
             observation.StateCandidates,
-            [GameInteractionOperations.Hover, GameInteractionOperations.Click],
-            structureRevisionId());
+            [interactionOperation],
+            structureRevisionId(),
+            targetIntent);
         var discovered = await provider.ObserveAsync(request, png.Bytes, cancellationToken).ConfigureAwait(false);
+        var groundedTargets = discovered.Scene.Affordances
+            .Select(candidate => VisualControlLocalGrounder.Ground(candidate, textRegions, frame))
+            .Where(candidate => candidate is not null)
+            .Select(candidate => candidate! with { SemanticKind = "probe-target" })
+            .ToArray();
+        initialTargets = groundedTargets;
         return discovered.Scene with
         {
-            Affordances = discovered.Scene.Affordances
-                .Select(candidate => EnrichWithOcr(candidate, textRegions))
-                .ToArray(),
+            Affordances = LocalTargetTrackingSceneBuilder.MergeInitial(
+                observation,
+                frame,
+                textRegions,
+                groundedTargets),
+            DiscoveryEvidence = discovered.Scene.DiscoveryEvidence! with
+            {
+                LocalGroundingTexts = textRegions.Select(region => region.Text).ToArray(),
+                LocalGroundingRegions = textRegions
+                    .Select(region => new SceneGroundingRegion(region.Text, region.EvidenceRegion))
+                    .ToArray(),
+            },
         };
     }
 
-    private static AffordanceCandidate EnrichWithOcr(
-        AffordanceCandidate candidate,
+}
+
+public static class LocalTargetTrackingSceneBuilder
+{
+    private const string Revision = "local-target-tracking-v1";
+
+    public static IReadOnlyList<AffordanceCandidate> MergeInitial(
+        ObservationResult observation,
+        CapturedFrame frame,
+        IReadOnlyList<LocalVisionTextRegion> textRegions,
+        IReadOnlyList<AffordanceCandidate> targets) =>
+        [.. targets, .. StructuralText(observation, frame, textRegions, targets)];
+
+    public static ObservedScene Build(
+        ObservationResult observation,
+        CapturedFrame frame,
+        IReadOnlyList<LocalVisionTextRegion> textRegions,
+        IReadOnlyList<AffordanceCandidate> initialTargets)
+    {
+        var affordances = StructuralText(observation, frame, textRegions, []);
+        var identity = observation.StateCandidates.Count switch
+        {
+            0 => StateIdentityStatus.Novel,
+            1 => StateIdentityStatus.Known,
+            _ => StateIdentityStatus.Ambiguous,
+        };
+        var groundingRegions = textRegions
+            .Select(region => new SceneGroundingRegion(region.Text, region.EvidenceRegion))
+            .ToArray();
+        return new ObservedScene(
+            ContractSchemaVersions.Revision03,
+            $"scene:{observation.ObservationId}",
+            observation.ObservationId,
+            observation.Frame,
+            CaptureAvailability.Available,
+            identity,
+            identity == StateIdentityStatus.Known ? observation.StateCandidates[0].StateId : null,
+            observation.StateCandidates,
+            affordances,
+            Revision,
+            new SceneDiscoveryEvidence(
+                "windows-ocr-local",
+                "none",
+                Revision,
+                "none",
+                "Completed",
+                "None",
+                null,
+                "{}",
+                0,
+                0,
+                0m,
+                LocalGroundingTexts: textRegions.Select(region => region.Text).ToArray(),
+                LocalGroundingRegions: groundingRegions));
+    }
+
+    private static AffordanceCandidate? Track(
+        AffordanceCandidate target,
+        ObservationResult observation,
+        CapturedFrame frame,
         IReadOnlyList<LocalVisionTextRegion> textRegions)
     {
-        var bounds = candidate.Locator.NormalizedBounds;
-        var ocrEvidence = textRegions
-            .Where(region => CenterInside(region.EvidenceRegion.NormalizedBounds, bounds))
+        var exact = VisualControlLocalGrounder.FindUniqueExactLabelRegion(textRegions, target.SemanticLabel);
+        if (exact.Region is not null)
+        {
+            var currentPatch = VisualPatchMatcher.Capture(frame, exact.Region.EvidenceRegion.NormalizedBounds);
+            var semanticKind = target.VisualPatch is not null
+                && !VisualPatchMatcher.Matches(
+                    target.VisualPatch,
+                    frame,
+                    exact.Region.EvidenceRegion.NormalizedBounds)
+                    ? "visual-changed"
+                    : target.SemanticKind;
+            return Rebind(
+                target with { SemanticKind = semanticKind },
+                observation,
+                exact.Region.EvidenceRegion.NormalizedBounds,
+                exact.Region.EvidenceRegion,
+                currentPatch);
+        }
+        if (exact.Ambiguous
+            || target.VisualPatch is null)
+        {
+            return null;
+        }
+        if (VisualPatchMatcher.Matches(target.VisualPatch, frame, target.Locator.NormalizedBounds))
+        {
+            return Rebind(target, observation, target.Locator.NormalizedBounds, null, target.VisualPatch);
+        }
+        return Rebind(
+            target with { SemanticKind = "visual-changed" },
+            observation,
+            target.Locator.NormalizedBounds,
+            null,
+            VisualPatchMatcher.Capture(frame, target.Locator.NormalizedBounds));
+    }
+
+    private static AffordanceCandidate Rebind(
+        AffordanceCandidate target,
+        ObservationResult observation,
+        IReadOnlyList<double> bounds,
+        EvidenceRegion? localEvidence,
+        VisualPatchSignature patch) => target with
+        {
+            ObservationId = observation.ObservationId,
+            FrameSequence = observation.Frame.Sequence,
+            TransformRevision = observation.Frame.TransformRevision,
+            TargetWindowSourceId = observation.Frame.SourceId,
+            Locator = target.Locator with
+            {
+                LocatorType = "local-tracked-region",
+                NormalizedBounds = bounds.ToArray(),
+                LocatorRevision = $"local:{observation.ObservationId}",
+            },
+            EvidenceRegions = localEvidence is null ? target.EvidenceRegions : [localEvidence],
+            AllowedPrimitives = [],
+            VisualPatch = patch,
+        };
+
+    private static IReadOnlyList<AffordanceCandidate> StructuralText(
+        ObservationResult observation,
+        CapturedFrame frame,
+        IReadOnlyList<LocalVisionTextRegion> textRegions,
+        IReadOnlyList<AffordanceCandidate> targets) =>
+        WindowsGameOcrSpanBuilder.Canonicalize(textRegions)
+            .Where(region => !targets.Any(target => target.SemanticLabel is not null
+                && FrameBoundLabelMatcher.Equals(region.Text, target.SemanticLabel)))
+            .Select((region, index) => new AffordanceCandidate(
+                ContractSchemaVersions.Revision03,
+                $"local-ocr:{observation.ObservationId}:{index + 1}",
+                observation.ObservationId,
+                observation.Frame.Sequence,
+                observation.Frame.TransformRevision,
+                observation.Frame.SourceId,
+                new AffordanceLocator(
+                    ContractSchemaVersions.Revision03,
+                    "local-ocr-region",
+                    region.EvidenceRegion.NormalizedBounds,
+                    $"local:{observation.ObservationId}"),
+                [region.EvidenceRegion],
+                1,
+                [],
+                "ocr-text",
+                region.Text,
+                VisualPatchMatcher.Capture(frame, region.EvidenceRegion.NormalizedBounds)))
+            .ToArray();
+
+}
+
+public static class VisualControlLocalGrounder
+{
+    public static AffordanceCandidate? Ground(
+        AffordanceCandidate candidate,
+        IReadOnlyList<LocalVisionTextRegion> textRegions,
+        CapturedFrame frame)
+    {
+        ArgumentNullException.ThrowIfNull(candidate);
+        ArgumentNullException.ThrowIfNull(textRegions);
+        ArgumentNullException.ThrowIfNull(frame);
+        var providerBounds = candidate.Locator.NormalizedBounds;
+        var textInsideProviderBounds = textRegions
+            .Where(region => CenterInside(region.EvidenceRegion.NormalizedBounds, providerBounds))
             .Select(region => region.EvidenceRegion)
             .ToArray();
-        return ocrEvidence.Length == 0
-            ? candidate
-            : candidate with { EvidenceRegions = [.. candidate.EvidenceRegions, .. ocrEvidence] };
+        return candidate with
+        {
+            EvidenceRegions = [.. candidate.EvidenceRegions, .. textInsideProviderBounds],
+            VisualPatch = VisualPatchMatcher.Capture(frame, providerBounds),
+        };
     }
+
+    public static (LocalVisionTextRegion? Region, bool Ambiguous) FindUniqueExactLabelRegion(
+        IReadOnlyList<LocalVisionTextRegion> textRegions,
+        string? semanticLabel)
+    {
+        if (string.IsNullOrWhiteSpace(semanticLabel))
+        {
+            return (null, false);
+        }
+        var exact = textRegions
+            .Where(region => OcrTextMatcher.IsSimilar(region.Text, semanticLabel))
+            .GroupBy(region => BoundsKey(region.EvidenceRegion.NormalizedBounds), StringComparer.Ordinal)
+            .Select(group => group.First())
+            .OrderBy(region => Area(region.EvidenceRegion.NormalizedBounds))
+            .ToArray();
+        if (exact.Length == 0)
+        {
+            return (null, false);
+        }
+        var selected = exact[0];
+        return exact.All(region => CentersNear(
+                selected.EvidenceRegion.NormalizedBounds,
+                region.EvidenceRegion.NormalizedBounds))
+            ? (selected, false)
+            : (null, true);
+    }
+
+    private static string BoundsKey(IReadOnlyList<double> bounds) =>
+        string.Join('|', bounds.Select(value => value.ToString("R", System.Globalization.CultureInfo.InvariantCulture)));
+    private static double Area(IReadOnlyList<double> bounds) => bounds[2] * bounds[3];
+    private static bool CentersNear(IReadOnlyList<double> left, IReadOnlyList<double> right) =>
+        Math.Abs(left[0] + left[2] / 2 - (right[0] + right[2] / 2)) <= 0.04
+        && Math.Abs(left[1] + left[3] / 2 - (right[1] + right[3] / 2)) <= 0.04;
 
     private static bool CenterInside(
         IReadOnlyList<double> inner,

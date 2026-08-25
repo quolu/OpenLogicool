@@ -18,9 +18,11 @@ public sealed class ZeroSeedFrameStateRecognizer : IFrameRecognizer
 public sealed class WindowsProductGameExplorerSession(
     ProductGameExplorerRuntime runtime,
     WindowsWgcGameFrameSource frameSource,
-    FoundryLocalVisionClient visionClient) : IDisposable
+    FoundryLocalVisionClient visionClient,
+    ILocalAiCallCounter aiCallCounter) : IDisposable
 {
     public ProductGameExplorerRuntime Runtime { get; } = runtime;
+    public int AiCallCount => aiCallCounter.AiCallCount;
 
     public void Dispose()
     {
@@ -48,7 +50,13 @@ public static class WindowsProductGameExplorerComposition
         SerialHidEmitter nanoEmitter,
         Func<GameCaptureScreenBounds> captureScreenBounds,
         ILearnedSceneProfileStore? learnedSceneProfileStore = null,
-        string? targetIntent = null)
+        string? targetIntent = null,
+        bool includeVisualTargets = false,
+        string interactionOperation = GameInteractionOperations.Click,
+        IReadOnlyList<string>? interactionKeyTokens = null,
+        int? interactionVerticalScrollSteps = null,
+        int? interactionHorizontalScrollSteps = null,
+        IReadOnlyList<double>? interactionDragDestination = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
         if (!string.Equals(gameId, gamePolicy.GameId, StringComparison.Ordinal))
@@ -79,13 +87,21 @@ public static class WindowsProductGameExplorerComposition
             foundryEndpoint,
             foundryModelId,
             TimeSpan.FromSeconds(30));
-        var labelProvider = new FoundryLocalDiscoveryVisionProvider(visionClient);
-        var targetDiscovery = new FoundryLabelTargetDiscoveryAdapter(
-            labelProvider,
-            new WindowsGameOcrRecognizer(),
-            new WindowsGameFramePngEncoder(),
-            () => coordinator.CurrentStructureRevisionId,
-            targetIntent);
+        IProductGameTargetDiscovery targetDiscovery = includeVisualTargets
+            ? new FoundryControlTargetDiscoveryAdapter(
+                new FoundryLocalControlDiscoveryProvider(visionClient),
+                new WindowsGameOcrRecognizer(),
+                new WindowsGameFramePngEncoder(),
+                () => coordinator.CurrentStructureRevisionId,
+                targetIntent,
+                interactionOperation)
+            : new FoundryLabelTargetDiscoveryAdapter(
+                new FoundryLocalDiscoveryVisionProvider(visionClient),
+                new WindowsGameOcrRecognizer(),
+                new WindowsGameFramePngEncoder(),
+                () => coordinator.CurrentStructureRevisionId,
+                targetIntent,
+                interactionOperation);
         var observationRuntime = new ProductGameObservationRuntime(
             frameSource,
             new LiveObservationSource(frameRecognizer),
@@ -138,8 +154,17 @@ public static class WindowsProductGameExplorerComposition
                 OpenLogicool.Contracts.Shared.ContractSchemaVersions.Revision03,
                 2,
                 1_000,
-                60_000),
-            knownScreenIndex: knownScreenIndex);
-        return new WindowsProductGameExplorerSession(runtime, frameSource, visionClient);
+                10_000),
+            knownScreenIndex: knownScreenIndex,
+            interactionOperation: interactionOperation,
+            interactionKeyTokens: interactionKeyTokens,
+            interactionVerticalScrollSteps: interactionVerticalScrollSteps,
+            interactionHorizontalScrollSteps: interactionHorizontalScrollSteps,
+            interactionDragDestination: interactionDragDestination);
+        return new WindowsProductGameExplorerSession(
+            runtime,
+            frameSource,
+            visionClient,
+            (ILocalAiCallCounter)targetDiscovery);
     }
 }

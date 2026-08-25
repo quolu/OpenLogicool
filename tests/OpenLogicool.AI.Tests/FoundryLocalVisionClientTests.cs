@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using OpenLogicool.AI;
 using Xunit;
 
@@ -289,6 +290,37 @@ public sealed class FoundryLocalVisionClientTests
             });
         Assert.Contains("icon-only controls", observedBody, StringComparison.Ordinal);
         Assert.Contains("\"max_output_tokens\":1500", observedBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Goal_specific_controls_prompt_accepts_icon_and_returns_only_one_control()
+    {
+        string? observedBody = null;
+        var handler = new StubHandler(async (request, cancellationToken) =>
+        {
+            observedBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+            return EventStream(
+                "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"controls\\\":[{\\\"kind\\\":\\\"icon\\\",\\\"label\\\":\\\"ホーム\\\",\\\"x\\\":0.05,\\\"y\\\":0.9,\\\"width\\\":0.05,\\\"height\\\":0.05},{\\\"kind\\\":\\\"icon\\\",\\\"label\\\":\\\"設定\\\",\\\"x\\\":0.9,\\\"y\\\":0.02,\\\"width\\\":0.05,\\\"height\\\":0.05}]}\"}",
+                "{\"type\":\"response.completed\",\"response\":{\"usage\":{}}}");
+        });
+        using var client = new FoundryLocalVisionClient(
+            new Uri("http://127.0.0.1:5000"),
+            "model",
+            TimeSpan.FromSeconds(1),
+            handler);
+
+        var result = await client.ProposeControlsAsync(new byte[] { 1 }, "ホームへ戻る");
+
+        var control = Assert.Single(result.Controls);
+        Assert.Equal("icon", control.Kind);
+        Assert.Equal("ホーム", control.Label);
+        Assert.True(result.Normalization.HasFlag(FoundryVisionNormalization.OutputLimitApplied));
+        using var request = JsonDocument.Parse(observedBody!);
+        var prompt = request.RootElement.GetProperty("input")[0].GetProperty("content")[0].GetProperty("text").GetString();
+        Assert.Contains("ホームへ戻る", prompt, StringComparison.Ordinal);
+        Assert.Contains("return exactly one visible clickable control", prompt, StringComparison.Ordinal);
+        Assert.Contains("icon-only, or be an image button", prompt, StringComparison.Ordinal);
+        Assert.Contains("shortest exact substring copied from the current goal", prompt, StringComparison.Ordinal);
     }
 
     [Fact]

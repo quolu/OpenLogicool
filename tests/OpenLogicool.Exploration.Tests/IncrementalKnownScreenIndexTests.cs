@@ -25,6 +25,9 @@ public sealed class IncrementalKnownScreenIndexTests
         var afterFirst = store.Document!;
         var sourceState = Assert.Single(afterFirst.States);
         Assert.DoesNotContain(sourceState.Anchors, anchor => anchor.Text == "LARGE ENGLISH DISPLAY");
+        Assert.DoesNotContain(sourceState.Anchors, anchor => anchor.Text == "ロイよNOWFLAKESPASS");
+        Assert.DoesNotContain(sourceState.Anchors, anchor => anchor.Text == "ーク");
+        Assert.Equal(["アークメニュー", "ロストセクター"], sourceState.Anchors.Select(anchor => anchor.Text));
         var savedArena = Assert.Single(sourceState.Affordances);
         Assert.Equal(first.ActionId, savedArena.CandidateId);
         Assert.Equal(arena.Locator.NormalizedBounds, savedArena.NormalizedBounds);
@@ -41,6 +44,31 @@ public sealed class IncrementalKnownScreenIndexTests
         savedArena = sourceState.Affordances.Single(action => action.CandidateId == linked.ActionId);
         Assert.Equal(linked.DestinationStateId, savedArena.DestinationStateId);
         Assert.Equal(2, sourceState.Affordances.Count);
+    }
+
+    [Fact]
+    public void Cleaner_similar_ocr_updates_text_without_changing_state_or_action_ids()
+    {
+        var store = new MemoryProfileStore();
+        var index = new IncrementalKnownScreenIndex(store, "game", "env", "game");
+        var noisy = Scene("noisy", 1, "前哨%地", "隊員募%");
+        var noisyControl = Control(noisy, "アリ%ナ", [0.5, 0.5, 0.1, 0.05]);
+        noisy = noisy with { Affordances = [noisyControl] };
+        var first = index.RememberControl(noisy, noisyControl, "evidence-noisy");
+        var clean = Scene("clean", 2, "前哨基地", "隊員募集");
+        var cleanControl = Control(clean, "アリーナ", [0.5, 0.5, 0.1, 0.05]);
+        clean = clean with { Affordances = [cleanControl] };
+
+        var second = index.RememberControl(clean, cleanControl, "evidence-clean");
+
+        Assert.Equal(first.PageStateId, second.PageStateId);
+        Assert.Equal(first.ActionId, second.ActionId);
+        var state = Assert.Single(store.Document!.States);
+        Assert.Contains(state.Anchors, anchor => anchor.Text == "前哨基地"
+            && anchor.PreviousTexts!.Contains("前哨%地", StringComparer.Ordinal));
+        var action = Assert.Single(state.Affordances);
+        Assert.Equal("アリーナ", action.Text);
+        Assert.Contains("アリ%ナ", action.PreviousTexts!);
     }
 
     private static ObservedScene Scene(string id, long sequence, string anchor1, string anchor2)
@@ -83,6 +111,8 @@ public sealed class IncrementalKnownScreenIndexTests
                     Ground(anchor1, [0.2, 0.2, 0.3, 0.05]),
                     Ground(anchor2, [0.6, 0.6, 0.25, 0.04]),
                     Ground("LARGE ENGLISH DISPLAY", [0.1, 0.4, 0.7, 0.10]),
+                    Ground("ロイよNOWFLAKESPASS", [0.8, 0.1, 0.18, 0.12]),
+                    Ground("ーク", [0.21, 0.2, 0.15, 0.05]),
                 ]));
     }
 
