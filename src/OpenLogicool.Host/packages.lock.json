@@ -262,6 +262,13 @@
           "OpenLogicool.Contracts": "[1.0.0, )"
         }
       },
+      "openlogicool.exploration": {
+        "type": "Project",
+        "dependencies": {
+          "OpenLogicool.Contracts": "[1.0.0, )",
+          "OpenLogicool.Playbooks": "[1.0.0, )"
+        }
+      },
       "openlogicool.input": {
         "type": "Project",
         "dependencies": {

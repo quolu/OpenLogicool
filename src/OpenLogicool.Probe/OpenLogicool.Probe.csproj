@@ -23,6 +23,7 @@
     <ProjectReference Include="..\OpenLogicool.Host\OpenLogicool.Host.csproj" />
     <ProjectReference Include="..\OpenLogicool.Input\OpenLogicool.Input.csproj" />
     <ProjectReference Include="..\OpenLogicool.Capture\OpenLogicool.Capture.csproj" />
+    <ProjectReference Include="..\OpenLogicool.Exploration\OpenLogicool.Exploration.csproj" />
   </ItemGroup>
 
 </Project>

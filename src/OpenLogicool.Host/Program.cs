@@ -77,6 +77,8 @@ using OpenLogicool.Playbooks;
 //       Game Operator の dispatch 境界を CLI から明示的に一回駆動する。外部入力はこの初期 CLI では
 //       コンソールへの handoff 記録だけであり、OS input を合成しない。capture/read と resume の gate は
 //       製品の CaptureContinuityDispatch をそのまま通す（FastPathPump は使わない）。
+//   game-index <discover|execute|back|inspect> --process <name> --db <path> --allow-explore [--goal <目的>] [--foundry-endpoint <uri>] [--action <id>]
+//       初回discoverは必要な一つのcontrolだけを索引へ追記し、executeは保存済みactionをAIなしで実行する。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -97,8 +99,34 @@ return command switch
     "onboard" when args.Length >= 2 => Onboard(args[1], args[2..]),
     "ui-test-scenario" => UiTestScenarioCommand(args[1..]),
     "capture-dispatch" when args.Length >= 2 => CaptureDispatch(args[1], args[2..]),
+    "supervised-import" when args.Length >= 2 => SupervisedImport(args[1], args[2..]),
+    "game-index" when args.Length >= 2 => HostGameIndexCommand.Run(args[1], args[2..]),
     _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>] | capture-dispatch <continuity|resume> [--capture available|stale|unavailable] [--recalibrate]]"),
 };
+
+static int SupervisedImport(string packagePath, string[] arguments)
+{
+    var databasePath = DefaultDatabasePath();
+    for (var index = 0; index < arguments.Length; index++)
+    {
+        if (arguments[index] == "--db" && index + 1 < arguments.Length)
+        {
+            databasePath = Path.GetFullPath(arguments[++index]);
+        }
+        else
+        {
+            return Fail($"unknown supervised-import option: {arguments[index]}");
+        }
+    }
+    Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+    using var connection = new SqliteConnection($"Data Source={databasePath}");
+    connection.Open();
+    new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+    var document = SupervisedMacroPackageImporter.Parse(File.ReadAllText(Path.GetFullPath(packagePath)));
+    var result = SupervisedMacroPackageImporter.Import(connection, document);
+    Console.WriteLine(JsonSerializer.Serialize(result));
+    return 0;
+}
 
 static int CaptureDispatch(string mode, string[] arguments)
 {
@@ -442,6 +470,31 @@ static int Ui(string[] arguments)
             new WebReferenceHtmlNormalizer()));
     var explorerIntents = new HostExplorerIntents(connection);
     var learningRouteIntents = new HostLearningRouteIntents(connection);
+    ProductSupervisedMacroRuntime? supervisedMacroRuntime = null;
+    HostSupervisedMacroIntents? supervisedMacroIntents = null;
+    string? supervisedUnavailableReason = null;
+    if (residentHost is null)
+    {
+        var outputSettings = outputSettingsStore.Load();
+        supervisedMacroRuntime = new ProductSupervisedMacroRuntime(
+            new SqliteLearnedSceneProfileStore(connection),
+            new WindowsSupervisedWindowLocator(),
+            new WindowsOcrFrameReader(),
+            new SerialHidSupervisedNanoSessionFactory(
+                serialHidDiscovery,
+                outputSettings.SelectedDeviceInstanceId));
+        supervisedMacroIntents = new HostSupervisedMacroIntents(
+            connection,
+            supervisedMacroRuntime,
+            new CliEngineeringLogSink());
+    }
+    else
+    {
+        supervisedUnavailableReason =
+            "通常入力が動作中のため、教師付き実行を同時に開始できません。" +
+            "OpenLogicoolを終了し、OpenLogicool.Host ui で教師付き実行専用に起動してください。";
+    }
+    using var supervisedMacroRuntimeDisposable = supervisedMacroRuntime;
 
     IResidentApplyIntent? residentApply = null;
     if (residentHost is not null && residentStatus is not null)
@@ -478,7 +531,9 @@ static int Ui(string[] arguments)
             new HostG13LcdSettingsIntent(),
             webResearchIntent,
             explorerIntents,
-            learningRouteIntents);
+            learningRouteIntents,
+            supervisedMacroIntents,
+            supervisedUnavailableReason);
         System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
         if (residentHost is not null)
         {

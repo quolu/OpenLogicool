@@ -1,0 +1,310 @@
+{
+  "schema": "lattice.todo_extraction.v4",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase12-game-interaction-foundation",
+  "plan_version": "v1",
+  "actor": {
+    "host": "kite-win11",
+    "session": "phase12-foundation",
+    "agent": "bell"
+  },
+  "recorded_at": "2026-08-25T00:44:29.523Z",
+  "tasks": [
+    {
+      "task_id": "t01-foundation-contracts",
+      "title": "基本10機能の契約固定",
+      "lane": "A",
+      "design_memo": "Observe、DiscoverTargets、Hover、Click、KeyTap、Scroll、Drag、WaitStable、Compare、LearnTransitionの公開contract、成功、失敗、evidence、既存実装対応表を固定する。Phase 9のcontractは再利用し、Probe固有実装を製品contractとして扱わない。",
+      "narrative_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+        "origin_line": 83,
+        "source_commit": "9ccfbe734cc487bec8c06c5d9ccf77788f1ce590",
+        "heading_path": ["Phase 12 Game Interaction Foundation", "Lattice移行元"],
+        "markdown_depth": 0,
+        "parent_task_id": null,
+        "checkbox_state": "unchecked"
+      },
+      "migration_context": {
+        "external_canonical_ref": null,
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": ["既存契約と欠落runtimeを仕分ける。"]
+      }
+    },
+    {
+      "task_id": "t02-observe-discover",
+      "title": "ObserveとDiscoverTargetsの製品接続",
+      "lane": "A",
+      "design_memo": "WGC fresh frame、Windows OCR、Foundry Local affordance proposal、既存state candidateを製品runtimeの一つのObservationへ接続する。game固有label、target座標、routeを入力にせず、候補なしとprovider failureを明示する。",
+      "narrative_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+        "origin_line": 84,
+        "source_commit": "9ccfbe734cc487bec8c06c5d9ccf77788f1ce590",
+        "heading_path": ["Phase 12 Game Interaction Foundation", "Lattice移行元"],
+        "markdown_depth": 0,
+        "parent_task_id": null,
+        "checkbox_state": "unchecked"
+      },
+      "migration_context": {
+        "external_canonical_ref": null,
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": ["Capture、AI、Hostの責務境界を維持する。"]
+      }
+    },
+    {
+      "task_id": "t03-nano-actions",
+      "title": "Nano基本入力の共通port",
+      "lane": "A",
+      "design_memo": "Hover、Click、KeyTap、Scroll、DragをObservation束縛、Nano Serial HID一回dispatch、有限down/up、receipt、no retry、no fallbackの共通portへ接続する。pointer移動後にOCR矩形を追跡補正しない。",
+      "narrative_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+        "origin_line": 85,
+        "source_commit": "9ccfbe734cc487bec8c06c5d9ccf77788f1ce590",
+        "heading_path": ["Phase 12 Game Interaction Foundation", "Lattice移行元"],
+        "markdown_depth": 0,
+        "parent_task_id": null,
+        "checkbox_state": "unchecked"
+      },
+      "migration_context": {
+        "external_canonical_ref": null,
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": ["SendInputとComputer Useは実装しない。"]
+      }
+    },
+    {
+      "task_id": "t04-transition-judge",
+      "title": "安定待機とクリック遷移判定",
+      "lane": "A",
+      "design_memo": "WaitStableとCompareを実装し、Observe→DiscoverTargets→Click→WaitStable→Observe→CompareをMoved、Stayed、Undeterminedへ分類する。raw SHA差分、固定sleep、ACK、API戻り値を意味遷移の根拠にせず、常時アニメーションを同一状態として扱うfocused fixtureを先行する。",
+      "narrative_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+        "origin_line": 86,
+        "source_commit": "9ccfbe734cc487bec8c06c5d9ccf77788f1ce590",
+        "heading_path": ["Phase 12 Game Interaction Foundation", "Lattice移行元"],
+        "markdown_depth": 0,
+        "parent_task_id": null,
+        "checkbox_state": "unchecked"
+      },
+      "migration_context": {
+        "external_canonical_ref": null,
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": ["timeoutをStayedへ丸めない。"]
+      }
+    },
+    {
+      "task_id": "t05-learn-transition",
+      "title": "遷移証拠の永続化",
+      "lane": "A",
+      "design_memo": "Before Observation、操作、Nano receipt、after観測列、Moved／Stayed／Undetermined、差分根拠をTransition Evidenceとして既存Structure Event Storeへappend-only保存する。入力未送信はDispatchFailedとして結果判定と分離する。",
+      "narrative_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+        "origin_line": 87,
+        "source_commit": "9ccfbe734cc487bec8c06c5d9ccf77788f1ce590",
+        "heading_path": ["Phase 12 Game Interaction Foundation", "Lattice移行元"],
+        "markdown_depth": 0,
+        "parent_task_id": null,
+        "checkbox_state": "unchecked"
+      },
+      "migration_context": {
+        "external_canonical_ref": null,
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": ["単一試行をVerifiedへ昇格しない。"]
+      }
+    },
+    {
+      "task_id": "t06-explorer-runtime",
+      "title": "製品Explorer runtime",
+      "lane": "A",
+      "design_memo": "IHostExplorerRuntimeControlを実装し、WGC、認識、候補選択、policy、Nano、安定待機、判定、Structure Event Storeをzero-seed探索loopとしてHostへ接続する。Probeはこの製品portを呼ぶevidence harnessだけにする。",
+      "narrative_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+        "origin_line": 88,
+        "source_commit": "9ccfbe734cc487bec8c06c5d9ccf77788f1ce590",
+        "heading_path": ["Phase 12 Game Interaction Foundation", "Lattice移行元"],
+        "markdown_depth": 0,
+        "parent_task_id": null,
+        "checkbox_state": "unchecked"
+      },
+      "migration_context": {
+        "external_canonical_ref": null,
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": ["既知fixture runnerを主経路にしない。"]
+      }
+    },
+    {
+      "task_id": "t07-basic-live",
+      "title": "基本10機能の実画面実証",
+      "lane": "F",
+      "design_memo": "基本10機能をWindows nativeで個別に実証する。NIKKEが受理しないprimitiveはNano入力receiptとgame effectを分けてUnsupportedとし、成功へ丸めない。Computer Use、SendInput、fallback、blind retryは0に固定する。",
+      "narrative_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+        "origin_line": 89,
+        "source_commit": "9ccfbe734cc487bec8c06c5d9ccf77788f1ce590",
+        "heading_path": ["Phase 12 Game Interaction Foundation", "Lattice移行元"],
+        "markdown_depth": 0,
+        "parent_task_id": null,
+        "checkbox_state": "unchecked"
+      },
+      "migration_context": {
+        "external_canonical_ref": null,
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": "NIKKE起動、Nano接続、Foundry Local利用可能",
+        "evidence_refs": [],
+        "notes": ["オーナーの画面操作を前提にしない。"]
+      }
+    },
+    {
+      "task_id": "t08-nikke-exploration",
+      "title": "NIKKE複数候補のzero-seed探索",
+      "lane": "F",
+      "design_memo": "NIKKEの非課金、非消費、非戦闘scopeで、game固有state名、target名、座標、正解routeを与えず複数候補を順に探索し、state、target、edge、no-changeを保存する。各操作は一回だけで、未確定結果を自動再試行しない。",
+      "narrative_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+        "origin_line": 90,
+        "source_commit": "9ccfbe734cc487bec8c06c5d9ccf77788f1ce590",
+        "heading_path": ["Phase 12 Game Interaction Foundation", "Lattice移行元"],
+        "markdown_depth": 0,
+        "parent_task_id": null,
+        "checkbox_state": "unchecked"
+      },
+      "migration_context": {
+        "external_canonical_ref": null,
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": "基本10機能と製品Explorer runtimeがgreen",
+        "evidence_refs": [],
+        "notes": ["課金、購入、希少資源、account変更、自由textを除外する。"]
+      }
+    },
+    {
+      "task_id": "t09-foundation-exit",
+      "title": "基盤Exitとclaim訂正",
+      "lane": "F",
+      "design_memo": "Phase 9／12の成立主張を実コードと再照合し、過大な記述を訂正する。関連test、最終full regression一回、独立反証、diff監査、対象限定commit、pushを行い、foundation成立後に旧t06 live sliceを再開可能へ戻す。",
+      "narrative_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase12-game-interaction-foundation-campaign-plan.md",
+        "origin_line": 91,
+        "source_commit": "9ccfbe734cc487bec8c06c5d9ccf77788f1ce590",
+        "heading_path": ["Phase 12 Game Interaction Foundation", "Lattice移行元"],
+        "markdown_depth": 0,
+        "parent_task_id": null,
+        "checkbox_state": "unchecked"
+      },
+      "migration_context": {
+        "external_canonical_ref": null,
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": ["未成立を成功扱いしない。"]
+      }
+    }
+  ],
+  "hard_dependencies": [
+    {
+      "from": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t01-foundation-contracts"},
+      "to": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t02-observe-discover"},
+      "reason": "契約固定後に製品観測を実装する。"
+    },
+    {
+      "from": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t02-observe-discover"},
+      "to": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t03-nano-actions"},
+      "reason": "入力をfresh Observationへ束縛する。"
+    },
+    {
+      "from": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t03-nano-actions"},
+      "to": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t04-transition-judge"},
+      "reason": "判定fixtureより先に一回入力契約を固定する。"
+    },
+    {
+      "from": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t04-transition-judge"},
+      "to": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t05-learn-transition"},
+      "reason": "確定した判定を遷移証拠へ保存する。"
+    },
+    {
+      "from": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t05-learn-transition"},
+      "to": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t06-explorer-runtime"},
+      "reason": "基本機能を製品loopへ統合する。"
+    },
+    {
+      "from": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t06-explorer-runtime"},
+      "to": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t07-basic-live"},
+      "reason": "focused green後に実画面へ進む。"
+    },
+    {
+      "from": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t07-basic-live"},
+      "to": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t08-nikke-exploration"},
+      "reason": "個別基本機能の成立後に複数候補探索を行う。"
+    },
+    {
+      "from": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t08-nikke-exploration"},
+      "to": {"project_id": "OpenLogicool", "plan_key": "phase12-game-interaction-foundation", "task_id": "t09-foundation-exit"},
+      "reason": "実ゲーム証拠後に最終判定する。"
+    }
+  ],
+  "joins": [],
+  "extraction_digest": "0000000000000000000000000000000000000000000000000000000000000000"
+}

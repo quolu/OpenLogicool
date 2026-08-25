@@ -1,0 +1,14 @@
+{
+  "Mode": "discover",
+  "ProductHostEntry": true,
+  "Status": "Learned",
+  "Target": "\u30A2\u30EA\u30FC\u30CA",
+  "Goal": "\u30A2\u30EA\u30FC\u30CA\u3092\u958B\u304F",
+  "ActionId": "known-action:6f9ac84464ae0f0df21e59a6343fc453477892e63d284fa15e8cdb03cd0bf0c0",
+  "DestinationStateId": "known-screen:856d2a7a6648647f2b44ee1c393a5a54425eff332bb37fdb6410dce90fcb6041",
+  "IndexedStateCount": 2,
+  "IndexedActionCount": 1,
+  "ExplorerRuntimeConnected": true,
+  "AiCallCount": 1,
+  "Database": "C:\\Users\\kite_\\AppData\\Local\\Temp\\openlogicool-host-final-index-0971e51592d84139814232e14eee0967.db"
+}

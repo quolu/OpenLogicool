@@ -122,7 +122,9 @@ public sealed record StructureScreenEdge(
     StructureVerificationState VerificationState,
     string? CreatedRevisionId = null,
     string? UpdatedRevisionId = null,
-    bool Retired = false);
+    bool Retired = false,
+    string? TargetSemanticKey = null,
+    IReadOnlyList<double>? TargetNormalizedBounds = null);
 
 public sealed record StructureContradiction(
     string SchemaVersion,

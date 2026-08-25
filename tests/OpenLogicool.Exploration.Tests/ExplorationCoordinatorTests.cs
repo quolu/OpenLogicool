@@ -37,11 +37,44 @@ public sealed class ExplorationCoordinatorTests
             Assert.Equal(RunEventPayloadTypes.Dispatch, fixture.RunStore.Events[^1].PayloadType);
         }, Time(4));
         var after = Scene("observation-after", sequence: 2, hypothesis: "hypothesis-b");
-        var evidence = fixture.Coordinator.RecordOutcome(Outcome("proposal-1", after, ExplorationOutcomeKind.Novel));
+        var dispatchReceipt = new GameInteractionDispatchReceipt(
+            ContractSchemaVersions.Revision03,
+            GameInteractionOperations.Click,
+            GameInteractionDispatchStatus.Dispatched,
+            scene.ObservationId,
+            scene.Frame.SourceId,
+            "NanoSerialHid",
+            1,
+            Time(4),
+            Time(4),
+            scene.Affordances[0].CandidateId,
+            "nano-1",
+            null);
+        var comparison = new GameTransitionComparison(
+            ContractSchemaVersions.Revision03,
+            scene.ObservationId,
+            after.ObservationId,
+            GameTransitionJudgement.Moved,
+            after.Affordances.SelectMany(candidate => candidate.EvidenceRegions).ToArray(),
+            ["actionable structure changed"]);
+        var evidence = fixture.Coordinator.RecordOutcome(
+            Outcome("proposal-1", after, ExplorationOutcomeKind.Novel) with
+            {
+                DispatchReceipt = dispatchReceipt,
+                Comparison = comparison,
+                ObservationSequenceIds = [after.ObservationId],
+            });
 
         Assert.Equal(1, inputCalls);
         Assert.Equal("observation-before", evidence.BeforeObservationId);
         Assert.Equal("observation-after", evidence.AfterObservationId);
+        Assert.Equal("nano-1", evidence.DispatchReceipt!.TransportReceiptId);
+        Assert.Equal(GameTransitionJudgement.Moved, evidence.Comparison!.Judgement);
+        Assert.Equal(["observation-after"], evidence.ObservationSequenceIds);
+        Assert.Contains(
+            "\"TransportReceiptId\":\"nano-1\"",
+            fixture.StructureStore.Events[^1].PayloadJson,
+            StringComparison.Ordinal);
         Assert.Equal(AttemptState.Confirmed, Recover(fixture).Attempts.Single().State);
         Assert.Equal(
             [
@@ -78,6 +111,59 @@ public sealed class ExplorationCoordinatorTests
 
         _ = fixture.Coordinator.Propose(Admission(fixture, scene, "proposal-1"), Time(3));
         Assert.Throws<InvalidOperationException>(() => fixture.Coordinator.SynchronizeStructureRevision());
+    }
+
+    [Fact]
+    public void Product_structure_learner_creates_candidate_nodes_and_edge_from_transition_evidence()
+    {
+        var fixture = Fixture(oneStepApproval: true);
+        var before = Scene("observation-before", 1, "hypothesis-a");
+        var afterBase = Scene("observation-after", 2, "hypothesis-b");
+        var after = afterBase with
+        {
+            Affordances = afterBase.Affordances.Select(candidate => candidate with
+            {
+                SemanticKind = "text",
+                SemanticLabel = "設定",
+                Locator = candidate.Locator with { NormalizedBounds = [0.7, 0.7, 0.2, 0.1] },
+            }).ToArray(),
+        };
+        fixture.Coordinator.CommitObservation(before, Time(1));
+        var admission = Admission(fixture, before, "proposal-structure");
+        _ = fixture.Coordinator.Propose(admission, Time(2));
+        _ = fixture.Coordinator.Approve(Approval(admission.Proposal, fixture.Policy, "approval-structure"), Time(3));
+        fixture.Coordinator.Dispatch("proposal-structure", () => { }, Time(4));
+        var evidence = fixture.Coordinator.RecordOutcome(
+            Outcome("proposal-structure", after, ExplorationOutcomeKind.Novel));
+        var stableIds = new InMemoryStableStructureIdRegistry();
+        var eventIds = new SequenceIds();
+        var knowledge = new StructureKnowledgeController(fixture.StructureStore, stableIds, eventIds);
+        var learner = new GameInteractionStructureLearner(
+            fixture.StructureStore,
+            knowledge,
+            stableIds,
+            eventIds,
+            fixture.Coordinator,
+            "game-1",
+            "env-1");
+
+        var revision = learner.Commit(
+            before,
+            after,
+            evidence,
+            admission.Proposal.WaitCondition,
+            ["unknown-side-effect"],
+            false,
+            Time(6));
+
+        Assert.Equal(2, revision.ScreenGraph.Nodes.Count);
+        var edge = Assert.Single(revision.ScreenGraph.Edges);
+        Assert.NotEqual(edge.SourceStateId, edge.DestinationStateId);
+        Assert.Equal(ExplorationOutcomeKind.Novel, Assert.Single(edge.OutcomeCounts).Outcome);
+        Assert.Equal("unknown-side-effect", Assert.Single(edge.RiskTags));
+        Assert.False(edge.Reversible);
+        Assert.False(string.IsNullOrWhiteSpace(edge.TargetSemanticKey));
+        Assert.Contains(evidence.EvidenceId, edge.EvidenceIds);
     }
 
     [Fact]
@@ -294,6 +380,27 @@ public sealed class ExplorationCoordinatorTests
     }
 
     [Fact]
+    public void Repeated_probe_limit_one_allows_the_first_probe_and_stops_only_after_repetition()
+    {
+        var fixture = Fixture(
+            oneStepApproval: false,
+            new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500, 1, 3, 3));
+        var before = Scene("observation-before", 1, "state-a");
+        fixture.Coordinator.CommitObservation(before, Time(1));
+        var first = Admission(fixture, before, "proposal-1");
+        Assert.True(fixture.Coordinator.Propose(first, Time(2)).DispatchAllowed);
+        fixture.Coordinator.Dispatch("proposal-1", () => { }, Time(3));
+        var after = Scene("observation-after", 2, "state-b");
+        _ = fixture.Coordinator.RecordOutcome(
+            Outcome("proposal-1", after, ExplorationOutcomeKind.Novel));
+
+        Assert.Equal(ExplorationStopReason.None, fixture.Coordinator.StopReason);
+        Assert.True(fixture.Coordinator.Propose(
+            Admission(fixture, after, "proposal-2"),
+            Time(4)).DispatchAllowed);
+    }
+
+    [Fact]
     public void Insufficient_stability_stops_without_false_confirmation()
     {
         var fixture = Fixture(oneStepApproval: false);
@@ -468,13 +575,15 @@ public sealed class ExplorationCoordinatorTests
         return after;
     }
 
-    private static FixtureState Fixture(bool oneStepApproval)
+    private static FixtureState Fixture(
+        bool oneStepApproval,
+        ExplorationStopPolicy? stopPolicy = null)
     {
         var structureStore = new MemoryStructureStore();
         var runStore = new MemoryRunStore();
         var journal = new RunJournal(runStore, new NoopLog());
         var gate = new AttemptDispatchGate(journal);
-        var policy = Policy(oneStepApproval);
+        var policy = Policy(oneStepApproval, stopPolicy);
         var coordinator = new ExplorationCoordinator(
             structureStore,
             journal,
@@ -492,7 +601,9 @@ public sealed class ExplorationCoordinatorTests
         return new FixtureState(coordinator, structureStore, runStore, gate, policy, journal);
     }
 
-    private static ExplorationPolicy Policy(bool oneStepApproval) => new(
+    private static ExplorationPolicy Policy(
+        bool oneStepApproval,
+        ExplorationStopPolicy? stopPolicy = null) => new(
         ContractSchemaVersions.Revision03,
         "policy-1",
         "app:game",
@@ -505,7 +616,7 @@ public sealed class ExplorationCoordinatorTests
         oneStepApproval,
         "consent-1",
         "back",
-        new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500, 2, 2, 2),
+        stopPolicy ?? new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500, 2, 2, 2),
         ["budget-exhausted", "no-progress", "recovery-lost"]);
 
     private static ExplorationProposalAdmission Admission(

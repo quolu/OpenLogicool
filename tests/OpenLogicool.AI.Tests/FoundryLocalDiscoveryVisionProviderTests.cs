@@ -32,6 +32,8 @@ public sealed class FoundryLocalDiscoveryVisionProviderTests
         Assert.Equal("window:game", affordance.TargetWindowSourceId);
         Assert.Equal([0.2, 0.3, 0.1, 0.05], affordance.Locator.NormalizedBounds);
         Assert.Equal(["click"], affordance.AllowedPrimitives);
+        Assert.Equal("text", affordance.SemanticKind);
+        Assert.Equal("OpenEvent", affordance.SemanticLabel);
         var proposal = Assert.Single(result.Proposals);
         Assert.Equal(affordance.CandidateId, proposal.AffordanceCandidateId);
         Assert.Equal("structure-0", proposal.SourceStructureRevisionId);
@@ -66,7 +68,7 @@ public sealed class FoundryLocalDiscoveryVisionProviderTests
     }
 
     [Fact]
-    public async Task Generic_fuzzy_grounding_accepts_unique_match_and_rejects_ambiguous_regions()
+    public async Task Candidate_constraint_rejects_non_ocr_label_before_fuzzy_grounding()
     {
         using var client = ClientReturning("{\"labels\":[\"タップして受けける\"]}");
         var provider = new FoundryLocalDiscoveryVisionProvider(client);
@@ -81,9 +83,33 @@ public sealed class FoundryLocalDiscoveryVisionProviderTests
             ]),
             new byte[] { 2 });
 
-        Assert.Single(unique.Scene.Affordances);
+        Assert.Equal(FoundryVisionStatus.Unknown, unique.ProviderResult.Status);
+        Assert.Equal(FoundryVisionFailure.InvalidResponse, unique.ProviderResult.Failure);
+        Assert.Empty(unique.Scene.Affordances);
         Assert.Empty(ambiguous.Scene.Affordances);
         Assert.Empty(ambiguous.Proposals);
+    }
+
+    [Fact]
+    public async Task Nested_exact_ocr_spans_choose_the_smallest_region_but_separate_labels_remain_ambiguous()
+    {
+        using var client = ClientReturning("{\"labels\":[\"アーク\"]}");
+        var provider = new FoundryLocalDiscoveryVisionProvider(client);
+        var nested = await provider.ObserveAsync(
+            Request([
+                Region("①アーク", 0.60, 0.70, 0.12, 0.05),
+                Region("アーク", 0.62, 0.70, 0.08, 0.05),
+            ]),
+            new byte[] { 1 });
+        var separate = await provider.ObserveAsync(
+            Request([
+                Region("アーク", 0.10, 0.70, 0.08, 0.05),
+                Region("アーク", 0.62, 0.70, 0.08, 0.05),
+            ]),
+            new byte[] { 2 });
+
+        Assert.Equal([0.62, 0.70, 0.08, 0.05], Assert.Single(nested.Scene.Affordances).Locator.NormalizedBounds);
+        Assert.Empty(separate.Scene.Affordances);
     }
 
     [Fact]

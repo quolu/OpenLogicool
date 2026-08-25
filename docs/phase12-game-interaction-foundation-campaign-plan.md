@@ -78,14 +78,6 @@ Phase 9で作成した`ObservedScene`、`AffordanceCandidate`、`ExplorationCoor
 - 購入、課金、希少資源消費、account変更、自由text入力の自動探索
 - Windows以外のruntime対応
 
-## Lattice移行元
+## 工程参照
 
-- [ ] 基本10機能の公開contractと既存実装対応表を固定する。
-- [ ] ObserveとDiscoverTargetsを製品runtimeへ接続する。
-- [ ] Hover、Click、KeyTap、Scroll、Dragを共通Nano操作portへ接続する。
-- [ ] WaitStableとCompare、クリック遷移判定を実装する。
-- [ ] LearnTransitionをStructure Event Storeへ接続する。
-- [ ] IHostExplorerRuntimeControlとzero-seed探索loopをHostへ実装する。
-- [ ] 基本10機能をWindows nativeの個別focused testと実画面で確認する。
-- [ ] NIKKEで安全な複数候補の探索と構造保存を実証する。
-- [ ] Phase 9／12のclaim、関連test、最終監査、commit、pushを閉じる。
+実行ToDo、依存、状態、完了証拠はLattice plan `phase12-game-interaction-foundation`だけを正本とする。

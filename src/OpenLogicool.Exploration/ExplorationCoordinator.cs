@@ -181,7 +181,12 @@ public sealed class ExplorationCoordinator
         active = probe with { Decision = decision };
         if (decision.Status == ExplorationAdmissionStatus.Allowed)
         {
-            Authorize(approval, RunEventActorType.User, persistedUtc);
+            Authorize(
+                approval,
+                approval.AuthorizationSource == ExplorationAuthorizationSource.OwnerDelegatedAutomation
+                    ? RunEventActorType.Automation
+                    : RunEventActorType.User,
+                persistedUtc);
         }
         return decision;
     }
@@ -355,7 +360,10 @@ public sealed class ExplorationCoordinator
             report.DispatchMonotonicMilliseconds,
             report.ObservationCompletedMonotonicMilliseconds,
             report.RecordedUtc,
-            binding.ExplorationRunId);
+            binding.ExplorationRunId,
+            report.DispatchReceipt,
+            report.Comparison,
+            report.ObservationSequenceIds);
         AppendStructure(
             StructureEventKind.OutcomeRecorded,
             StructureEventActor.Controller,
@@ -382,6 +390,13 @@ public sealed class ExplorationCoordinator
         completed.TryGetValue(proposalId, out var probe)
             ? probe.Evidence
             : throw new InvalidOperationException($"proposal '{proposalId}' の完了evidenceがありません。");
+
+    public string GetActiveAttemptId(string proposalId)
+    {
+        var probe = RequireActive(proposalId);
+        return probe.AttemptId
+            ?? throw new InvalidOperationException($"proposal '{proposalId}' はまだauthorizeされていません。");
+    }
 
     private ExplorationAdmissionDecision Evaluate(
         ExplorationProposalAdmission admission,
@@ -529,7 +544,12 @@ public sealed class ExplorationCoordinator
             attemptGate.CommitAuthorized);
         AppendStructure(
             StructureEventKind.ProbeApproved,
-            actor == RunEventActorType.User ? StructureEventActor.User : StructureEventActor.Controller,
+            actor switch
+            {
+                RunEventActorType.User => StructureEventActor.User,
+                RunEventActorType.Automation => StructureEventActor.Automation,
+                _ => StructureEventActor.Controller,
+            },
             probe.CorrelationId,
             approval.ApprovalId,
             approval.ObservationId,
@@ -577,7 +597,7 @@ public sealed class ExplorationCoordinator
         probeCounts.TryGetValue(probeKey, out var count);
         count++;
         probeCounts[probeKey] = count;
-        if (count >= policy.StopPolicy.MaximumRepeatedProbeCount)
+        if (count > policy.StopPolicy.MaximumRepeatedProbeCount)
         {
             stopReason = ExplorationStopReason.RepeatedProbe;
         }

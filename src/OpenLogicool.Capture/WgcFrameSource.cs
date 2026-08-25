@@ -67,7 +67,7 @@ public sealed class WgcFrameSource : IDetailedFrameSource, IDisposable
     [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
 
-    private WgcFrameSource(IntPtr window, string sourceId)
+    private WgcFrameSource(IntPtr window, string sourceId, bool includeCursor)
     {
         if (window == IntPtr.Zero)
         {
@@ -102,11 +102,15 @@ public sealed class WgcFrameSource : IDetailedFrameSource, IDisposable
             item.Size);
         observedItemSize = item.Size;
         session = framePool.CreateCaptureSession(item);
+        session.IsCursorCaptureEnabled = includeCursor;
         session.StartCapture();
     }
 
-    public static WgcFrameSource CreateForWindow(nint window, string sourceId) =>
-        new((IntPtr)window, sourceId);
+    public static WgcFrameSource CreateForWindow(
+        nint window,
+        string sourceId,
+        bool includeCursor = true) =>
+        new((IntPtr)window, sourceId, includeCursor);
 
     public FrameReadResult Pull() => PullDetailed().Result;
 
@@ -135,6 +139,13 @@ public sealed class WgcFrameSource : IDetailedFrameSource, IDisposable
         {
             // WGC は内容の再描画に伴って frame を供給する。静止しているだけなら正常である。
             return CaptureRead.Unavailable("wgc frame はまだ到着していません。");
+        }
+
+        // AI推論中に溜まった古いframeはGPU copyせず捨て、queue末尾の最新frameだけを観測へ渡す。
+        while (framePool.TryGetNextFrame() is { } newer)
+        {
+            frame.Dispose();
+            frame = newer;
         }
 
         using (frame)

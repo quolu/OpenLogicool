@@ -29,7 +29,16 @@ public sealed record CapturedFrameReference(
     DateTimeOffset WallClockUtc,
     long TransformRevision,
     long FreshnessMs,
-    long LastChangeMs);
+    long LastChangeMs,
+    CapturedFrameArtifact? Artifact = null);
+
+public sealed record CapturedFrameArtifact(
+    string ArtifactId,
+    string MediaType,
+    string Sha256,
+    int Width,
+    int Height,
+    string LocalPath);
 
 public sealed record EvidenceRegion(
     string SchemaVersion,
@@ -72,7 +81,9 @@ public sealed record AffordanceCandidate(
     AffordanceLocator Locator,
     IReadOnlyList<EvidenceRegion> EvidenceRegions,
     double Confidence,
-    IReadOnlyList<string> AllowedPrimitives);
+    IReadOnlyList<string> AllowedPrimitives,
+    string? SemanticKind = null,
+    string? SemanticLabel = null);
 
 public sealed record ObservedScene(
     string SchemaVersion,
@@ -84,7 +95,29 @@ public sealed record ObservedScene(
     string? StateHypothesisId,
     IReadOnlyList<StateCandidate> StateCandidates,
     IReadOnlyList<AffordanceCandidate> Affordances,
-    string PerceptionVersion);
+    string PerceptionVersion,
+    SceneDiscoveryEvidence? DiscoveryEvidence = null);
+
+public sealed record SceneGroundingRegion(
+    string Text,
+    EvidenceRegion EvidenceRegion);
+
+public sealed record SceneDiscoveryEvidence(
+    string ProviderId,
+    string ModelId,
+    string PromptRevision,
+    string PromptSha256,
+    string Status,
+    string Failure,
+    string? FailureDetail,
+    string RawResponse,
+    long ElapsedMilliseconds,
+    int ExternalAiTransmissionCount,
+    decimal ExternalAiApiCostUsd,
+    IReadOnlyList<string>? LocalGroundingTexts = null,
+    IReadOnlyList<string>? ProposedLabels = null,
+    IReadOnlyList<string>? GroundingDiagnostics = null,
+    IReadOnlyList<SceneGroundingRegion>? LocalGroundingRegions = null);
 
 public interface IObservationSource
 {

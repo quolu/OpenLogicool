@@ -53,6 +53,65 @@ public sealed class FoundryLocalVisionClientTests
     }
 
     [Fact]
+    public async Task Candidate_constrained_prompt_accepts_only_exact_same_frame_ocr_string()
+    {
+        string? observedBody = null;
+        var handler = new StubHandler(async (request, cancellationToken) =>
+        {
+            observedBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+            return EventStream(
+                "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"labels\\\":[\\\"アリーナ\\\"]}\"}",
+                "{\"type\":\"response.completed\",\"response\":{\"usage\":{}}}");
+        });
+        using var client = new FoundryLocalVisionClient(
+            new Uri("http://127.0.0.1:5000"),
+            "model",
+            TimeSpan.FromSeconds(1),
+            handler);
+
+        var result = await client.ProposeLabelsAsync(
+            new byte[] { 1 },
+            ["アリーナ", "戻る"]);
+
+        Assert.Equal(FoundryVisionStatus.Completed, result.Status);
+        Assert.Equal(["アリーナ"], result.Labels);
+        using var request = System.Text.Json.JsonDocument.Parse(observedBody!);
+        var prompt = request.RootElement
+            .GetProperty("input")[0]
+            .GetProperty("content")[0]
+            .GetProperty("text")
+            .GetString();
+        Assert.Contains("same-frame OCR strings", prompt, StringComparison.Ordinal);
+        Assert.Contains("アリーナ", prompt, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Candidate_constrained_prompt_rejects_transliteration_without_fallback()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"labels\\\":[\\\"ТЕТРА\\\"]}\"}");
+
+        var result = await client.ProposeLabelsAsync(new byte[] { 1 }, ["TETRA"]);
+
+        Assert.Equal(FoundryVisionStatus.Unknown, result.Status);
+        Assert.Equal(FoundryVisionFailure.InvalidResponse, result.Failure);
+        Assert.Empty(result.Labels);
+    }
+
+    [Fact]
+    public async Task Candidate_constrained_prompt_keeps_exact_labels_and_reports_dropped_hallucinations()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"labels\\\":[\\\"アリーナ\\\",\\\"ТЕТРА\\\"]}\"}");
+
+        var result = await client.ProposeLabelsAsync(new byte[] { 1 }, ["アリーナ", "戻る"]);
+
+        Assert.Equal(FoundryVisionStatus.Completed, result.Status);
+        Assert.Equal(["アリーナ"], result.Labels);
+        Assert.Equal(FoundryVisionNormalization.OutOfCandidateLabelsDropped, result.Normalization);
+    }
+
+    [Fact]
     public async Task InvalidSchemaIsUnknownWithoutFallback()
     {
         using var client = ClientReturning(
@@ -192,6 +251,82 @@ public sealed class FoundryLocalVisionClientTests
         Assert.Equal(FoundryVisionStatus.Unknown, result.Status);
         Assert.Equal(FoundryVisionFailure.Timeout, result.Failure);
         Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public async Task Controls_include_text_and_icon_bounds_from_one_strict_response()
+    {
+        string? observedBody = null;
+        var handler = new StubHandler(async (request, cancellationToken) =>
+        {
+            observedBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+            return EventStream(
+                "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"controls\\\":[{\\\"kind\\\":\\\"text\\\",\\\"label\\\":\\\"部隊\\\",\\\"x\\\":0.1,\\\"y\\\":0.2,\\\"width\\\":0.15,\\\"height\\\":0.08},{\\\"kind\\\":\\\"icon\\\",\\\"label\\\":\\\"歯車\\\",\\\"x\\\":0.9,\\\"y\\\":0.02,\\\"width\\\":0.05,\\\"height\\\":0.05}]}\"}",
+                "{\"type\":\"response.completed\",\"response\":{\"usage\":{}}}");
+        });
+        using var client = new FoundryLocalVisionClient(
+            new Uri("http://127.0.0.1:5000"),
+            "model",
+            TimeSpan.FromSeconds(1),
+            handler);
+
+        var result = await client.ProposeControlsAsync(new byte[] { 1 });
+
+        Assert.Equal(FoundryVisionStatus.Completed, result.Status);
+        Assert.Collection(
+            result.Controls,
+            control =>
+            {
+                Assert.Equal("text", control.Kind);
+                Assert.Equal("部隊", control.Label);
+                Assert.Equal(0.1, control.X);
+            },
+            control =>
+            {
+                Assert.Equal("icon", control.Kind);
+                Assert.Equal("歯車", control.Label);
+                Assert.Equal(0.05, control.Width);
+            });
+        Assert.Contains("icon-only controls", observedBody, StringComparison.Ordinal);
+        Assert.Contains("\"max_output_tokens\":1500", observedBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Control_bounds_outside_the_frame_are_unknown_without_normalization()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"controls\\\":[{\\\"kind\\\":\\\"icon\\\",\\\"label\\\":\\\"歯車\\\",\\\"x\\\":0.98,\\\"y\\\":0.1,\\\"width\\\":0.1,\\\"height\\\":0.1}]}\"}");
+
+        var result = await client.ProposeControlsAsync(new byte[] { 1 });
+
+        Assert.Equal(FoundryVisionStatus.Unknown, result.Status);
+        Assert.Equal(FoundryVisionFailure.InvalidResponse, result.Failure);
+        Assert.Empty(result.Controls);
+    }
+
+    [Fact]
+    public async Task Control_schema_rejects_extra_properties()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"controls\\\":[{\\\"kind\\\":\\\"text\\\",\\\"label\\\":\\\"部隊\\\",\\\"x\\\":0.1,\\\"y\\\":0.2,\\\"width\\\":0.1,\\\"height\\\":0.1,\\\"action\\\":\\\"click\\\"}]}\"}");
+
+        var result = await client.ProposeControlsAsync(new byte[] { 1 });
+
+        Assert.Equal(FoundryVisionStatus.Unknown, result.Status);
+        Assert.Equal(FoundryVisionFailure.InvalidResponse, result.Failure);
+    }
+
+    [Fact]
+    public async Task Exact_duplicate_controls_are_collapsed_after_complete_json()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"controls\\\":[{\\\"kind\\\":\\\"icon\\\",\\\"label\\\":\\\"前哨基地\\\",\\\"x\\\":0.3,\\\"y\\\":0.5,\\\"width\\\":0.1,\\\"height\\\":0.1},{\\\"kind\\\":\\\"icon\\\",\\\"label\\\":\\\"前哨基地\\\",\\\"x\\\":0.3,\\\"y\\\":0.5,\\\"width\\\":0.1,\\\"height\\\":0.1}]}\"}");
+
+        var result = await client.ProposeControlsAsync(new byte[] { 1 });
+
+        Assert.Equal(FoundryVisionStatus.Completed, result.Status);
+        Assert.Single(result.Controls);
+        Assert.Equal(FoundryVisionNormalization.DuplicateLabelsCollapsed, result.Normalization);
     }
 
     private static FoundryLocalVisionClient ClientReturning(params string[] events) => new(

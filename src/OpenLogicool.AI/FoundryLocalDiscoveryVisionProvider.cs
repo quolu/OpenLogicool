@@ -24,7 +24,8 @@ public sealed record LocalVisionSceneRequest(
     IReadOnlyList<LocalVisionTextRegion> TextRegions,
     IReadOnlyList<StateCandidate> SameSceneCandidates,
     IReadOnlyList<string> AllowedPrimitives,
-    string StructureRevisionId);
+    string StructureRevisionId,
+    string? TargetIntent = null);
 
 public sealed record LocalVisionProviderTelemetry(
     string ProviderId,
@@ -50,11 +51,19 @@ public sealed record LocalVisionDiscoveryResult(
     FoundryVisionResult ProviderResult,
     LocalVisionProviderTelemetry Telemetry);
 
+public interface ILocalLabelDiscoveryProvider
+{
+    Task<LocalVisionDiscoveryResult> ObserveAsync(
+        LocalVisionSceneRequest request,
+        ReadOnlyMemory<byte> pngBytes,
+        CancellationToken cancellationToken = default);
+}
+
 /// <summary>
 /// t05で採用したFoundry Local label→同一frame OCR regionの一経路だけを製品contractへ接続する。
 /// provider座標、生screen座標、cloud、別providerへのfallbackは持たない。
 /// </summary>
-public sealed class FoundryLocalDiscoveryVisionProvider
+public sealed class FoundryLocalDiscoveryVisionProvider : ILocalLabelDiscoveryProvider
 {
     private const double MinimumFuzzySimilarity = 0.85;
     private const double MinimumFuzzyMargin = 0.15;
@@ -73,12 +82,18 @@ public sealed class FoundryLocalDiscoveryVisionProvider
     {
         Validate(request, pngBytes);
 
+        var candidateLabels = request.TextRegions.Select(region => region.Text).ToArray();
+        var promptSha256 = client.LabelsPromptSha256(candidateLabels, request.TargetIntent);
         var providerResult = await client
-            .ProposeLabelsAsync(pngBytes, cancellationToken)
+            .ProposeLabelsAsync(pngBytes, candidateLabels, request.TargetIntent, cancellationToken)
             .ConfigureAwait(false);
         var affordances = providerResult.Status == FoundryVisionStatus.Completed
             ? Ground(request, providerResult.Labels)
             : [];
+        var groundingDiagnostics = new[] { $"provider-normalization:{providerResult.Normalization}" }
+            .Concat(providerResult.Labels.Select(label =>
+                $"{label}:exact={request.TextRegions.Count(region => FrameBoundLabelMatcher.Equals(region.Text, label))}"))
+            .ToArray();
         var identity = request.SameSceneCandidates.Count switch
         {
             0 => StateIdentityStatus.Novel,
@@ -99,7 +114,22 @@ public sealed class FoundryLocalDiscoveryVisionProvider
                     : null,
             request.SameSceneCandidates,
             affordances,
-            $"foundry-local:{client.ModelId}:{client.PromptSha256}");
+            $"foundry-local:{client.ModelId}:{promptSha256}",
+            new SceneDiscoveryEvidence(
+                "microsoft-foundry-local",
+                client.ModelId,
+                FoundryLocalVisionClient.PromptRevision,
+                promptSha256,
+                providerResult.Status.ToString(),
+                providerResult.Failure.ToString(),
+                providerResult.FailureDetail,
+                providerResult.RawOutput,
+                providerResult.ElapsedMs,
+                0,
+                0m,
+                LocalGroundingTexts: null,
+                ProposedLabels: providerResult.Labels,
+                GroundingDiagnostics: groundingDiagnostics));
         var proposals = request.AllowedPrimitives.Contains("click", StringComparer.Ordinal)
             ? affordances.Select(affordance => Proposal(request, affordance)).ToArray()
             : [];
@@ -108,7 +138,7 @@ public sealed class FoundryLocalDiscoveryVisionProvider
             client.Endpoint.ToString(),
             client.ModelId,
             FoundryLocalVisionClient.PromptRevision,
-            client.PromptSha256,
+            promptSha256,
             request.CropId,
             request.CropWidth,
             request.CropHeight,
@@ -160,7 +190,9 @@ public sealed class FoundryLocalDiscoveryVisionProvider
                 request.LocatorRevision),
             [item.Region.EvidenceRegion],
             Confidence(label: item.Label, observed: item.Region.Text),
-            request.AllowedPrimitives.Contains("click", StringComparer.Ordinal) ? ["click"] : []))
+            request.AllowedPrimitives.Contains("click", StringComparer.Ordinal) ? ["click"] : [],
+            "text",
+            item.Label))
             .ToArray();
     }
 
@@ -175,7 +207,14 @@ public sealed class FoundryLocalDiscoveryVisionProvider
         }
         if (exact.Length > 1)
         {
-            return null;
+            var smallest = exact
+                .OrderBy(region => Area(region.EvidenceRegion.NormalizedBounds))
+                .First();
+            return exact.All(region => Contains(
+                    region.EvidenceRegion.NormalizedBounds,
+                    smallest.EvidenceRegion.NormalizedBounds))
+                ? smallest
+                : null;
         }
 
         var ranked = regions
@@ -191,6 +230,14 @@ public sealed class FoundryLocalDiscoveryVisionProvider
 
         return ranked[0].Region;
     }
+
+    private static double Area(IReadOnlyList<double> bounds) => bounds[2] * bounds[3];
+
+    private static bool Contains(IReadOnlyList<double> outer, IReadOnlyList<double> inner) =>
+        inner[0] >= outer[0]
+        && inner[1] >= outer[1]
+        && inner[0] + inner[2] <= outer[0] + outer[2]
+        && inner[1] + inner[3] <= outer[1] + outer[3];
 
     private static double Confidence(string label, string observed) =>
         FrameBoundLabelMatcher.Equals(observed, label)
