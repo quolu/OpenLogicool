@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using OpenLogicool.Contracts.Perception;
 
 namespace OpenLogicool.AI;
 
@@ -30,6 +31,8 @@ public enum FoundryVisionNormalization
     TruncatedRepetitionRecovered = 2,
     OutOfCandidateLabelsDropped = 4,
     OutputLimitApplied = 8,
+    TargetIntentMismatchDropped = 16,
+    SimilarCandidateLabelRebound = 32,
 }
 
 public sealed record FoundryVisionResult(
@@ -230,10 +233,21 @@ public sealed class FoundryLocalVisionClient : IDisposable
         }
         if (candidates.Length > 0)
         {
-            var constrained = labels
-                .Where(label => candidates.Contains(label, StringComparer.Ordinal))
-                .ToArray();
-            if (constrained.Length == 0)
+            var constrained = new List<string>();
+            var dropped = false;
+            var rebound = false;
+            foreach (var label in labels)
+            {
+                var resolved = ResolveCandidateLabel(label, candidates);
+                if (resolved is null)
+                {
+                    dropped = true;
+                    continue;
+                }
+                rebound |= !string.Equals(label, resolved, StringComparison.Ordinal);
+                if (!constrained.Contains(resolved, StringComparer.Ordinal)) constrained.Add(resolved);
+            }
+            if (constrained.Count == 0)
             {
                 return new FoundryVisionResult(
                     FoundryVisionStatus.Unknown,
@@ -247,11 +261,15 @@ public sealed class FoundryLocalVisionClient : IDisposable
                     raw.InputTokens,
                     raw.OutputTokens);
             }
-            if (constrained.Length != labels.Count)
+            if (dropped)
             {
                 normalization |= FoundryVisionNormalization.OutOfCandidateLabelsDropped;
             }
-            labels = constrained;
+            if (rebound)
+            {
+                normalization |= FoundryVisionNormalization.SimilarCandidateLabelRebound;
+            }
+            labels = constrained.ToArray();
         }
         var maximumReturnedLabels = string.IsNullOrWhiteSpace(targetIntent) ? MaximumReturnedLabels : 1;
         if (labels.Count > maximumReturnedLabels)
@@ -270,6 +288,21 @@ public sealed class FoundryLocalVisionClient : IDisposable
             raw.RequestBytes,
             raw.InputTokens,
             raw.OutputTokens);
+    }
+
+    private static string? ResolveCandidateLabel(string label, IReadOnlyList<string> candidates)
+    {
+        var exact = candidates.FirstOrDefault(candidate => string.Equals(candidate, label, StringComparison.Ordinal));
+        if (exact is not null) return exact;
+        var ranked = candidates
+            .Select(candidate => new { Candidate = candidate, Score = OcrTextMatcher.Similarity(label, candidate) })
+            .Where(item => item.Score >= OcrTextMatcher.DefaultMinimumSimilarity)
+            .OrderByDescending(item => item.Score)
+            .ThenBy(item => item.Candidate, StringComparer.Ordinal)
+            .ToArray();
+        if (ranked.Length == 0) return null;
+        if (ranked.Length > 1 && Math.Abs(ranked[0].Score - ranked[1].Score) < 0.000_001) return null;
+        return ranked[0].Candidate;
     }
 
     private static string BuildLabelsPrompt(IReadOnlyList<string> candidateLabels, string? targetIntent) =>
@@ -319,12 +352,33 @@ public sealed class FoundryLocalVisionClient : IDisposable
                 raw.OutputTokens,
                 FoundryVisionNormalization.None);
         }
-        if (!string.IsNullOrWhiteSpace(targetIntent) && controls.Count > 1)
+        if (!string.IsNullOrWhiteSpace(targetIntent))
         {
-            controls = controls.Take(1).ToArray();
-            normalization |= FoundryVisionNormalization.OutputLimitApplied;
+            var relevant = controls
+                .Where(control => DirectlyMatchesTargetIntent(targetIntent, control.Label))
+                .ToArray();
+            if (relevant.Length != controls.Count)
+            {
+                normalization |= FoundryVisionNormalization.TargetIntentMismatchDropped;
+            }
+            controls = relevant;
+            if (controls.Count > 1)
+            {
+                controls = controls.Take(1).ToArray();
+                normalization |= FoundryVisionNormalization.OutputLimitApplied;
+            }
         }
         return ControlsFromRaw(raw, controls, normalization);
+    }
+
+    private static bool DirectlyMatchesTargetIntent(string targetIntent, string label)
+    {
+        var goal = OcrTextMatcher.Normalize(targetIntent);
+        var candidate = OcrTextMatcher.Normalize(label);
+        return candidate.Length > 0
+            && (goal.Contains(candidate, StringComparison.Ordinal)
+                || candidate.Contains(goal, StringComparison.Ordinal)
+                || OcrTextMatcher.Similarity(goal, candidate) >= OcrTextMatcher.DefaultMinimumSimilarity);
     }
 
     private static string BuildControlsPrompt(string? targetIntent) =>

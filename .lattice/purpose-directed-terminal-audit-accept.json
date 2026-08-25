@@ -1,0 +1,27 @@
+{
+  "schema": "lattice.phase_accept_input.v1",
+  "review_event_digest": "9134e5cb92cc6b61d24ad1a733ecbd37c5cf6450edbb32ea1746775414fe71db",
+  "decision_evidence": {
+    "evidence_id": "purpose-directed-exploration-terminal-audit",
+    "repo_id": "self",
+    "path": "evidence/purpose-directed-exploration/t05-terminal.md",
+    "media_type": "text/markdown",
+    "content_digest": "527c60b1607129ca2f6495ef6c47ec3fbb1afa1456efe8225c253f8cfb0535d9",
+    "git_blob_oid": "4cb6223067962f37531cdebbe878ad32ea31358d",
+    "anchor_digest": null
+  },
+  "evidence_slots": [
+    {
+      "slot_id": "terminal-audit",
+      "evidence": {
+        "evidence_id": "purpose-directed-exploration-terminal-audit",
+        "repo_id": "self",
+        "path": "evidence/purpose-directed-exploration/t05-terminal.md",
+        "media_type": "text/markdown",
+        "content_digest": "527c60b1607129ca2f6495ef6c47ec3fbb1afa1456efe8225c253f8cfb0535d9",
+        "git_blob_oid": "4cb6223067962f37531cdebbe878ad32ea31358d",
+        "anchor_digest": null
+      }
+    }
+  ]
+}

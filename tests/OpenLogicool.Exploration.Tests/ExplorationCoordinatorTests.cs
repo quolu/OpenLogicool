@@ -142,7 +142,7 @@ public sealed class ExplorationCoordinatorTests
             "game-1",
             "env-1");
 
-        var revision = learner.Commit(
+        var committed = learner.Commit(
             before,
             after,
             evidence,
@@ -151,8 +151,9 @@ public sealed class ExplorationCoordinatorTests
             false,
             Time(6));
 
-        Assert.Equal(2, revision.ScreenGraph.Nodes.Count);
-        var edge = Assert.Single(revision.ScreenGraph.Edges);
+        Assert.Equal(2, committed.Revision.ScreenGraph.Nodes.Count);
+        var edge = Assert.Single(committed.Revision.ScreenGraph.Edges);
+        Assert.Equal(edge.EdgeId, committed.EdgeId);
         Assert.NotEqual(edge.SourceStateId, edge.DestinationStateId);
         Assert.Equal(ExplorationOutcomeKind.Novel, Assert.Single(edge.OutcomeCounts).Outcome);
         Assert.Equal("unknown-side-effect", Assert.Single(edge.RiskTags));

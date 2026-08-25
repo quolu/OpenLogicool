@@ -85,7 +85,6 @@ public static class LearnedSceneProfileValidator
         || string.IsNullOrWhiteSpace(state.StateId)
         || string.IsNullOrWhiteSpace(state.SignatureVersion)
         || state.Anchors is null
-        || state.Anchors.Count == 1
         || state.Anchors.Count == 0 && !state.Affordances.Any(affordance => affordance.VisualPatch is not null)
         || state.Anchors.Any(anchor => string.IsNullOrWhiteSpace(anchor.Text)
             || string.IsNullOrWhiteSpace(anchor.EvidenceId)

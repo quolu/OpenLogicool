@@ -68,7 +68,7 @@ public sealed class FoundryLocalDiscoveryVisionProviderTests
     }
 
     [Fact]
-    public async Task Candidate_constraint_rejects_non_ocr_label_before_fuzzy_grounding()
+    public async Task Candidate_constraint_rebinds_unique_similar_ocr_but_keeps_duplicate_regions_ambiguous()
     {
         using var client = ClientReturning("{\"labels\":[\"タップして受けける\"]}");
         var provider = new FoundryLocalDiscoveryVisionProvider(client);
@@ -83,9 +83,9 @@ public sealed class FoundryLocalDiscoveryVisionProviderTests
             ]),
             new byte[] { 2 });
 
-        Assert.Equal(FoundryVisionStatus.Unknown, unique.ProviderResult.Status);
-        Assert.Equal(FoundryVisionFailure.InvalidResponse, unique.ProviderResult.Failure);
-        Assert.Empty(unique.Scene.Affordances);
+        Assert.Equal(FoundryVisionStatus.Completed, unique.ProviderResult.Status);
+        Assert.Equal("タップして受け取る", Assert.Single(unique.Scene.Affordances).SemanticLabel);
+        Assert.True(unique.ProviderResult.Normalization.HasFlag(FoundryVisionNormalization.SimilarCandidateLabelRebound));
         Assert.Empty(ambiguous.Scene.Affordances);
         Assert.Empty(ambiguous.Proposals);
     }

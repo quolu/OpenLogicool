@@ -131,9 +131,7 @@ public sealed class GameInteractionStabilityRuntime(
             if (lastStable is not null
                 && (scene.CaptureAvailability != CaptureAvailability.Available
                     || !signature.HasEvidence
-                    || !GameSceneSemanticComparer.StableEquivalent(
-                        GameSceneSemanticComparer.Signature(lastStable),
-                        signature)))
+                    || !GameSceneSemanticComparer.StableEquivalent(lastStable, scene)))
             {
                 lastStable = null;
                 lastStableFrames = 0;

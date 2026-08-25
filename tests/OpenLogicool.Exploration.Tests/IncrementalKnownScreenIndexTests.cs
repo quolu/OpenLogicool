@@ -73,6 +73,61 @@ public sealed class IncrementalKnownScreenIndexTests
         Assert.Contains("アリ%ナ", action.PreviousTexts!);
     }
 
+    [Fact]
+    public void Destination_with_one_usable_ocr_anchor_is_saved_instead_of_rejected()
+    {
+        var store = new MemoryProfileStore();
+        var index = new IncrementalKnownScreenIndex(store, "game", "env", "game");
+        var source = Scene("source", 1, "ロビー", "隊員募集");
+        var control = Control(source, "イベント", [0.9, 0.3, 0.05, 0.1]);
+        source = source with { Affordances = [control] };
+        var destination = Scene("destination", 2, "イベント", "unused");
+        destination = destination with
+        {
+            DiscoveryEvidence = destination.DiscoveryEvidence! with
+            {
+                LocalGroundingRegions = [Ground("イベント", [0.1, 0.1, 0.2, 0.05])],
+            },
+        };
+
+        var linked = index.RememberDestination(source, control, [destination], "evidence-destination");
+
+        Assert.NotNull(linked.DestinationStateId);
+        var saved = store.Document!.States.Single(state => state.StateId == linked.DestinationStateId);
+        Assert.Equal("イベント", Assert.Single(saved.Anchors).Text);
+    }
+
+    [Fact]
+    public void Cleaner_ocr_does_not_collapse_existing_same_position_variants()
+    {
+        var store = new MemoryProfileStore();
+        var index = new IncrementalKnownScreenIndex(store, "game", "env", "game");
+        var bounds = new double[] { 0.2, 0.2, 0.3, 0.05 };
+        var noisy = Scene("noisy", 1, "A", "B") with
+        {
+            DiscoveryEvidence = Scene("noisy", 1, "A", "B").DiscoveryEvidence! with
+            {
+                LocalGroundingRegions =
+                [
+                    Ground("フィィベーンルトド", bounds),
+                    Ground("フィイベーンルトド", bounds),
+                ],
+            },
+        };
+        var control = Control(noisy, "ショップ", [0.5, 0.5, 0.1, 0.05]);
+        noisy = noisy with { Affordances = [control] };
+        _ = index.RememberControl(noisy, control, "noisy-evidence");
+        var clean = Scene("clean", 2, "イベントフィールド", "ミッション");
+        var cleanControl = Control(clean, "ショップ", [0.5, 0.5, 0.1, 0.05]);
+        clean = clean with { Affordances = [cleanControl] };
+
+        _ = index.RememberControl(clean, cleanControl, "clean-evidence");
+
+        LearnedSceneProfileValidator.Validate(store.Document!);
+        Assert.Equal(2, store.Document!.States[0].Anchors
+            .Select(anchor => OcrTextMatcher.Normalize(anchor.Text)).Distinct(StringComparer.Ordinal).Count());
+    }
+
     private static ObservedScene Scene(string id, long sequence, string anchor1, string anchor2)
     {
         var frame = new CapturedFrameReference(

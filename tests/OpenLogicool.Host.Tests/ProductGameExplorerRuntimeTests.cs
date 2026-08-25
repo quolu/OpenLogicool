@@ -21,8 +21,9 @@ public sealed class ProductGameExplorerRuntimeTests
         var device = new Device();
         var learning = new Learner();
         var structure = new StructureCommitter();
+        var observation = new ObservationRuntime([before]);
         var runtime = Runtime(
-            new ObservationRuntime([before]),
+            observation,
             new StabilityWaiter(after),
             coordinator,
             device,
@@ -39,6 +40,7 @@ public sealed class ProductGameExplorerRuntimeTests
         Assert.NotNull(learning.Request);
         Assert.Equal("nano-click", learning.Request!.Dispatch.TransportReceiptId);
         Assert.Equal(1, structure.Calls);
+        Assert.Equal(["begin-comparison", "end-comparison"], observation.PhaseCalls);
     }
 
     [Fact]
@@ -65,6 +67,38 @@ public sealed class ProductGameExplorerRuntimeTests
         Assert.Equal(ProductGameExplorerStepStatus.Learned, second.Status);
         Assert.Equal(2, coordinator.DispatchCalls);
         Assert.Equal(["click", "click"], device.Calls);
+    }
+
+    [Fact]
+    public async Task Compare_uses_the_same_local_representation_before_and_after_input()
+    {
+        var targetScene = Scene("before", 1, "AIだけの候補", 0.1);
+        var localScene = Scene("local", 1, "ローカルOCR", 0.4);
+        var observation = new ObservationRuntime([targetScene]) { ComparisonScene = localScene };
+        var runtime = Runtime(observation, new StabilityWaiter(localScene), new Coordinator(), new Device(),
+            new Learner(), new StructureCommitter(), gamePolicyAllowsExplore: true);
+
+        var result = await runtime.ExecuteNextAsync();
+
+        Assert.Equal(GameTransitionJudgement.Stayed, result.Comparison!.Judgement);
+        Assert.Equal(2, observation.DiscoverCalls);
+    }
+
+    [Fact]
+    public async Task Successful_saved_route_step_reuses_its_edge_without_recommitting_structure()
+    {
+        var before = Scene("before", 1, "部隊", 0.1);
+        var after = Scene("after", 2, "部隊編成", 0.7);
+        var structure = new StructureCommitter();
+        var runtime = Runtime(new ObservationRuntime([before]), new StabilityWaiter(after),
+            new Coordinator(), new Device(), new Learner(), structure, gamePolicyAllowsExplore: true);
+        runtime.SetRouteTarget(RouteEdge("edge:saved"), repairing: false);
+
+        var result = await runtime.ExecuteNextAsync();
+
+        Assert.Equal(ProductGameExplorerStepStatus.Learned, result.Status);
+        Assert.Equal("edge:saved", result.CommittedEdgeId);
+        Assert.Equal(0, structure.Calls);
     }
 
     [Fact]
@@ -150,7 +184,7 @@ public sealed class ProductGameExplorerRuntimeTests
 
         Assert.Equal(ProductGameExplorerStepStatus.Learned, result.Status);
         Assert.Equal(1, observation.ObserveCalls);
-        Assert.Equal(1, observation.DiscoverCalls);
+        Assert.Equal(2, observation.DiscoverCalls);
         Assert.Equal(1, index.RememberControlCalls);
     }
 
@@ -182,6 +216,10 @@ public sealed class ProductGameExplorerRuntimeTests
         Assert.Equal(GameTransitionJudgement.Moved, result.Comparison!.Judgement);
         Assert.Equal([operation], device.Calls);
         Assert.Equal(operation, result.Dispatch!.Operation);
+        if (operation == GameInteractionOperations.KeyTap)
+        {
+            Assert.Equal("global-key", result.Target!.SemanticKind);
+        }
     }
 
     private static ProductGameExplorerRuntime Runtime(
@@ -235,12 +273,15 @@ public sealed class ProductGameExplorerRuntimeTests
         new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 1_000),
         ["budget-exhausted"]);
 
-    private sealed class ObservationRuntime(Queue<ObservedScene> scenes) : IGameObservationRuntime
+    private sealed class ObservationRuntime(Queue<ObservedScene> scenes) : IGameObservationRuntime, IProductGameRouteControl
     {
         public ObservationRuntime(IEnumerable<ObservedScene> scenes) : this(new Queue<ObservedScene>(scenes)) { }
         private ObservedScene? current;
         public int ObserveCalls { get; private set; }
         public int DiscoverCalls { get; private set; }
+        public List<string> PhaseCalls { get; } = [];
+        public ObservedScene? ComparisonScene { get; init; }
+        private bool comparison;
 
         public ValueTask<ObservationResult> ObserveAsync(CancellationToken cancellationToken = default)
         {
@@ -263,8 +304,12 @@ public sealed class ProductGameExplorerRuntimeTests
             CancellationToken cancellationToken = default)
         {
             DiscoverCalls++;
-            return ValueTask.FromResult(current!);
+            return ValueTask.FromResult(comparison && ComparisonScene is not null ? ComparisonScene : current!);
         }
+
+        public void SetRouteTarget(StructureScreenEdge? edge) { }
+        public void BeginComparison() { comparison = true; PhaseCalls.Add("begin-comparison"); }
+        public void EndComparison() { comparison = false; PhaseCalls.Add("end-comparison"); }
     }
 
     private sealed class StabilityWaiter(ObservedScene after) : IGameInteractionStabilityWaiter
@@ -397,7 +442,7 @@ public sealed class ProductGameExplorerRuntimeTests
     {
         public int Calls { get; private set; }
 
-        public GameStructureRevision Commit(
+        public GameInteractionStructureCommitResult Commit(
             ObservedScene before,
             ObservedScene after,
             TransitionEvidence evidence,
@@ -407,7 +452,7 @@ public sealed class ProductGameExplorerRuntimeTests
             DateTimeOffset recordedUtc)
         {
             Calls++;
-            return null!;
+            return new(null!, "edge:test");
         }
     }
 
@@ -479,4 +524,25 @@ public sealed class ProductGameExplorerRuntimeTests
             "text",
             label)],
         "foundry-local-controls");
+
+    private static StructureScreenEdge RouteEdge(string edgeId) => new(
+        ContractSchemaVersions.Revision03,
+        edgeId,
+        "source",
+        "destination",
+        null,
+        "candidate",
+        "locator",
+        GameInteractionOperations.Click,
+        "goal",
+        [],
+        false,
+        "before",
+        "after",
+        new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
+        [new StructureOutcomeCount(ExplorationOutcomeKind.Destination, 1)],
+        ["evidence"],
+        StructureVerificationState.Candidate,
+        TargetSemanticKey: "text|部隊|0|0",
+        TargetNormalizedBounds: [0.1, 0.1, 0.1, 0.1]);
 }

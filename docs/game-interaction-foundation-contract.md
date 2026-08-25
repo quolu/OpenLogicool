@@ -35,6 +35,14 @@ Game Operatorの探索、構造学習、教師付きmacro、将来の自律実�
 - `WindowsKnownFirstTargetDiscovery`: 保存page／actionを類似OCRで先に解決し、二つの許可条件でだけAI discoveryへ移る。
 - `ProductGameExplorerRuntime`: 10の基盤機能、Durable Attempt、明示Game Policy、Structure学習、Explorer UI controlを一つのzero-seed stepへ合成する。送出前の追加AI再観測を行わない。
 - `WindowsProductGameExplorerComposition`: WGC、Windows OCR、Foundry Local、Nano Serial HID、Game Policy、Structure Storeを接続するWindows正規入口。
+- `PurposeDirectedExplorationRuntime`: 利用者goal、決定的Learning Route ID、route cursorを所有し、既存`ProductGameExplorerRuntime`だけを一手実行器として使う。`Moved` edgeを逐次appendし、`Stayed`／`Undetermined`は同じstepの学習継続、失敗stepの修復は当該edgeだけを新版で差し替える。
+- `SemanticTextGoalCompletionEvaluator`: `Moved`したaction名またはafter sceneにあるlocal OCR／affordanceをgoal coreへ類似照合して初回完了を判定する。正規化後の空文字は候補にしない。操作受付gateではない。保存route再生は`Compiled` routeの全edge `Moved`で完了し、`Draft` prefixは再生後も探索を続ける。
+
+目的runのCompareは、操作前と操作後の両方をcomparison-only local sceneで作る。AI／保存actionで一件に絞ったtarget sceneはdispatch、index、learningに保持し、異なるscene表現同士をCompareしない。state identityがAmbiguous／Insufficientでもactionable structureが同じなら`Stayed`、明確に変われば`Moved`、構造証拠が無い時だけ`Undetermined`とする。
+
+保存routeのedgeにsemantic key、primitive、normalized boundsがあれば、current window／frame／transformへ直接再束縛してOCR state identityより先に実行する。正常`Moved`再生は同じStructure edgeを使い、新edgeを再commitしない。非遷移後だけ当該stepをAI repairへ移し、修復成功時だけ新版edgeへ差し替える。
+
+Foundry Localのgoal指定responseはgoalとの類似／包含を満たす1件だけを受け、同一frame OCRへの束縛は完全一致でなく一意な類似候補を使う。page索引は1件以上の類似OCR anchorを保存でき、2件固定をdurable commit gateにしない。0件は既存visual evidence経路だけを使う。
 
 ## 禁止する成功判定
 

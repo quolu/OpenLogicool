@@ -23,6 +23,13 @@ public interface IProductGameRediscoveryTrigger
     void MarkTransitionConfirmed(ObservedScene before, AffordanceCandidate target);
 }
 
+public interface IProductGameRouteControl
+{
+    void SetRouteTarget(StructureScreenEdge? edge);
+    void BeginComparison();
+    void EndComparison();
+}
+
 public interface IProductGameFrameEvidenceSink
 {
     ValueTask<CapturedFrameArtifact> SaveAsync(
@@ -38,7 +45,10 @@ public sealed class ProductGameObservationRuntime(
     IProductGameFrameSource frameSource,
     IObservationSource observationSource,
     IProductGameTargetDiscovery targetDiscovery,
-    IProductGameFrameEvidenceSink evidenceSink) : IGameObservationRuntime, IProductGameRediscoveryTrigger
+    IProductGameFrameEvidenceSink evidenceSink) :
+    IGameObservationRuntime,
+    IProductGameRediscoveryTrigger,
+    IProductGameRouteControl
 {
     private readonly object gate = new();
     private CapturedFrame? currentFrame;
@@ -106,6 +116,30 @@ public sealed class ProductGameObservationRuntime(
         if (targetDiscovery is IProductGameRediscoveryTrigger rediscovery)
         {
             rediscovery.MarkTransitionConfirmed(before, target);
+        }
+    }
+
+    public void SetRouteTarget(StructureScreenEdge? edge)
+    {
+        if (targetDiscovery is IProductGameRouteControl routeControl)
+        {
+            routeControl.SetRouteTarget(edge);
+        }
+    }
+
+    public void BeginComparison()
+    {
+        if (targetDiscovery is IProductGameRouteControl routeControl)
+        {
+            routeControl.BeginComparison();
+        }
+    }
+
+    public void EndComparison()
+    {
+        if (targetDiscovery is IProductGameRouteControl routeControl)
+        {
+            routeControl.EndComparison();
         }
     }
 

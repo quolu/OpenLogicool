@@ -87,10 +87,11 @@ public sealed record ProductGameExplorerStepResult(
     GameTransitionComparison? Comparison,
     GameTransitionLearningResult? Learning,
     string StructureRevisionId,
-    string Detail);
+    string Detail,
+    string? CommittedEdgeId = null);
 
 /// <summary>基本10機能を一つのzero-seed探索stepへ合成する製品runtime。</summary>
-public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IGameInteractionRuntime
+public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IGameInteractionRuntime, IProductGameStepRuntime
 {
     private readonly IGameObservationRuntime observation;
     private readonly NanoGameInteractionActions actions;
@@ -112,6 +113,8 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     private readonly TimeProvider time;
     private readonly SemaphoreSlim execution = new(1, 1);
     private ObservationResult? currentObservation;
+    private StructureScreenEdge? routeTarget;
+    private bool routeTargetIsRepairing;
     private volatile bool paused;
     private volatile bool abandoned;
     private string activeProbeLabel = "（実行中の一手なし）";
@@ -293,6 +296,16 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     public GameTransitionLearningResult LearnTransition(GameTransitionLearningRequest request) =>
         learning.Learn(request);
 
+    public void SetRouteTarget(StructureScreenEdge? edge, bool repairing)
+    {
+        routeTarget = edge;
+        routeTargetIsRepairing = repairing;
+        if (observation is IProductGameRouteControl routeControl)
+        {
+            routeControl.SetRouteTarget(edge);
+        }
+    }
+
     public void Pause()
     {
         paused = true;
@@ -335,8 +348,32 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         try
         {
             var now = time.GetUtcNow();
+            var currentRouteTarget = routeTarget;
+            var currentRouteTargetIsRepairing = routeTargetIsRepairing;
             var observed = await ObserveAsync(cancellationToken).ConfigureAwait(false);
-            var before = await DiscoverTargetsAsync(observed, cancellationToken).ConfigureAwait(false);
+            var routeControl = observation as IProductGameRouteControl;
+            ObservedScene? precomputedComparison = null;
+            ObservedScene before;
+            if (interactionOperation == GameInteractionOperations.KeyTap)
+            {
+                routeControl?.BeginComparison();
+                try
+                {
+                    precomputedComparison = await DiscoverTargetsAsync(observed, cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    routeControl?.EndComparison();
+                }
+                before = precomputedComparison with
+                {
+                    Affordances = [.. precomputedComparison.Affordances, GlobalKeyCandidate(observed)],
+                };
+            }
+            else
+            {
+                before = await DiscoverTargetsAsync(observed, cancellationToken).ConfigureAwait(false);
+            }
             coordinator.CommitObservation(before, now);
             var selection = Select(before);
             if (selection is null)
@@ -380,7 +417,6 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 return Result(ProductGameExplorerStepStatus.AdmissionStopped, decision.Detail, before, target);
             }
             IReadOnlyList<ObservedScene> sourceSamples = [before];
-            var stableBefore = before;
             currentObservation = observed;
             var indexedTarget = target with
             {
@@ -390,10 +426,25 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 HorizontalScrollSteps = interactionHorizontalScrollSteps,
                 DragDestinationNormalized = interactionDragDestination,
             };
-            _ = knownScreenIndex?.RememberControl(
-                sourceSamples,
-                indexedTarget,
-                $"control:{before.ObservationId}:{target.CandidateId}");
+            if (interactionOperation != GameInteractionOperations.KeyTap)
+            {
+                _ = knownScreenIndex?.RememberControl(
+                    sourceSamples,
+                    indexedTarget,
+                    $"control:{before.ObservationId}:{target.CandidateId}");
+            }
+            routeControl?.BeginComparison();
+            ObservedScene comparisonBefore;
+            try
+            {
+                comparisonBefore = precomputedComparison
+                    ?? await DiscoverTargetsAsync(observed, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                routeControl?.EndComparison();
+                throw;
+            }
             var attemptId = coordinator.GetActiveAttemptId(proposal.ProposalId);
             GameInteractionDispatchReceipt? dispatch = null;
             try
@@ -413,6 +464,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             }
             catch (Exception exception)
             {
+                routeControl?.EndComparison();
                 stopReasonLabel = exception.Message;
                 return new ProductGameExplorerStepResult(
                     ProductGameExplorerStepStatus.DispatchFailed,
@@ -425,17 +477,25 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                     coordinator.CurrentStructureRevisionId,
                     exception.Message);
             }
-            var waited = await WaitStableAsync(stableBefore, proposal.WaitCondition, cancellationToken).ConfigureAwait(false);
-            var comparison = Compare(stableBefore, waited);
+            GameInteractionStabilityResult waited;
+            try
+            {
+                waited = await WaitStableAsync(comparisonBefore, proposal.WaitCondition, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                routeControl?.EndComparison();
+            }
+            var comparison = Compare(comparisonBefore, waited);
             if (comparison.Judgement != GameTransitionJudgement.Moved
                 && observation is IProductGameRediscoveryTrigger rediscovery)
             {
-                rediscovery.MarkTransitionUnconfirmed(stableBefore, target);
+                rediscovery.MarkTransitionUnconfirmed(before, target);
             }
             else if (comparison.Judgement == GameTransitionJudgement.Moved
                      && observation is IProductGameRediscoveryTrigger confirmed)
             {
-                confirmed.MarkTransitionConfirmed(stableBefore, target);
+                confirmed.MarkTransitionConfirmed(before, target);
             }
             if (waited.Observations.Count == 0)
             {
@@ -455,7 +515,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             var learned = LearnTransition(new GameTransitionLearningRequest(
                 ContractSchemaVersions.Revision03,
                 proposal.ProposalId,
-                stableBefore,
+                before,
                 dispatch!,
                 waited,
                 comparison,
@@ -466,41 +526,52 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 checked((long)after.Frame.MonotonicMs),
                 time.GetUtcNow(),
                 policy.PolicyRevisionId));
+            string? committedEdgeId = null;
             if (learned.Evidence is not null)
             {
-                if (comparison.Judgement == GameTransitionJudgement.Moved)
+                if (comparison.Judgement == GameTransitionJudgement.Moved
+                    && currentRouteTarget is not null
+                    && !currentRouteTargetIsRepairing)
                 {
-                    _ = knownScreenIndex?.RememberDestination(
-                        sourceSamples,
-                        indexedTarget,
-                        waited.Observations
-                            .Where(scene => GameSceneSemanticComparer.StableEquivalent(
-                                GameSceneSemanticComparer.Signature(scene),
-                                GameSceneSemanticComparer.Signature(after)))
-                            .ToArray(),
-                        learned.Evidence.EvidenceId);
+                    committedEdgeId = currentRouteTarget.EdgeId;
                 }
-                _ = structure.Commit(
-                    stableBefore,
-                    after,
-                    learned.Evidence,
-                    proposal.WaitCondition,
-                    risk.RiskTags,
-                    risk.Reversible,
-                    time.GetUtcNow());
+                else
+                {
+                    if (comparison.Judgement == GameTransitionJudgement.Moved
+                        && interactionOperation != GameInteractionOperations.KeyTap)
+                    {
+                        _ = knownScreenIndex?.RememberDestination(
+                            sourceSamples,
+                            indexedTarget,
+                            waited.Observations
+                                .Where(scene => GameSceneSemanticComparer.StableEquivalent(scene, after))
+                                .ToArray(),
+                            learned.Evidence.EvidenceId);
+                    }
+                    var committed = structure.Commit(
+                        before,
+                        after,
+                        learned.Evidence,
+                        proposal.WaitCondition,
+                        risk.RiskTags,
+                        risk.Reversible,
+                        time.GetUtcNow());
+                    committedEdgeId = committed.EdgeId;
+                }
             }
             activeProbeLabel = "（実行中の一手なし）";
             stopReasonLabel = "停止していません";
             return new ProductGameExplorerStepResult(
                 ProductGameExplorerStepStatus.Learned,
-                stableBefore,
+                before,
                 target,
                 dispatch,
                 waited,
                 comparison,
                 learned,
                 coordinator.CurrentStructureRevisionId,
-                learned.Detail);
+                learned.Detail,
+                committedEdgeId);
         }
         finally
         {
@@ -510,8 +581,13 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
 
     private (AffordanceCandidate Candidate, ExplorationCandidateRiskDecision Risk)? Select(ObservedScene scene)
     {
-        foreach (var candidate in scene.Affordances
-                     .Where(candidate => candidate.AllowedPrimitives.Contains(interactionOperation, StringComparer.Ordinal)))
+        var candidates = scene.Affordances
+            .Where(candidate => candidate.AllowedPrimitives.Contains(interactionOperation, StringComparer.Ordinal));
+        if (interactionOperation == GameInteractionOperations.KeyTap)
+        {
+            candidates = candidates.Where(candidate => string.Equals(candidate.SemanticKind, "global-key", StringComparison.Ordinal));
+        }
+        foreach (var candidate in candidates)
         {
             var risk = riskPolicy.Evaluate(candidate);
             if (risk.Level != ExplorationRiskLevel.Prohibited)
@@ -545,6 +621,20 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             ],
             interactionWaitCondition,
             ["capture-unavailable", "stale-transform", "budget-exhausted"]);
+
+    private AffordanceCandidate GlobalKeyCandidate(ObservationResult observed) => new(
+        ContractSchemaVersions.Revision03,
+        $"global-key:{observed.ObservationId}",
+        observed.ObservationId,
+        observed.Frame.Sequence,
+        observed.Frame.TransformRevision,
+        observed.Frame.SourceId,
+        new AffordanceLocator(ContractSchemaVersions.Revision03, "global-key", [0d, 0d, 1d, 1d], "global-key:v1"),
+        [],
+        1,
+        [GameInteractionOperations.KeyTap],
+        "global-key",
+        string.Join('+', interactionKeyTokens!));
 
     private ProductGameExplorerStepResult Result(
         ProductGameExplorerStepStatus status,

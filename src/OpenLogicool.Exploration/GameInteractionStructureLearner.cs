@@ -7,7 +7,7 @@ namespace OpenLogicool.Exploration;
 
 public interface IGameInteractionStructureCommitter
 {
-    GameStructureRevision Commit(
+    GameInteractionStructureCommitResult Commit(
         ObservedScene before,
         ObservedScene after,
         TransitionEvidence evidence,
@@ -16,6 +16,8 @@ public interface IGameInteractionStructureCommitter
         bool reversible,
         DateTimeOffset recordedUtc);
 }
+
+public sealed record GameInteractionStructureCommitResult(GameStructureRevision Revision, string? EdgeId);
 
 /// <summary>Transition Evidenceからcandidate node／edgeだけを作るcontroller。</summary>
 public sealed class GameInteractionStructureLearner(
@@ -27,7 +29,7 @@ public sealed class GameInteractionStructureLearner(
     string gameId,
     string environmentScope) : IGameInteractionStructureCommitter
 {
-    public GameStructureRevision Commit(
+    public GameInteractionStructureCommitResult Commit(
         ObservedScene before,
         ObservedScene after,
         TransitionEvidence evidence,
@@ -42,7 +44,7 @@ public sealed class GameInteractionStructureLearner(
         var sourceId = EnsureNode(before, evidence.EvidenceId, recordedUtc);
         if (evidence.Outcome == ExplorationOutcomeKind.OutcomeUnknown)
         {
-            return store.LoadRevision(gameId, environmentScope);
+            return new(store.LoadRevision(gameId, environmentScope), null);
         }
         var destinationId = evidence.Outcome == ExplorationOutcomeKind.NoChange
             ? sourceId
@@ -104,7 +106,7 @@ public sealed class GameInteractionStructureLearner(
             gameId,
             environmentScope);
         _ = coordinator.SynchronizeStructureRevision();
-        return store.LoadRevision(gameId, environmentScope);
+        return new(store.LoadRevision(gameId, environmentScope), edgeId);
     }
 
     private string EnsureNode(ObservedScene scene, string evidenceId, DateTimeOffset recordedUtc)

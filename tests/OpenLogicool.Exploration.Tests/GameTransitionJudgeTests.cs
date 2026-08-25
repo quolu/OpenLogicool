@@ -199,6 +199,35 @@ public sealed class GameTransitionJudgeTests
     }
 
     [Fact]
+    public void Visual_stability_keeps_the_same_page_when_ocr_labels_churn()
+    {
+        var left = SceneWithLabels("left", 1, ["イベントフィールド", "ショップ"]) with
+        {
+            SceneVisualPatch = Patch(40),
+        };
+        var right = SceneWithLabels("right", 2, ["フイィベーンルトド", "シヨップ"]) with
+        {
+            SceneVisualPatch = Patch(42),
+        };
+
+        Assert.True(GameSceneSemanticComparer.StableEquivalent(left, right));
+    }
+
+    [Fact]
+    public void Stability_window_accumulates_visual_same_page_across_ocr_churn()
+    {
+        var window = new GameSceneStabilityWindow(new ExplorationWaitCondition(
+            ContractSchemaVersions.Revision03, 3, 300, 2_000));
+        var first = SceneWithLabels("first", 1, ["イベントフィールド", "ショップ"]) with { SceneVisualPatch = Patch(40) };
+        var second = SceneWithLabels("second", 2, ["フイィベーンルトド", "シヨップ"]) with { SceneVisualPatch = Patch(42) };
+        var third = SceneWithLabels("third", 3, ["イベントフイールド", "ショップ0"]) with { SceneVisualPatch = Patch(43) };
+
+        Assert.False(window.Observe(first, 0));
+        Assert.False(window.Observe(second, 150));
+        Assert.True(window.Observe(third, 300));
+    }
+
+    [Fact]
     public void Partial_detection_is_equivalent_when_the_smaller_semantic_set_is_mostly_contained()
     {
         var smaller = new GameSceneSemanticSignature(
@@ -269,7 +298,7 @@ public sealed class GameTransitionJudgeTests
     }
 
     [Fact]
-    public void Ambiguous_state_is_undetermined_even_when_the_window_is_stable()
+    public void Ambiguous_state_with_the_same_actionable_structure_is_stayed()
     {
         var before = Scene("before", 1, "部隊", 0.1) with
         {
@@ -279,7 +308,21 @@ public sealed class GameTransitionJudgeTests
 
         var comparison = new GameTransitionJudge().Compare(before, Stable(after));
 
-        Assert.Equal(GameTransitionJudgement.Undetermined, comparison.Judgement);
+        Assert.Equal(GameTransitionJudgement.Stayed, comparison.Judgement);
+    }
+
+    [Fact]
+    public void Ambiguous_destination_with_changed_actionable_structure_is_moved()
+    {
+        var before = Scene("before", 1, "部隊", 0.1);
+        var after = Scene("after", 2, "自動編成", 0.7) with
+        {
+            StateIdentity = StateIdentityStatus.Ambiguous,
+        };
+
+        var comparison = new GameTransitionJudge().Compare(before, Stable(after));
+
+        Assert.Equal(GameTransitionJudgement.Moved, comparison.Judgement);
     }
 
     private static GameInteractionStabilityResult Stable(ObservedScene scene) => new(

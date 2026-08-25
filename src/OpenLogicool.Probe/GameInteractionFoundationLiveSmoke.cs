@@ -39,6 +39,13 @@ internal static class GameInteractionFoundationLiveSmoke
             "--model",
             "qwen3-vl-4b-instruct-cuda-gpu:2");
         var requestedSteps = OptionalInt(arguments, "--steps", 3);
+        var purposeGoal = operation == "purpose-run" ? Required(arguments, "--goal") : null;
+        var purposePhase = operation == "purpose-run" ? Optional(arguments, "--phase", "learn") : null;
+        var purposeOperation = operation == "purpose-run"
+            ? Optional(arguments, "--purpose-operation", GameInteractionOperations.Click)
+            : GameInteractionOperations.Click;
+        if (purposePhase is not null && purposePhase is not ("learn" or "replay"))
+            throw new ArgumentException("--phase は learn または replay です。");
         var dbPath = Path.GetFullPath(Required(arguments, "--db"));
         var target = LiveDiscoveryObserveSmoke.FindWindow(processName);
         WindowsGameWindowActivator.Activate(target.Window);
@@ -114,12 +121,52 @@ internal static class GameInteractionFoundationLiveSmoke
                 target.CaptureRect.Top,
                 captureWidth,
                 captureHeight),
-            new SqliteLearnedSceneProfileStore(connection));
+            new SqliteLearnedSceneProfileStore(connection),
+            targetIntent: purposeGoal,
+            includeVisualTargets: arguments.Contains("--visual-targets", StringComparer.Ordinal),
+            interactionOperation: purposeOperation,
+            interactionKeyTokens: purposeOperation == GameInteractionOperations.KeyTap ? ["Key:Esc"] : null,
+            interactionWaitCondition: operation == "purpose-run"
+                ? new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000)
+                : null);
         var runtime = product.Runtime;
         object result;
         var passed = true;
 
-        if (operation == "explore-run")
+        if (operation == "purpose-run")
+        {
+            var routeStore = new SqliteLearningRouteStore(connection);
+            var routeId = PurposeLearningRouteIds.Create(processName, environment, purposeGoal!);
+            var revisionsBefore = routeStore.ReadRevisions(routeId).Count;
+            var aiBefore = product.AiCallCount;
+            var purpose = new PurposeDirectedExplorationRuntime(
+                processName, environment, purposeGoal!, runtime, structureStore, routeStore,
+                new SemanticTextGoalCompletionEvaluator());
+            var purposeSteps = new List<PurposeDirectedStepResult>();
+            while (purposeSteps.Count < requestedSteps)
+            {
+                var step = await purpose.ExecuteNextAsync();
+                purposeSteps.Add(step);
+                if (step.Status is PurposeDirectedStepStatus.Completed or PurposeDirectedStepStatus.Stopped) break;
+            }
+            var aiCalls = product.AiCallCount - aiBefore;
+            var revisionsAfter = routeStore.ReadRevisions(routeId).Count;
+            var completed = purposeSteps[^1].Status == PurposeDirectedStepStatus.Completed;
+            passed = completed && (purposePhase == "learn"
+                ? revisionsAfter > revisionsBefore
+                : aiCalls == 0 && revisionsAfter == revisionsBefore);
+            result = new
+            {
+                Phase = purposePhase,
+                Goal = purposeGoal,
+                RouteId = routeId,
+                AiCalls = aiCalls,
+                RevisionsBefore = revisionsBefore,
+                RevisionsAfter = revisionsAfter,
+                Steps = purposeSteps,
+            };
+        }
+        else if (operation == "explore-run")
         {
             var steps = new List<ProductGameExplorerStepResult>();
             for (var index = 0; index < requestedSteps; index++)
@@ -211,7 +258,7 @@ internal static class GameInteractionFoundationLiveSmoke
                         ContractSchemaVersions.Revision03,
                         2,
                         1_000,
-                        60_000);
+                        10_000);
                     var stability = await runtime.WaitStableAsync(before, wait);
                     var comparison = runtime.Compare(before, stability);
                     result = new

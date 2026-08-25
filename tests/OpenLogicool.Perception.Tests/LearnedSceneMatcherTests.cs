@@ -41,14 +41,14 @@ public sealed class LearnedSceneMatcherTests
     }
 
     [Fact]
-    public void Profile_rejects_less_than_two_anchors()
+    public void Profile_accepts_one_fuzzy_anchor_without_turning_it_into_an_operation_gate()
     {
         var invalid = Profile() with
         {
             States = [Profile().States[0] with { Anchors = [Profile().States[0].Anchors[0]] }],
         };
 
-        Assert.Throws<ArgumentException>(() => LearnedSceneProfileValidator.Validate(invalid));
+        LearnedSceneProfileValidator.Validate(invalid);
     }
 
     [Fact]
@@ -205,6 +205,31 @@ public sealed class LearnedSceneMatcherTests
         Assert.Contains("部%隊", action.PreviousTexts!);
         Assert.Contains("old-anchor", refined.EvidenceIds);
         Assert.Contains(refined.EvidenceIds, id => id.StartsWith("ocr-refine:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Cleaner_ocr_does_not_collapse_two_page_anchors_into_the_same_text()
+    {
+        var original = Profile();
+        var state = original.States[0] with
+        {
+            Anchors =
+            [
+                new LearnedSceneAnchor("ロ%ー", [0.50, 0.89, 0.06, 0.03], "e1"),
+                new LearnedSceneAnchor("ロビ%", [0.64, 0.89, 0.09, 0.03], "e2"),
+            ],
+        };
+        var profile = original with { States = [state] };
+        var ocr = new OcrFrameSnapshot("windows-ocr:v1", "ja",
+        [
+            new OcrWordBox("ロビー", 500, 890, 60, 30),
+            new OcrWordBox("ロビー", 640, 890, 90, 30),
+        ]);
+
+        var refined = LearnedSceneMatcher.RefineText(profile, Frame(), ocr);
+
+        LearnedSceneProfileValidator.Validate(refined);
+        Assert.Equal(["ロ%ー", "ロビ%"], refined.States[0].Anchors.Select(anchor => anchor.Text));
     }
 
     private static LearnedSceneProfileDocument Profile() => new(

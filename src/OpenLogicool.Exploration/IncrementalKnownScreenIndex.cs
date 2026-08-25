@@ -211,21 +211,37 @@ public sealed class IncrementalKnownScreenIndex(
         string evidenceId)
     {
         var changed = false;
-        var anchors = state.Anchors.Select(saved =>
+        var matches = state.Anchors.Select(saved => new
         {
-            var current = observed.FirstOrDefault(candidate =>
+            Saved = saved,
+            Current = observed.FirstOrDefault(candidate =>
                 OcrTextMatcher.IsSimilar(saved.Text, candidate.Text)
-                && PositionMatches(saved.NormalizedBounds, candidate.NormalizedBounds));
-            if (current is null || !OcrTextMatcher.PreferObserved(saved.Text, current.Text))
+                && PositionMatches(saved.NormalizedBounds, candidate.NormalizedBounds)),
+        }).ToArray();
+        var proposedTexts = matches.Select(item =>
+            item.Current is not null && OcrTextMatcher.PreferObserved(item.Saved.Text, item.Current.Text)
+                ? item.Current.Text
+                : item.Saved.Text).ToArray();
+        var collided = proposedTexts
+            .Select(OcrTextMatcher.Normalize)
+            .GroupBy(text => text, StringComparer.Ordinal)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToHashSet(StringComparer.Ordinal);
+        var anchors = matches.Select((item, index) =>
+        {
+            if (item.Current is null
+                || !OcrTextMatcher.PreferObserved(item.Saved.Text, item.Current.Text)
+                || collided.Contains(OcrTextMatcher.Normalize(proposedTexts[index])))
             {
-                return saved;
+                return item.Saved;
             }
             changed = true;
-            return saved with
+            return item.Saved with
             {
-                Text = current.Text,
+                Text = item.Current.Text,
                 EvidenceId = evidenceId,
-                PreviousTexts = (saved.PreviousTexts ?? []).Append(saved.Text).Distinct(StringComparer.Ordinal).ToArray(),
+                PreviousTexts = (item.Saved.PreviousTexts ?? []).Append(item.Saved.Text).Distinct(StringComparer.Ordinal).ToArray(),
             };
         }).ToArray();
         return changed
@@ -271,13 +287,13 @@ public sealed class IncrementalKnownScreenIndex(
                 region.EvidenceRegion.NormalizedBounds.ToArray(),
                 evidenceId))
             .ToArray();
-        if (selected.Length != 2)
+        if (selected.Length == 0)
         {
             if (allowVisualFallback)
             {
                 return [];
             }
-            throw new InvalidOperationException("ページ索引に必要な異なるOCR anchorを2件取得できません。");
+            throw new InvalidOperationException("ページ索引に使えるOCR anchorを取得できません。");
         }
         return selected;
     }

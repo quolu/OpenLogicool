@@ -87,6 +87,19 @@ public sealed class FoundryLocalVisionClientTests
     }
 
     [Fact]
+    public async Task Candidate_constrained_prompt_rebinds_a_unique_similar_ocr_string()
+    {
+        using var client = ClientReturning(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"labels\\\":[\\\"アーク\\\"]}\"}");
+
+        var result = await client.ProposeLabelsAsync(new byte[] { 1 }, ["0アーク", "戻る"]);
+
+        Assert.Equal(FoundryVisionStatus.Completed, result.Status);
+        Assert.Equal(["0アーク"], result.Labels);
+        Assert.True(result.Normalization.HasFlag(FoundryVisionNormalization.SimilarCandidateLabelRebound));
+    }
+
+    [Fact]
     public async Task Candidate_constrained_prompt_rejects_transliteration_without_fallback()
     {
         using var client = ClientReturning(
@@ -314,13 +327,28 @@ public sealed class FoundryLocalVisionClientTests
         var control = Assert.Single(result.Controls);
         Assert.Equal("icon", control.Kind);
         Assert.Equal("ホーム", control.Label);
-        Assert.True(result.Normalization.HasFlag(FoundryVisionNormalization.OutputLimitApplied));
+        Assert.True(result.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
         using var request = JsonDocument.Parse(observedBody!);
         var prompt = request.RootElement.GetProperty("input")[0].GetProperty("content")[0].GetProperty("text").GetString();
         Assert.Contains("ホームへ戻る", prompt, StringComparison.Ordinal);
         Assert.Contains("return exactly one visible clickable control", prompt, StringComparison.Ordinal);
         Assert.Contains("icon-only, or be an image button", prompt, StringComparison.Ordinal);
         Assert.Contains("shortest exact substring copied from the current goal", prompt, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Goal_specific_controls_drop_a_control_unrelated_to_the_requested_goal()
+    {
+        var handler = new StubHandler((_, _) => Task.FromResult(EventStream(
+            "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"controls\\\":[{\\\"kind\\\":\\\"icon\\\",\\\"label\\\":\\\"出撃\\\",\\\"x\\\":0.5,\\\"y\\\":0.7,\\\"width\\\":0.2,\\\"height\\\":0.1}]}\"}",
+            "{\"type\":\"response.completed\",\"response\":{\"usage\":{}}}")));
+        using var client = new FoundryLocalVisionClient(
+            new Uri("http://127.0.0.1:5000"), "model", TimeSpan.FromSeconds(1), handler);
+
+        var result = await client.ProposeControlsAsync(new byte[] { 1 }, "部隊編成を開く");
+
+        Assert.Empty(result.Controls);
+        Assert.True(result.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
     }
 
     [Fact]

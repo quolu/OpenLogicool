@@ -30,14 +30,14 @@ public sealed class KnownGoalActionSelectorTests
     }
 
     [Fact]
-    public void Unconfirmed_destination_is_the_second_discovery_condition()
+    public void Destination_unknown_does_not_skip_the_saved_action()
     {
         var selection = KnownGoalActionSelector.Select(
             State(Action("フレンド", null)),
             "フレンドを開く",
             GameInteractionOperations.Click);
 
-        Assert.Equal(KnownGoalActionSelectionKind.PreviousTransitionUnconfirmed, selection.Kind);
+        Assert.Equal(KnownGoalActionSelectionKind.UseKnown, selection.Kind);
     }
 
     private static LearnedStateSceneSignature State(params LearnedAffordanceSignature[] actions) => new(

@@ -12,6 +12,8 @@ public sealed class GameTransitionLearningControllerTests
     [Theory]
     [InlineData(GameTransitionJudgement.Moved, StateIdentityStatus.Novel, ExplorationOutcomeKind.Novel)]
     [InlineData(GameTransitionJudgement.Moved, StateIdentityStatus.Known, ExplorationOutcomeKind.Destination)]
+    [InlineData(GameTransitionJudgement.Moved, StateIdentityStatus.Ambiguous, ExplorationOutcomeKind.Novel)]
+    [InlineData(GameTransitionJudgement.Moved, StateIdentityStatus.InsufficientEvidence, ExplorationOutcomeKind.Novel)]
     [InlineData(GameTransitionJudgement.Stayed, StateIdentityStatus.Novel, ExplorationOutcomeKind.NoChange)]
     [InlineData(GameTransitionJudgement.Undetermined, StateIdentityStatus.Novel, ExplorationOutcomeKind.OutcomeUnknown)]
     public void Meaning_judgement_maps_to_durable_outcome(

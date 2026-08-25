@@ -49,13 +49,6 @@ public static class KnownGoalActionSelector
                 null,
                 "目的へ使える保存済みボタンを一意に選べません。");
         }
-        if (ranked[0].Action.DestinationStateId is null)
-        {
-            return new(
-                KnownGoalActionSelectionKind.PreviousTransitionUnconfirmed,
-                ranked[0].Action,
-                "保存済みボタンは前回の画面遷移を確認できていません。");
-        }
         return new(
             KnownGoalActionSelectionKind.UseKnown,
             ranked[0].Action,

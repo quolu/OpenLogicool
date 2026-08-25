@@ -1,6 +1,8 @@
 using OpenLogicool.Contracts.Capture;
 using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Perception;
+using OpenLogicool.Contracts.Shared;
+using OpenLogicool.Exploration;
 using OpenLogicool.Perception;
 
 namespace OpenLogicool.Host;
@@ -16,9 +18,17 @@ public sealed class WindowsKnownFirstTargetDiscovery(
     string gameId,
     string environmentScope,
     string? goal,
-    string operation) : IProductGameTargetDiscovery, IProductGameRediscoveryTrigger, ILocalAiCallCounter
+    string operation) :
+    IProductGameTargetDiscovery,
+    IProductGameRediscoveryTrigger,
+    IProductGameRouteControl,
+    ILocalAiCallCounter
 {
     private readonly HashSet<string> transitionUnconfirmed = new(StringComparer.Ordinal);
+    private StructureScreenEdge? routeTarget;
+    private string? selectedSavedKey;
+    private bool comparisonOnly;
+    private bool forceAiRepair;
     public int AiCallCount => (aiDiscovery as ILocalAiCallCounter)?.AiCallCount ?? 0;
 
     public async ValueTask<ObservedScene> DiscoverAsync(
@@ -26,13 +36,21 @@ public sealed class WindowsKnownFirstTargetDiscovery(
         CapturedFrame frame,
         CancellationToken cancellationToken = default)
     {
+        var recognized = await ocr.RecognizeAsync(frame, cancellationToken).ConfigureAwait(false);
+        if (!comparisonOnly && !forceAiRepair && RouteCandidate(observation) is { } routeCandidate)
+        {
+            var local = LocalScene(observation, frame, recognized);
+            return local with { Affordances = [routeCandidate] };
+        }
         var profile = profiles.Load(gameId, environmentScope);
         if (profile is null)
         {
+            if (comparisonOnly)
+            {
+                return LocalScene(observation, frame, recognized);
+            }
             return await aiDiscovery.DiscoverAsync(observation, frame, cancellationToken).ConfigureAwait(false);
         }
-
-        var recognized = await ocr.RecognizeAsync(frame, cancellationToken).ConfigureAwait(false);
         var snapshot = new OcrFrameSnapshot(
             $"windows-ocr:{recognized.RecognizerLanguage}",
             recognized.RecognizerLanguage,
@@ -64,6 +82,7 @@ public sealed class WindowsKnownFirstTargetDiscovery(
             RecognizerVersion = scene.PerceptionVersion,
         };
         var textRegions = WindowsGameOcrSpanBuilder.Build(recognized, frame.Width, frame.Height);
+        var localScene = LocalTargetTrackingSceneBuilder.Build(bindingObservation, frame, textRegions, []);
         scene = scene with
         {
             Affordances =
@@ -75,6 +94,8 @@ public sealed class WindowsKnownFirstTargetDiscovery(
                     textRegions,
                     scene.Affordances),
             ],
+            DiscoveryEvidence = localScene.DiscoveryEvidence,
+            SceneVisualPatch = localScene.SceneVisualPatch,
         };
         var refined = LearnedSceneMatcher.RefineText(profile, frame, snapshot);
         if (!ReferenceEquals(refined, profile))
@@ -83,6 +104,17 @@ public sealed class WindowsKnownFirstTargetDiscovery(
             profile = refined;
         }
 
+        if (comparisonOnly)
+        {
+            return scene;
+        }
+
+        if (forceAiRepair)
+        {
+            return await aiDiscovery.DiscoverAsync(observation, frame, cancellationToken).ConfigureAwait(false);
+        }
+
+        selectedSavedKey = null;
         if (scene.StateIdentity == StateIdentityStatus.Known && scene.StateHypothesisId is not null)
         {
             var state = profile.States.Single(item => item.StateId == scene.StateHypothesisId);
@@ -90,7 +122,8 @@ public sealed class WindowsKnownFirstTargetDiscovery(
             if (saved is not null)
             {
                 var key = Key(state.StateId, saved.CandidateId);
-                if (!transitionUnconfirmed.Remove(key))
+                selectedSavedKey = key;
+                if (!transitionUnconfirmed.Contains(key))
                 {
                     return scene with
                     {
@@ -107,6 +140,12 @@ public sealed class WindowsKnownFirstTargetDiscovery(
 
     public void MarkTransitionUnconfirmed(ObservedScene before, AffordanceCandidate target)
     {
+        forceAiRepair = true;
+        if (selectedSavedKey is not null)
+        {
+            transitionUnconfirmed.Add(selectedSavedKey);
+            return;
+        }
         if (before.StateIdentity == StateIdentityStatus.Known && before.StateHypothesisId is not null)
         {
             transitionUnconfirmed.Add(Key(before.StateHypothesisId, target.CandidateId));
@@ -115,6 +154,12 @@ public sealed class WindowsKnownFirstTargetDiscovery(
 
     public void MarkTransitionConfirmed(ObservedScene before, AffordanceCandidate target)
     {
+        forceAiRepair = false;
+        if (selectedSavedKey is not null)
+        {
+            transitionUnconfirmed.Remove(selectedSavedKey);
+            selectedSavedKey = null;
+        }
         if (before.StateIdentity == StateIdentityStatus.Known && before.StateHypothesisId is not null)
         {
             transitionUnconfirmed.Remove(Key(before.StateHypothesisId, target.CandidateId));
@@ -125,6 +170,21 @@ public sealed class WindowsKnownFirstTargetDiscovery(
         LearnedStateSceneSignature state,
         ObservedScene scene)
     {
+        if (routeTarget is not null)
+        {
+            var action = state.Affordances
+                .Where(action => action.AllowedPrimitives.Contains(routeTarget.Primitive, StringComparer.Ordinal))
+                .FirstOrDefault(action => routeTarget.TargetSemanticKey is not null
+                    && GameSceneSemanticComparer.AffordanceKeySimilar(
+                        routeTarget.TargetSemanticKey,
+                        GameSceneSemanticComparer.TargetKey(
+                            action.VisualPatch is null ? "text" : "visual",
+                            action.Text,
+                            action.NormalizedBounds)));
+            return action is null
+                ? null
+                : scene.Affordances.SingleOrDefault(candidate => candidate.CandidateId == action.CandidateId);
+        }
         if (!string.IsNullOrWhiteSpace(goal))
         {
             var selection = KnownGoalActionSelector.Select(state, goal, operation);
@@ -134,11 +194,53 @@ public sealed class WindowsKnownFirstTargetDiscovery(
         }
 
         var usable = state.Affordances
-            .Where(action => action.DestinationStateId is not null)
             .Where(action => action.AllowedPrimitives.Contains(operation, StringComparer.Ordinal))
             .Select(action => action.CandidateId)
             .ToHashSet(StringComparer.Ordinal);
         return scene.Affordances.FirstOrDefault(candidate => usable.Contains(candidate.CandidateId));
+    }
+
+    public void SetRouteTarget(StructureScreenEdge? edge) => routeTarget = edge;
+
+    public void BeginComparison() => comparisonOnly = true;
+
+    public void EndComparison() => comparisonOnly = false;
+
+    private AffordanceCandidate? RouteCandidate(ObservationResult observation)
+    {
+        if (routeTarget?.TargetNormalizedBounds is not { Count: 4 } bounds) return null;
+        var semantic = routeTarget.TargetSemanticKey?.Split('|') ?? [];
+        var kind = semantic.Length > 0 && semantic[0].Length > 0 ? semantic[0] : "saved-route";
+        var label = semantic.Length > 1 && semantic[1].Length > 0 ? semantic[1] : routeTarget.AffordanceCandidateId;
+        return new AffordanceCandidate(
+            ContractSchemaVersions.Revision03,
+            $"route:{routeTarget.EdgeId}:{observation.ObservationId}",
+            observation.ObservationId,
+            observation.Frame.Sequence,
+            observation.Frame.TransformRevision,
+            observation.Frame.SourceId,
+            new AffordanceLocator(
+                ContractSchemaVersions.Revision03,
+                "saved-route",
+                bounds.ToArray(),
+                routeTarget.LocatorRevision),
+            [],
+            1,
+            [routeTarget.Primitive],
+            kind,
+            label);
+    }
+
+    private static ObservedScene LocalScene(
+        ObservationResult observation,
+        CapturedFrame frame,
+        WindowsGameOcrResult recognized)
+    {
+        return LocalTargetTrackingSceneBuilder.Build(
+            observation,
+            frame,
+            WindowsGameOcrSpanBuilder.Build(recognized, frame.Width, frame.Height),
+            []);
     }
 
     private static string Key(string stateId, string candidateId) => $"{stateId}\n{candidateId}";

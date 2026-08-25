@@ -71,11 +71,9 @@ public sealed class GameTransitionLearningController(IExplorationOutcomeRecorder
         {
             GameTransitionJudgement.Stayed => ExplorationOutcomeKind.NoChange,
             GameTransitionJudgement.Undetermined => ExplorationOutcomeKind.OutcomeUnknown,
-            GameTransitionJudgement.Moved when afterIdentity == StateIdentityStatus.Novel =>
-                ExplorationOutcomeKind.Novel,
             GameTransitionJudgement.Moved when afterIdentity == StateIdentityStatus.Known =>
                 ExplorationOutcomeKind.Destination,
-            GameTransitionJudgement.Moved => ExplorationOutcomeKind.OutcomeUnknown,
+            GameTransitionJudgement.Moved => ExplorationOutcomeKind.Novel,
             _ => throw new ArgumentOutOfRangeException(nameof(judgement)),
         };
 

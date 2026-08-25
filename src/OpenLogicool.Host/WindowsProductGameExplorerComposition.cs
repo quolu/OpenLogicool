@@ -57,7 +57,8 @@ public static class WindowsProductGameExplorerComposition
         int? interactionVerticalScrollSteps = null,
         int? interactionHorizontalScrollSteps = null,
         IReadOnlyList<double>? interactionDragDestination = null,
-        IReadOnlyList<double>? visualSearchRegion = null)
+        IReadOnlyList<double>? visualSearchRegion = null,
+        ExplorationWaitCondition? interactionWaitCondition = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
         if (!string.Equals(gameId, gamePolicy.GameId, StringComparison.Ordinal))
@@ -163,7 +164,7 @@ public static class WindowsProductGameExplorerComposition
                 UnclassifiedExplorationCandidateRiskPolicy.Default),
             explorationPolicy,
             gamePolicyDecision.IsAllowed,
-            interactionWaitCondition: new ExplorationWaitCondition(
+            interactionWaitCondition: interactionWaitCondition ?? new ExplorationWaitCondition(
                 OpenLogicool.Contracts.Shared.ContractSchemaVersions.Revision03,
                 2,
                 1_000,

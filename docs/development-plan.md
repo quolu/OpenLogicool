@@ -59,6 +59,8 @@ UnverifiedをSupportedとして表示しない。実験失敗を別方式へ黙�
 7. safe-sliceで使った購入、戦闘、開始等の制限はその実験policyだけに属する。コア製品の既定へ一般化しない。明示Game Policyで禁止tagを与えた場合だけ、そのtagを持つ操作を拒否できる。
 8. 過去のObservation、Attempt、evidence、journalは履歴として保持する。失効した裁定を現行runtimeの権限、合否、操作拒否へ再利用しない。
 
+実装状態（2026-08-26）: `PurposeDirectedExplorationRuntime`がgoal単位の決定的Learning Routeを所有し、10基盤の一手runtimeだけを逐次合成する。NIKKE実windowで「アークを開く」を空routeからAI 1で発見・Nano click・10秒Compare・button／座標／destination／edge／route保存まで完了し、別process再起動後は保存routeをAI 0で再現した。判定は[目的指向の逐次探索 Exit](purpose-directed-exploration-exit-assessment.md)。
+
 ## 1. 製品語彙
 
 | 用語 | 意味 |

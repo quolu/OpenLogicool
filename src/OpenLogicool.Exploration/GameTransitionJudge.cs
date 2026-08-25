@@ -47,6 +47,16 @@ public static class GameSceneSemanticComparer
         && (left.StateIdentity == StateIdentityStatus.Known && left.StateIds.Count > 0
             || AffordancesStableEquivalent(left.AffordanceKeys, right.AffordanceKeys));
 
+    public static bool StableEquivalent(ObservedScene left, ObservedScene right)
+    {
+        ArgumentNullException.ThrowIfNull(left);
+        ArgumentNullException.ThrowIfNull(right);
+        if (StableEquivalent(Signature(left), Signature(right))) return true;
+        return left.SceneVisualPatch is not null
+            && right.SceneVisualPatch is not null
+            && VisualPatchSignatureComparer.MeanAbsoluteDifference(left.SceneVisualPatch, right.SceneVisualPatch) < 6;
+    }
+
     private static bool AffordancesStableEquivalent(
         IReadOnlyList<string> left,
         IReadOnlyList<string> right)
@@ -118,13 +128,31 @@ public static class GameSceneSemanticComparer
 
     public static string TargetKey(AffordanceCandidate candidate)
     {
-        var bounds = candidate.Locator.NormalizedBounds;
+        ArgumentNullException.ThrowIfNull(candidate);
+        return TargetKey(
+            candidate.SemanticKind ?? candidate.Locator.LocatorType,
+            candidate.SemanticLabel,
+            candidate.Locator.NormalizedBounds);
+    }
+
+    public static string TargetKey(
+        string semanticKind,
+        string? semanticLabel,
+        IReadOnlyList<double> normalizedBounds)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(semanticKind);
+        ArgumentNullException.ThrowIfNull(normalizedBounds);
+        if (normalizedBounds.Count != 4)
+        {
+            throw new ArgumentException("target boundsは4要素でなければなりません。", nameof(normalizedBounds));
+        }
+        var bounds = normalizedBounds;
         var centerXBand = Band(bounds[0] + bounds[2] / 2);
         var centerYBand = Band(bounds[1] + bounds[3] / 2);
         return string.Join(
             '|',
-            candidate.SemanticKind ?? candidate.Locator.LocatorType,
-            NormalizeSemanticLabel(candidate.SemanticLabel),
+            semanticKind,
+            NormalizeSemanticLabel(semanticLabel),
             centerXBand,
             centerYBand);
     }
@@ -144,7 +172,7 @@ public static class GameSceneSemanticComparer
 /// <summary>意味構造が必要frame数と時間の両方で連続したかを判定するpure window。</summary>
 public sealed class GameSceneStabilityWindow(ExplorationWaitCondition condition)
 {
-    private GameSceneSemanticSignature? current;
+    private ObservedScene? current;
     private long stableStartedMilliseconds;
     private int stableFrames;
 
@@ -160,18 +188,18 @@ public sealed class GameSceneStabilityWindow(ExplorationWaitCondition condition)
             Reset();
             return false;
         }
-        var signature = GameSceneSemanticComparer.Signature(scene);
-        if (!signature.HasEvidence)
+        if (!GameSceneSemanticComparer.Signature(scene).HasEvidence)
         {
             return false;
         }
-        if (current is null || !GameSceneSemanticComparer.StableEquivalent(current, signature))
+        if (current is null || !GameSceneSemanticComparer.StableEquivalent(current, scene))
         {
-            current = signature;
+            current = scene;
             stableStartedMilliseconds = elapsedMilliseconds;
             stableFrames = 1;
             return condition.StableFrames <= 1 && condition.MinimumStableMilliseconds <= 0;
         }
+        current = scene;
         stableFrames++;
         return stableFrames >= condition.StableFrames
             && elapsedMilliseconds - stableStartedMilliseconds >= condition.MinimumStableMilliseconds;
@@ -209,20 +237,18 @@ public sealed class GameTransitionJudge
         {
             return Undetermined(before, stable, "capture binding changed");
         }
-        if (before.StateIdentity == StateIdentityStatus.Ambiguous
-            || stable.StateIdentity == StateIdentityStatus.Ambiguous
-            || before.StateIdentity == StateIdentityStatus.InsufficientEvidence
-            || stable.StateIdentity == StateIdentityStatus.InsufficientEvidence)
-        {
-            return Undetermined(before, stable, "state identity is ambiguous or insufficient");
-        }
         var beforeSignature = GameSceneSemanticComparer.Signature(before);
         var afterSignature = GameSceneSemanticComparer.Signature(stable);
         if (!beforeSignature.HasEvidence || !afterSignature.HasEvidence)
         {
             return Undetermined(before, stable, "semantic evidence is empty");
         }
-        if (GameSceneSemanticComparer.Equivalent(beforeSignature, afterSignature))
+        var identityUncertain = before.StateIdentity is StateIdentityStatus.Ambiguous or StateIdentityStatus.InsufficientEvidence
+            || stable.StateIdentity is StateIdentityStatus.Ambiguous or StateIdentityStatus.InsufficientEvidence;
+        var changedKeyCount = ChangedAffordanceCount(beforeSignature.AffordanceKeys, afterSignature.AffordanceKeys);
+        if (GameSceneSemanticComparer.Equivalent(beforeSignature, afterSignature)
+            || identityUncertain && changedKeyCount == 0
+                && beforeSignature.AffordanceKeys.Count > 0 && afterSignature.AffordanceKeys.Count > 0)
         {
             return new GameTransitionComparison(
                 ContractSchemaVersions.Revision03,
@@ -245,7 +271,6 @@ public sealed class GameTransitionJudge
                 [],
                 ["OCR構造差に対して全画面visual差が小さい"]);
         }
-        var changedKeyCount = ChangedAffordanceCount(beforeSignature.AffordanceKeys, afterSignature.AffordanceKeys);
         if (beforeSignature.StateIds.SequenceEqual(afterSignature.StateIds, StringComparer.Ordinal)
             && Math.Min(beforeSignature.AffordanceKeys.Count, afterSignature.AffordanceKeys.Count) >= 3
             && changedKeyCount < 4)
@@ -257,6 +282,10 @@ public sealed class GameTransitionJudge
                 GameTransitionJudgement.Stayed,
                 [],
                 ["単一のOCR構造差はページ遷移に使わない"]);
+        }
+        if (identityUncertain && beforeSignature.AffordanceKeys.Count == 0 && afterSignature.AffordanceKeys.Count == 0)
+        {
+            return Undetermined(before, stable, "state identity is ambiguous or insufficient");
         }
         var changed = ChangedRegions(before, stable);
         return new GameTransitionComparison(

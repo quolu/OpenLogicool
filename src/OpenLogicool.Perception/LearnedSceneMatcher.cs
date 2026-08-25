@@ -26,20 +26,36 @@ public static class LearnedSceneMatcher
         var states = profile.States.Select(state =>
         {
             var stateChanged = false;
-            var anchors = state.Anchors.Select(anchor =>
+            var anchorMatches = state.Anchors.Select(anchor => new
             {
-                var observed = UniqueAt(anchor.Text, anchor.NormalizedBounds, spans, frame,
-                    profile.NormalizedPositionTolerance);
-                if (observed is null || !OcrTextMatcher.PreferObserved(anchor.Text, observed.Text))
+                Anchor = anchor,
+                Observed = UniqueAt(anchor.Text, anchor.NormalizedBounds, spans, frame,
+                    profile.NormalizedPositionTolerance),
+            }).ToArray();
+            var proposedTexts = anchorMatches.Select(item =>
+                item.Observed is not null && OcrTextMatcher.PreferObserved(item.Anchor.Text, item.Observed.Text)
+                    ? item.Observed.Text
+                    : item.Anchor.Text).ToArray();
+            var collided = proposedTexts
+                .Select(OcrTextMatcher.Normalize)
+                .GroupBy(text => text, StringComparer.Ordinal)
+                .Where(group => group.Count() > 1)
+                .Select(group => group.Key)
+                .ToHashSet(StringComparer.Ordinal);
+            var anchors = anchorMatches.Select((item, index) =>
+            {
+                if (item.Observed is null
+                    || !OcrTextMatcher.PreferObserved(item.Anchor.Text, item.Observed.Text)
+                    || collided.Contains(OcrTextMatcher.Normalize(proposedTexts[index])))
                 {
-                    return anchor;
+                    return item.Anchor;
                 }
                 stateChanged = true;
-                return anchor with
+                return item.Anchor with
                 {
-                    Text = observed.Text,
+                    Text = item.Observed.Text,
                     EvidenceId = evidenceId,
-                    PreviousTexts = AppendPrevious(anchor.PreviousTexts, anchor.Text),
+                    PreviousTexts = AppendPrevious(item.Anchor.PreviousTexts, item.Anchor.Text),
                 };
             }).ToArray();
             var affordances = state.Affordances.Select(affordance =>
