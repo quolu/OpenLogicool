@@ -13,14 +13,14 @@ public sealed class GameInteractionStabilityRuntimeTests
     public async Task Waits_for_semantic_stability_instead_of_frame_identity()
     {
         var scenes = new Queue<ObservedScene>([
-            Scene("after-1", 2, 0.10),
-            Scene("after-2", 3, 0.11),
-            Scene("after-3", 4, 0.12),
-            Scene("after-4", 5, 0.13),
+            Scene("after-1", 2, 0.10, "設定"),
+            Scene("after-2", 3, 0.11, "設定"),
+            Scene("after-3", 4, 0.12, "設定"),
+            Scene("after-4", 5, 0.13, "設定"),
         ]);
         var clock = new FakeClock();
         var runtime = new GameInteractionStabilityRuntime(
-            new ObservationRuntime(scenes),
+            new ObservationRuntime(scenes, repeatLast: true),
             clock,
             TimeSpan.FromMilliseconds(100));
 
@@ -33,10 +33,10 @@ public sealed class GameInteractionStabilityRuntimeTests
                 1_000));
 
         Assert.Equal(GameInteractionStabilityStatus.Stable, result.Status);
-        Assert.Equal(4, result.Observations.Count);
-        Assert.Equal(4, result.StableFramesObserved);
-        Assert.Equal(300, result.StableMillisecondsObserved);
-        Assert.Equal(600, result.ElapsedMilliseconds);
+        Assert.True(result.Observations.Count >= 4);
+        Assert.True(result.StableFramesObserved >= 4);
+        Assert.True(result.StableMillisecondsObserved >= 300);
+        Assert.Equal(1_000, result.ElapsedMilliseconds);
     }
 
     [Fact]
@@ -44,12 +44,12 @@ public sealed class GameInteractionStabilityRuntimeTests
     {
         var clock = new FakeClock();
         var scenes = new Queue<ObservedScene>([
-            Scene("after-1", 2, 0.10),
-            Scene("after-2", 3, 0.11),
-            Scene("after-3", 4, 0.12),
-            Scene("after-4", 5, 0.13),
+            Scene("after-1", 2, 0.10, "設定"),
+            Scene("after-2", 3, 0.11, "設定"),
+            Scene("after-3", 4, 0.12, "設定"),
+            Scene("after-4", 5, 0.13, "設定"),
         ]);
-        var observation = new ObservationRuntime(scenes, observedAt: () => clock.ElapsedMilliseconds);
+        var observation = new ObservationRuntime(scenes, repeatLast: true, observedAt: () => clock.ElapsedMilliseconds);
         var runtime = new GameInteractionStabilityRuntime(
             observation,
             clock,
@@ -65,6 +65,81 @@ public sealed class GameInteractionStabilityRuntimeTests
 
         Assert.Equal(GameInteractionStabilityStatus.Stable, result.Status);
         Assert.Equal(300, observation.FirstObservedAtMilliseconds);
+    }
+
+    [Fact]
+    public async Task Stable_source_screen_is_observed_until_full_timeout_before_stayed()
+    {
+        var source = Scene("source", 1, 0.1);
+        var clock = new FakeClock();
+        var runtime = new GameInteractionStabilityRuntime(
+            new ObservationRuntime(new Queue<ObservedScene>([Scene("same", 2, 0.1)]), repeatLast: true),
+            clock,
+            TimeSpan.FromMilliseconds(100));
+
+        var result = await runtime.WaitStableAsync(
+            source,
+            new ExplorationWaitCondition(
+                ContractSchemaVersions.Revision03,
+                3,
+                300,
+                1_000));
+
+        Assert.Equal(GameInteractionStabilityStatus.Stable, result.Status);
+        Assert.NotNull(result.StableScene);
+        Assert.Equal(1_000, result.ElapsedMilliseconds);
+    }
+
+    [Fact]
+    public async Task Late_divergence_invalidates_an_earlier_stable_snapshot()
+    {
+        var clock = new FakeClock();
+        var scenes = new Queue<ObservedScene>(
+        [
+            Scene("stable-1", 2, 0.1, "設定"),
+            Scene("stable-2", 3, 0.1, "設定"),
+            Scene("late", 4, 0.7, "別表示"),
+        ]);
+        var runtime = new GameInteractionStabilityRuntime(
+            new ObservationRuntime(scenes, repeatLast: true),
+            clock,
+            TimeSpan.FromMilliseconds(100));
+
+        var result = await runtime.WaitStableAsync(
+            Scene("before", 1, 0.1),
+            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 100, 350));
+
+        Assert.Equal(GameInteractionStabilityStatus.TimedOut, result.Status);
+        Assert.Null(result.StableScene);
+    }
+
+    [Fact]
+    public async Task Late_missing_evidence_cannot_return_an_earlier_stable_snapshot()
+    {
+        var clock = new FakeClock();
+        var missing = Scene("missing", 4, 0.7) with
+        {
+            StateHypothesisId = null,
+            StateCandidates = [],
+            Affordances = [],
+        };
+        var scenes = new Queue<ObservedScene>(
+        [
+            Scene("stable-1", 2, 0.1, "設定"),
+            Scene("stable-2", 3, 0.1, "設定"),
+            missing,
+        ]);
+        var runtime = new GameInteractionStabilityRuntime(
+            new ObservationRuntime(scenes, repeatLast: true),
+            clock,
+            TimeSpan.FromMilliseconds(100));
+
+        var result = await runtime.WaitStableAsync(
+            Scene("before", 1, 0.1),
+            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 100, 450));
+
+        Assert.Equal(GameInteractionStabilityStatus.TimedOut, result.Status);
+        Assert.Null(result.StableScene);
     }
 
     [Fact]

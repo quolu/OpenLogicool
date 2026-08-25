@@ -115,6 +115,90 @@ public sealed class GameTransitionJudgeTests
     }
 
     [Fact]
+    public void Ocr_keys_at_the_same_position_use_light_text_distance()
+    {
+        Assert.True(GameSceneSemanticComparer.AffordanceKeySimilar(
+            "ocr-text|前哨%地|1|2",
+            "ocr-text|前哨基地|1|2"));
+        Assert.False(GameSceneSemanticComparer.AffordanceKeySimilar(
+            "ocr-text|前哨基地|1|2",
+            "ocr-text|隊員募集|1|2"));
+    }
+
+    [Fact]
+    public void Known_state_stability_does_not_break_on_ocr_affordance_flutter()
+    {
+        var left = new GameSceneSemanticSignature(
+            StateIdentityStatus.Known,
+            ["known-screen:a"],
+            ["ocr-text|OpenEvent|1|3"]);
+        var right = new GameSceneSemanticSignature(
+            StateIdentityStatus.Known,
+            ["known-screen:a"],
+            []);
+
+        Assert.True(GameSceneSemanticComparer.StableEquivalent(left, right));
+        Assert.False(GameSceneSemanticComparer.Equivalent(left, right));
+    }
+
+    [Fact]
+    public void Exact_equivalence_does_not_use_fuzzy_ocr_distance()
+    {
+        var left = new GameSceneSemanticSignature(
+            StateIdentityStatus.Novel,
+            ["state:a"],
+            ["ocr-text|前哨%地|1|2"]);
+        var right = new GameSceneSemanticSignature(
+            StateIdentityStatus.Novel,
+            ["state:a"],
+            ["ocr-text|前哨基地|1|2"]);
+
+        Assert.False(GameSceneSemanticComparer.Equivalent(left, right));
+        Assert.True(GameSceneSemanticComparer.StableEquivalent(left, right));
+    }
+
+    [Fact]
+    public void One_changing_banner_among_stable_page_structure_is_stayed()
+    {
+        var before = SceneWithLabels("before", 1, ["ロビー", "部隊", "TRAILMARKER"]);
+        var after = SceneWithLabels("after", 2, ["ロビー", "部隊", "MISSIONPASS"]);
+
+        var comparison = new GameTransitionJudge().Compare(before, Stable(after));
+
+        Assert.Equal(GameTransitionJudgement.Stayed, comparison.Judgement);
+    }
+
+    [Fact]
+    public void Scroll_uses_smaller_visual_threshold_than_click_page_transition()
+    {
+        var before = SceneWithLabels("before", 1, ["A", "B", "C"]);
+        var after = SceneWithLabels("after", 2, ["D", "E", "F"]);
+        before = before with
+        {
+            Affordances = before.Affordances.Select(candidate => candidate with
+            {
+                AllowedPrimitives = [GameInteractionOperations.Scroll],
+            }).ToArray(),
+            SceneVisualPatch = Patch(40),
+        };
+        after = after with { SceneVisualPatch = Patch(42) };
+
+        var scroll = new GameTransitionJudge().Compare(before, Stable(after));
+        var click = new GameTransitionJudge().Compare(
+            before with
+            {
+                Affordances = before.Affordances.Select(candidate => candidate with
+                {
+                    AllowedPrimitives = [GameInteractionOperations.Click],
+                }).ToArray(),
+            },
+            Stable(after));
+
+        Assert.Equal(GameTransitionJudgement.Moved, scroll.Judgement);
+        Assert.Equal(GameTransitionJudgement.Stayed, click.Judgement);
+    }
+
+    [Fact]
     public void Partial_detection_is_equivalent_when_the_smaller_semantic_set_is_mostly_contained()
     {
         var smaller = new GameSceneSemanticSignature(
@@ -259,4 +343,32 @@ public sealed class GameTransitionJudgeTests
             Affordances = [],
             StateCandidates = [],
         };
+
+    private static ObservedScene SceneWithLabels(
+        string observationId,
+        long sequence,
+        IReadOnlyList<string> labels)
+    {
+        var scene = Scene(observationId, sequence, labels[0], 0.1);
+        return scene with
+        {
+            Affordances = labels.Select((label, index) => scene.Affordances[0] with
+            {
+                CandidateId = $"candidate:{observationId}:{index}",
+                SemanticKind = "ocr-text",
+                SemanticLabel = label,
+                Locator = scene.Affordances[0].Locator with
+                {
+                    NormalizedBounds = [0.1 + index * 0.25, 0.2, 0.1, 0.1],
+                },
+            }).ToArray(),
+        };
+    }
+
+    private static VisualPatchSignature Patch(byte value) => new(
+        ContractSchemaVersions.Revision03,
+        8,
+        8,
+        Convert.ToBase64String(Enumerable.Repeat(value, 64).ToArray()),
+        $"patch-{value}");
 }

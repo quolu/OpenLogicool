@@ -29,7 +29,14 @@ public sealed record ExplorationApproval(
     string PolicyRevisionId,
     string StructureRevisionId,
     string ActorId,
-    DateTimeOffset ApprovedUtc);
+    DateTimeOffset ApprovedUtc,
+    ExplorationAuthorizationSource AuthorizationSource = ExplorationAuthorizationSource.InteractiveUser);
+
+public enum ExplorationAuthorizationSource
+{
+    InteractiveUser,
+    OwnerDelegatedAutomation,
+}
 
 public enum ExplorationAdmissionStatus
 {
@@ -98,7 +105,10 @@ public sealed record ExplorationOutcomeReport(
     string TransitionEvidenceId,
     long DispatchMonotonicMilliseconds,
     long ObservationCompletedMonotonicMilliseconds,
-    DateTimeOffset RecordedUtc);
+    DateTimeOffset RecordedUtc,
+    GameInteractionDispatchReceipt? DispatchReceipt = null,
+    GameTransitionComparison? Comparison = null,
+    IReadOnlyList<string>? ObservationSequenceIds = null);
 
 public sealed record MaterializedStructureDeltaOperation(
     StructureDeltaOperation ProposalOperation,

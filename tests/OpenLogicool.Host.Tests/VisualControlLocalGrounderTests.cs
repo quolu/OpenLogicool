@@ -64,6 +64,19 @@ public sealed class VisualControlLocalGrounderTests
         Assert.NotNull(grounded.VisualPatch);
     }
 
+    [Fact]
+    public void Failed_transition_rediscovery_can_rebind_similar_label_to_full_frame_ocr()
+    {
+        var candidate = Candidate("icon", "MISSION PASS", [0.4, 0.5, 0.2, 0.1]);
+        var observed = Region("MISSIONPASS", [0.90, 0.15, 0.08, 0.04]);
+
+        var rebound = VisualControlLocalGrounder.RebindAfterFailedTransition(candidate, [observed]);
+
+        Assert.Equal("rediscovery-ocr-region", rebound.Locator.LocatorType);
+        Assert.Equal(observed.EvidenceRegion.NormalizedBounds, rebound.Locator.NormalizedBounds);
+        Assert.Contains(observed.EvidenceRegion, rebound.EvidenceRegions);
+    }
+
     private static AffordanceCandidate Candidate(
         string kind,
         string label,

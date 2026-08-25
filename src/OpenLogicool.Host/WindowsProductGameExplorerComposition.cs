@@ -56,7 +56,8 @@ public static class WindowsProductGameExplorerComposition
         IReadOnlyList<string>? interactionKeyTokens = null,
         int? interactionVerticalScrollSteps = null,
         int? interactionHorizontalScrollSteps = null,
-        IReadOnlyList<double>? interactionDragDestination = null)
+        IReadOnlyList<double>? interactionDragDestination = null,
+        IReadOnlyList<double>? visualSearchRegion = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
         if (!string.Equals(gameId, gamePolicy.GameId, StringComparison.Ordinal))
@@ -94,7 +95,8 @@ public static class WindowsProductGameExplorerComposition
                 new WindowsGameFramePngEncoder(),
                 () => coordinator.CurrentStructureRevisionId,
                 targetIntent,
-                interactionOperation)
+                interactionOperation,
+                visualSearchRegion)
             : new FoundryLabelTargetDiscoveryAdapter(
                 new FoundryLocalDiscoveryVisionProvider(visionClient),
                 new WindowsGameOcrRecognizer(),

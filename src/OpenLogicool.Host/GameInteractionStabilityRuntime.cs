@@ -52,6 +52,9 @@ public sealed class GameInteractionStabilityRuntime(
         var started = clock.ElapsedMilliseconds;
         var window = new GameSceneStabilityWindow(condition);
         var observations = new List<ObservedScene>();
+        ObservedScene? lastStable = null;
+        var lastStableFrames = 0;
+        long lastStableMilliseconds = 0;
         if (condition.MinimumStableMilliseconds > 0)
         {
             await clock.DelayAsync(
@@ -114,25 +117,43 @@ public sealed class GameInteractionStabilityRuntime(
                     "capture binding changed");
             }
             var elapsed = clock.ElapsedMilliseconds - started;
+            var signature = GameSceneSemanticComparer.Signature(scene);
+            if (lastStable is not null
+                && (scene.CaptureAvailability != CaptureAvailability.Available
+                    || !signature.HasEvidence
+                    || !GameSceneSemanticComparer.StableEquivalent(
+                        GameSceneSemanticComparer.Signature(lastStable),
+                        signature)))
+            {
+                lastStable = null;
+                lastStableFrames = 0;
+                lastStableMilliseconds = 0;
+            }
             if (window.Observe(scene, elapsed))
             {
-                return Result(
-                    GameInteractionStabilityStatus.Stable,
-                    observations,
-                    scene,
-                    window,
-                    elapsed,
-                    null);
+                lastStable = scene;
+                lastStableFrames = window.StableFramesObserved;
+                lastStableMilliseconds = window.StableMillisecondsObserved(elapsed);
             }
             await clock.DelayAsync(sampleInterval, cancellationToken).ConfigureAwait(false);
         }
-        return Result(
-            GameInteractionStabilityStatus.TimedOut,
-            observations,
-            null,
-            window,
-            clock.ElapsedMilliseconds - started,
-            "意味構造がtimeout内に安定しませんでした。");
+        return lastStable is not null
+            ? Result(
+                GameInteractionStabilityStatus.Stable,
+                observations,
+                lastStable,
+                window,
+                clock.ElapsedMilliseconds - started,
+                null,
+                lastStableFrames,
+                lastStableMilliseconds)
+            : Result(
+                GameInteractionStabilityStatus.TimedOut,
+                observations,
+                null,
+                window,
+                clock.ElapsedMilliseconds - started,
+                "意味構造がtimeout内に安定しませんでした。");
     }
 
     private static GameInteractionStabilityResult Result(
@@ -141,14 +162,16 @@ public sealed class GameInteractionStabilityRuntime(
         ObservedScene? stable,
         GameSceneStabilityWindow window,
         long elapsed,
-        string? failure) =>
+        string? failure,
+        int? stableFrames = null,
+        long? stableMilliseconds = null) =>
         new(
             ContractSchemaVersions.Revision03,
             status,
             observations.ToArray(),
             stable,
-            window.StableFramesObserved,
-            window.StableMillisecondsObserved(elapsed),
+            stableFrames ?? window.StableFramesObserved,
+            stableMilliseconds ?? window.StableMillisecondsObserved(elapsed),
             elapsed,
             failure);
 }

@@ -22,7 +22,7 @@ public sealed record HostExplorerRuntimeSnapshot(
     bool CanStep,
     bool CanAbandon);
 
-/// <summary>Explorer UIと実行中coordinatorを繋ぐ制御port。t12の実game runnerが実装を供給する。</summary>
+/// <summary>Explorer UIと実行中coordinatorを繋ぐ制御port。ProductGameExplorerRuntimeが実装する。</summary>
 public interface IHostExplorerRuntimeControl
 {
     HostExplorerRuntimeSnapshot Snapshot { get; }

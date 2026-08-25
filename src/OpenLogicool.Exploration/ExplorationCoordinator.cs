@@ -578,7 +578,9 @@ public sealed class ExplorationCoordinator
         if (!string.Equals(report.SchemaVersion, ContractSchemaVersions.Revision03, StringComparison.Ordinal)
             || !probe.Admission.Proposal.AllowedOutcomes.Contains(report.Outcome)
             || !string.Equals(report.AfterScene.Frame.SourceId, policy.TargetWindowSourceId, StringComparison.Ordinal)
-            || report.AfterScene.Frame.Sequence <= probe.Admission.Context.CurrentScene.Frame.Sequence
+            || (report.Outcome == ExplorationOutcomeKind.NoChange
+                ? report.AfterScene.Frame.Sequence < probe.Admission.Context.CurrentScene.Frame.Sequence
+                : report.AfterScene.Frame.Sequence <= probe.Admission.Context.CurrentScene.Frame.Sequence)
             || requiresStableAvailableObservation
                 && (report.AfterScene.CaptureAvailability != CaptureAvailability.Available
                     || report.StableFramesObserved < probe.Admission.Proposal.WaitCondition.StableFrames

@@ -44,13 +44,14 @@ public static class GameSceneSemanticComparer
         GameSceneSemanticSignature right) =>
         left.StateIdentity == right.StateIdentity
         && left.StateIds.SequenceEqual(right.StateIds, StringComparer.Ordinal)
-        && AffordancesStableEquivalent(left.AffordanceKeys, right.AffordanceKeys);
+        && (left.StateIdentity == StateIdentityStatus.Known && left.StateIds.Count > 0
+            || AffordancesStableEquivalent(left.AffordanceKeys, right.AffordanceKeys));
 
     private static bool AffordancesStableEquivalent(
         IReadOnlyList<string> left,
         IReadOnlyList<string> right)
     {
-        if (left.SequenceEqual(right, StringComparer.Ordinal))
+        if (AffordanceSetsEquivalent(left, right))
         {
             return true;
         }
@@ -59,9 +60,49 @@ public static class GameSceneSemanticComparer
         {
             return false;
         }
-        var common = left.Intersect(right, StringComparer.Ordinal).ToArray();
-        return common.Length / (double)smallerCount >= 0.8
-            && common.Count(key => !key.EndsWith("|0", StringComparison.Ordinal)) >= 2;
+        var common = CommonAffordanceCount(left, right);
+        return common / (double)smallerCount >= 0.8 && common >= 2;
+    }
+
+    private static bool AffordanceSetsEquivalent(
+        IReadOnlyList<string> left,
+        IReadOnlyList<string> right) =>
+        left.Count == right.Count && CommonAffordanceCount(left, right) == left.Count;
+
+    private static int CommonAffordanceCount(
+        IReadOnlyList<string> left,
+        IReadOnlyList<string> right)
+    {
+        var remaining = right.ToList();
+        var common = 0;
+        foreach (var leftKey in left)
+        {
+            var index = remaining.FindIndex(rightKey => AffordanceKeySimilar(leftKey, rightKey));
+            if (index < 0)
+            {
+                continue;
+            }
+            common++;
+            remaining.RemoveAt(index);
+        }
+        return common;
+    }
+
+    public static bool AffordanceKeySimilar(string left, string right)
+    {
+        if (string.Equals(left, right, StringComparison.Ordinal))
+        {
+            return true;
+        }
+        var leftParts = left.Split('|');
+        var rightParts = right.Split('|');
+        return leftParts.Length == 4
+            && rightParts.Length == 4
+            && string.Equals(leftParts[0], "ocr-text", StringComparison.Ordinal)
+            && string.Equals(rightParts[0], "ocr-text", StringComparison.Ordinal)
+            && string.Equals(leftParts[2], rightParts[2], StringComparison.Ordinal)
+            && string.Equals(leftParts[3], rightParts[3], StringComparison.Ordinal)
+            && OcrTextMatcher.IsSimilar(leftParts[1], rightParts[1]);
     }
 
     public static string SignatureId(ObservedScene scene)
@@ -191,6 +232,32 @@ public sealed class GameTransitionJudge
                 [],
                 ["state候補とactionable structureが同一"]);
         }
+        if (before.SceneVisualPatch is not null
+            && stable.SceneVisualPatch is not null
+            && VisualPatchSignatureComparer.MeanAbsoluteDifference(before.SceneVisualPatch, stable.SceneVisualPatch)
+                < MinimumVisualDifference(before))
+        {
+            return new GameTransitionComparison(
+                ContractSchemaVersions.Revision03,
+                before.ObservationId,
+                stable.ObservationId,
+                GameTransitionJudgement.Stayed,
+                [],
+                ["OCR構造差に対して全画面visual差が小さい"]);
+        }
+        var changedKeyCount = ChangedAffordanceCount(beforeSignature.AffordanceKeys, afterSignature.AffordanceKeys);
+        if (beforeSignature.StateIds.SequenceEqual(afterSignature.StateIds, StringComparer.Ordinal)
+            && Math.Min(beforeSignature.AffordanceKeys.Count, afterSignature.AffordanceKeys.Count) >= 3
+            && changedKeyCount < 4)
+        {
+            return new GameTransitionComparison(
+                ContractSchemaVersions.Revision03,
+                before.ObservationId,
+                stable.ObservationId,
+                GameTransitionJudgement.Stayed,
+                [],
+                ["単一のOCR構造差はページ遷移に使わない"]);
+        }
         var changed = ChangedRegions(before, stable);
         return new GameTransitionComparison(
             ContractSchemaVersions.Revision03,
@@ -200,6 +267,22 @@ public sealed class GameTransitionJudge
             changed,
             ["state候補またはactionable structureが変化"]);
     }
+
+    private static double MinimumVisualDifference(ObservedScene before)
+    {
+        var operation = before.Affordances
+            .SelectMany(candidate => candidate.AllowedPrimitives)
+            .FirstOrDefault(GameInteractionOperations.InputOperations.Contains);
+        return operation is GameInteractionOperations.Hover or GameInteractionOperations.Scroll or GameInteractionOperations.Drag
+            ? 1
+            : 6;
+    }
+
+    private static int ChangedAffordanceCount(
+        IReadOnlyList<string> before,
+        IReadOnlyList<string> after) =>
+        before.Count(key => !after.Any(other => GameSceneSemanticComparer.AffordanceKeySimilar(key, other)))
+        + after.Count(key => !before.Any(other => GameSceneSemanticComparer.AffordanceKeySimilar(key, other)));
 
     private static GameTransitionComparison Undetermined(
         ObservedScene before,
@@ -217,17 +300,15 @@ public sealed class GameTransitionJudge
         ObservedScene before,
         ObservedScene after)
     {
-        var beforeKeys = before.Affordances
-            .Select(GameSceneSemanticComparer.TargetKey)
-            .ToHashSet(StringComparer.Ordinal);
-        var afterKeys = after.Affordances
-            .Select(GameSceneSemanticComparer.TargetKey)
-            .ToHashSet(StringComparer.Ordinal);
+        var beforeKeys = before.Affordances.Select(GameSceneSemanticComparer.TargetKey).ToArray();
+        var afterKeys = after.Affordances.Select(GameSceneSemanticComparer.TargetKey).ToArray();
         return before.Affordances
-            .Where(candidate => !afterKeys.Contains(GameSceneSemanticComparer.TargetKey(candidate)))
+            .Where(candidate => !afterKeys.Any(key => GameSceneSemanticComparer.AffordanceKeySimilar(
+                GameSceneSemanticComparer.TargetKey(candidate), key)))
             .SelectMany(candidate => candidate.EvidenceRegions)
             .Concat(after.Affordances
-                .Where(candidate => !beforeKeys.Contains(GameSceneSemanticComparer.TargetKey(candidate)))
+                .Where(candidate => !beforeKeys.Any(key => GameSceneSemanticComparer.AffordanceKeySimilar(
+                    GameSceneSemanticComparer.TargetKey(candidate), key)))
                 .SelectMany(candidate => candidate.EvidenceRegions))
             .ToArray();
     }

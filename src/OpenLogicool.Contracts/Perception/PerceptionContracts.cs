@@ -95,7 +95,8 @@ public sealed record AffordanceCandidate(
     IReadOnlyList<string>? KeyTokens = null,
     int? VerticalScrollSteps = null,
     int? HorizontalScrollSteps = null,
-    IReadOnlyList<double>? DragDestinationNormalized = null);
+    IReadOnlyList<double>? DragDestinationNormalized = null,
+    IReadOnlyList<string>? ContextTexts = null);
 
 public sealed record ObservedScene(
     string SchemaVersion,
@@ -108,7 +109,8 @@ public sealed record ObservedScene(
     IReadOnlyList<StateCandidate> StateCandidates,
     IReadOnlyList<AffordanceCandidate> Affordances,
     string PerceptionVersion,
-    SceneDiscoveryEvidence? DiscoveryEvidence = null);
+    SceneDiscoveryEvidence? DiscoveryEvidence = null,
+    VisualPatchSignature? SceneVisualPatch = null);
 
 public sealed record SceneGroundingRegion(
     string Text,

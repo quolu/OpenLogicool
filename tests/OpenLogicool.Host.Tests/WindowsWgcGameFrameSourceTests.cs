@@ -51,6 +51,62 @@ public sealed class WindowsWgcGameFrameSourceTests
         Assert.Equal(1, source.Remaining);
     }
 
+    [Fact]
+    public void Detailed_drain_reuses_the_last_valid_frame_when_wgc_is_normally_static()
+    {
+        var cached = Frame(sequence: 7, freshnessMs: 4);
+        var source = new QueueDetailedFrameSource([
+            CaptureRead.Unavailable("wgc frame はまだ到着していません。"),
+        ]);
+
+        var latest = WindowsWgcGameFrameSource.DrainNewestDetailed(
+            source,
+            cached,
+            out var unavailable,
+            out var fault);
+
+        Assert.Same(cached, latest);
+        Assert.Equal("wgc frame はまだ到着していません。", unavailable);
+        Assert.Null(fault);
+    }
+
+    [Fact]
+    public void Detailed_drain_never_reuses_a_cached_frame_across_a_capture_fault()
+    {
+        var cached = Frame(sequence: 7, freshnessMs: 4);
+        var minimized = new CaptureFault(CaptureFaultKind.Minimized, "window minimized");
+        var source = new QueueDetailedFrameSource([
+            CaptureRead.Unavailable(minimized),
+        ]);
+
+        var latest = WindowsWgcGameFrameSource.DrainNewestDetailed(
+            source,
+            cached,
+            out var unavailable,
+            out var fault);
+
+        Assert.Null(latest);
+        Assert.Equal("window minimized", unavailable);
+        Assert.Same(minimized, fault);
+    }
+
+    [Fact]
+    public async Task Capture_fault_clears_cache_and_later_static_unavailability_cannot_reuse_it()
+    {
+        var source = new FaultThenStaticDetailedFrameSource(Frame(sequence: 7, freshnessMs: 4));
+        using var runtime = new WindowsWgcGameFrameSource(source, TimeSpan.FromMilliseconds(5));
+
+        var first = await runtime.CaptureAsync();
+        var fault = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await runtime.CaptureAsync());
+        var afterFault = await Assert.ThrowsAsync<TimeoutException>(
+            async () => await runtime.CaptureAsync());
+
+        Assert.Equal(7, first.Sequence);
+        Assert.Contains("Minimized", fault.Message);
+        Assert.Contains("static", afterFault.Message);
+    }
+
     private static CapturedFrame Frame(long sequence, long freshnessMs) =>
         new(
             "0.3.0",
@@ -75,5 +131,29 @@ public sealed class WindowsWgcGameFrameSourceTests
         public int Remaining => queue.Count;
 
         public FrameReadResult Pull() => queue.Dequeue();
+    }
+
+    private sealed class QueueDetailedFrameSource(IEnumerable<CaptureRead> results) : IDetailedFrameSource
+    {
+        private readonly Queue<CaptureRead> queue = new(results);
+
+        public FrameReadResult Pull() => PullDetailed().Result;
+
+        public CaptureRead PullDetailed() => queue.Dequeue();
+    }
+
+    private sealed class FaultThenStaticDetailedFrameSource(CapturedFrame first) : IDetailedFrameSource
+    {
+        private int calls;
+
+        public FrameReadResult Pull() => PullDetailed().Result;
+
+        public CaptureRead PullDetailed() => calls++ switch
+        {
+            0 => CaptureRead.Available(first),
+            1 => CaptureRead.Unavailable("initial queue drained"),
+            2 => CaptureRead.Unavailable(new CaptureFault(CaptureFaultKind.Minimized, "window minimized")),
+            _ => CaptureRead.Unavailable("static"),
+        };
     }
 }

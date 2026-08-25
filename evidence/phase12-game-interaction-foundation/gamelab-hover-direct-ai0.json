@@ -1,0 +1,21 @@
+{
+  "Mode": "point",
+  "ProductHostEntry": true,
+  "X": 0.4,
+  "Y": 0.89,
+  "dispatch": {
+    "SchemaVersion": "0.3.0",
+    "Operation": "hover",
+    "Status": "Dispatched",
+    "ObservationId": "observation:window:game-index:59584:1",
+    "TargetWindowSourceId": "window:game-index:59584",
+    "Route": "NanoSerialHid",
+    "DispatchCount": 1,
+    "StartedUtc": "2026-08-25T08:17:59.6788048+00:00",
+    "CompletedUtc": "2026-08-25T08:17:59.9902642+00:00",
+    "CandidateId": "host-point",
+    "TransportReceiptId": "pointer:618,356-\u003E548,685;deltas:20",
+    "FailureReason": null
+  },
+  "AiCallCount": 0
+}

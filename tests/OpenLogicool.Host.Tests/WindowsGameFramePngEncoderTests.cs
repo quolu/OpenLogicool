@@ -37,4 +37,21 @@ public sealed class WindowsGameFramePngEncoderTests
         Assert.False(full.Bytes.IsEmpty);
         Assert.False(vision.Bytes.IsEmpty);
     }
+
+    [Fact]
+    public void Rediscovery_crop_is_encoded_from_the_requested_full_frame_region()
+    {
+        const int width = 1920;
+        const int height = 1080;
+        var frame = new CapturedFrame(
+            "0.3.0", "window:game", CaptureBackend.WindowsGraphicsCapture, 1, 0,
+            DateTimeOffset.UnixEpoch, width, height, "BGRA8", 96, 96, 0, 0, 0,
+            Pixels: new FramePixels(new byte[width * height * 4], width * 4));
+
+        var crop = new WindowsGameFramePngEncoder().EncodeRegion(frame, [0.5, 0, 0.5, 1], 640);
+
+        Assert.Equal(640, crop.Height);
+        Assert.InRange(crop.Width, 560, 580);
+        Assert.False(crop.Bytes.IsEmpty);
+    }
 }

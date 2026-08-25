@@ -380,6 +380,24 @@ public sealed class ExplorationCoordinatorTests
     }
 
     [Fact]
+    public void No_change_accepts_reobservation_of_the_same_static_wgc_frame()
+    {
+        var fixture = Fixture(oneStepApproval: false);
+        var before = Scene("observation-before", 1, "state-a");
+        fixture.Coordinator.CommitObservation(before, Time(1));
+        var admission = Admission(fixture, before, "proposal-static");
+        Assert.True(fixture.Coordinator.Propose(admission, Time(2)).DispatchAllowed);
+        fixture.Coordinator.Dispatch("proposal-static", () => { }, Time(3));
+        var after = Scene("observation-after", 1, "state-a");
+
+        var result = fixture.Coordinator.RecordOutcome(
+            Outcome("proposal-static", after, ExplorationOutcomeKind.NoChange));
+
+        Assert.Equal(ExplorationOutcomeKind.NoChange, result.Outcome);
+        Assert.Equal(ExplorationStopReason.None, fixture.Coordinator.StopReason);
+    }
+
+    [Fact]
     public void Repeated_probe_limit_one_allows_the_first_probe_and_stops_only_after_repetition()
     {
         var fixture = Fixture(

@@ -1,0 +1,25 @@
+{
+  "Mode": "drag-points",
+  "ProductHostEntry": true,
+  "StartX": 0.5,
+  "StartY": 0.7,
+  "Destination": [
+    0.5,
+    0.4
+  ],
+  "dispatch": {
+    "SchemaVersion": "0.3.0",
+    "Operation": "drag",
+    "Status": "Dispatched",
+    "ObservationId": "observation:window:game-index:27492:2",
+    "TargetWindowSourceId": "window:game-index:27492",
+    "Route": "NanoSerialHid",
+    "DispatchCount": 1,
+    "StartedUtc": "2026-08-25T08:04:46.0952862+00:00",
+    "CompletedUtc": "2026-08-25T08:04:46.7574757+00:00",
+    "CandidateId": "host-drag-points",
+    "TransportReceiptId": "start:pointer:1361,723-\u003E1363,842;deltas:19;drag:pointer:1363,842-\u003E1363,485;deltas:22;mouse-left-up",
+    "FailureReason": null
+  },
+  "AiCallCount": 0
+}

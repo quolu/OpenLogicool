@@ -71,7 +71,10 @@ public sealed record TransitionEvidence(
     long DispatchMonotonicMilliseconds,
     long ObservationCompletedMonotonicMilliseconds,
     DateTimeOffset RecordedUtc,
-    string? ExplorationRunId = null);
+    string? ExplorationRunId = null,
+    GameInteractionDispatchReceipt? DispatchReceipt = null,
+    GameTransitionComparison? Comparison = null,
+    IReadOnlyList<string>? ObservationSequenceIds = null);
 
 public enum StructureVerificationState
 {

@@ -9,6 +9,7 @@ using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Exploration;
 using OpenLogicool.Input;
 using OpenLogicool.Persistence;
+using OpenLogicool.Perception;
 using OpenLogicool.Playbooks;
 
 namespace OpenLogicool.Host;
@@ -84,8 +85,11 @@ public static class HostGameIndexCommand
                 allowExplore),
             "back" => await BackAsync(nano, emitter, target, sourceId),
             "point" => await PointAsync(arguments, nano, emitter, target, sourceId),
+            "scroll-point" => await ScrollPointAsync(arguments, nano, emitter, target, sourceId),
+            "drag-points" => await DragPointsAsync(arguments, nano, emitter, target, sourceId),
+            "capture" => await CaptureAsync(arguments, target, sourceId),
             "inspect" => Inspect(profiles, target.ProcessName, environment),
-            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、point、inspectです。"),
+            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、point、scroll-point、drag-points、capture、inspectです。"),
         };
         nano.Protocol.SendAllUp();
         var json = JsonSerializer.Serialize(result, Json);
@@ -142,8 +146,7 @@ public static class HostGameIndexCommand
             allowExplore);
         if (known.Execution is
             {
-                DestinationMatched: true,
-                Comparison.Judgement: GameTransitionJudgement.Moved,
+                TransitionObserved: true,
             } execution)
         {
             return new
@@ -157,6 +160,7 @@ public static class HostGameIndexCommand
                 execution.SourceStateId,
                 execution.ExpectedDestinationStateId,
                 execution.ObservedDestinationStateId,
+                execution.TransitionObserved,
                 execution.DestinationMatched,
                 execution.Dispatch,
                 execution.Comparison,
@@ -165,6 +169,9 @@ public static class HostGameIndexCommand
             };
         }
         var endpoint = new Uri(Required(arguments, "--foundry-endpoint"));
+        var visualSearchRegion = includeVisualTargets
+            ? FindRediscoveryRegion(profiles.Load(target.ProcessName, environment), goal, operation)
+            : null;
         var model = Optional(arguments, "--model") ?? "qwen3-vl-4b-instruct-cuda-gpu:2";
         var frameDirectory = Path.GetFullPath(Optional(arguments, "--frames")
             ?? Path.Combine("probe-output", $"host-game-index-{DateTime.Now:yyyyMMdd-HHmmss-fff}"));
@@ -200,7 +207,8 @@ public static class HostGameIndexCommand
             keyTokens,
             verticalScrollSteps,
             horizontalScrollSteps,
-            dragDestination);
+            dragDestination,
+            visualSearchRegion);
         var explorerIntents = new HostExplorerIntents(connection, product.Runtime);
         var step = await product.Runtime.ExecuteNextAsync();
         var indexed = profiles.Load(target.ProcessName, environment);
@@ -221,6 +229,7 @@ public static class HostGameIndexCommand
             Goal = goal,
             Operation = operation,
             IncludeVisualTargets = includeVisualTargets,
+            VisualSearchRegion = visualSearchRegion,
             RediscoveryStarted = true,
             RediscoveryReason = known.Reason,
             ActionId = indexed?.States.SelectMany(state => state.Affordances).LastOrDefault()?.CandidateId,
@@ -231,6 +240,35 @@ public static class HostGameIndexCommand
             product.AiCallCount,
             Database = connection.DataSource,
         };
+    }
+
+    private static IReadOnlyList<double>? FindRediscoveryRegion(
+        LearnedSceneProfileDocument? profile,
+        string goal,
+        string operation)
+    {
+        if (profile is null)
+        {
+            return null;
+        }
+        foreach (var state in profile.States.Reverse())
+        {
+            var selection = KnownGoalActionSelector.Select(state, goal, operation);
+            if (selection.Kind != KnownGoalActionSelectionKind.PreviousTransitionUnconfirmed
+                || selection.Action is null)
+            {
+                continue;
+            }
+            var bounds = selection.Action.NormalizedBounds;
+            var centerX = bounds[0] + bounds[2] / 2;
+            var centerY = bounds[1] + bounds[3] / 2;
+            var width = Math.Min(1, Math.Max(bounds[2] * 6, 0.50));
+            var height = Math.Min(1, Math.Max(bounds[3] * 6, 0.50));
+            var left = Math.Clamp(centerX - width / 2, 0, 1 - width);
+            var top = Math.Clamp(centerY - height / 2, 0, 1 - height);
+            return [left, top, width, height];
+        }
+        return null;
     }
 
     private static async Task<(KnownScreenActionExecutionResult? Execution, string Reason)> TryExecuteKnownForGoalAsync(
@@ -283,8 +321,7 @@ public static class HostGameIndexCommand
             new WindowsGameExplorationCandidateRiskPolicy(DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault),
             gamePolicyAllowsExecute: allowExplore);
         var execution = await runtime.ExecuteKnownAsync(selection.Action!.CandidateId);
-        return execution.DestinationMatched
-            && execution.Comparison.Judgement == GameTransitionJudgement.Moved
+        return execution.TransitionObserved
             ? (execution, "保存済みボタンで正常に遷移しました。")
             : (execution, "保存済みボタンで正常な画面遷移を確認できませんでした。");
     }
@@ -336,9 +373,11 @@ public static class HostGameIndexCommand
             execution.SourceStateId,
             execution.ExpectedDestinationStateId,
             execution.ObservedDestinationStateId,
+            execution.TransitionObserved,
             execution.DestinationMatched,
             execution.AiCallCount,
             execution.Dispatch,
+            execution.Stability,
             execution.Comparison,
         };
     }
@@ -364,6 +403,14 @@ public static class HostGameIndexCommand
         }
         var original = profiles.Load(target.ProcessName, environment)
             ?? throw new InvalidOperationException("既知ページ索引がありません。");
+        var maximumFrameFreshnessMilliseconds = OptionalInt(
+            arguments,
+            "--maximum-frame-freshness-ms",
+            checked((int)original.MaximumFrameFreshnessMilliseconds));
+        if (maximumFrameFreshnessMilliseconds <= 0)
+        {
+            throw new ArgumentException("--maximum-frame-freshness-msは正の整数で指定します。");
+        }
         var sourceState = original.States.SingleOrDefault(state =>
                 state.Affordances.Any(action => action.CandidateId == sourceActionId))
             ?? throw new InvalidOperationException("派生元actionが索引にありません。");
@@ -391,6 +438,31 @@ public static class HostGameIndexCommand
         var dragDestination = operation == GameInteractionOperations.Drag
             ? new[] { RequiredUnitDouble(arguments, "--destination-x"), RequiredUnitDouble(arguments, "--destination-y") }
             : null;
+        var overrideXText = Optional(arguments, "--target-x");
+        var overrideYText = Optional(arguments, "--target-y");
+        if ((overrideXText is null) != (overrideYText is null))
+        {
+            throw new ArgumentException("--target-xと--target-yは両方指定します。");
+        }
+        IReadOnlyList<double>? overrideBounds = null;
+        VisualPatchSignature? overridePatch = null;
+        if (overrideXText is not null)
+        {
+            var x = RequiredUnitDouble(arguments, "--target-x");
+            var y = RequiredUnitDouble(arguments, "--target-y");
+            var width = sourceAction.NormalizedBounds[2];
+            var height = sourceAction.NormalizedBounds[3];
+            overrideBounds =
+            [
+                Math.Clamp(x - width / 2, 0, 1 - width),
+                Math.Clamp(y - height / 2, 0, 1 - height),
+                width,
+                height,
+            ];
+            using var patchFrames = new WindowsWgcGameFrameSource(target.Window, sourceId, TimeSpan.FromSeconds(10));
+            var patchFrame = await patchFrames.CaptureAsync();
+            overridePatch = VisualPatchMatcher.Capture(patchFrame, overrideBounds);
+        }
         var derived = sourceAction with
         {
             CandidateId = actionId,
@@ -401,9 +473,12 @@ public static class HostGameIndexCommand
             VerticalScrollSteps = verticalSteps,
             HorizontalScrollSteps = horizontalSteps,
             DragDestinationNormalized = dragDestination,
+            NormalizedBounds = overrideBounds ?? sourceAction.NormalizedBounds,
+            VisualPatch = overridePatch ?? sourceAction.VisualPatch,
         };
         var candidateProfile = original with
         {
+            MaximumFrameFreshnessMilliseconds = maximumFrameFreshnessMilliseconds,
             States = original.States
                 .Where(state => state.StateId != sourceState.StateId)
                 .Append(sourceState with
@@ -441,9 +516,15 @@ public static class HostGameIndexCommand
             new WindowsGameExplorationCandidateRiskPolicy(DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault),
             gamePolicyAllowsExecute: allowExplore);
         var execution = await runtime.ExecuteKnownAsync(actionId);
-        if (!execution.DestinationMatched)
+        if (!execution.TransitionObserved)
         {
-            throw new InvalidOperationException($"{operation}後の遷移を確認できなかったため索引へ保存しません。");
+            throw new InvalidOperationException(
+                $"{operation}後の遷移を確認できなかったため索引へ保存しません。"
+                + $" comparison={execution.Comparison.Judgement};"
+                + $" stability={execution.Stability.Status};"
+                + $" frames={execution.Stability.Observations.Count};"
+                + $" elapsedMs={execution.Stability.ElapsedMilliseconds};"
+                + $" stableSequence={execution.Stability.StableScene?.Frame.Sequence.ToString() ?? "none"}");
         }
         profiles.Upsert(candidateProfile);
         return new
@@ -454,6 +535,7 @@ public static class HostGameIndexCommand
             Operation = operation,
             ActionId = actionId,
             Saved = true,
+            MaximumFrameFreshnessMilliseconds = maximumFrameFreshnessMilliseconds,
             execution.Dispatch,
             execution.Comparison,
             execution.AiCallCount,
@@ -547,6 +629,122 @@ public static class HostGameIndexCommand
         var dispatch = actions.Hover(binding, observation);
         return new { Mode = "point", ProductHostEntry = true, X = x, Y = y, dispatch, AiCallCount = 0 };
     }
+
+    private static async Task<object> CaptureAsync(
+        string[] arguments,
+        WindowsGameTarget target,
+        string sourceId)
+    {
+        var imagePath = Path.GetFullPath(Required(arguments, "--image"));
+        Directory.CreateDirectory(Path.GetDirectoryName(imagePath)!);
+        using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId, TimeSpan.FromSeconds(10));
+        var frame = await frames.CaptureAsync();
+        var png = new WindowsGameFramePngEncoder().Encode(frame);
+        await File.WriteAllBytesAsync(imagePath, png.Bytes.ToArray());
+        return new
+        {
+            Mode = "capture",
+            ProductHostEntry = true,
+            Image = imagePath,
+            png.Width,
+            png.Height,
+            Sha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(png.Bytes.Span)).ToLowerInvariant(),
+            frame.FreshnessMs,
+            AiCallCount = 0,
+        };
+    }
+
+    private static async Task<object> ScrollPointAsync(
+        string[] arguments,
+        SerialHidResidentOutputSession nano,
+        SerialHidEmitter emitter,
+        WindowsGameTarget target,
+        string sourceId)
+    {
+        var x = RequiredUnitDouble(arguments, "--x");
+        var y = RequiredUnitDouble(arguments, "--y");
+        var vertical = RequiredInt(arguments, "--vertical-steps");
+        var horizontal = OptionalInt(arguments, "--horizontal-steps", 0);
+        var observation = await CaptureBoundObservationAsync(target, sourceId, "host-scroll-point-no-ai");
+        var actions = DirectActions(nano, emitter, target);
+        var binding = PointBinding(observation, x, y, "host-scroll-point");
+        var dispatch = actions.Scroll(
+            new GameInteractionScrollRequest(ContractSchemaVersions.Revision03, binding, vertical, horizontal),
+            observation);
+        return new { Mode = "scroll-point", ProductHostEntry = true, X = x, Y = y, Vertical = vertical, Horizontal = horizontal, dispatch, AiCallCount = 0 };
+    }
+
+    private static async Task<object> DragPointsAsync(
+        string[] arguments,
+        SerialHidResidentOutputSession nano,
+        SerialHidEmitter emitter,
+        WindowsGameTarget target,
+        string sourceId)
+    {
+        var startX = RequiredUnitDouble(arguments, "--start-x");
+        var startY = RequiredUnitDouble(arguments, "--start-y");
+        var destination = new[]
+        {
+            RequiredUnitDouble(arguments, "--destination-x"),
+            RequiredUnitDouble(arguments, "--destination-y"),
+        };
+        var observation = await CaptureBoundObservationAsync(target, sourceId, "host-drag-points-no-ai");
+        var actions = DirectActions(nano, emitter, target);
+        var binding = PointBinding(observation, startX, startY, "host-drag-points");
+        var dispatch = actions.Drag(
+            new GameInteractionDragRequest(ContractSchemaVersions.Revision03, binding, destination),
+            observation);
+        return new { Mode = "drag-points", ProductHostEntry = true, StartX = startX, StartY = startY, Destination = destination, dispatch, AiCallCount = 0 };
+    }
+
+    private static async Task<ObservationResult> CaptureBoundObservationAsync(
+        WindowsGameTarget target,
+        string sourceId,
+        string recognizerVersion)
+    {
+        using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId, TimeSpan.FromSeconds(10));
+        var frame = await frames.CaptureAsync();
+        return new ObservationResult(
+            ContractSchemaVersions.Revision03,
+            $"observation:{sourceId}:{frame.Sequence}",
+            new CapturedFrameReference(
+                ContractSchemaVersions.Revision03,
+                frame.SourceId,
+                frame.Backend,
+                frame.Sequence,
+                frame.MonotonicMs,
+                frame.WallClockUtc,
+                frame.TransformRevision,
+                frame.FreshnessMs,
+                frame.LastChangeMs),
+            CaptureAvailability.Available,
+            StateIdentityStatus.Novel,
+            [],
+            recognizerVersion,
+            frame.FreshnessMs,
+            null);
+    }
+
+    private static NanoGameInteractionActions DirectActions(
+        SerialHidResidentOutputSession nano,
+        SerialHidEmitter emitter,
+        WindowsGameTarget target) => new(
+        new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()),
+        new WindowsGameInteractionCoordinateMapper(() => target.Bounds));
+
+    private static GameInteractionTargetBinding PointBinding(
+        ObservationResult observation,
+        double x,
+        double y,
+        string candidateId) => new(
+        ContractSchemaVersions.Revision03,
+        observation.ObservationId,
+        observation.Frame.Sequence,
+        observation.Frame.TransformRevision,
+        observation.Frame.SourceId,
+        candidateId,
+        $"{candidateId}-v1",
+        [Math.Clamp(x - 0.0005, 0, 0.999), Math.Clamp(y - 0.0005, 0, 0.999), 0.001, 0.001]);
 
     private static object Inspect(
         SqliteLearnedSceneProfileStore profiles,

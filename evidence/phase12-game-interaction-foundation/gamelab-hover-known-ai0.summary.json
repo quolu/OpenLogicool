@@ -1,0 +1,21 @@
+{
+  "SchemaVersion": "summary-1",
+  "DerivedFrom": "gamelab-hover-known-ai0.json",
+  "DerivedFromSha256": "b9705a46d79d69c07f9af61ed29e629106f4fa849021fff40f55a1e331eb5eae",
+  "ActionId": "known-action:b63afe89530c77d3b27210d06a7c6334ab463fbbaea28939e12a52cbf5ce1cd3",
+  "ExpectedDestinationStateId": "known-screen:ef01e5ed918997886889a203e762904e1a52722b84002cf376ce76a6965f0da6",
+  "ObservedDestinationStateId": "known-screen:ef01e5ed918997886889a203e762904e1a52722b84002cf376ce76a6965f0da6",
+  "TransitionObserved": true,
+  "DestinationMatched": true,
+  "AiCallCount": 0,
+  "DispatchStatus": "Dispatched",
+  "TransportReceiptId": "pointer:698,436->626,763;deltas:20",
+  "StabilityStatus": "Stable",
+  "ElapsedMilliseconds": 10055,
+  "ObservationCount": 67,
+  "StableFrameCount": 67,
+  "StableMilliseconds": 8900,
+  "Judgement": "Moved",
+  "Reason": "保存済みtarget patchがhover後に変化",
+  "MaximumFrameFreshnessMilliseconds": 2000
+}

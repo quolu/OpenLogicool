@@ -7,8 +7,9 @@ namespace OpenLogicool.Host;
 public sealed class WindowsWgcGameFrameSource : IProductGameFrameSource, IDisposable
 {
     private const int MaximumDrainFrames = 2;
-    private readonly WgcFrameSource source;
+    private readonly IDetailedFrameSource source;
     private readonly TimeSpan timeout;
+    private CapturedFrame? lastFrame;
 
     public WindowsWgcGameFrameSource(
         nint window,
@@ -23,6 +24,18 @@ public sealed class WindowsWgcGameFrameSource : IProductGameFrameSource, IDispos
         this.timeout = timeout;
     }
 
+    internal WindowsWgcGameFrameSource(
+        IDetailedFrameSource source,
+        TimeSpan timeout)
+    {
+        this.source = source ?? throw new ArgumentNullException(nameof(source));
+        if (timeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(timeout));
+        }
+        this.timeout = timeout;
+    }
+
     public async ValueTask<CapturedFrame> CaptureAsync(
         CancellationToken cancellationToken = default)
     {
@@ -31,9 +44,15 @@ public sealed class WindowsWgcGameFrameSource : IProductGameFrameSource, IDispos
         while (started.Elapsed < timeout)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var latest = DrainNewest(source, out var unavailable);
+            var latest = DrainNewestDetailed(source, lastFrame, out var unavailable, out var fault);
+            if (fault is not null)
+            {
+                lastFrame = null;
+                throw new InvalidOperationException($"WGC capture fault: {fault.Kind}: {fault.Detail}");
+            }
             if (latest is not null)
             {
+                lastFrame = latest;
                 return latest;
             }
             lastUnavailable = unavailable;
@@ -65,5 +84,36 @@ public sealed class WindowsWgcGameFrameSource : IProductGameFrameSource, IDispos
         return latest;
     }
 
-    public void Dispose() => source.Dispose();
+    internal static CapturedFrame? DrainNewestDetailed(
+        IDetailedFrameSource frameSource,
+        CapturedFrame? cached,
+        out string? lastUnavailable,
+        out CaptureFault? fault)
+    {
+        ArgumentNullException.ThrowIfNull(frameSource);
+        CapturedFrame? latest = null;
+        lastUnavailable = null;
+        fault = null;
+        for (var index = 0; index < MaximumDrainFrames; index++)
+        {
+            var read = frameSource.PullDetailed();
+            switch (read.Result)
+            {
+                case FrameAvailable available:
+                    latest = available.Frame;
+                    break;
+                case FrameUnavailable unavailable:
+                    lastUnavailable = unavailable.Reason;
+                    if (read.Fault is not null)
+                    {
+                        fault = read.Fault;
+                        return null;
+                    }
+                    return latest ?? cached;
+            }
+        }
+        return latest ?? cached;
+    }
+
+    public void Dispose() => (source as IDisposable)?.Dispose();
 }

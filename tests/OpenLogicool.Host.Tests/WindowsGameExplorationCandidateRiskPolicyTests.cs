@@ -41,7 +41,27 @@ public sealed class WindowsGameExplorationCandidateRiskPolicyTests
         Assert.Contains("activity-start", activityStart.RiskTags);
     }
 
-    private static AffordanceCandidate Candidate(string label, IReadOnlyList<double> bounds) =>
+    [Fact]
+    public void Exit_modal_ok_is_rejected_from_same_frame_context()
+    {
+        var ok = policy.Evaluate(Candidate(
+            "OK",
+            [0.55, 0.65, 0.2, 0.08],
+            ["お知らせ", "ゲームを終了しますか？", "取消", "OK"]));
+        var cancel = policy.Evaluate(Candidate(
+            "取消",
+            [0.35, 0.65, 0.2, 0.08],
+            ["お知らせ", "ゲームを終了しますか？", "取消", "OK"]));
+
+        Assert.Equal(ExplorationRiskLevel.Prohibited, ok.Level);
+        Assert.Contains("game-exit", ok.RiskTags);
+        Assert.NotEqual(ExplorationRiskLevel.Prohibited, cancel.Level);
+    }
+
+    private static AffordanceCandidate Candidate(
+        string label,
+        IReadOnlyList<double> bounds,
+        IReadOnlyList<string>? contextTexts = null) =>
         new(
             ContractSchemaVersions.Revision03,
             $"candidate:{label}",
@@ -62,5 +82,6 @@ public sealed class WindowsGameExplorationCandidateRiskPolicyTests
             1,
             [GameInteractionOperations.Click],
             "text",
-            label);
+            label,
+            ContextTexts: contextTexts);
 }

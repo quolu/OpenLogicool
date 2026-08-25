@@ -61,6 +61,7 @@ public sealed class FoundryLabelTargetDiscoveryAdapter(
             {
                 SemanticKind = "probe-target",
                 VisualPatch = VisualPatchMatcher.Capture(frame, target.Locator.NormalizedBounds),
+                ContextTexts = textRegions.Select(region => region.Text).ToArray(),
             })
             .ToArray();
         return discovered.Scene with
@@ -77,6 +78,7 @@ public sealed class FoundryLabelTargetDiscoveryAdapter(
                     .Select(region => new SceneGroundingRegion(region.Text, region.EvidenceRegion))
                     .ToArray(),
             },
+            SceneVisualPatch = VisualPatchMatcher.Capture(frame, [0d, 0d, 1d, 1d]),
         };
     }
 }

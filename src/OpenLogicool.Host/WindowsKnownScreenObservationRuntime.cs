@@ -43,6 +43,29 @@ public sealed class WindowsKnownScreenObservationRuntime(
             profile,
             frame,
             snapshot);
+        var bindingObservation = new ObservationResult(
+            ContractSchemaVersions.Revision03,
+            scene.ObservationId,
+            scene.Frame,
+            scene.CaptureAvailability,
+            scene.StateIdentity,
+            scene.StateCandidates,
+            scene.PerceptionVersion,
+            scene.Frame.FreshnessMs,
+            null);
+        var textRegions = WindowsGameOcrSpanBuilder.Build(recognized, frame.Width, frame.Height);
+        scene = scene with
+        {
+            Affordances =
+            [
+                .. scene.Affordances,
+                .. LocalTargetTrackingSceneBuilder.StructuralText(
+                    bindingObservation,
+                    frame,
+                    textRegions,
+                    scene.Affordances),
+            ],
+        };
         var refined = LearnedSceneMatcher.RefineText(profile, frame, snapshot);
         if (!ReferenceEquals(refined, profile))
         {

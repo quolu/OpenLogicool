@@ -1,0 +1,276 @@
+{
+  "Mode": "learn-operation",
+  "ProductHostEntry": true,
+  "SourceActionId": "known-action:01055c9ec068882c8e7ca29491587dd777f16f5c9969b4434909afff84eab40c",
+  "Operation": "scroll",
+  "ActionId": "known-action:01055c9ec068882c8e7ca29491587dd777f16f5c9969b4434909afff84eab40c",
+  "Saved": true,
+  "Dispatch": {
+    "SchemaVersion": "0.3.0",
+    "Operation": "scroll",
+    "Status": "Dispatched",
+    "ObservationId": "observation:window:game-index:27492:2:8908dceb7c2749de9aa12e82682d8e03",
+    "TargetWindowSourceId": "window:game-index:27492",
+    "Route": "NanoSerialHid",
+    "DispatchCount": 1,
+    "StartedUtc": "2026-08-25T08:02:36.6745272+00:00",
+    "CompletedUtc": "2026-08-25T08:02:36.6782788+00:00",
+    "CandidateId": "known-action:01055c9ec068882c8e7ca29491587dd777f16f5c9969b4434909afff84eab40c",
+    "TransportReceiptId": "pointer:1361,723-\u003E1361,723;deltas:0;wheel:-5;ack:15",
+    "FailureReason": null
+  },
+  "Comparison": {
+    "SchemaVersion": "0.3.0",
+    "BeforeObservationId": "observation:window:game-index:27492:2:8908dceb7c2749de9aa12e82682d8e03",
+    "AfterObservationId": "observation:window:game-index:27492:46:341003a477994bb4a8531fc704a266da",
+    "Judgement": "Moved",
+    "ChangedRegions": [
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.425,
+          0.575,
+          0.15,
+          0.05
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.44025735294117646,
+          0.24853801169590642,
+          0.09227941176470589,
+          0.01796157059314954
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.44025735294117646,
+          0.24853801169590642,
+          0.09227941176470589,
+          0.01796157059314954
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.44834558823529413,
+          0.24853801169590642,
+          0.08419117647058824,
+          0.01796157059314954
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.44834558823529413,
+          0.24853801169590642,
+          0.08419117647058824,
+          0.01796157059314954
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.41746323529411766,
+          0.24937343358395989,
+          0.09172794117647058,
+          0.017126148705096073
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.41746323529411766,
+          0.24937343358395989,
+          0.09172794117647058,
+          0.017126148705096073
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.425,
+          0.24937343358395989,
+          0.09172794117647058,
+          0.017126148705096073
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.425,
+          0.24937343358395989,
+          0.09172794117647058,
+          0.017126148705096073
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.3963235294117647,
+          0.7038429406850459,
+          0.015625,
+          0.017543859649122806
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.45643382352941175,
+          0.7840434419381788,
+          0.02849264705882353,
+          0.032999164578111945
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.3704044117647059,
+          0.22639933166248954,
+          0.10827205882352942,
+          0.01921470342522974
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.3704044117647059,
+          0.22639933166248954,
+          0.10827205882352942,
+          0.01921470342522974
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.44025735294117646,
+          0.2284878863826232,
+          0.09227941176470589,
+          0.017543859649122806
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.44025735294117646,
+          0.2284878863826232,
+          0.09227941176470589,
+          0.017543859649122806
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.44834558823529413,
+          0.2284878863826232,
+          0.08419117647058824,
+          0.017543859649122806
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.44834558823529413,
+          0.2284878863826232,
+          0.08419117647058824,
+          0.017543859649122806
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.41746323529411766,
+          0.22890559732664995,
+          0.09172794117647058,
+          0.017126148705096073
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.41746323529411766,
+          0.22890559732664995,
+          0.09172794117647058,
+          0.017126148705096073
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.425,
+          0.22890559732664995,
+          0.09172794117647058,
+          0.017126148705096073
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.425,
+          0.22890559732664995,
+          0.09172794117647058,
+          0.017126148705096073
+        ],
+        "recognizer": "windows-ocr:ja"
+      },
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.434375,
+          0.22890559732664995,
+          0.09025735294117647,
+          0.017126148705096073
+        ],
+        "recognizer": "windows-ocr:ja"
+      }
+    ],
+    "Reasons": [
+      "state\u5019\u88DC\u307E\u305F\u306Factionable structure\u304C\u5909\u5316"
+    ]
+  },
+  "AiCallCount": 0
+}

@@ -1,0 +1,17 @@
+{
+  "SchemaVersion": "summary-1",
+  "DerivedFrom": "host-keytap-known-ai0.json",
+  "DerivedFromSha256": "7c20764f360f954c918e341c1945b6047995a0dac0b0028404f2e1c5499f16c0",
+  "ActionId": "known-action:b7fc15945abd9253a7216f8a2406aeb6d24f8905def0bd7787f2062475696bc2",
+  "ExpectedDestinationStateId": "known-screen:514081b4aaaffb03c7b8267ea6642f7457108995c007c69fb28462a08b131b66",
+  "ObservedDestinationStateId": "known-screen:d68cd27b63c2a0eedd1bb87fb33e7613c675a441f0fff12330d338eb516a98ce",
+  "TransitionObserved": true,
+  "DestinationMatched": false,
+  "AiCallCount": 0,
+  "DispatchStatus": "Dispatched",
+  "TransportReceiptId": "keys:Key:Esc:down-up",
+  "StabilityStatus": "Stable",
+  "ElapsedMilliseconds": 10027,
+  "ObservationCount": 24,
+  "Judgement": "Moved"
+}

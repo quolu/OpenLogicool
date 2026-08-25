@@ -1,23 +1,23 @@
-# t07 基本10機能 NIKKE 実機成立
+# t07 10の基盤機能 NIKKE 実機成立
 
 判定日: 2026-08-25
 
 ## 結論
 
-NIKKE実画面、WGC、Windows OCR、Foundry Local `qwen3-vl-4b-instruct-cuda-gpu:2`、Nano Serial HIDを接続し、基本10機能の製品runtime経路を実測した。実入力はNanoだけを通り、SendInput、Computer Use、fallback、自動retryは全証拠で0である。Scroll／DragはNano送出と安全なreleaseまでの確認で、ゲーム内効果の受理は未確認である。
+NIKKE実画面、WGC、Windows OCR、Foundry Local `qwen3-vl-4b-instruct-cuda-gpu:2`、Nano Serial HIDを接続し、10の基盤機能の製品runtime経路を実測した。実入力はNanoだけを通り、SendInput、Computer Use、fallback、自動retryは全証拠で0である。後続実測でScroll／Dragのゲーム内内容移動、KeyTapの索引再実行、10秒の遷移監視まで確認した。HoverはNIKKEの2対象が`Stayed`であり、対応UIを持つGameLabで表示反応を確認した。
 
-## 基本機能と証拠
+## 10の基盤機能と証拠
 
 | 機能 | 実測結果 | 証拠 |
 |---|---|---|
 | Observe | 元PNG、SHA-256、2720×1197を保存 | `probe-output/game-interaction-foundation-observe-20260825-103639-945.json` |
-| DiscoverTargets | 同一frame OCR候補へAI出力を制約し、アーク画面の対象をframe-bound化 | `probe-output/game-interaction-foundation-discover-targets-20260825-113448-902.json` |
-| Hover | `アーク`へNano pointer dispatch 1、実座標receipt取得 | `probe-output/game-interaction-foundation-hover-20260825-110041-503.json` |
+| DiscoverTargets | 同一frame OCR候補に加え、局所visual patchへ束縛したicon／画像controlを初回発見し、AIなし再実行 | `host-visual-image-discover-ai1.json`、`host-visual-image-known-execute-ai0.json` |
+| Hover | NIKKEの保存済みbuttonは`Stayed`。GameLabのOpenEventは白→青、索引保存、AIなし再実行で`Stable`＋`Moved` | `host-hover-friend-known-ai0.json`、`gamelab-hover-before.png`、`gamelab-hover-after.png`、`gamelab-hover-known-ai0.summary.json` |
 | Click | ランキング操作へNano click dispatch 1 | `probe-output/game-interaction-foundation-explore-step-20260825-114915-963.json` |
-| KeyTap | ランキング→アークをEsc 1回で復帰 | `probe-output/game-interaction-foundation-key-tap-20260825-114814-878.json` |
-| Scroll | wheel 1、アーク→アーク、Stayed。Nano送出確認／ゲーム内受理は未確認 | `probe-output/game-interaction-foundation-scroll-20260825-111900-608.json` |
-| Drag | down→move→up、アーク→アーク、Stayed。Nano送出確認／ゲーム内受理は未確認 | `probe-output/game-interaction-foundation-drag-20260825-111938-886.json` |
-| WaitStable | 候補数35→12→34の部分検出を意味集合で統合しStable 3 | `probe-output/game-interaction-foundation-wait-stable-20260825-114010-435.json` |
+| KeyTap | NIKKE lobby→終了確認modalをEsc 1回で遷移。索引再実行はAI 0、`TransitionObserved=true`、10.027秒 | `keytap-source-lobby.png`、`keytap-after.png`、`host-keytap-known-ai0.summary.json` |
+| Scroll | NIKKEランキングをwheelで上下移動。索引再実行はAI 0、`TransitionObserved=true`、10.091秒 | `ranking-moved.png`、`ranking-scroll-after.png`、`host-ranking-scroll-known-ai0.summary.json` |
+| Drag | NIKKEランキングをdown→move→upで約350px移動。索引再実行はAI 0、`TransitionObserved=true`、10.033秒 | `drag-before.png`、`drag-after.png`、`host-ranking-drag-known-ai0.summary.json` |
+| WaitStable | 早い安定候補で打ち切らず、操作後10秒間の再観測を継続。後半に別構造へ変われば古い安定候補を破棄する | `host-keytap-known-ai0.summary.json`、`host-ranking-scroll-known-ai0.summary.json`、`host-ranking-drag-known-ai0.summary.json` |
 | Compare | ランキング→アークをMovedと判定 | `probe-output/game-interaction-foundation-key-tap-20260825-114814-878.json` |
 | LearnTransition | アーク→ランキングをNovelとして永続化し、Structure revision作成 | `probe-output/game-interaction-foundation-explore-step-20260825-114915-963.json` |
 
@@ -39,6 +39,6 @@ NIKKE実画面、WGC、Windows OCR、Foundry Local `qwen3-vl-4b-instruct-cuda-gp
 
 2BはOCR候補列をほぼ全件返し、clickability判定が弱かった。RTX 5090 32GB／空き8.7GBを実測後、公式Foundry CLIで4Bをロードした。4Bも候補外を混ぜるため、候補内だけを採用してdropを証拠化する。8Bは未使用である。
 
-## 残り
+## 判定
 
-t08では同一runtime・同一DBで複数stepを継続し、同じ意味対象の再試行禁止、復帰edge、複数node／edgeの永続化を実証する。
+NIKKEで反応を持つClick、KeyTap、Scroll、Dragはゲーム内効果まで確認した。HoverはNIKKEの非反応を`Stayed`のまま保存し、ゲーム共通GameLabで受理を確認した。gameが受理しない操作を成功へ丸めていない。

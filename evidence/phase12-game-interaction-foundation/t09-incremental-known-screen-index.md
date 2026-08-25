@@ -44,8 +44,8 @@
 - 保存actionを最新frameへ再束縛
 - Nano Click dispatch 1
 - Comparison: Moved
-- expected destinationとobserved destinationが完全一致
-- `DestinationMatched=true`
+- `TransitionObserved=true`。これは再探索を起動しない条件であり、OCR由来state IDの厳密一致とは分離する
+- `DestinationMatched`はexpected／observed state IDが厳密一致した時だけtrueにする
 - 実行後はHost `game-index back`、AI call 0でアークへ復帰
 
 ## 構造
@@ -54,15 +54,16 @@
 2. `RememberDestination`は安定観測後に行き先だけを追記する。
 3. ページanchorはWindows OCR複数frameの共通文字・近接位置から2件選ぶ。AI出力をanchorにしない。
 4. `KnownScreenActionRuntime.ExecuteKnownAsync`はFoundry型を参照せず、WGC、Windows OCR、SQLite profile、Nanoだけを使う。
-5. 未登録actionはKnown実行で明示エラーとなり、AIへ黙ってfallbackしない。
+5. 未登録actionはKnown実行で明示エラーとなり、AIへ黙ってfallbackしない。保存済みactionは`TransitionObserved=false`の時だけ再探索条件になる。
 6. actionはrisk admission成功後・dispatch直前だけ保存する。destination未確定、Game Policy不許可、現行risk禁止のactionはKnown実行しない。
 
-## 非対応
+## 現在の制約
 
-- icon-only controlの初回発見
 - OCRで安定anchorを2件作れないページ
-- 保存destinationと再観測destinationが一致しない操作の成功扱い
+- 保存actionを送出して10秒観測しても`Moved`にならない操作はdestination未確定のまま保持する
 - 全ボタンの事前列挙
+
+icon-only／画像controlは後続実測で、局所visual patchによる初回発見、destination保存、Foundry停止中のAI0再実行まで成立した。証拠は`host-visual-image-discover-ai1.json`と`host-visual-image-known-execute-ai0.json`。
 
 ## 最終検証
 

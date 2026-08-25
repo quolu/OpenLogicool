@@ -49,6 +49,11 @@ public static class VisualPatchMatcher
         return difference <= maximumMeanAbsoluteDifference;
     }
 
+    public static double MeanAbsoluteDifference(
+        VisualPatchSignature left,
+        VisualPatchSignature right) =>
+        VisualPatchSignatureComparer.MeanAbsoluteDifference(left, right);
+
     private static byte[] Sample(CapturedFrame frame, IReadOnlyList<double> bounds)
     {
         Validate(frame, bounds);

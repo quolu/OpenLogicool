@@ -119,8 +119,17 @@ public sealed class IncrementalKnownScreenIndex(
         var source = RememberControl(beforeSamples, control, evidenceId);
         var document = store.Load(gameId, environmentScope)
             ?? throw new InvalidOperationException("保存直後のknown screen indexを読み出せません。");
-        var (destination, states) = EnsureState(document.States, destinationSamples, evidenceId);
+        var (rawDestination, states) = EnsureState(document.States, destinationSamples, evidenceId);
         var sourceState = states.Single(state => state.StateId == source.PageStateId);
+        var destination = rawDestination.StateId == sourceState.StateId
+            ? rawDestination
+            : rawDestination with
+            {
+                SupersedesStateIds = (rawDestination.SupersedesStateIds ?? [])
+                    .Append(sourceState.StateId)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray(),
+            };
         var action = sourceState.Affordances.Single(item => item.CandidateId == source.ActionId) with
         {
             DestinationStateId = destination.StateId,

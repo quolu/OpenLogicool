@@ -1,0 +1,46 @@
+{
+  "Mode": "learn-operation",
+  "ProductHostEntry": true,
+  "SourceActionId": "known-action:b63afe89530c77d3b27210d06a7c6334ab463fbbaea28939e12a52cbf5ce1cd3",
+  "Operation": "hover",
+  "ActionId": "known-action:b63afe89530c77d3b27210d06a7c6334ab463fbbaea28939e12a52cbf5ce1cd3",
+  "Saved": true,
+  "MaximumFrameFreshnessMilliseconds": 2000,
+  "Dispatch": {
+    "SchemaVersion": "0.3.0",
+    "Operation": "hover",
+    "Status": "Dispatched",
+    "ObservationId": "observation:window:game-index:59008:1:4f7cda275504491fb691dbda39e87219",
+    "TargetWindowSourceId": "window:game-index:59008",
+    "Route": "NanoSerialHid",
+    "DispatchCount": 1,
+    "StartedUtc": "2026-08-25T09:02:16.1636819+00:00",
+    "CompletedUtc": "2026-08-25T09:02:16.4704154+00:00",
+    "CandidateId": "known-action:b63afe89530c77d3b27210d06a7c6334ab463fbbaea28939e12a52cbf5ce1cd3",
+    "TransportReceiptId": "pointer:698,436-\u003E626,763;deltas:20",
+    "FailureReason": null
+  },
+  "Comparison": {
+    "SchemaVersion": "0.3.0",
+    "BeforeObservationId": "observation:window:game-index:59008:1:4f7cda275504491fb691dbda39e87219",
+    "AfterObservationId": "observation:window:game-index:59008:2:955f353a79c14beb9adbba6d6e42c27e",
+    "Judgement": "Moved",
+    "ChangedRegions": [
+      {
+        "SchemaVersion": "0.3.0",
+        "Shape": "rect",
+        "normalized": [
+          0.325,
+          0.865,
+          0.15,
+          0.05
+        ],
+        "recognizer": "visual-patch-hover-change"
+      }
+    ],
+    "Reasons": [
+      "\u4FDD\u5B58\u6E08\u307Ftarget patch\u304Chover\u5F8C\u306B\u5909\u5316"
+    ]
+  },
+  "AiCallCount": 0
+}

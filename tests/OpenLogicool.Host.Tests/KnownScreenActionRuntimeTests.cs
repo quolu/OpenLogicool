@@ -5,6 +5,7 @@ using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Exploration;
 using OpenLogicool.Host;
 using OpenLogicool.Input;
+using OpenLogicool.Perception;
 using Xunit;
 
 namespace OpenLogicool.Host.Tests;
@@ -40,6 +41,7 @@ public sealed class KnownScreenActionRuntimeTests
         Assert.Equal(GameInteractionDispatchStatus.Dispatched, result.Dispatch.Status);
         Assert.Equal(1, device.ClickCount);
         Assert.Equal("state-b", result.ObservedDestinationStateId);
+        Assert.True(result.TransitionObserved);
         Assert.True(result.DestinationMatched);
     }
 
@@ -67,8 +69,98 @@ public sealed class KnownScreenActionRuntimeTests
         Assert.Equal(1, device.HoverCount);
         Assert.Equal(0, device.ClickCount);
         Assert.Equal(GameTransitionJudgement.Stayed, result.Comparison.Judgement);
+        Assert.False(result.TransitionObserved);
         Assert.False(result.DestinationMatched);
         Assert.Equal(0, result.AiCallCount);
+    }
+
+    [Fact]
+    public async Task Hover_patch_change_cannot_override_stability_timeout()
+    {
+        var bounds = new[] { 0.4, 0.4, 0.1, 0.05 };
+        var signature = new LearnedAffordanceSignature(
+            "action-a",
+            "locator-a",
+            "アリーナ",
+            bounds,
+            [GameInteractionOperations.Hover],
+            ["evidence-a"],
+            "state-a",
+            VisualPatch: VisualPatchMatcher.Capture(PixelFrame(40), bounds));
+        var profile = Profile(GameInteractionOperations.Hover, "state-a") with
+        {
+            States = [State("state-a", [signature]), State("state-b", [])],
+        };
+        var before = Scene("state-a", 1, includeAction: true, GameInteractionOperations.Hover);
+        var after = Scene("state-a", 2, includeAction: true, GameInteractionOperations.Hover);
+        var runtime = new KnownScreenActionRuntime(
+            new ObservationRuntime(before, PixelFrame(50)),
+            new NanoGameInteractionActions(new RecordingDevice(), new Mapper()),
+            new Stability(after, GameInteractionStabilityStatus.TimedOut),
+            new GameTransitionJudge(),
+            new ProfileStore(profile),
+            "nikke",
+            "env",
+            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
+            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            gamePolicyAllowsExecute: true);
+
+        var result = await runtime.ExecuteKnownAsync("action-a");
+
+        Assert.Equal(GameTransitionJudgement.Undetermined, result.Comparison.Judgement);
+        Assert.False(result.TransitionObserved);
+        Assert.False(result.DestinationMatched);
+    }
+
+    [Fact]
+    public async Task Moved_to_a_different_destination_is_observed_but_not_destination_matched()
+    {
+        var profile = Profile();
+        var runtime = new KnownScreenActionRuntime(
+            new ObservationRuntime(Scene("state-a", 1, includeAction: true)),
+            new NanoGameInteractionActions(new RecordingDevice(), new Mapper()),
+            new Stability(Scene("state-c", 2, includeAction: false)),
+            new GameTransitionJudge(),
+            new ProfileStore(profile),
+            "nikke",
+            "env",
+            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
+            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            gamePolicyAllowsExecute: true);
+
+        var result = await runtime.ExecuteKnownAsync("action-a");
+
+        Assert.Equal(GameTransitionJudgement.Moved, result.Comparison.Judgement);
+        Assert.True(result.TransitionObserved);
+        Assert.Equal("state-c", result.ObservedDestinationStateId);
+        Assert.False(result.DestinationMatched);
+    }
+
+    [Fact]
+    public async Task Stale_known_screen_never_reaches_nano_dispatch()
+    {
+        var device = new RecordingDevice();
+        var stale = Scene("state-a", 1, includeAction: true) with
+        {
+            CaptureAvailability = CaptureAvailability.Stale,
+        };
+        var runtime = new KnownScreenActionRuntime(
+            new ObservationRuntime(stale),
+            new NanoGameInteractionActions(device, new Mapper()),
+            new Stability(Scene("state-b", 2, includeAction: false)),
+            new GameTransitionJudge(),
+            new ProfileStore(Profile()),
+            "nikke",
+            "env",
+            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
+            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            gamePolicyAllowsExecute: true);
+
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await runtime.ExecuteKnownAsync("action-a"));
+
+        Assert.Contains("fresh", failure.Message);
+        Assert.Equal(0, device.ClickCount);
     }
 
     [Theory]
@@ -102,6 +194,7 @@ public sealed class KnownScreenActionRuntimeTests
 
         Assert.Equal(0, result.AiCallCount);
         Assert.Equal(GameTransitionJudgement.Moved, result.Comparison.Judgement);
+        Assert.True(result.TransitionObserved);
         Assert.True(result.DestinationMatched);
         Assert.Equal(operation == GameInteractionOperations.KeyTap ? 1 : 0, device.KeyTapCount);
         Assert.Equal(operation == GameInteractionOperations.Scroll ? 1 : 0, device.ScrollCount);
@@ -209,8 +302,40 @@ public sealed class KnownScreenActionRuntimeTests
             "known-screen-index-v1");
     }
 
-    private sealed class ObservationRuntime(ObservedScene scene) : IGameObservationRuntime
+    private static CapturedFrame PixelFrame(byte value)
     {
+        const int width = 16;
+        const int height = 16;
+        return new CapturedFrame(
+            ContractSchemaVersions.Revision03,
+            "window:nikke",
+            CaptureBackend.WindowsGraphicsCapture,
+            2,
+            200,
+            DateTimeOffset.UnixEpoch,
+            width,
+            height,
+            "BGRA8",
+            96,
+            96,
+            1,
+            0,
+            0,
+            Pixels: new FramePixels(Enumerable.Repeat(value, width * height * 4).ToArray(), width * 4));
+    }
+
+    private sealed class ObservationRuntime : IGameObservationRuntime, ILastCapturedFrameProvider
+    {
+        private readonly ObservedScene scene;
+
+        public ObservationRuntime(ObservedScene scene, CapturedFrame? lastFrame = null)
+        {
+            this.scene = scene;
+            LastFrame = lastFrame;
+        }
+
+        public CapturedFrame? LastFrame { get; }
+
         public ValueTask<ObservationResult> ObserveAsync(CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new ObservationResult(
                 ContractSchemaVersions.Revision03,
@@ -228,7 +353,9 @@ public sealed class KnownScreenActionRuntimeTests
             CancellationToken cancellationToken = default) => ValueTask.FromResult(scene);
     }
 
-    private sealed class Stability(ObservedScene after) : IGameInteractionStabilityWaiter
+    private sealed class Stability(
+        ObservedScene after,
+        GameInteractionStabilityStatus status = GameInteractionStabilityStatus.Stable) : IGameInteractionStabilityWaiter
     {
         public ValueTask<GameInteractionStabilityResult> WaitStableAsync(
             ObservedScene before,
@@ -236,9 +363,9 @@ public sealed class KnownScreenActionRuntimeTests
             CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new GameInteractionStabilityResult(
                 ContractSchemaVersions.Revision03,
-                GameInteractionStabilityStatus.Stable,
+                status,
                 [after],
-                after,
+                status == GameInteractionStabilityStatus.Stable ? after : null,
                 2,
                 1_000,
                 1_000,

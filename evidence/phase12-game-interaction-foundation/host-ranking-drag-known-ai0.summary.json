@@ -1,0 +1,17 @@
+{
+  "SchemaVersion": "summary-1",
+  "DerivedFrom": "host-ranking-drag-known-ai0.json",
+  "DerivedFromSha256": "0dcd75f21651eb87b81388823e99aca4de0e52f55a4f3daad77f708689e6973d",
+  "ActionId": "known-action:9258b3fd5a9902d6b3a6cc30b4722826c8b03a633e6e55a03b71ceb9819988e0",
+  "ExpectedDestinationStateId": "known-screen:b05277e2f649620552f504fe58c8cfac2ecdaa3a40ea1df2f2e9b00bc20c2ecf",
+  "ObservedDestinationStateId": null,
+  "TransitionObserved": true,
+  "DestinationMatched": false,
+  "AiCallCount": 0,
+  "DispatchStatus": "Dispatched",
+  "TransportReceiptId": "start:pointer:1363,842->1363,842;deltas:0;drag:pointer:1363,842->1363,485;deltas:22;mouse-left-up",
+  "StabilityStatus": "Stable",
+  "ElapsedMilliseconds": 10033,
+  "ObservationCount": 20,
+  "Judgement": "Moved"
+}

@@ -1,0 +1,17 @@
+{
+  "SchemaVersion": "summary-1",
+  "DerivedFrom": "host-ranking-scroll-known-ai0.json",
+  "DerivedFromSha256": "57ebf6573ddd9c7f8358cdbca9bf82c2ede9681602942bc2659777f7cba6b174",
+  "ActionId": "known-action:01055c9ec068882c8e7ca29491587dd777f16f5c9969b4434909afff84eab40c",
+  "ExpectedDestinationStateId": "known-screen:b05277e2f649620552f504fe58c8cfac2ecdaa3a40ea1df2f2e9b00bc20c2ecf",
+  "ObservedDestinationStateId": null,
+  "TransitionObserved": true,
+  "DestinationMatched": false,
+  "AiCallCount": 0,
+  "DispatchStatus": "Dispatched",
+  "TransportReceiptId": "pointer:1361,723->1361,723;deltas:0;wheel:-5;ack:12",
+  "StabilityStatus": "Stable",
+  "ElapsedMilliseconds": 10091,
+  "ObservationCount": 20,
+  "Judgement": "Moved"
+}

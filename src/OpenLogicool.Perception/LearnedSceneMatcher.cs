@@ -134,7 +134,10 @@ public static class LearnedSceneMatcher
             identity == StateIdentityStatus.Known ? effective[0].State.StateId : null,
             candidates,
             affordances,
-            $"{profile.ProfileVersion}/{ocr.RecognizerVersion}");
+            $"{profile.ProfileVersion}/{ocr.RecognizerVersion}",
+            SceneVisualPatch: frame.Pixels is null
+                ? null
+                : VisualPatchMatcher.Capture(frame, [0d, 0d, 1d, 1d]));
     }
 
     private static StateMatch? MatchState(

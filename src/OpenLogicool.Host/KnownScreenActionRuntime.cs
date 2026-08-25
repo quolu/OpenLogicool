@@ -14,6 +14,7 @@ public sealed record KnownScreenActionExecutionResult(
     GameInteractionStabilityResult Stability,
     GameTransitionComparison Comparison,
     string? ObservedDestinationStateId,
+    bool TransitionObserved,
     bool DestinationMatched,
     int AiCallCount);
 
@@ -30,6 +31,8 @@ public sealed class KnownScreenActionRuntime(
     IExplorationCandidateRiskPolicy riskPolicy,
     bool gamePolicyAllowsExecute)
 {
+    private const double HoverMaximumMeanAbsoluteDifference = 0.5;
+
     public async ValueTask<KnownScreenActionExecutionResult> ExecuteKnownAsync(
         string actionId,
         CancellationToken cancellationToken = default)
@@ -37,6 +40,10 @@ public sealed class KnownScreenActionRuntime(
         ArgumentException.ThrowIfNullOrWhiteSpace(actionId);
         var observed = await observation.ObserveAsync(cancellationToken).ConfigureAwait(false);
         var before = await observation.DiscoverTargetsAsync(observed, cancellationToken).ConfigureAwait(false);
+        if (before.CaptureAvailability != CaptureAvailability.Available)
+        {
+            throw new InvalidOperationException("freshな現在画面を取得できないため保存済みactionを実行しません。");
+        }
         if (before.StateIdentity != StateIdentityStatus.Known || before.StateHypothesisId is null)
         {
             throw new InvalidOperationException("現在ページを既知索引へ一意に照合できません。");
@@ -100,10 +107,15 @@ public sealed class KnownScreenActionRuntime(
         var waited = await stability.WaitStableAsync(before, waitCondition, cancellationToken).ConfigureAwait(false);
         var comparison = judge.Compare(before, waited);
         if (operation == GameInteractionOperations.Hover
+            && waited.Status == GameInteractionStabilityStatus.Stable
             && signature.VisualPatch is not null
             && observation is ILastCapturedFrameProvider frameProvider
             && frameProvider.LastFrame is { } lastFrame
-            && !VisualPatchMatcher.Matches(signature.VisualPatch, lastFrame, signature.NormalizedBounds))
+            && !VisualPatchMatcher.Matches(
+                signature.VisualPatch,
+                lastFrame,
+                signature.NormalizedBounds,
+                maximumMeanAbsoluteDifference: HoverMaximumMeanAbsoluteDifference))
         {
             comparison = new GameTransitionComparison(
                 ContractSchemaVersions.Revision03,
@@ -118,10 +130,10 @@ public sealed class KnownScreenActionRuntime(
                 ["保存済みtarget patchがhover後に変化"]);
         }
         var observedDestination = waited.StableScene?.StateHypothesisId;
-        var matched = comparison.Judgement == GameTransitionJudgement.Moved
-            && (operation is GameInteractionOperations.Hover or GameInteractionOperations.Scroll or GameInteractionOperations.Drag
-                || signature.DestinationStateId is null
-                || string.Equals(signature.DestinationStateId, observedDestination, StringComparison.Ordinal));
+        var transitionObserved = comparison.Judgement == GameTransitionJudgement.Moved;
+        var destinationMatched = transitionObserved
+            && observedDestination is not null
+            && string.Equals(signature.DestinationStateId, observedDestination, StringComparison.Ordinal);
         return new KnownScreenActionExecutionResult(
             actionId,
             state.StateId,
@@ -130,7 +142,8 @@ public sealed class KnownScreenActionRuntime(
             waited,
             comparison,
             observedDestination,
-            matched,
+            transitionObserved,
+            destinationMatched,
             AiCallCount: 0);
     }
 }

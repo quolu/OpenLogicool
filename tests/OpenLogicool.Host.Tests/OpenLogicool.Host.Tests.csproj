@@ -14,6 +14,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\OpenLogicool.Exploration\OpenLogicool.Exploration.csproj" />
     <ProjectReference Include="..\..\src\OpenLogicool.Host\OpenLogicool.Host.csproj" />
     <ProjectReference Include="..\..\src\OpenLogicool.Launcher\OpenLogicool.Launcher.csproj" />
   </ItemGroup>

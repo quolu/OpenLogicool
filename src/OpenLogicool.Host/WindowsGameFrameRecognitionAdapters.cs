@@ -1,4 +1,5 @@
 using System.IO;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using OpenLogicool.AI;
@@ -251,6 +252,11 @@ public sealed class WindowsGameOcrRecognizer(int scaleFactor = 2) : IWindowsGame
 public interface IGameFramePngEncoder
 {
     EncodedGameFramePng Encode(CapturedFrame frame, int maximumDimension = int.MaxValue);
+
+    EncodedGameFramePng EncodeRegion(
+        CapturedFrame frame,
+        IReadOnlyList<double> normalizedBounds,
+        int maximumDimension = int.MaxValue);
 }
 
 public sealed record EncodedGameFramePng(ReadOnlyMemory<byte> Bytes, int Width, int Height);
@@ -287,6 +293,50 @@ public sealed class WindowsGameFramePngEncoder : IGameFramePngEncoder
         encoder.Save(stream);
         return new EncodedGameFramePng(stream.ToArray(), bitmap.PixelWidth, bitmap.PixelHeight);
     }
+
+    public EncodedGameFramePng EncodeRegion(
+        CapturedFrame frame,
+        IReadOnlyList<double> normalizedBounds,
+        int maximumDimension = int.MaxValue)
+    {
+        ArgumentNullException.ThrowIfNull(frame);
+        if (normalizedBounds is not { Count: 4 }
+            || normalizedBounds.Any(value => !double.IsFinite(value) || value is < 0 or > 1)
+            || normalizedBounds[2] <= 0
+            || normalizedBounds[3] <= 0
+            || normalizedBounds[0] + normalizedBounds[2] > 1
+            || normalizedBounds[1] + normalizedBounds[3] > 1)
+        {
+            throw new ArgumentException("vision crop boundsが不正です。", nameof(normalizedBounds));
+        }
+        var pixels = frame.Pixels
+            ?? throw new InvalidOperationException("PNG encodeにはBGRA8 frame pixelsが必要です。");
+        BitmapSource bitmap = BitmapSource.Create(
+            frame.Width,
+            frame.Height,
+            frame.DpiX,
+            frame.DpiY,
+            PixelFormats.Bgra32,
+            null,
+            pixels.Bgra8.ToArray(),
+            pixels.Stride);
+        var left = Math.Clamp((int)Math.Floor(normalizedBounds[0] * frame.Width), 0, frame.Width - 1);
+        var top = Math.Clamp((int)Math.Floor(normalizedBounds[1] * frame.Height), 0, frame.Height - 1);
+        var right = Math.Clamp((int)Math.Ceiling((normalizedBounds[0] + normalizedBounds[2]) * frame.Width), left + 1, frame.Width);
+        var bottom = Math.Clamp((int)Math.Ceiling((normalizedBounds[1] + normalizedBounds[3]) * frame.Height), top + 1, frame.Height);
+        bitmap = new CroppedBitmap(bitmap, new Int32Rect(left, top, right - left, bottom - top));
+        var longest = Math.Max(bitmap.PixelWidth, bitmap.PixelHeight);
+        if (longest > maximumDimension)
+        {
+            var scale = maximumDimension / (double)longest;
+            bitmap = new TransformedBitmap(bitmap, new ScaleTransform(scale, scale));
+        }
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using var stream = new MemoryStream();
+        encoder.Save(stream);
+        return new EncodedGameFramePng(stream.ToArray(), bitmap.PixelWidth, bitmap.PixelHeight);
+    }
 }
 
 /// <summary>Foundry Local controlsとWindows OCRを同じWGC frameへ束縛するadapter。</summary>
@@ -296,7 +346,8 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
     IGameFramePngEncoder pngEncoder,
     Func<string> structureRevisionId,
     string? targetIntent = null,
-    string interactionOperation = GameInteractionOperations.Click) : IProductGameTargetDiscovery, ILocalAiCallCounter
+    string interactionOperation = GameInteractionOperations.Click,
+    IReadOnlyList<double>? visualSearchRegion = null) : IProductGameTargetDiscovery, ILocalAiCallCounter
 {
     private const int MaximumVisionDimension = 1280;
     private int discoveryCount;
@@ -318,7 +369,9 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
         {
             return LocalTargetTrackingSceneBuilder.Build(observation, frame, textRegions, initialTargets);
         }
-        var png = pngEncoder.Encode(frame, MaximumVisionDimension);
+        var png = visualSearchRegion is null
+            ? pngEncoder.Encode(frame, MaximumVisionDimension)
+            : pngEncoder.EncodeRegion(frame, visualSearchRegion, MaximumVisionDimension);
         Interlocked.Increment(ref aiCallCount);
         var request = new LocalVisionSceneRequest(
             ContractSchemaVersions.Revision03,
@@ -337,6 +390,10 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
             targetIntent);
         var discovered = await provider.ObserveAsync(request, png.Bytes, cancellationToken).ConfigureAwait(false);
         var groundedTargets = discovered.Scene.Affordances
+            .Select(candidate => visualSearchRegion is null ? candidate : MapFromCrop(candidate, visualSearchRegion))
+            .Select(candidate => visualSearchRegion is null
+                ? candidate
+                : VisualControlLocalGrounder.RebindAfterFailedTransition(candidate, textRegions))
             .Select(candidate => VisualControlLocalGrounder.Ground(candidate, textRegions, frame))
             .Where(candidate => candidate is not null)
             .Select(candidate => candidate! with { SemanticKind = "probe-target" })
@@ -356,6 +413,37 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
                     .Select(region => new SceneGroundingRegion(region.Text, region.EvidenceRegion))
                     .ToArray(),
             },
+            SceneVisualPatch = VisualPatchMatcher.Capture(frame, [0d, 0d, 1d, 1d]),
+        };
+    }
+
+    private static AffordanceCandidate MapFromCrop(
+        AffordanceCandidate candidate,
+        IReadOnlyList<double> crop)
+    {
+        var local = candidate.Locator.NormalizedBounds;
+        var full = new[]
+        {
+            crop[0] + local[0] * crop[2],
+            crop[1] + local[1] * crop[3],
+            local[2] * crop[2],
+            local[3] * crop[3],
+        };
+        return candidate with
+        {
+            Locator = candidate.Locator with { NormalizedBounds = full },
+            EvidenceRegions = candidate.EvidenceRegions
+                .Select(region => region with
+                {
+                    NormalizedBounds =
+                    [
+                        crop[0] + region.NormalizedBounds[0] * crop[2],
+                        crop[1] + region.NormalizedBounds[1] * crop[3],
+                        region.NormalizedBounds[2] * crop[2],
+                        region.NormalizedBounds[3] * crop[3],
+                    ],
+                })
+                .ToArray(),
         };
     }
 
@@ -412,7 +500,8 @@ public static class LocalTargetTrackingSceneBuilder
                 0,
                 0m,
                 LocalGroundingTexts: textRegions.Select(region => region.Text).ToArray(),
-                LocalGroundingRegions: groundingRegions));
+                LocalGroundingRegions: groundingRegions),
+            VisualPatchMatcher.Capture(frame, [0d, 0d, 1d, 1d]));
     }
 
     private static AffordanceCandidate? Track(
@@ -478,7 +567,7 @@ public static class LocalTargetTrackingSceneBuilder
             VisualPatch = patch,
         };
 
-    private static IReadOnlyList<AffordanceCandidate> StructuralText(
+    public static IReadOnlyList<AffordanceCandidate> StructuralText(
         ObservationResult observation,
         CapturedFrame frame,
         IReadOnlyList<LocalVisionTextRegion> textRegions,
@@ -510,6 +599,26 @@ public static class LocalTargetTrackingSceneBuilder
 
 public static class VisualControlLocalGrounder
 {
+    public static AffordanceCandidate RebindAfterFailedTransition(
+        AffordanceCandidate candidate,
+        IReadOnlyList<LocalVisionTextRegion> textRegions)
+    {
+        var match = FindUniqueExactLabelRegion(textRegions, candidate.SemanticLabel);
+        if (match.Ambiguous || match.Region is null)
+        {
+            return candidate;
+        }
+        return candidate with
+        {
+            Locator = candidate.Locator with
+            {
+                LocatorType = "rediscovery-ocr-region",
+                NormalizedBounds = match.Region.EvidenceRegion.NormalizedBounds.ToArray(),
+            },
+            EvidenceRegions = [.. candidate.EvidenceRegions, match.Region.EvidenceRegion],
+        };
+    }
+
     public static AffordanceCandidate? Ground(
         AffordanceCandidate candidate,
         IReadOnlyList<LocalVisionTextRegion> textRegions,
@@ -527,6 +636,7 @@ public static class VisualControlLocalGrounder
         {
             EvidenceRegions = [.. candidate.EvidenceRegions, .. textInsideProviderBounds],
             VisualPatch = VisualPatchMatcher.Capture(frame, providerBounds),
+            ContextTexts = textRegions.Select(region => region.Text).ToArray(),
         };
     }
 

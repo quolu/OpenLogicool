@@ -25,7 +25,9 @@ public sealed class SerialHidDiscoveryService(
 
     public IReadOnlyList<SerialHidCandidate> ListCandidates() => candidates.EnumerateCandidates();
 
-    public SerialHidSessionSelection Resolve(string? selectedDeviceInstanceId)
+    public SerialHidSessionSelection Resolve(
+        string? selectedDeviceInstanceId,
+        SerialHidCapability requestedCapabilities = SerialHidProtocolV1.BaselineCapabilities)
     {
         var allCandidates = candidates.EnumerateCandidates();
         IReadOnlyList<SerialHidCandidate> eligible = selectedDeviceInstanceId is null
@@ -49,7 +51,11 @@ public sealed class SerialHidDiscoveryService(
             try
             {
                 exchange = exchangeFactory.Open(candidate);
-                var protocol = SerialHidProtocolSession.Connect(exchange, HostVersion, RequestTimeout);
+                var protocol = SerialHidProtocolSession.Connect(
+                    exchange,
+                    HostVersion,
+                    RequestTimeout,
+                    requestedCapabilities);
                 successes.Add(new SerialHidSessionSelection(
                     candidate,
                     protocol.ReadyInfo,

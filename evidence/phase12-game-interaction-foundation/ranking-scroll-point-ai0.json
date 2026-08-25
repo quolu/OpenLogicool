@@ -1,0 +1,23 @@
+{
+  "Mode": "scroll-point",
+  "ProductHostEntry": true,
+  "X": 0.5,
+  "Y": 0.6,
+  "Vertical": -5,
+  "Horizontal": 0,
+  "dispatch": {
+    "SchemaVersion": "0.3.0",
+    "Operation": "scroll",
+    "Status": "Dispatched",
+    "ObservationId": "observation:window:game-index:27492:2",
+    "TargetWindowSourceId": "window:game-index:27492",
+    "Route": "NanoSerialHid",
+    "DispatchCount": 1,
+    "StartedUtc": "2026-08-25T07:57:15.700095+00:00",
+    "CompletedUtc": "2026-08-25T07:57:16.1200506+00:00",
+    "CandidateId": "host-scroll-point",
+    "TransportReceiptId": "pointer:2669,261-\u003E1365,723;deltas:27;wheel:-5;ack:41",
+    "FailureReason": null
+  },
+  "AiCallCount": 0
+}

@@ -436,6 +436,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 return Result(ProductGameExplorerStepStatus.AdmissionStopped, decision.Detail, before, target);
             }
             var sourceSamples = await CaptureSourceSamplesAsync(before, cancellationToken).ConfigureAwait(false);
+            var stableBefore = ConsolidateSourceScene(before, sourceSamples);
             currentObservation = observed;
             var indexedTarget = target with
             {
@@ -480,8 +481,8 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                     coordinator.CurrentStructureRevisionId,
                     exception.Message);
             }
-            var waited = await WaitStableAsync(before, proposal.WaitCondition, cancellationToken).ConfigureAwait(false);
-            var comparison = Compare(before, waited);
+            var waited = await WaitStableAsync(stableBefore, proposal.WaitCondition, cancellationToken).ConfigureAwait(false);
+            var comparison = Compare(stableBefore, waited);
             if (waited.Observations.Count == 0)
             {
                 stopReasonLabel = "after Observationを取得できずOutcomeUnknown";
@@ -500,7 +501,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             var learned = LearnTransition(new GameTransitionLearningRequest(
                 ContractSchemaVersions.Revision03,
                 proposal.ProposalId,
-                before,
+                stableBefore,
                 dispatch!,
                 waited,
                 comparison,
@@ -526,7 +527,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                         learned.Evidence.EvidenceId);
                 }
                 _ = structure.Commit(
-                    before,
+                    stableBefore,
                     after,
                     learned.Evidence,
                     proposal.WaitCondition,
@@ -540,7 +541,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             stopReasonLabel = "停止していません";
             return new ProductGameExplorerStepResult(
                 ProductGameExplorerStepStatus.Learned,
-                before,
+                stableBefore,
                 target,
                 dispatch,
                 waited,
@@ -553,6 +554,20 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         {
             execution.Release();
         }
+    }
+
+    private static ObservedScene ConsolidateSourceScene(
+        ObservedScene before,
+        IReadOnlyList<ObservedScene> samples)
+    {
+        var stable = before.Affordances
+            .Where(candidate => string.Equals(candidate.SemanticKind, "probe-target", StringComparison.Ordinal)
+                || samples.Skip(1).All(sample => sample.Affordances.Any(other =>
+                    GameSceneSemanticComparer.AffordanceKeySimilar(
+                        GameSceneSemanticComparer.TargetKey(candidate),
+                        GameSceneSemanticComparer.TargetKey(other)))))
+            .ToArray();
+        return before with { Affordances = stable };
     }
 
     private async ValueTask<IReadOnlyList<ObservedScene>> CaptureSourceSamplesAsync(

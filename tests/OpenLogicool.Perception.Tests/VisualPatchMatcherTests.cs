@@ -1,4 +1,5 @@
 using OpenLogicool.Contracts.Capture;
+using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Perception;
 using Xunit;
 
@@ -14,6 +15,24 @@ public sealed class VisualPatchMatcherTests
 
         Assert.True(VisualPatchMatcher.Matches(signature, original, [0.25, 0.25, 0.5, 0.5]));
         Assert.False(VisualPatchMatcher.Matches(signature, Frame(220), [0.25, 0.25, 0.5, 0.5]));
+        Assert.Equal(0, VisualPatchSignatureComparer.MeanAbsoluteDifference(signature, signature));
+        Assert.True(VisualPatchSignatureComparer.MeanAbsoluteDifference(
+            signature,
+            VisualPatchMatcher.Capture(Frame(220), [0.25, 0.25, 0.5, 0.5])) > 100);
+    }
+
+    [Fact]
+    public void Hover_change_uses_stricter_sensitivity_than_saved_image_identity()
+    {
+        var bounds = new[] { 0.25, 0.25, 0.5, 0.5 };
+        var signature = VisualPatchMatcher.Capture(Frame(40), bounds);
+
+        Assert.True(VisualPatchMatcher.Matches(signature, Frame(50), bounds));
+        Assert.False(VisualPatchMatcher.Matches(
+            signature,
+            Frame(50),
+            bounds,
+            maximumMeanAbsoluteDifference: 0.5));
     }
 
     private static CapturedFrame Frame(byte value)

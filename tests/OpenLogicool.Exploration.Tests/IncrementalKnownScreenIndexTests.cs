@@ -44,6 +44,8 @@ public sealed class IncrementalKnownScreenIndexTests
         savedArena = sourceState.Affordances.Single(action => action.CandidateId == linked.ActionId);
         Assert.Equal(linked.DestinationStateId, savedArena.DestinationStateId);
         Assert.Equal(2, sourceState.Affordances.Count);
+        var destinationState = store.Document.States.Single(state => state.StateId == linked.DestinationStateId);
+        Assert.Contains(sourceState.StateId, destinationState.SupersedesStateIds!);
     }
 
     [Fact]
