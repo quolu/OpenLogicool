@@ -1,0 +1,27 @@
+{
+  "schema": "lattice.phase_accept_input.v1",
+  "review_event_digest": "901a431b5ca50e7376c577bbd447f9ba7c2cf7847b8d78192b472c464612c33a",
+  "decision_evidence": {
+    "anchor_digest": null,
+    "content_digest": "a8935db9627b5f8e6e9db46fae3a595d70365c4ccba241cc6048920f82b680e5",
+    "evidence_id": "ev-phase12-foundation-current-canon-terminal-audit",
+    "git_blob_oid": "efd571858b005b304d6b7b8003ea13e0145c2b48",
+    "media_type": "text/markdown",
+    "path": "evidence/phase12-game-interaction-foundation/current-canon-purge-20260825.md",
+    "repo_id": "self"
+  },
+  "evidence_slots": [
+    {
+      "slot_id": "terminal-audit",
+      "evidence": {
+        "anchor_digest": null,
+        "content_digest": "a8935db9627b5f8e6e9db46fae3a595d70365c4ccba241cc6048920f82b680e5",
+        "evidence_id": "ev-phase12-foundation-current-canon-terminal-audit",
+        "git_blob_oid": "efd571858b005b304d6b7b8003ea13e0145c2b48",
+        "media_type": "text/markdown",
+        "path": "evidence/phase12-game-interaction-foundation/current-canon-purge-20260825.md",
+        "repo_id": "self"
+      }
+    }
+  ]
+}
