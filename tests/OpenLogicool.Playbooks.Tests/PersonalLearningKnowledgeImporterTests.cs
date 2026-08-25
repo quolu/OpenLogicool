@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Playbooks;
 using Xunit;
@@ -23,7 +24,7 @@ public sealed class PersonalLearningKnowledgeImporterTests
     }
 
     [Fact]
-    public void Import_rejects_document_without_hard_policy()
+    public void Import_rejects_document_without_required_steps_and_sources()
     {
         const string invalid =
             """
@@ -31,5 +32,17 @@ public sealed class PersonalLearningKnowledgeImporterTests
             """;
 
         Assert.Throws<ArgumentException>(() => PersonalLearningKnowledgeImporter.Parse(invalid));
+    }
+
+    [Fact]
+    public void Import_accepts_an_explicitly_empty_prohibited_tag_set()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "fixtures", "knowledge", "nikke-daily-phase10.v1.json");
+        var root = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+        root["ProhibitedRiskTags"] = new JsonArray();
+
+        var document = PersonalLearningKnowledgeImporter.Parse(root.ToJsonString());
+
+        Assert.Empty(document.ProhibitedRiskTags);
     }
 }

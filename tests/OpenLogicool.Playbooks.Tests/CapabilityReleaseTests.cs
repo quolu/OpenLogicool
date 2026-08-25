@@ -30,24 +30,20 @@ public sealed class CapabilityReleaseTests
         var supervisedDenied = CapabilityRelease.Evaluate(
             AllEnabled,
             GameOperatorCapability.Supervised,
-            Policy(GamePolicyReviewStatus.Unverified));
+            Policy(GamePolicyReviewStatus.Unverified, [GameAutomationMode.Observe]));
 
         Assert.Equal(CapabilityReleaseGateReason.GamePolicyDenied, observeDenied.Reason);
         Assert.Equal(CapabilityReleaseGateReason.GamePolicyDenied, supervisedDenied.Reason);
     }
 
     [Fact]
-    public void Verified_requires_an_exact_verified_environment_in_addition_to_auto_policy()
+    public void Verification_scope_is_claim_metadata_and_does_not_block_an_enabled_auto_mode()
     {
         var policy = Policy(GamePolicyReviewStatus.Confirmed);
-        var scope = new VerifiedEnvScope("gamelab:scenario-01");
+        var decision = CapabilityRelease.Evaluate(AllEnabled, GameOperatorCapability.Verified, policy);
 
-        var wrongEnvironment = CapabilityRelease.Evaluate(AllEnabled, GameOperatorCapability.Verified, policy, scope, "game:nikke");
-        var exactEnvironment = CapabilityRelease.Evaluate(AllEnabled, GameOperatorCapability.Verified, policy, scope, "gamelab:scenario-01");
-
-        Assert.Equal(CapabilityReleaseGateReason.EnvironmentNotVerified, wrongEnvironment.Reason);
-        Assert.True(exactEnvironment.IsReleased);
-        Assert.Equal(CapabilityReleaseGateReason.Released, exactEnvironment.Reason);
+        Assert.True(decision.IsReleased);
+        Assert.Equal(CapabilityReleaseGateReason.Released, decision.Reason);
     }
 
     private static GamePolicyRecord Policy(

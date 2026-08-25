@@ -1,5 +1,7 @@
 # NIKKE Global / Japan Game Policy Record
 
+> **Superseded historical record**: 本書は2026-08-24のG0／safe-slice実験だけのpolicy evidenceである。一手承認、可逆復帰、戦闘・開始等の固定禁止を現在のコアruntimeへ適用しない。現行の操作受付は`docs/development-plan.md` §0.3／§6.13.4を正とし、利用者がRunへ明示した禁止tagだけが有効である。
+
 取得・確認日: 2026-08-24
 確認者: OpenLogicool開発lane
 schema: `0.2.0`
@@ -38,4 +40,4 @@ owner risk acceptance: **2026-08-24、本人アカウントのBAN riskだけを�
 ## 再確認
 
 - 次回確認: Phase 9で別real targetを選ぶ時、またはNIKKE terms変更検出時
-- 変更検出時: review statusを`Changed`へ落とし、差分確認までAssist／Explore／Autoを拒否する
+- 変更検出時: review statusを`Changed`へ落として利用者へ表示する。現在の操作可否はRunへ明示した`AllowedModes`だけで決める

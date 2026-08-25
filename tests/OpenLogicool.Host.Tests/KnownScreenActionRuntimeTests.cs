@@ -32,7 +32,7 @@ public sealed class KnownScreenActionRuntimeTests
             "nikke",
             "env",
             new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 60_000),
-            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            UnclassifiedExplorationCandidateRiskPolicy.Default,
             gamePolicyAllowsExecute: true);
 
         var result = await runtime.ExecuteKnownAsync("action-a");
@@ -61,7 +61,7 @@ public sealed class KnownScreenActionRuntimeTests
             "nikke",
             "env",
             new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 60_000),
-            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            UnclassifiedExplorationCandidateRiskPolicy.Default,
             gamePolicyAllowsExecute: true);
 
         var result = await runtime.ExecuteKnownAsync("action-a");
@@ -102,7 +102,7 @@ public sealed class KnownScreenActionRuntimeTests
             "nikke",
             "env",
             new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
-            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            UnclassifiedExplorationCandidateRiskPolicy.Default,
             gamePolicyAllowsExecute: true);
 
         var result = await runtime.ExecuteKnownAsync("action-a");
@@ -125,7 +125,7 @@ public sealed class KnownScreenActionRuntimeTests
             "nikke",
             "env",
             new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
-            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            UnclassifiedExplorationCandidateRiskPolicy.Default,
             gamePolicyAllowsExecute: true);
 
         var result = await runtime.ExecuteKnownAsync("action-a");
@@ -153,7 +153,7 @@ public sealed class KnownScreenActionRuntimeTests
             "nikke",
             "env",
             new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
-            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            UnclassifiedExplorationCandidateRiskPolicy.Default,
             gamePolicyAllowsExecute: true);
 
         var failure = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -187,7 +187,7 @@ public sealed class KnownScreenActionRuntimeTests
             "nikke",
             "env",
             new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 60_000),
-            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            UnclassifiedExplorationCandidateRiskPolicy.Default,
             gamePolicyAllowsExecute: true);
 
         var result = await runtime.ExecuteKnownAsync("action-a");

@@ -105,7 +105,7 @@ public sealed class FaultMatrixTests
     private static long PrepareAttempt(AttemptDispatchGate gate, string attemptId, long firstSequence, string? commandId = null)
     {
         gate.CommitProposed(Event(firstSequence, RunEventPayloadTypes.Proposal, attemptId, commandId));
-        gate.CommitAuthorized(Event(firstSequence + 1, RunEventPayloadTypes.Approval, attemptId));
+        gate.CommitAuthorized(Event(firstSequence + 1, RunEventPayloadTypes.Authorization, attemptId));
         gate.MarkPrepared(attemptId);
         return firstSequence + 2;
     }

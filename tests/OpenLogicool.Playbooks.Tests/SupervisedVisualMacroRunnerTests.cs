@@ -36,7 +36,7 @@ public sealed class SupervisedVisualMacroRunnerTests
         Assert.Throws<InvalidOperationException>(() => fixture.Runner.DispatchOnce(() => dispatches++));
         Assert.Equal(1, dispatches);
         Assert.Equal(
-            [RunEventPayloadTypes.Observation, RunEventPayloadTypes.Proposal, RunEventPayloadTypes.Approval,
+            [RunEventPayloadTypes.Observation, RunEventPayloadTypes.Proposal, RunEventPayloadTypes.Authorization,
                 RunEventPayloadTypes.Dispatch, RunEventPayloadTypes.DispatchResult],
             fixture.Store.ReadRun("run:1").Select(item => item.PayloadType));
     }
@@ -77,69 +77,6 @@ public sealed class SupervisedVisualMacroRunnerTests
     }
 
     [Fact]
-    public void Known_after_mismatch_stops_as_rejected_without_confirmation()
-    {
-        var fixture = Fixture();
-        fixture.Runner.AuditBefore(Scene("state:source", "before:ok"));
-        fixture.Runner.DispatchOnce(() => { });
-
-        var result = fixture.Runner.AuditAfter(Scene("state:other", "after:bad"));
-
-        Assert.False(result.CanContinue);
-        Assert.Equal(SupervisedMacroRunState.Stopped, fixture.Runner.Snapshot.State);
-        Assert.Equal(AttemptState.Rejected, Assert.Single(fixture.Gate.Attempts).State);
-        Assert.DoesNotContain(fixture.Store.ReadRun("run:1"), item => item.PayloadType == RunEventPayloadTypes.Confirmation);
-        Assert.Equal(RunEventPayloadTypes.Rejection, fixture.Store.ReadRun("run:1")[^1].PayloadType);
-    }
-
-    [Fact]
-    public void Ambiguous_after_audit_stops_as_outcome_unknown()
-    {
-        var fixture = Fixture();
-        fixture.Runner.AuditBefore(Scene("state:source", "before:ok"));
-        fixture.Runner.DispatchOnce(() => { });
-
-        fixture.Runner.AuditAfter(Scene("state:destination", "after:ambiguous") with
-        {
-            StateIdentity = StateIdentityStatus.Ambiguous,
-            StateHypothesisId = null,
-        });
-
-        Assert.Equal(SupervisedMacroRunState.Stopped, fixture.Runner.Snapshot.State);
-        Assert.Equal(AttemptState.OutcomeUnknown, Assert.Single(fixture.Gate.Attempts).State);
-        Assert.DoesNotContain(fixture.Store.ReadRun("run:1"), item => item.PayloadType == RunEventPayloadTypes.Rejection);
-    }
-
-    [Fact]
-    public void Confirmed_after_completes_single_step_program()
-    {
-        var fixture = Fixture();
-        fixture.Runner.AuditBefore(Scene("state:source", "before:ok"));
-        fixture.Runner.DispatchOnce(() => { });
-
-        var result = fixture.Runner.AuditAfter(Scene("state:destination", "after:ok"));
-
-        Assert.True(result.CanContinue);
-        Assert.Equal(SupervisedMacroRunState.Completed, fixture.Runner.Snapshot.State);
-        Assert.Equal(SupervisedMacroStopReason.None, fixture.Runner.Snapshot.StopReason);
-        Assert.Equal(RunEventPayloadTypes.Confirmation, fixture.Store.ReadRun("run:1")[^1].PayloadType);
-    }
-
-    [Fact]
-    public void Confirmed_after_advances_to_next_pinned_step()
-    {
-        var fixture = Fixture(steps: 2);
-        fixture.Runner.AuditBefore(Scene("state:source", "before:1"));
-        fixture.Runner.DispatchOnce(() => { });
-        fixture.Runner.AuditAfter(Scene("state:destination", "after:1"));
-
-        Assert.Equal(SupervisedMacroRunState.AwaitingBeforeAudit, fixture.Runner.Snapshot.State);
-        Assert.Equal(2, fixture.Runner.Snapshot.CurrentStepSequence);
-        Assert.Equal(2, fixture.Runner.CurrentStep.Sequence);
-        Assert.Single(fixture.Runner.Snapshot.History);
-    }
-
-    [Fact]
     public void Runtime_unavailable_before_dispatch_is_a_system_terminal_event_not_user_abandon()
     {
         var fixture = Fixture();
@@ -173,6 +110,25 @@ public sealed class SupervisedVisualMacroRunnerTests
         Assert.True(result.CanContinue);
         Assert.Equal(SupervisedMacroRunState.Completed, fixture.Runner.Snapshot.State);
         Assert.Contains("診断上不一致", result.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Moved_transition_advances_to_the_next_pinned_step()
+    {
+        var fixture = Fixture(steps: 2);
+        var before = Scene("state:source", "before:ok");
+        fixture.Runner.AuditBefore(before);
+        fixture.Runner.DispatchOnce(() => { });
+
+        fixture.Runner.AuditAfterTransition(Transition(
+            before,
+            Scene("state:any-moved-destination", "after:moved"),
+            GameTransitionJudgement.Moved,
+            destinationMatched: false));
+
+        Assert.Equal(SupervisedMacroRunState.AwaitingBeforeAudit, fixture.Runner.Snapshot.State);
+        Assert.Equal(2, fixture.Runner.CurrentStep.Sequence);
+        Assert.Single(fixture.Runner.Snapshot.History);
     }
 
     [Fact]

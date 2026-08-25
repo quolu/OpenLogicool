@@ -10,10 +10,7 @@ public sealed record ExplorationBudget(
 
 public sealed record ExplorationStopPolicy(
     string SchemaVersion,
-    long MaximumFrameFreshnessMilliseconds,
-    int MaximumRepeatedProbeCount,
-    int MaximumConsecutiveNoProgressCount,
-    int MaximumOscillationCount);
+    long MaximumFrameFreshnessMilliseconds);
 
 public sealed record ExplorationPolicy(
     string SchemaVersion,
@@ -25,7 +22,6 @@ public sealed record ExplorationPolicy(
     IReadOnlyList<string> AllowedPrimitives,
     IReadOnlyList<string> ProhibitedRiskTags,
     ExplorationBudget Budget,
-    bool OneStepApprovalRequired,
     string ConsentRevisionId,
     string RecoveryBoundary,
     ExplorationStopPolicy StopPolicy,

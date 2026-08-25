@@ -104,6 +104,17 @@ public static class WindowsProductGameExplorerComposition
                 () => coordinator.CurrentStructureRevisionId,
                 targetIntent,
                 interactionOperation);
+        if (learnedSceneProfileStore is not null)
+        {
+            targetDiscovery = new WindowsKnownFirstTargetDiscovery(
+                targetDiscovery,
+                new WindowsGameOcrRecognizer(),
+                learnedSceneProfileStore,
+                gameId,
+                explorationPolicy.EnvironmentScope,
+                targetIntent,
+                interactionOperation);
+        }
         var observationRuntime = new ProductGameObservationRuntime(
             frameSource,
             new LiveObservationSource(frameRecognizer),
@@ -149,7 +160,7 @@ public static class WindowsProductGameExplorerComposition
             structureLearner,
             new ProductExplorationCoordinatorAdapter(coordinator),
             new WindowsGameExplorationCandidateRiskPolicy(
-                DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault),
+                UnclassifiedExplorationCandidateRiskPolicy.Default),
             explorationPolicy,
             gamePolicyDecision.IsAllowed,
             interactionWaitCondition: new ExplorationWaitCondition(

@@ -99,19 +99,19 @@ internal static class SupervisedMacroLiveSmoke
             var dispatches = events.Where(item => item.PayloadType == RunEventPayloadTypes.Dispatch).ToArray();
             var dispatchReports = events.Where(item => item.PayloadType == RunEventPayloadTypes.DispatchResult).ToArray();
             var confirmations = events.Where(item => item.PayloadType == RunEventPayloadTypes.Confirmation).ToArray();
-            var approvals = events.Where(item => item.PayloadType == RunEventPayloadTypes.Approval).ToArray();
+            var authorizations = events.Where(item => item.PayloadType == RunEventPayloadTypes.Authorization).ToArray();
             var passed = observeOnly
                 ? terminal.State == SupervisedMacroRunState.ReadyToDispatch
                     && dispatches.Length == 0
-                    && approvals.Length == 0
+                    && authorizations.Length == 0
                 : terminal.State == SupervisedMacroRunState.Completed
                     && terminal.History.Count == terminal.TotalSteps
                     && dispatches.Length == terminal.TotalSteps
                     && dispatchReports.Length == terminal.TotalSteps
                     && confirmations.Length == terminal.TotalSteps
-                    && approvals.Length == terminal.TotalSteps
-                    && approvals.All(item => item.ActorType == RunEventActorType.Automation)
-                    && approvals.All(item => item.PayloadJson.Contains("owner-delegated-automation", StringComparison.Ordinal));
+                    && authorizations.Length == terminal.TotalSteps
+                    && authorizations.All(item => item.ActorType == RunEventActorType.Automation)
+                    && authorizations.All(item => item.PayloadJson.Contains("owner-delegated-automation", StringComparison.Ordinal));
             var evidence = new
             {
                 SchemaVersion = "1.0.0",
@@ -133,7 +133,7 @@ internal static class SupervisedMacroLiveSmoke
                 Authorization = new
                 {
                     Source = SupervisedMacroAuthorizationSource.OwnerDelegatedAutomation,
-                    ApprovalActors = approvals.Select(item => item.ActorType).ToArray(),
+                    Actors = authorizations.Select(item => item.ActorType).ToArray(),
                 },
                 Snapshots = snapshots,
                 OcrSnapshots = ocrSnapshots,

@@ -86,10 +86,9 @@ internal static class GameInteractionFoundationLiveSmoke
             GameInteractionOperations.InputOperations,
             ["purchase", "paid-resource", "rare-resource", "gacha", "combat", "delete", "account-change"],
             new ExplorationBudget(ContractSchemaVersions.Revision03, 20, 300_000, 300_000),
-            true,
             "owner-delegated-2026-08-25",
             "known-menu-or-escape",
-            new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 1_000, 1, 3, 3),
+            new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 1_000),
             ["capture-unavailable", "budget-exhausted", "no-candidate"]);
         var gamePolicy = new GamePolicyRecord(
             ContractSchemaVersions.Revision02,
@@ -286,7 +285,7 @@ internal static class GameInteractionFoundationLiveSmoke
 
     private static AffordanceCandidate SelectSafe(ObservedScene scene)
     {
-        var policy = DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault;
+        var policy = UnclassifiedExplorationCandidateRiskPolicy.Default;
         return scene.Affordances
             .Where(candidate => policy.Evaluate(candidate).Level != ExplorationRiskLevel.Prohibited)
             .OrderBy(candidate => candidate.Locator.NormalizedBounds[1])

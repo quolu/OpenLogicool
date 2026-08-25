@@ -15,10 +15,11 @@ public sealed class LearningRouteValidatorTests
     }
 
     [Fact]
-    public void Different_structure_environment_and_discontinuous_edges_are_rejected()
+    public void Compatible_older_revision_is_accepted_but_environment_and_discontinuity_are_rejected()
     {
-        Assert.Throws<InvalidOperationException>(() =>
-            LearningRouteValidator.Validate(Route(["edge:open"]) with { StructureRevisionId = "structure:old" }, Revision()));
+        LearningRouteValidator.Validate(
+            Route(["edge:open"]) with { StructureRevisionId = "structure:old" },
+            Revision());
         Assert.Throws<InvalidOperationException>(() =>
             LearningRouteValidator.Validate(Route(["edge:open"]) with { EnvironmentScope = "other" }, Revision()));
         Assert.Throws<InvalidOperationException>(() =>

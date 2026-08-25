@@ -7,6 +7,8 @@
 - 根拠4値: 確認済み／強い推定／未確認／非対応
 - Exit 宣言: **2026-08-21 親（bell-grok46）**。技術成立の宣言でオーナーに止めない。H は未確認のまま残す
 
+> Historical acceptance: 条件5のreview statusによる操作拒否は2026-08-25裁定で失効した。現在は利用者が`AllowedModes`へ明示したmodeだけを操作gateとし、review statusは表示情報に限定する。
+
 ## Exit 条件の判定
 
 ### 条件1: 初日の成功を verified としない — **確認済み**

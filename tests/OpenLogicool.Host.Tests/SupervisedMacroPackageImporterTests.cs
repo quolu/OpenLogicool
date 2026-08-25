@@ -28,6 +28,20 @@ public sealed class SupervisedMacroPackageImporterTests
         Assert.Empty(new SqliteLearningRouteStore(connection).ReadRevisions("route:1"));
     }
 
+    [Fact]
+    public void Empty_prohibited_tag_set_does_not_block_import()
+    {
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        connection.Open();
+        new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
+        var package = Package() with { ProhibitedRiskTags = [] };
+
+        var result = SupervisedMacroPackageImporter.Import(connection, package);
+
+        Assert.Equal(package.PackageId, result.PackageId);
+        Assert.Single(new SqliteLearningRouteStore(connection).ReadRevisions(package.RouteId));
+    }
+
     private static SupervisedMacroPackageDocument Package()
     {
         var node1 = new StructureScreenNode(

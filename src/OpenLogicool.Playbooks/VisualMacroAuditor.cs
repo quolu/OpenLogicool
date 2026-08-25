@@ -19,9 +19,6 @@ public static class VisualMacroAuditor
             : result;
     }
 
-    public static VisualMacroAuditResult AuditAfter(VisualMacroStep step, ObservedScene scene) =>
-        Audit(step, scene, VisualMacroAuditPhase.After, step.DestinationStateId);
-
     public static VisualMacroAuditResult AuditTransition(
         VisualMacroStep step,
         SupervisedMacroTransitionObservation transition)

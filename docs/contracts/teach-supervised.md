@@ -1,8 +1,7 @@
 # Teach／Supervised contract
 
 `TeachSupervised.Request` は注入された `INextActionPlanner` から Teach proposal を一件だけ受け取り、
-`PendingTeachStep` として返す。provider client は選定・生成しない。
+`TeachStepProposal`として返す。provider clientは選定・生成しない。
 
-`Approve` は利用者の明示 `approvalId` を受けて `ApprovedTeachStep` を返す。それ以前の型は承認待ちであり、
-この module は dispatch delegate、InputEmitter、device API、SendInput を持たない。実入力の実行はこの口の外にある
-既存 dispatch 境界だけが扱う。
+このmoduleは利用者承認gate、dispatch delegate、InputEmitter、device API、SendInputを持たない。実入力の受付は
+10の基盤機能がcurrent frame／window／transform、Nano capability、明示Game Policyを確認して扱う。

@@ -6,27 +6,18 @@ namespace OpenLogicool.Playbooks;
 public enum GamePolicyGateReason
 {
     Allowed,
-    Unverified,
-    Changed,
-    InterpretationUnknown,
     ModeNotAllowed,
 }
 
 public sealed record GamePolicyDecision(bool IsAllowed, GamePolicyGateReason Reason);
 
-/// <summary>規約確認状態と mode 許可だけから automation 可否を決める pure gate。</summary>
+/// <summary>利用者がGame Policyへ明示したmodeだけからautomation可否を決めるpure gate。review statusは表示情報。</summary>
 public static class GamePolicyGate
 {
     public static GamePolicyDecision Evaluate(GamePolicyRecord record, GameAutomationMode requestedMode)
     {
         ArgumentNullException.ThrowIfNull(record);
         Validate(record);
-
-        if (requestedMode is GameAutomationMode.Assist or GameAutomationMode.Explore or GameAutomationMode.Auto
-            && record.ReviewStatus is not GamePolicyReviewStatus.Confirmed)
-        {
-            return new GamePolicyDecision(false, ReviewReason(record.ReviewStatus));
-        }
 
         return record.AllowedModes.Contains(requestedMode)
             ? new GamePolicyDecision(true, GamePolicyGateReason.Allowed)
@@ -57,11 +48,4 @@ public static class GamePolicyGate
         }
     }
 
-    private static GamePolicyGateReason ReviewReason(GamePolicyReviewStatus status) => status switch
-    {
-        GamePolicyReviewStatus.Unverified => GamePolicyGateReason.Unverified,
-        GamePolicyReviewStatus.Changed => GamePolicyGateReason.Changed,
-        GamePolicyReviewStatus.InterpretationUnknown => GamePolicyGateReason.InterpretationUnknown,
-        _ => throw new ArgumentOutOfRangeException(nameof(status)),
-    };
 }

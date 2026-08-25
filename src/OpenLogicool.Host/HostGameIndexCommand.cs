@@ -318,7 +318,7 @@ public static class HostGameIndexCommand
             target.ProcessName,
             environment,
             new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
-            new WindowsGameExplorationCandidateRiskPolicy(DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault),
+            new WindowsGameExplorationCandidateRiskPolicy(UnclassifiedExplorationCandidateRiskPolicy.Default),
             gamePolicyAllowsExecute: allowExplore);
         var execution = await runtime.ExecuteKnownAsync(selection.Action!.CandidateId);
         return execution.TransitionObserved
@@ -362,7 +362,7 @@ public static class HostGameIndexCommand
             environment,
             new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
             new WindowsGameExplorationCandidateRiskPolicy(
-                DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault),
+                UnclassifiedExplorationCandidateRiskPolicy.Default),
             gamePolicyAllowsExecute: allowExplore);
         var execution = await runtime.ExecuteKnownAsync(actionId);
         return new
@@ -513,7 +513,7 @@ public static class HostGameIndexCommand
             target.ProcessName,
             environment,
             wait,
-            new WindowsGameExplorationCandidateRiskPolicy(DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault),
+            new WindowsGameExplorationCandidateRiskPolicy(UnclassifiedExplorationCandidateRiskPolicy.Default),
             gamePolicyAllowsExecute: allowExplore);
         var execution = await runtime.ExecuteKnownAsync(actionId);
         if (!execution.TransitionObserved)
@@ -791,12 +791,11 @@ public static class HostGameIndexCommand
             environment,
             "visible-safe-menu",
             GameInteractionOperations.InputOperations,
-            ["purchase", "paid-resource", "rare-resource", "gacha", "combat", "activity-start", "delete", "account-change"],
+            [],
             new ExplorationBudget(ContractSchemaVersions.Revision03, 20, 300_000, 300_000),
-            true,
             "owner-delegated-known-index",
             "known-menu-or-escape",
-            new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 1_000, 1, 3, 3),
+            new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 1_000),
             ["capture-unavailable", "budget-exhausted", "no-candidate"]);
 
     private static string Required(string[] arguments, string name) =>

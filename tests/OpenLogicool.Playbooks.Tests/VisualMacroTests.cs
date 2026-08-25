@@ -39,6 +39,28 @@ public sealed class VisualMacroTests
             VisualMacroCompiler.Compile(Route(), revision, ["spend-premium-currency"]));
     }
 
+    [Fact]
+    public void Compatible_newer_structure_is_used_without_invalidating_the_saved_route()
+    {
+        var current = Revision() with { RevisionId = "structure:v2" };
+
+        var macro = VisualMacroCompiler.Compile(Route(), current, []);
+
+        Assert.Equal("structure:v2", macro.StructureRevisionId);
+        Assert.Equal(VisualMacroExecutionMode.Supervised, macro.ExecutionMode);
+    }
+
+    [Fact]
+    public void Verification_metadata_downgrades_to_supervised_instead_of_blocking_execution()
+    {
+        var macro = VisualMacroCompiler.Compile(
+            Route() with { Status = LearningRouteStatus.Verified },
+            Revision(),
+            []);
+
+        Assert.Equal(VisualMacroExecutionMode.Supervised, macro.ExecutionMode);
+    }
+
     [Theory]
     [InlineData(CaptureAvailability.Available, StateIdentityStatus.Known, "state:source", VisualMacroAuditStatus.Confirmed)]
     [InlineData(CaptureAvailability.Available, StateIdentityStatus.Known, "state:other", VisualMacroAuditStatus.UnexpectedState)]

@@ -4,6 +4,8 @@
 
 Game Operatorの探索、構造学習、教師付きmacro、将来の自律実行は、`IGameInteractionRuntime`の基本10機能だけを通る。Probe固有スクリプト、ACK、raw frame SHA差分、既知labelを上位機能の成功根拠にしない。
 
+保存済みpage／actionを常に先に使い、AIの`DiscoverTargets`を呼べるのは保存情報が無い時と、保存actionの送出後10秒で`Moved`を確認できなかった時だけである。OCR／AI文字、固定risk語、利用者確認、復帰edge、反復回数、destination IDは通常操作の受付条件を所有しない。
+
 ## 10の基盤機能と現在地
 
 | 基本機能 | 既存部品 | 製品runtime成立 |
@@ -30,7 +32,8 @@ Game Operatorの探索、構造学習、教師付きmacro、将来の自律実�
 - `KnownScreenActionExecutionResult.DestinationMatched`: expected／observed state IDが厳密一致したか。OCR揺れで`TransitionObserved`を否定するためには使わない。
 - `GameTransitionLearningRequest`: 操作前後、dispatch、安定窓、判定を既存Transition Evidenceへ渡す要求。
 - `IGameInteractionRuntime`: 上位探索loopが使う唯一の製品port。
-- `ProductGameExplorerRuntime`: 10の基盤機能、Durable Attempt、risk／承認、Structure学習、Explorer UI controlを一つのzero-seed stepへ合成する。
+- `WindowsKnownFirstTargetDiscovery`: 保存page／actionを類似OCRで先に解決し、二つの許可条件でだけAI discoveryへ移る。
+- `ProductGameExplorerRuntime`: 10の基盤機能、Durable Attempt、明示Game Policy、Structure学習、Explorer UI controlを一つのzero-seed stepへ合成する。送出前の追加AI再観測を行わない。
 - `WindowsProductGameExplorerComposition`: WGC、Windows OCR、Foundry Local、Nano Serial HID、Game Policy、Structure Storeを接続するWindows正規入口。
 
 ## 禁止する成功判定
@@ -41,3 +44,6 @@ Game Operatorの探索、構造学習、教師付きmacro、将来の自律実�
 - timeoutや途中で古くなった安定候補を`Moved`にする。
 - provider failureを別provider、OCR、既知fixtureへfallbackして成功扱いする。
 - pointer移動後にOCR矩形を追跡し、別targetへ座標を補正する。
+- OCRまたはAI labelの「購入」「戦闘」「開始」等を固定禁止tagへ変換して通常操作を拒否する。
+- 一手承認、既知復帰edge、反復回数を満たさないことだけで通常操作を拒否する。
+- 保存時より新しいStructure revisionで参照edgeが有効なのに、revision ID不一致だけでrouteを拒否する。

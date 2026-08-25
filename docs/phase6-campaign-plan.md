@@ -1,5 +1,7 @@
 # Phase 6 campaign — AI Teach／Learn
 
+> Historical plan: 本書の一手承認口はPhase 6当時の受入であり、2026-08-25以降の通常操作gateではない。現行裁定は`development-plan.md` §0.3を正とする。
+
 - status: **completed**（2026-08-20 Exit 宣言・[phase6-exit-assessment.md](phase6-exit-assessment.md)）
 - 起票: 2026-08-20（オーナー指示。Phase 5 Exit 成立後）
 - 統括: ベル（Grok 4.6）。実装 Terra×high（Codex）／監査 Grok 4.6×medium

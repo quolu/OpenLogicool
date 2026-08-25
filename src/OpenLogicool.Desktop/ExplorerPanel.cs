@@ -13,7 +13,6 @@ internal sealed class ExplorerPanel : UserControl
     private readonly TextBlock revision = NewValue();
     private readonly TextBlock probe = NewValue();
     private readonly TextBlock risk = NewValue();
-    private readonly TextBlock approval = NewValue();
     private readonly TextBlock budget = NewValue();
     private readonly TextBlock recovery = NewValue();
     private readonly TextBlock stopReason = NewValue();
@@ -95,7 +94,6 @@ internal sealed class ExplorerPanel : UserControl
         AddRow(left, "次に調べる候補", frontier);
         AddRow(left, "実行待ちの一手", probe);
         AddRow(left, "危険度", risk);
-        AddRow(left, "承認理由", approval);
         AddRow(left, "残り予算", budget);
         AddRow(left, "戻り道", recovery);
         AddRow(left, "停止理由", stopReason);
@@ -180,7 +178,6 @@ internal sealed class ExplorerPanel : UserControl
         frontier.ItemsSource = value.FrontierIds.Count == 0 ? new[] { "（なし）" } : value.FrontierIds;
         probe.Text = value.ActiveProbeLabel;
         risk.Text = value.RiskLabel;
-        approval.Text = value.ApprovalReason;
         budget.Text = $"操作 {value.RemainingProbeCount}回　｜　時間 {value.RemainingElapsedMilliseconds}ms　｜　推論 {value.RemainingInferenceMilliseconds}ms";
         recovery.Text = value.RecoveryPathEdgeIds.Count == 0 ? "（確認できる戻り道なし）" : string.Join(" → ", value.RecoveryPathEdgeIds);
         stopReason.Text = value.StopReasonLabel;

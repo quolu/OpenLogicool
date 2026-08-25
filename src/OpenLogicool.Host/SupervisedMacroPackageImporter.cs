@@ -105,7 +105,7 @@ public static class SupervisedMacroPackageImporter
             || string.IsNullOrWhiteSpace(document.Goal)
             || document.RouteEdgeIds is null || document.RouteEdgeIds.Count == 0
             || document.RouteEdgeIds.Any(id => document.Edges.All(edge => edge.EdgeId != id))
-            || document.ProhibitedRiskTags is null || document.ProhibitedRiskTags.Count == 0
+            || document.ProhibitedRiskTags is null
             || document.EvidenceIds is null || document.EvidenceIds.Count == 0)
         {
             throw new ArgumentException("教師付きマクロpackageの必須fieldまたは参照整合性が不正です。", nameof(document));

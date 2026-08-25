@@ -6,7 +6,7 @@ namespace OpenLogicool.Playbooks;
 /// <summary>
 /// Attempt の dispatch 統括（PB-003/004/005・§6.7。dispatch 依頼の統括は Playbooks——§6.3）。
 ///
-/// - Attempt（proposal／approval）と DispatchArmed（dispatch）を journal へ commit してから
+/// - Attempt（proposal／内部authorization）と DispatchArmed（dispatch）を journal へ commit してから
 ///   外部入力 delegate を呼ぶ。順序は ArmThenDispatch の構造が強制する（PB-003）。
 /// - 外部入力の例外・戻り値で状態を変えない。DispatchReported へ進むのは CommitReported だけで、
 ///   Input API の成功は Confirmed の証拠にならない（§6.7 契約3）。失敗時の自動再送は存在しない（PB-004）。
@@ -15,7 +15,7 @@ namespace OpenLogicool.Playbooks;
 /// - dispatch し得た未解決 Attempt が居る間、次の ArmThenDispatch を拒否する（契約5）。
 /// - Recover は journal の実 event だけから Attempt を再分類する（OPS-008・契約2）:
 ///   confirmation 済み→Confirmed、dispatch 済み未確定→実際に未送信でも OutcomeUnknown、
-///   dispatch 前（proposal／approval のみ）→Cancelled。journal に解決が記録されていない Attempt は
+///   dispatch 前（proposal／authorization のみ）→Cancelled。journal に解決が記録されていない Attempt は
 ///   未解決として復元される——記録の無い解決を信じない安全側の分類である。
 /// </summary>
 public sealed class AttemptDispatchGate
@@ -64,12 +64,18 @@ public sealed class AttemptDispatchGate
         }
     }
 
-    /// <summary>approval event を journal へ commit し、Proposed→Authorized。</summary>
-    public void CommitAuthorized(RunEvent approvalEvent)
+    /// <summary>内部authorization eventをjournalへcommitし、Proposed→Authorized。legacy approvalもreplay互換で受理する。</summary>
+    public void CommitAuthorized(RunEvent authorizationEvent)
     {
-        var attemptId = RequireAttemptId(approvalEvent, RunEventPayloadTypes.Approval);
+        ArgumentNullException.ThrowIfNull(authorizationEvent);
+        if (authorizationEvent.PayloadType is not (RunEventPayloadTypes.Authorization or RunEventPayloadTypes.Approval))
+        {
+            throw new ArgumentException("この操作はauthorization eventだけを受け取ります。", nameof(authorizationEvent));
+        }
+        var attemptId = authorizationEvent.AttemptId
+            ?? throw new ArgumentException("Attempt gateを通るeventにはAttemptIdが必要です。", nameof(authorizationEvent));
         var next = Get(attemptId).TransitionTo(AttemptState.Authorized);
-        _journal.Append(approvalEvent);
+        _journal.Append(authorizationEvent);
         _attempts[attemptId] = next;
     }
 

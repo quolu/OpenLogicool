@@ -13,21 +13,17 @@ namespace OpenLogicool.Exploration.Tests;
 public sealed class ExplorationCoordinatorTests
 {
     [Fact]
-    public void One_step_approval_is_bound_before_durable_dispatch_and_outcome_evidence()
+    public void Current_frame_and_explicit_policy_arm_durable_dispatch_without_user_confirmation_gate()
     {
-        var fixture = Fixture(oneStepApproval: true);
+        var fixture = Fixture();
         var scene = Scene("observation-before", sequence: 1, hypothesis: "hypothesis-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
         var admission = Admission(fixture, scene, "proposal-1");
 
         var decision = fixture.Coordinator.Propose(admission, Time(2));
 
-        Assert.Equal(ExplorationAdmissionStatus.NeedsApproval, decision.Status);
-        Assert.Throws<InvalidOperationException>(() =>
-            fixture.Coordinator.Dispatch("proposal-1", () => { }, Time(3)));
-
-        var approval = Approval(admission.Proposal, fixture.Policy, "approval-1");
-        Assert.True(fixture.Coordinator.Approve(approval, Time(3)).DispatchAllowed);
+        Assert.Equal(ExplorationAdmissionStatus.Allowed, decision.Status);
+        Assert.True(decision.DispatchAllowed);
 
         var inputCalls = 0;
         fixture.Coordinator.Dispatch("proposal-1", () =>
@@ -80,7 +76,7 @@ public sealed class ExplorationCoordinatorTests
             [
                 RunEventPayloadTypes.Observation,
                 RunEventPayloadTypes.Proposal,
-                RunEventPayloadTypes.Approval,
+                RunEventPayloadTypes.Authorization,
                 RunEventPayloadTypes.Dispatch,
                 RunEventPayloadTypes.DispatchResult,
                 RunEventPayloadTypes.Observation,
@@ -95,7 +91,7 @@ public sealed class ExplorationCoordinatorTests
     [Fact]
     public void Coordinator_synchronizes_an_external_structure_commit_only_between_probes()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var scene = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
         var previous = fixture.Coordinator.CurrentStructureRevisionId;
@@ -116,7 +112,7 @@ public sealed class ExplorationCoordinatorTests
     [Fact]
     public void Product_structure_learner_creates_candidate_nodes_and_edge_from_transition_evidence()
     {
-        var fixture = Fixture(oneStepApproval: true);
+        var fixture = Fixture();
         var before = Scene("observation-before", 1, "hypothesis-a");
         var afterBase = Scene("observation-after", 2, "hypothesis-b");
         var after = afterBase with
@@ -131,7 +127,6 @@ public sealed class ExplorationCoordinatorTests
         fixture.Coordinator.CommitObservation(before, Time(1));
         var admission = Admission(fixture, before, "proposal-structure");
         _ = fixture.Coordinator.Propose(admission, Time(2));
-        _ = fixture.Coordinator.Approve(Approval(admission.Proposal, fixture.Policy, "approval-structure"), Time(3));
         fixture.Coordinator.Dispatch("proposal-structure", () => { }, Time(4));
         var evidence = fixture.Coordinator.RecordOutcome(
             Outcome("proposal-structure", after, ExplorationOutcomeKind.Novel));
@@ -189,7 +184,7 @@ public sealed class ExplorationCoordinatorTests
     [Fact]
     public void Rejected_proposal_does_not_occupy_the_active_probe_slot()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var scene = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
         var rejected = Admission(fixture, scene, "proposal-rejected") with
@@ -208,9 +203,9 @@ public sealed class ExplorationCoordinatorTests
     }
 
     [Fact]
-    public void Stopped_condition_is_persisted_for_the_rest_of_the_run()
+    public void Stale_observation_is_rejected_without_poisoning_the_run()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var scene = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
         var stale = Admission(fixture, scene, "proposal-stale") with
@@ -218,14 +213,14 @@ public sealed class ExplorationCoordinatorTests
             Context = Context(fixture, scene with { Frame = scene.Frame with { FreshnessMs = 999 } }),
         };
 
-        Assert.Equal(ExplorationAdmissionStatus.Stopped, fixture.Coordinator.Propose(stale, Time(2)).Status);
-        Assert.Equal(ExplorationStopReason.StaleFrame, fixture.Coordinator.StopReason);
+        Assert.Equal(ExplorationAdmissionStatus.Rejected, fixture.Coordinator.Propose(stale, Time(2)).Status);
+        Assert.Equal(ExplorationStopReason.None, fixture.Coordinator.StopReason);
         Assert.False(fixture.Coordinator.HasActiveProbe);
 
         var later = fixture.Coordinator.Propose(Admission(fixture, scene, "proposal-later"), Time(3));
-        Assert.Equal(ExplorationAdmissionStatus.Stopped, later.Status);
-        Assert.Equal(ExplorationStopReason.StaleFrame, later.Reason);
-        Assert.Empty(fixture.AttemptGate.Attempts);
+        Assert.Equal(ExplorationAdmissionStatus.Allowed, later.Status);
+        Assert.Equal(ExplorationStopReason.None, later.Reason);
+        Assert.Single(fixture.AttemptGate.Attempts);
     }
 
     [Fact]
@@ -261,7 +256,7 @@ public sealed class ExplorationCoordinatorTests
     [Fact]
     public void Supplied_context_cannot_replace_the_committed_candidate_locator()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var committed = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(committed, Time(1));
         var replaced = committed with
@@ -290,9 +285,9 @@ public sealed class ExplorationCoordinatorTests
     }
 
     [Fact]
-    public void Lost_recovery_edge_stops_before_attempt_creation()
+    public void Recovery_metadata_does_not_block_current_target_dispatch()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var scene = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
         var admission = Admission(fixture, scene, "proposal-recovery-lost") with
@@ -302,16 +297,15 @@ public sealed class ExplorationCoordinatorTests
 
         var decision = fixture.Coordinator.Propose(admission, Time(2));
 
-        Assert.Equal(ExplorationAdmissionStatus.Stopped, decision.Status);
-        Assert.Equal(ExplorationStopReason.RecoveryLost, decision.Reason);
-        Assert.Equal(ExplorationStopReason.RecoveryLost, fixture.Coordinator.StopReason);
-        Assert.Empty(fixture.AttemptGate.Attempts);
+        Assert.Equal(ExplorationAdmissionStatus.Allowed, decision.Status);
+        Assert.Equal(ExplorationStopReason.None, decision.Reason);
+        Assert.Single(fixture.AttemptGate.Attempts);
     }
 
     [Fact]
     public void Capture_loss_stops_before_attempt_creation()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var scene = Scene("observation-before", 1, "state-a") with
         {
             CaptureAvailability = CaptureAvailability.Unavailable,
@@ -320,7 +314,7 @@ public sealed class ExplorationCoordinatorTests
 
         var decision = fixture.Coordinator.Propose(Admission(fixture, scene, "proposal-capture-lost"), Time(2));
 
-        Assert.Equal(ExplorationAdmissionStatus.Stopped, decision.Status);
+        Assert.Equal(ExplorationAdmissionStatus.Rejected, decision.Status);
         Assert.Equal(ExplorationStopReason.CaptureUnavailable, decision.Reason);
         Assert.Empty(fixture.AttemptGate.Attempts);
     }
@@ -328,7 +322,7 @@ public sealed class ExplorationCoordinatorTests
     [Fact]
     public void Elapsed_budget_exhaustion_stops_before_attempt_creation()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var scene = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
         var admission = Admission(fixture, scene, "proposal-budget") with
@@ -344,45 +338,25 @@ public sealed class ExplorationCoordinatorTests
     }
 
     [Fact]
-    public void Mismatched_approval_cannot_authorize_or_dispatch()
+    public void Repeated_no_change_remains_learning_evidence_and_does_not_stop_the_run()
     {
-        var fixture = Fixture(oneStepApproval: true);
-        var scene = Scene("observation-before", 1, "hypothesis-a");
-        fixture.Coordinator.CommitObservation(scene, Time(1));
-        var admission = Admission(fixture, scene, "proposal-1");
-        _ = fixture.Coordinator.Propose(admission, Time(2));
-
-        var decision = fixture.Coordinator.Approve(
-            Approval(admission.Proposal, fixture.Policy, "approval-1") with { ObservationId = "other-observation" },
-            Time(3));
-
-        Assert.Equal(ExplorationAdmissionStatus.Rejected, decision.Status);
-        Assert.Equal(ExplorationStopReason.ApprovalMismatch, decision.Reason);
-        Assert.Empty(fixture.AttemptGate.Attempts);
-    }
-
-    [Fact]
-    public void Repeated_no_change_stops_before_a_third_probe()
-    {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var scene = Scene("observation-1", 1, "state-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
 
         scene = RunNoChange(fixture, scene, "proposal-1", 2);
         scene = RunNoChange(fixture, scene, "proposal-2", 3);
 
-        Assert.Contains(
-            fixture.Coordinator.StopReason,
-            new[] { ExplorationStopReason.RepeatedProbe, ExplorationStopReason.NoProgress });
-        var stopped = fixture.Coordinator.Propose(Admission(fixture, scene, "proposal-3"), Time(10));
-        Assert.Equal(ExplorationAdmissionStatus.Stopped, stopped.Status);
-        Assert.False(stopped.DispatchAllowed);
+        Assert.Equal(ExplorationStopReason.None, fixture.Coordinator.StopReason);
+        var next = fixture.Coordinator.Propose(Admission(fixture, scene, "proposal-3"), Time(10));
+        Assert.Equal(ExplorationAdmissionStatus.Allowed, next.Status);
+        Assert.True(next.DispatchAllowed);
     }
 
     [Fact]
     public void No_change_accepts_reobservation_of_the_same_static_wgc_frame()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var before = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(before, Time(1));
         var admission = Admission(fixture, before, "proposal-static");
@@ -398,11 +372,9 @@ public sealed class ExplorationCoordinatorTests
     }
 
     [Fact]
-    public void Repeated_probe_limit_one_allows_the_first_probe_and_stops_only_after_repetition()
+    public void A_prior_probe_does_not_create_a_hidden_repetition_gate()
     {
-        var fixture = Fixture(
-            oneStepApproval: false,
-            new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500, 1, 3, 3));
+        var fixture = Fixture();
         var before = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(before, Time(1));
         var first = Admission(fixture, before, "proposal-1");
@@ -421,7 +393,7 @@ public sealed class ExplorationCoordinatorTests
     [Fact]
     public void Insufficient_stability_stops_without_false_confirmation()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var scene = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
         _ = fixture.Coordinator.Propose(Admission(fixture, scene, "proposal-1"), Time(2));
@@ -441,7 +413,7 @@ public sealed class ExplorationCoordinatorTests
     [Fact]
     public void External_input_fault_is_not_retried_and_recovers_as_outcome_unknown()
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         var scene = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
         _ = fixture.Coordinator.Propose(Admission(fixture, scene, "proposal-1"), Time(2));
@@ -555,20 +527,18 @@ public sealed class ExplorationCoordinatorTests
         Func<FixtureState, ObservedScene, ExplorationProposalAdmission> change,
         ExplorationStopReason expected)
     {
-        var fixture = Fixture(oneStepApproval: true);
+        var fixture = Fixture();
         var scene = Scene("observation-before", 1, "state-a");
         fixture.Coordinator.CommitObservation(scene, Time(1));
         var decision = fixture.Coordinator.Propose(change(fixture, scene), Time(2));
-        Assert.Equal(expected == ExplorationStopReason.StaleFrame
-            ? ExplorationAdmissionStatus.Stopped
-            : ExplorationAdmissionStatus.Rejected, decision.Status);
+        Assert.Equal(ExplorationAdmissionStatus.Rejected, decision.Status);
         Assert.Equal(expected, decision.Reason);
         Assert.Empty(fixture.AttemptGate.Attempts);
     }
 
     private static void AssertTargetRejected(ObservedScene scene, string proposalId)
     {
-        var fixture = Fixture(oneStepApproval: false);
+        var fixture = Fixture();
         fixture.Coordinator.CommitObservation(scene, Time(1));
 
         var decision = fixture.Coordinator.Propose(Admission(fixture, scene, proposalId), Time(2));
@@ -593,15 +563,13 @@ public sealed class ExplorationCoordinatorTests
         return after;
     }
 
-    private static FixtureState Fixture(
-        bool oneStepApproval,
-        ExplorationStopPolicy? stopPolicy = null)
+    private static FixtureState Fixture()
     {
         var structureStore = new MemoryStructureStore();
         var runStore = new MemoryRunStore();
         var journal = new RunJournal(runStore, new NoopLog());
         var gate = new AttemptDispatchGate(journal);
-        var policy = Policy(oneStepApproval, stopPolicy);
+        var policy = Policy();
         var coordinator = new ExplorationCoordinator(
             structureStore,
             journal,
@@ -619,9 +587,7 @@ public sealed class ExplorationCoordinatorTests
         return new FixtureState(coordinator, structureStore, runStore, gate, policy, journal);
     }
 
-    private static ExplorationPolicy Policy(
-        bool oneStepApproval,
-        ExplorationStopPolicy? stopPolicy = null) => new(
+    private static ExplorationPolicy Policy() => new(
         ContractSchemaVersions.Revision03,
         "policy-1",
         "app:game",
@@ -631,11 +597,10 @@ public sealed class ExplorationCoordinatorTests
         ["click", "back"],
         ["purchase", "delete", "account-change"],
         new ExplorationBudget(ContractSchemaVersions.Revision03, 4, 5_000, 60_000),
-        oneStepApproval,
         "consent-1",
         "back",
-        stopPolicy ?? new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500, 2, 2, 2),
-        ["budget-exhausted", "no-progress", "recovery-lost"]);
+        new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500),
+        ["budget-exhausted"]);
 
     private static ExplorationProposalAdmission Admission(
         FixtureState fixture,
@@ -686,19 +651,6 @@ public sealed class ExplorationCoordinatorTests
         true,
         ["edge-back"],
         "risk-policy-1");
-
-    private static ExplorationApproval Approval(
-        ExplorationProposal proposal,
-        ExplorationPolicy policy,
-        string approvalId) => new(
-        ContractSchemaVersions.Revision03,
-        approvalId,
-        proposal.ProposalId,
-        proposal.SourceObservationId,
-        policy.PolicyRevisionId,
-        proposal.SourceStructureRevisionId,
-        "user-1",
-        Time(3));
 
     private static ExplorationOutcomeReport Outcome(
         string proposalId,

@@ -10,10 +10,10 @@ namespace OpenLogicool.Host.Tests;
 public sealed class WindowsGameExplorationCandidateRiskPolicyTests
 {
     private readonly WindowsGameExplorationCandidateRiskPolicy policy = new(
-        DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault);
+        UnclassifiedExplorationCandidateRiskPolicy.Default);
 
     [Fact]
-    public void Rejects_window_title_and_numeric_hud_but_keeps_content_candidate()
+    public void Rejects_only_windows_non_client_region()
     {
         var title = policy.Evaluate(Candidate("NIKKE", [0.01, 0.008, 0.02, 0.008]));
         var hud = policy.Evaluate(Candidate("4,846+", [0.45, 0.04, 0.05, 0.02]));
@@ -22,27 +22,25 @@ public sealed class WindowsGameExplorationCandidateRiskPolicyTests
 
         Assert.Equal(ExplorationRiskLevel.Prohibited, title.Level);
         Assert.Contains("windows-non-client", title.RiskTags);
-        Assert.Equal(ExplorationRiskLevel.Prohibited, hud.Level);
-        Assert.Contains("status-hud", hud.RiskTags);
-        Assert.Equal(ExplorationRiskLevel.Prohibited, objective.Level);
-        Assert.Contains("status-hud", objective.RiskTags);
-        Assert.Equal(ExplorationRiskLevel.Elevated, content.Level);
+        Assert.Equal(ExplorationRiskLevel.Unknown, hud.Level);
+        Assert.Equal(ExplorationRiskLevel.Unknown, objective.Level);
+        Assert.Equal(ExplorationRiskLevel.Unknown, content.Level);
     }
 
     [Fact]
-    public void Content_policy_still_rejects_prohibited_semantics()
+    public void Ocr_semantics_never_receive_rejection_authority()
     {
         var result = policy.Evaluate(Candidate("ショップ", [0.4, 0.4, 0.1, 0.05]));
         var activityStart = policy.Evaluate(Candidate("シミュレーション開始", [0.4, 0.4, 0.1, 0.05]));
 
-        Assert.Equal(ExplorationRiskLevel.Prohibited, result.Level);
-        Assert.Contains("purchase", result.RiskTags);
-        Assert.Equal(ExplorationRiskLevel.Prohibited, activityStart.Level);
-        Assert.Contains("activity-start", activityStart.RiskTags);
+        Assert.Equal(ExplorationRiskLevel.Unknown, result.Level);
+        Assert.Empty(result.RiskTags);
+        Assert.Equal(ExplorationRiskLevel.Unknown, activityStart.Level);
+        Assert.Empty(activityStart.RiskTags);
     }
 
     [Fact]
-    public void Exit_modal_ok_is_rejected_from_same_frame_context()
+    public void Exit_modal_text_does_not_block_either_candidate()
     {
         var ok = policy.Evaluate(Candidate(
             "OK",
@@ -53,9 +51,8 @@ public sealed class WindowsGameExplorationCandidateRiskPolicyTests
             [0.35, 0.65, 0.2, 0.08],
             ["お知らせ", "ゲームを終了しますか？", "取消", "OK"]));
 
-        Assert.Equal(ExplorationRiskLevel.Prohibited, ok.Level);
-        Assert.Contains("game-exit", ok.RiskTags);
-        Assert.NotEqual(ExplorationRiskLevel.Prohibited, cancel.Level);
+        Assert.Equal(ExplorationRiskLevel.Unknown, ok.Level);
+        Assert.Equal(ExplorationRiskLevel.Unknown, cancel.Level);
     }
 
     private static AffordanceCandidate Candidate(

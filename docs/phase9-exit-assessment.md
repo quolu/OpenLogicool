@@ -8,6 +8,8 @@
 
 **Phase 9 Exitは成立した。** Exit 10条件は確認済み9、強い推定1、未確認0、非対応0である。
 
+本書は2026-08-24時点のhistorical acceptanceである。当時の一手承認、復帰edge、risk推定、反復停止はPhase 12の10基盤機能と2026-08-25裁定で失効し、現行runtimeの操作受付には使わない。
+
 この判定が許可する公開範囲は`Game Structure Explorer Preview`である。hidden-oracle GameLabではVerified structureから別Supervised Runを成立させた。NIKKEは独立2 sessionのopen→observe→backをNano Serial HIDで再現したが、verificationは`Replayed`のままである。したがってNIKKEの`Verified Game Structure`、Fact依存task planning、`Verified Autonomous Playbook`、日課完遂、一般game対応はclaimしない。製品全体の公開claimは`Game Operator Preview`のまま維持する。
 
 ## Exit 10条件

@@ -8,12 +8,10 @@ namespace OpenLogicool.Playbooks.Tests;
 public sealed class GamePolicyGateTests
 {
     [Theory]
-    [InlineData(GamePolicyReviewStatus.Unverified, GamePolicyGateReason.Unverified)]
-    [InlineData(GamePolicyReviewStatus.Changed, GamePolicyGateReason.Changed)]
-    [InlineData(GamePolicyReviewStatus.InterpretationUnknown, GamePolicyGateReason.InterpretationUnknown)]
-    public void 未確認状態はAssistとExploreとAutoを技術可否に関わらず無効にする(
-        GamePolicyReviewStatus status,
-        GamePolicyGateReason expectedReason)
+    [InlineData(GamePolicyReviewStatus.Unverified)]
+    [InlineData(GamePolicyReviewStatus.Changed)]
+    [InlineData(GamePolicyReviewStatus.InterpretationUnknown)]
+    public void review表示状態は明示された許可modeを無効化しない(GamePolicyReviewStatus status)
     {
         var record = Record(status, [GameAutomationMode.Observe, GameAutomationMode.Assist, GameAutomationMode.Explore, GameAutomationMode.Auto]);
 
@@ -23,12 +21,9 @@ public sealed class GamePolicyGateTests
         var auto = GamePolicyGate.Evaluate(record, GameAutomationMode.Auto);
 
         Assert.True(observe.IsAllowed);
-        Assert.False(assist.IsAllowed);
-        Assert.Equal(expectedReason, assist.Reason);
-        Assert.False(explore.IsAllowed);
-        Assert.Equal(expectedReason, explore.Reason);
-        Assert.False(auto.IsAllowed);
-        Assert.Equal(expectedReason, auto.Reason);
+        Assert.True(assist.IsAllowed);
+        Assert.True(explore.IsAllowed);
+        Assert.True(auto.IsAllowed);
     }
 
     [Fact]

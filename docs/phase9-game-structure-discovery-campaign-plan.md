@@ -7,6 +7,8 @@
 - 上位正本: [development-plan.md](development-plan.md) §3.6.1、§6.13、§Phase 9
 - 先行: Phase 0〜8B Exit、Serial HID Output Exit。Phase 9は[Exit Assessment](phase9-exit-assessment.md)で成立判定済み
 
+> Historical plan: 一手承認、復帰経路、risk推定、反復停止を含む本campaignの旧gateは現行runtime authorityではない。2026-08-25以降は[development-plan.md](development-plan.md) §0.3／§6.13.4と[Game Interaction Foundation Contract](game-interaction-foundation-contract.md)を正とする。
+
 ## 目的
 
 AI学習前のSTEP 0で、公式情報と攻略情報からゲームの仕組み、ルール、日課候補を出典付きMarkdown Referenceとして集める。その仮説を権限へ変換せず、端末内のローカルAIが画面を観測、探索、再観測してGame Structureを構築する。Web支援がないzero-seed pathも独立して成立させる。製品runtimeは外部AI APIへ依存せず、AI推論目的の外部送信と外部AI API費用を0に固定する。

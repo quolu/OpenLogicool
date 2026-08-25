@@ -15,7 +15,6 @@ public enum CapabilityReleaseGateReason
     Released,
     DisabledByRelease,
     GamePolicyDenied,
-    EnvironmentNotVerified,
 }
 
 /// <summary>配布 release ごとの capability 明示設定。</summary>
@@ -38,7 +37,7 @@ public sealed record CapabilityReleaseSettings(
 public sealed record CapabilityReleaseDecision(bool IsReleased, CapabilityReleaseGateReason Reason);
 
 /// <summary>
-/// capability の公開可否を既存の規約 gate と Verified 環境根拠へ束縛する。
+/// capability の公開可否をrelease設定と利用者が明示したGame Policy modeへ束縛する。
 /// ObserveOnly／TeachSupervised の proposal 処理や GamePolicyGate の規約解釈を再実装しない。
 /// </summary>
 public static class CapabilityRelease
@@ -46,9 +45,7 @@ public static class CapabilityRelease
     public static CapabilityReleaseDecision Evaluate(
         CapabilityReleaseSettings settings,
         GameOperatorCapability capability,
-        GamePolicyRecord policy,
-        VerifiedEnvScope? verifiedScope = null,
-        string? environmentId = null)
+        GamePolicyRecord policy)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(policy);
@@ -61,12 +58,6 @@ public static class CapabilityRelease
         if (!GamePolicyGate.Evaluate(policy, RequiredPolicyMode(capability)).IsAllowed)
         {
             return new CapabilityReleaseDecision(false, CapabilityReleaseGateReason.GamePolicyDenied);
-        }
-
-        if (capability == GameOperatorCapability.Verified &&
-            (verifiedScope is null || string.IsNullOrWhiteSpace(environmentId) || !verifiedScope.AppliesTo(environmentId)))
-        {
-            return new CapabilityReleaseDecision(false, CapabilityReleaseGateReason.EnvironmentNotVerified);
         }
 
         return new CapabilityReleaseDecision(true, CapabilityReleaseGateReason.Released);

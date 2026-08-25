@@ -1,8 +1,8 @@
 # OpenLogicool 製品・開発計画
 
-- 版: 0.9（2026-08-24 Phase 11 Exit）
-- 改訂日: 2026-08-24
-- 状態: Phase 0〜10 Exit済み／NIKKE Daily Drive一件実証
+- 版: 1.0（2026-08-25 Game Interaction現行裁定統合）
+- 改訂日: 2026-08-25
+- 状態: Phase 0〜12の成立範囲を確定／10の基盤機能とNIKKE教師付きVisual Macro実証済み
 - 対象: Logicool G13 / G600を統合するWindowsネイティブアプリと、画面認識付き逐次学習プレイブック
 - 比較基準: Logicool ゲームソフトウェア 9.04.49
 - 成立性資料: [G13/G600 Windows成立性調査](../rag/openlogicool/feasibility-2026-08-14.md)
@@ -17,7 +17,7 @@ OpenLogicoolは、次の二つの製品価値を同じアプリで提供する�
 
 両者は同じ意味操作とアプリプロファイルを共有するが、稼働条件とrelease gateを分ける。AI、network、captureが利用不能でもInput Studioは動作しなければならない。Input Studioを完成させるためにGame Operatorを待たず、Game Operatorを急ぐためにG13/G600の低遅延入力経路へAIを混ぜない。
 
-2026-08-24時点でPhase 0〜9はExit済みであり、Input Studioの両実機fast path、app-first設定、Durable Attempt、capture／perception契約、Game Operator Preview、Game Structure Explorer Previewまで成立している。Serial HID Output campaignもExit済みである。
+2026-08-25時点でPhase 0〜12の成立範囲は確定しており、Input Studioの両実機fast path、app-first設定、Durable Attempt、capture／perception契約、Game Operator Preview、10のGame Interaction基盤機能、NIKKEの教師付きVisual Macroまで成立している。Serial HID Output campaignもExit済みである。
 
 Phase 9は、開発者がgame固有state、visual target、遷移、recognizer、正解手順を事前投入しない探索基盤を成立させた。AIは画面から候補を提案するだけで、入力、risk判定、verification昇格、DB writeには直接到達しない。hidden-oracleのVerified graph→別Supervised Runと、NIKKE可逆edgeのReplayedまで確認済み。Game State Fact依存planning、NIKKEのVerified昇格、Verified Autonomous Playbook、日課完遂は未確認である。判定は[Phase 9 Exit Assessment](phase9-exit-assessment.md)を正とする。
 
@@ -45,6 +45,19 @@ UnverifiedをSupportedとして表示しない。実験失敗を別方式へ黙�
 - package: 開発中はunpackagedを許す。Dynamic Lightingのbackground制御または公開配布の前にMSIX／Sparse Package／MSIを実測して決定する。
 
 技術裁定は実測で反証された場合に変更できる。変更時は対象requirement、影響module、migration、rollbackを記録する。
+
+### 0.3 Game Operator現行裁定（2026-08-25）
+
+本節はGame Operatorの探索、学習、macro、将来の自走に対する現在の最上位裁定である。後続節や過去campaignに残る一手承認、復帰経路必須、OCR禁止語、destination ID完全一致、反復回数停止と矛盾する時は本節を正とする。
+
+1. 上位機能はObserve、DiscoverTargets、Hover、Click、KeyTap、Scroll、Drag、WaitStable、Compare、LearnTransitionの10機能だけを通る。
+2. AIでボタンを探せるのは、現在ページに目的へ使える保存済みbuttonが無い時と、保存済みbuttonを実行して10秒観測しても`Moved`を確認できなかった時だけである。
+3. 保存済みbuttonで`Moved`を確認した時はAIを呼ばず、保存したpage、action、座標、遷移を再利用する。目的に必要なbuttonだけを一件ずつ追記し、全buttonの事前探索を要求しない。
+4. OCRはUnicode正規化、位置許容差、軽い編集距離で照合する。OCR、AI label、単一frameの差、destination ID不一致だけで保存情報を誤りと判定しない。より自然な文字列を得た時はID、座標、遷移、旧文字列、evidenceを維持して表示文字列を更新する。
+5. 操作後は最低10秒間、意味構造の遷移を確認する。`Moved`はdestination ID不一致でも遷移成立、`Stayed`と`Undetermined`は学習結果であり探索全体の失敗ではない。
+6. 操作前拒否を所有できるのは、対象window、current frame／transform、Nano接続と有限入力、durable commit、利用者が明示したGame Policyだけである。OCR文字、AI推測、固定risk語、未確認label、一手承認、復帰edge、反復回数は通常操作を拒否できない。
+7. safe-sliceで使った購入、戦闘、開始等の制限はその実験policyだけに属する。コア製品の既定へ一般化しない。明示Game Policyで禁止tagを与えた場合だけ、そのtagを持つ操作を拒否できる。
+8. 過去のObservation、Attempt、evidence、journalは履歴として保持する。失効した裁定を現行runtimeの権限、合否、操作拒否へ再利用しない。
 
 ## 1. 製品語彙
 
@@ -246,7 +259,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 |---|---|---|
 | GS-001 | R4 | 新規gameはgame固有state、Semantic Action、visual target、recognizer、edge、route、Playbook、allowed action列、expected sequenceを0件で開始できる。初期入力として許すのはapp／window identity、capture frameとtransform、環境fingerprint、game固有語義を持たないgeneric primitive catalog、構造情報を含まない利用者goal、policy、同意、budgetだけとする |
 | GS-002 | R4 | AvailableかつNovelな画面を棄却せず、ObservedSceneとしてstate hypothesis、affordance candidate、evidenceを保存できる。人の事前命名をnode作成条件にしない |
-| GS-003 | R4 | AffordanceCandidateはObservation ID、Frame sequence、transform revision、対象window、領域またはlocator、evidence、confidence、許可primitiveへ束縛する。AI生成の任意screen座標、古いtransform、window外targetはdispatch前に拒否する |
+| GS-003 | R4 | AffordanceCandidateは操作時のObservation ID、Frame sequence、transform revision、対象window、領域、evidence、許可primitiveへ束縛する。保存locator revisionは再同定の証拠であり、OCR差だけで保存済みtargetを拒否しない。window外targetと古いtransformだけをdispatch前に拒否する |
 | GS-004 | R4 | ExplorationContext／ExplorationProposalをtask実行用PlannerContext／NextActionProposalから分離する。探索proposalは既知Action ID、既知destination state、成功予測を必須にせず、source observation、structure revision、target、primitive、probe仮説、許容outcome、wait／stability、停止条件を必須にする |
 | GS-005 | R4 | AIの構造変更はStructureDeltaProposalに限定し、evidence参照、node作成、edge帰属、label、merge／split、fact抽出の提案だけを許す。Lane LのStructure Knowledge Controllerだけがschema、identity、policy、evidenceを検証してappendし、AIにDB write、risk確定、検証昇格を許さない |
 | GS-006 | R4 | raw Frame／Observation、AI hypothesis、controller受理済みcandidate、replayed／verified構造、Playbookを別layerとして保持する。AIの説明または一回成功だけで上位layerへ昇格しない |
@@ -254,16 +267,16 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | GS-008 | R4 | Screen Graph edgeはsource hypothesis、frame-bound target／locator revision、primitive、guard、risk／reversibility判定、before／after Observation、待機条件、timeout、observed outcome分布、no-change／unknown／fault、証拠回数を持つ。単一試行を決定論的遷移として固定しない |
 | GS-009 | R4 | 同一画面候補のmerge／split、edge再帰属、label変更、contradiction、retireは旧IDと証拠を失わない新revisionとして行う。反証されたverified node／edgeは依存Playbookとともに自動実行不可へ降格する |
 | GS-010 | R4 | Structure Event Storeはappend-onlyとし、Observation、probe proposal、承認、Attempt、outcome、delta、projection revisionを相関できる。process再起動後に同じrevisionを再構成し、未解決DispatchArmedをOutcomeUnknownとして残す |
-| GS-011 | R4 | Exploration Run開始時にapp／window、environment、許可primitive、探索領域、action回数、時間、ローカルmodel／resource上限、外部AI送信なし、外部AI API費用0、保存期間、risk禁止項目、復帰境界、停止条件をimmutable policyとして固定する。Run中にAIが拡張できない |
-| GS-012 | R4 | 未知targetの初回probeは一手承認を既定とする。自動probeは利用者が許可した探索範囲内で、利用者またはdeterministic policyがlow-risk／side-effect-freeとして登録し、可逆性と既知復帰経路を実証したprimitiveだけに段階解放する。AI／OCRのrisk自己申告を根拠にせず、課金、購入、削除、account変更、希少資源消費、自由text入力を初期自動探索から除外する |
-| GS-013 | R4 | no-progress、同一edge反復、画面振動、modal閉じ込め、animation、network待ち、capture喪失、stale／transform変更、budget到達、復帰経路喪失を検出して停止する。同一probeを根拠なく再送せず、復帰不能時はStopAndAskにする |
+| GS-011 | R4 | Exploration Run開始時にapp／window、environment、許可primitive、探索領域、時間／resource上限、外部AI送信なし、外部AI API費用0、保存期間、利用者が明示した禁止tagを固定する。Run中にAI、OCR、画面内文言から権限や禁止tagを追加しない |
+| GS-012 | R4 | current frame／window／transform、Nano capability、明示Game Policyを満たす通常操作は追加承認や既知復帰edgeを要求せず受理する。OCR／AIが推測したrisk class、固定禁止語、未知labelを操作拒否の根拠にしない |
+| GS-013 | R4 | capture喪失、古いtransform、Nano不達、利用者取消、明示budget到達は新規dispatchを止める。`Stayed`／`Undetermined`／同一edge／画面振動はTransition Evidenceとして保存し、Run全体を自動失敗にしない。保存済み操作の10秒非遷移は再探索条件にする |
 | GS-014 | R4 | navigation topologyを表すScreen Graphと、日課回数、資源、reset、選択値等のGame State Factを分離する。Factはextractor version、evidence、confidence、environment、validity／reset scopeを持ち、値変化だけで新nodeを乱造しない |
 | GS-015 | R4 | Exploration Runとtask達成用Runを別instance・別目的・別active executorとして扱う。task Run中にNovel branchへ到達した場合は自動で構造を書き換えず、taskをpauseして別Exploration Runを開始し、元Runはpin済みrevisionのまま残す |
 | GS-016 | R4 | Goal Plannerはverified構造と、run modeに必要なverification状態・environment一致・未失効validity／reset scopeを満たすGame State Factからroute／Playbook候補を合成できる。candidate／replayed edgeを含む経路はVerified Runへ昇格せず、ExploreまたはSupervisedとして表示する |
 | GS-017 | R4 | ローカルprovider／model／prompt／vision入力範囲／response／resource使用量をversioned記録する。AI推論目的のfull frame／crop／OCR／embedding／prompt／responseの外部送信を禁止し、外部AI API費用0とcloud fallback不在をData Flow Contractで固定する |
 | GS-018 | R4 | hidden-oracle GameLabではruntimeとplannerへstate ID、transition表、allowed action、expected event列、正解recognizerを渡さない。oracleは最終assertionだけに使い、この依存禁止をarchitecture testで固定する |
 | GS-019 | R4 Gate | live探索前に、対象gameでcapture継続、visual grounding、pointer移動、target click、back／Escape、scroll、policyで許可したgeneric keyの受理をprimitiveごと・input routeごとに実観測する。不成立primitiveを別routeへ黙ってfallbackせずUnsupportedにする |
-| GS-020 | R4 | UIは現在のstructure revision、Known／Novel、frontier、提案probe、risk／承認理由、残budget、復帰経路、停止理由、candidate／replayed／verifiedを表示し、利用者がpause、step、abandon、evidence確認を行える |
+| GS-020 | R4 | UIは現在のstructure revision、Known／Novel、frontier、提案probe、明示policy、残budget、停止理由、candidate／replayed／verifiedを表示し、利用者がpause、step、abandon、evidence確認を行える。承認理由と復帰経路を通常操作gateとして表示しない |
 | GS-021 | R4 | 利用者はnode label、同一性、merge／split、edge帰属、fact値の誤りを訂正できる。訂正はactor=userのappend-only Structure Eventと新revisionを作り、旧証拠を削除せず、verifiedへの自動昇格根拠にしない |
 
 ### 3.6.2 学習コンソール／検証付きマクロ
@@ -276,11 +289,11 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | LC-002 | R4 | 利用者はstepを追加、削除、並べ替え、差替えし、修正指示と理由を付けた新route revisionとして保存／undoできる。旧revisionは保持する |
 | LC-003 | R4 | AI案と利用者案を別revisionとして比較し、利用者訂正だけではVerifiedへ昇格しない |
 | LC-004 | R4 | Screen Graph、Learning Route、Playbook／Visual Macroを別成果物とし、一つのStructureから複数goal routeを作れる |
-| LC-005 | R4 | route compilerは同一environment、edge連続性、locator、destination、risk、verificationを検証し、一部成功や黙ったedge補完を行わない |
-| LC-006 | R4 | 既知routeはAIなしでローカルrecognizer→Nano入力→期待画面／Game State Fact監査を行い、Confirmed以外では次stepをdispatchしない |
-| LC-007 | R4 | AIは未知画面、曖昧target、期待結果不一致、game update、経路最適化時だけ修復案を返し、停止済みRunへ新revisionとして提示する |
-| LC-008 | R4 | 固定座標を唯一根拠にせず、画像特徴、OCR、配置関係、locator revisionから対象を再同定する |
-| LC-009 | R4 | hard policyはrouteより上位で、AI案とroute編集から変更できない。禁止risk候補はdispatch前に棄却する |
+| LC-005 | R4 | route compilerは同一environmentと現在Structure上のedge連続性を検証する。保存時より新しいStructure revisionでも参照edgeが有効なら実行可能とし、verification不足はSupervisedへ下げて通常操作を拒否しない |
+| LC-006 | R4 | 既知routeはAIなしでローカルrecognizer→Nano入力→10秒の意味遷移監査を行い、`Moved`ならdestination ID不一致でも次stepへ進む |
+| LC-007 | R4 | AI探索は現在ページに保存済みactionが無い時と、保存済みactionの10秒非遷移時だけ起動する。修正は失敗stepに必要な一件を新revisionへ追記し、正常区間を作り直さない |
+| LC-008 | R4 | 保存座標、画像特徴、類似OCR、配置関係を使って同じaction IDへ再同定する。完全一致とlocator revision一致を通常操作の条件にしない |
+| LC-009 | R4 | 利用者が明示したGame Policyだけをrouteより上位に置く。AI案、OCR、固定禁止語から操作禁止を作らない |
 | LC-010 | R4 | 通常実行は外部AI APIとcloud fallbackを必要とせず、外部AI送信0、外部AI API費用0を維持する |
 
 ### 3.7 UX／Operations
@@ -289,7 +302,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 |---|---|---|
 | UX-001 | R1 | 初回起動で各device、LGS/G HUB、driver、利用可能capability、read-only／ownership状態を表示する |
 | UX-002 | R2 | app選択から両device設定までをdevice別画面の往復なしで完了できる |
-| UX-003 | R3 | 提案待ち、承認待ち、入力中、結果確認中、利用者停止、対象不一致、認識不能、完了、失敗を常時表示する |
+| UX-003 | R3 | 提案待ち、入力中、結果確認中、利用者停止、対象不一致、認識不能、完了、失敗を常時表示する。内部authorizationを利用者の承認待ちとして表示しない |
 | UX-004 | R3 | pause／emergency stopをAI、capture、対象deviceに依存しない操作で提供する |
 | UX-005 | R3 | 再開時に最後のconfirmed state、現在state、差分、採用version、次の操作を表示する |
 | UX-006 | R2 | device未接続、競合、app identity不一致、入力不達に利用者向け復旧選択を出す |
@@ -434,10 +447,10 @@ Hardware Maintenanceは保守面であり、通常のゲーム設定flowへ出�
 1. 対象app／window、探索領域、許可primitive、risk禁止項目、復帰境界、ローカルAI処理、外部AI送信なし、保存期間、action／時間／resource上限を固定する。
 2. game固有state、visual target、recognizer、routeが0件のPersonal Knowledge StoreからExploration Runを開始する。
 3. Observe OnlyでAIが現在画面のNovel判定、affordance候補、探索frontierを提示する。
-4. 未知targetの最初の一手を利用者が承認し、runtimeが既存Durable Attempt境界からdispatchする。
+4. current frame／window／transformと明示Game Policyを満たす候補を、runtimeが既存Durable Attempt境界からdispatchする。通常操作に追加承認を要求しない。
 5. Perceptionが前後の安定観測を取り、node／edge／no-change／faultをTransition Evidenceとして保存する。
 6. AIがStructureDeltaProposalを返し、Structure Knowledge Controllerが証拠を検証して新しいGame Structure revisionを作る。
-7. low-risk、可逆、既知復帰経路が実証された範囲だけbounded autonomous explorationを許す。
+7. 保存済みactionはAIなしで再利用し、保存actionが無い時か10秒非遷移時だけ次の一件をAIで探索する。
 8. 別sessionでnodeを再同定しedgeを再観測してcandidate→replayed→verifiedへ昇格する。
 9. verified構造とGame State Factからtask用Playbook候補を合成し、Supervised Runで検証する。
 
@@ -448,16 +461,16 @@ Hardware Maintenanceは保守面であり、通常のゲーム設定flowへ出�
 3. DispatchArmed以降で結果未確認ならOutcomeUnknownと表示する。
 4. 訂正は新Playbook versionを作り、確定済み履歴を残す。
 5. 再開時に現在Observationと候補stateを示す。
-6. UniqueMatchだけ自動再開できる。曖昧なら利用者が状態指定、再観察、手順修正、終了を選ぶ。
+6. 類似OCRと保存anchor／座標で既知pageとactionを再同定できれば再開する。保存情報が使えなければ、そのstepだけDiscoverTargetsへ戻す。
 
 #### Journey D2: 学習ルートを直して検証付きマクロへする
 
 1. 探索で得たedge列を操作stepとして表示し、AIが押した対象と期待結果を利用者が確認する。
 2. 利用者はより短いedge列、対象差替え、不要step削除、修正指示を新route revisionへ保存する。
-3. compilerがStructure revision、edge連続性、locator、risk、verificationを検証する。
+3. compilerがenvironmentと現在Structure上のedge連続性を検証する。古いStructure revisionの一致だけで有効routeを拒否しない。
 4. candidate／replayedを含むrouteはSupervised、全Verified routeだけをVerified実行へ変換する。
-5. happy pathはAIを呼ばず、各stepの操作前stateと期待destinationをローカル観測で監査する。
-6. 期待結果不一致では再送せず停止し、AI修復または利用者訂正へ戻す。
+5. happy pathはAIを呼ばず、各stepの保存page／actionを再同定し、操作後10秒の`Moved`を監査する。destination IDは診断情報であり進行条件にしない。
+6. 10秒で`Moved`を確認できなかったstepだけAI再探索または利用者訂正へ戻す。正常stepと保存済みrouteを作り直さない。
 
 #### Journey E: 障害診断
 
@@ -477,12 +490,12 @@ Hardware Maintenanceは保守面であり、通常のゲーム設定flowへ出�
 | Mode | AI | 入力 | 知識更新 |
 |---|---|---|---|
 | Observe Only | state同定、Novel、affordance、proposalを表示 | なし | observation、hypothesis、利用者操作由来candidate |
-| Explore | frontierとframe-bound probeを提案 | 初回一手承認。実証済みlow-risk／可逆／既知復帰範囲だけbounded auto | Structure Evidence、Screen Graph、Game State Fact |
-| Teach | 一手を提案 | stepごとに承認 | 成功後candidate |
-| Supervised Run | known low-riskを実行、未知は確認 | 条件付き | candidate／replayed／verified昇格（§6.8） |
-| Verified Run | verified pathだけ実行 | ambiguityで停止 | 実行証拠を追加 |
+| Explore | 保存action無しまたは10秒非遷移時だけ一件を提案 | current frame／window／transformと明示Game Policyで一回dispatch | Structure Evidence、Screen Graph、Game State Fact |
+| Teach | 利用者の目的から一件を提案 | Teach開始の明示意図に従い一回dispatch | 結果をcandidateとして保存 |
+| Supervised Run | 保存page／actionはAIなし、失敗stepだけ再探索 | `Moved`で進行 | candidate／replayed／verified証拠を追加 |
+| Verified Run | 保存routeをAIなしで実行 | `Moved`で進行。verificationはclaim表示 | 実行証拠を追加 |
 
-承認はapp、window、Observation、proposal、Playbook version、risk classへ結び付ける。いずれかが変わった承認を再利用しない。
+全modeで入力はcurrent app／window／Observation／transformへ束縛する。journalの内部authorizationはdurable状態遷移であり、利用者確認gateではない。
 
 ## 6. Architecture契約
 
@@ -722,7 +735,7 @@ verification statusはenvironment scopeを持つ。GameLabでのVerifiedはGameL
 - replayed → verified: 同一環境scopeの独立live sessionで再現した場合。candidateから直接verifiedになるのは、最初の独立再現が同一環境scopeだった場合である。
 - 環境scopeは game/build、locale、UI scale、resolution、display mode（windowed／borderless／fullscreen）、DPI、HDR、capture backend、input route、Screen Graph version、recognizer version の同一性で判定する。
 
-Screen Graphのnode／edgeもcandidate／replayed／verifiedの3状態を持つ。別sessionで同一node hypothesisが再同定され、edgeが同じtarget／primitiveから互換outcomeへ再遷移した時にreplayedへ上げる。そのsessionが同一environment scopeならverifiedへ上げられる。fixture、同一session反復、AIの自己評価、利用者の成功申告だけでは昇格しない。PB-009の再開照合とVerified Runのstate根拠に使えるのはverified node／edgeだけであり、candidate／replayedは提案、表示、Explore、Teach、Supervisedの参考に限る。Verified StepはScreen Graph versionへpinし、参照先の反証、merge／split、環境scope不一致が生じた場合は自動実行不可へ降格する。
+Screen Graphのnode／edgeもcandidate／replayed／verifiedの3状態を持つ。別sessionで同一node hypothesisが再同定され、edgeが同じtarget／primitiveから互換outcomeへ再遷移した時にreplayedへ上げる。そのsessionが同一environment scopeならverifiedへ上げられる。fixture、同一session反復、AIの自己評価、利用者の成功申告だけでは昇格しない。verificationは公開claimと表示の根拠であり、通常操作gateではない。candidate／replayedを含む保存routeもSupervisedとして実行できる。参照先の反証、merge／split、environment差があればVerified表示を外し、current page／actionを再同定してSupervisedで続ける。
 
 State matchは次を返す。
 
@@ -733,7 +746,7 @@ State matchは次を返す。
 - StaleObservation
 - UnavailableCapture
 
-自動再開できるのは、app、target window、Playbook version、観測鮮度、安定窓、state predicateを満たすUniqueMatchだけである。
+再開時はapp、target window、current transform、保存page／actionを類似OCR、画像、配置で照合する。保存actionを再同定できればAIなしで再開し、使える保存情報が無ければそのstepだけDiscoverTargetsへ進む。`UniqueMatch`という旧分類だけで正常操作を拒否しない。
 
 ### 6.9 Capture／Perception
 
@@ -877,9 +890,8 @@ Game State Factはnavigation nodeから分離する。factの値だけが変わ�
 1. CaptureがFrameを取得し、PerceptionがObservedSceneとAffordanceCandidateを作る。
 2. Exploration CoordinatorがObservation evidenceをcommitする。
 3. AIがimmutable ExplorationContextからExplorationProposalを返す。
-4. controllerがschema、source revision、Frame／transform、target window、primitive、risk、budget、復帰境界を検証する。
-5. 必要な一手承認をObservation、proposal、policy revisionへ束縛する。
-6. PlaybooksがAttemptとDispatchArmedをcommitし、初めてInput Emitterへprobeを依頼する。
+4. controllerがschema、current Frame／transform、target window、primitive、明示Game Policy、budgetを検証する。OCR／AI推測のrisk、復帰edge、追加承認を操作条件にしない。
+5. Playbooksが内部authorization、Attempt、DispatchArmedをcommitし、初めてInput Emitterへprobeを依頼する。内部authorizationはjournal状態遷移であり、利用者確認gateではない。
 7. Perceptionが安定窓まで再観測し、Destination／Novel／NoChange／Ambiguous／Unavailable／faultの探索outcomeを返す。Playbooksはcommit済みObservationで効果を確定できた場合だけAttemptをConfirmed／Rejectedへ進め、確定不能ならOutcomeUnknownにする。
 8. Exploration CoordinatorがTransition Evidenceをappendする。
 9. AIは必要ならStructureDeltaProposalを返し、Structure Knowledge Controllerだけが検証・commitして新Game Structure revisionを作る。
@@ -896,26 +908,19 @@ AIが返したlabel／座標とOCR結果の差、単一frameの見た目、事�
 
 全OCR照合はUnicode正規化、位置許容差、軽い編集距離による類似度で行い、完全一致を正解条件にしない。類似する同一anchor／controlについて後の観測からより自然な文字列が得られた時は、StateId、ActionId、座標、遷移、旧文字列とevidence履歴を維持したまま現在表示文字列を置き換える。OCR生値は観測evidenceとして改変しない。
 
-#### 6.13.4 自律度、risk、停止
+#### 6.13.4 操作受付、明示policy、停止
 
-探索開始時の既定は一手承認である。次をすべて満たすfrontierだけ、利用者が許可したRun内で自動probeへ移せる。
+通常操作は、targetがcurrent Observation／Frame／transform／windowへ束縛され、Nano capabilityがあり、利用者が明示したGame Policyが対象modeとprimitiveを許可する時に受理する。一手承認、既知復帰edge、OCR文字、AI risk説明、固定禁止語、verification labelを追加条件にしない。
 
-- controllerがlow-riskと判定したprimitiveである
-- targetがcurrent Observation／Frame／transformへ一意に束縛されている
-- 課金、購入、削除、account変更、希少資源消費、自由text入力ではない
-- verifiedまたは同Run内で実証済みの復帰edge列があり、残budget内で戻れる
-- no-progress、loop、capture loss、modal、network waitを検出する停止条件がある
-- Game Policyが対象modeを許可する
+Game Policyの禁止tagは利用者または製品設定が明示的に与えたものだけを使う。OCRやAIが「購入」「戦闘」「開始」等の文字を見つけても禁止tagへ変換しない。safe-sliceの禁止事項はそのRunのpolicyだけに属し、別game、別goal、通常runtimeへ継承しない。
 
-AI自身のrisk説明を許可根拠にしない。risk分類と自律可否はdeterministic policyが決める。復帰edgeが反証された時点で自動probe権限を失う。budget到達、同一probe反復、画面振動、frontier枯渇、target confidence不足、対象app不一致、transform変更では新しい入力を出さず停止する。
-
-未知targetのrisk classはUnknownから始める。low-riskへの登録は、利用者の明示分類または事前合意したdeterministic ruleと観測証拠だけで行う。画面上で戻れたことはpersistent side effectが巻き戻った証拠ではないため、既知復帰経路だけでside-effect-freeへ昇格しない。
+対象app不一致、capture unavailable、古いtransform、window外target、Nano不達、durable commit失敗、利用者停止、明示budget到達では新しい入力を出さない。`Stayed`、`Undetermined`、no-progress、同一edge、画面振動、未知labelは操作履歴として保存し、Run全体の自動停止理由にしない。保存actionの10秒非遷移だけが、そのactionを再探索できる条件になる。
 
 #### 6.13.5 Exploration Runとtask Run
 
 Exploration Runは構造を増やすためのRun、task Runはgoalを達成するためのRunである。一つのapp／windowで同時に両executorを動かさない。各Runは開始時のGame Structure revisionとpolicyへpinする。
 
-task RunがNovel branchに到達した場合はそのRunをpauseし、未解決Attemptがないことを確認して別Exploration Runを開始する。探索で新revisionができても元task Runへ自動適用しない。再観測と互換性確認後に新Playbook versionまたは新Runとして採用する。
+task Runが保存actionの無いpageまたは10秒非遷移へ到達した場合は、そのstepだけDiscoverTargetsへ移り、目的に必要な一件を追記する。新しいnode／edge／actionはappend-only revisionとして保存し、正常だった前段と旧証拠を保持する。未解決Attemptがある間だけ次dispatchを作らない。
 
 Goal Plannerはverified node／edge／factを無人実行候補に使える。candidate／replayedを含むrouteは候補Playbookとして表示し、ExploreまたはSupervisedで検証する。構造のVerifiedと日課taskのVerified Stepは別状態であり、構造がverifiedでもtask全体の成功を意味しない。
 
@@ -1255,7 +1260,7 @@ Exit:
 1. GameLab daily resetで複数日を高速検証。
 2. 実game Observe Only。
 3. 利用者の実操作とAI proposalを比較するshadow run。
-4. Teach modeの一手承認。
+4. Teach modeの一件proposalを10の基盤機能へ渡し、current frame／window／transformと明示Game Policyで実行する。
 5. verified部分だけSupervised／Verified Run。
 6. 日替わり未知branchは停止して追記。
 
@@ -1317,6 +1322,8 @@ Exit:
 
 ### Phase 9: AI Game Structure Discovery（Exit成立 2026-08-24）
 
+本節は2026-08-24時点のhistorical acceptanceである。一手承認、復帰経路、risk推定、反復停止を含む当時のgateは現行runtime authorityではない。現在の操作受付は§0.3、§6.13.3.1、§6.13.4と[Game Interaction Foundation Contract](game-interaction-foundation-contract.md)を正とする。
+
 目的: game固有state／target／recognizer／遷移／正解手順を開発時に提供せず、AIが安全な画面操作と再観測からGame Structureを構築し、その知識を再起動・別session・task計画へ再利用できる基盤を成立させる。
 
 既存のWGC Frame、transform／freshness、Durable Attempt、commit-before-dispatch、Run Journal、Run Controls、policy／risk gate、AI proposal-only境界は作り直さず利用する。`FixtureFrameRecognizer`、手書きGameLab遷移、script済みAllowedAction、`UnknownBranchAppend`を探索成立の主経路または証拠にしない。
@@ -1355,7 +1362,7 @@ Exit:
 
 - 初期対象はNIKKEの非課金・非消費・非戦闘のlobby範囲とし、対象build／locale／resolution／input routeを固定する。
 - 一つの可逆な「画面を開く→別画面を観測→戻る」経路を、人のstate／target命名なしで発見する。
-- 最初は一手承認で成立させ、その同一scope内でlow-risk、可逆、既知復帰条件を満たした後だけbounded autoで再実行する。
+- 当時のsafe-sliceは一手承認で実証した。このhistorical条件を現行runtimeの通常操作gateへ継承しない。
 - input APIまたはSerial HID ACKではなく、game画面のbefore／after Observationで受理を判定する。
 - 規約、capture、visual grounding、pointer／click受理のどれかが不成立ならPhase 9Cは未成立のまま止め、GameLab成功をreal-game成功へ読み替えない。
 
@@ -1410,7 +1417,7 @@ Exit:
 - **Serial HID Output campaign Exit成立（2026-08-23）**: Exit 11条件をすべて満たしCLOSE。判定は[Exit Assessment](serial-hid-output-exit-assessment.md)、通常操作と復旧は[運用手順](serial-hid-output-operation.md)を正とする。製品公開claimは`Partial LGS Replacement`のまま維持する。
 - **G13 Native LCD campaign Phase 1 Exit成立（2026-08-23）**: Windows標準HidUsbの992-byte output collectionへ`WriteFile`でsolid frameを送り、LCD反映とwrite後のG1 down/up・drop 0を実機確認。`HidD_SetOutputReport`はerror 31で不採用、driver差替え不要。Phase 2のresident LCD runtimeへ進む。判定は[Phase 1標準HID write gate](../evidence/g13-native-lcd/p1-standard-hid-write-gate.md)。
 - **G13 Native LCD campaign Phase 2機能中核成立（2026-08-23）**: resident LCD worker、workspace単位の画像／テキスト保存、Input Studio G13ペイン、app-first前面連動、共通Windows表示を実装し、実機G13と実SQLiteで確認した。特定アプリが共通profileを再利用していた場合は編集前に専用workspaceへ分岐し、共通設定の巻込みを防ぐ。証跡は[プリセット表示・設定 delivery](../evidence/g13-native-lcd/p2-preset-lcd-delivery.md)。Phase 2 Exit全体はfocused latencyと実機hotplug再表示の確認待ち。
-- **Phase 12 Game Interaction Foundation 最終判定中（2026-08-25）**: 画面認識→一回入力→安定待機→再認識→意味比較→遷移学習を基本10機能として実装し、目的に必要な1ボタンだけを初回AIで発見してページ・座標・行き先へ逐次追記するScreen Indexを製品Hostへ配線した。NIKKEで初回AI 1、Host再起動後・Foundry unload中の既知実行AI 0、Nano Click、保存destination一致が成立。Scroll／Dragのゲーム内受理、最終full regression、独立反証を閉じるまでExitは宣言しない。判定は[Phase 12 Foundation](phase12-game-interaction-foundation-exit-assessment.md)、正証拠は[t09](../evidence/phase12-game-interaction-foundation/t09-incremental-known-screen-index.md)。
+- **Phase 12 Game Interaction Foundation／Supervised Visual Macro Runner Exit成立（2026-08-25）**: 10の基盤機能、逐次Screen Index、AIなし既知実行、NIKKEのHover／Click／KeyTap／Scroll／Drag、10秒の意味遷移判定、保存済みLearning Routeの可逆2step教師付き実行まで成立した。destination ID不一致は診断だけとし、`Moved`で進む。旧zero-seed複数target harnessの`Passed=false`は上位探索loopのhistorical判定であり、基盤Exitを否定しない。判定は[Phase 12 Foundation](phase12-game-interaction-foundation-exit-assessment.md)と[Supervised Macro Exit](phase12-supervised-macro-runner-exit-assessment.md)。
 
 ## 9. Blockerを潰すfocused experiment
 
@@ -1678,22 +1685,22 @@ LGS Parityは、Phase 0のcanonical inventoryでLGS 9.04.49上の存在を確認
 Game Structure Explorer Previewには次を全て要求する。
 
 1. game固有seed inventoryが0であり、hidden-oracle／expected sequence／fixture recognizerがruntime dependencyにない。
-2. node／edge／factがObservation、proposal、policy／承認、Attempt、outcome、Structure Eventへ追跡可能。
-3. restart replay、OutcomeUnknown、loop／no-progress停止、budget停止、scope外dispatch拒否が合格。
+2. node／edge／factがObservation、proposal、明示policy、内部authorization、Attempt、outcome、Structure Eventへ追跡可能。
+3. restart replay、OutcomeUnknown、明示budget停止、scope外dispatch拒否が合格。loop／no-progress／Stayedは失敗でなく学習結果として残る。
 4. AIがInput、Persistence、risk確定、verification昇格へ直接到達できない。
-5. candidate／replayed／verified、Known／Novel、frontier、risk、残budget、復帰経路、停止理由をUIで区別する。
+5. candidate／replayed／verified、Known／Novel、frontier、残budget、停止理由をUIで区別する。verificationと復帰経路は表示情報であり通常操作gateにしない。
 6. ローカルprovider／model、vision入力範囲、保存、削除、resource使用量、外部AI送信なし、外部AI API費用0がData Flow Contractに従う。
 
 real gameを対象とするVerified Game Structure claimには、さらに次を要求する。
 
 7. 対象game／build／environment／policyでcapture、visual grounding、使用primitive、input routeが個別実測済み。
 8. nodeは独立live sessionで再同定し、edgeはactual inputとbefore／after Observationで再遷移済み。
-9. high-impact、scope外、復帰経路なしの自動dispatch 0。
+9. 利用者が明示した禁止tag、scope外、current window／transform不一致のdispatch 0。OCR／AI推測だけの拒否0。
 10. GameLab証拠、AI自己評価、利用者命名をreal-game verificationへ読み替えていない。
 
 ## 15. Admission package
 
-以下のPhase 0 packageは完了済みのhistorical baselineである。現在の次着手は本節末尾のPhase 9 G0だけとする。
+以下のPhase 0 packageは完了済みのhistorical baselineである。Phase 9 G0も完了済みであり、本節を現在の次着手指示として使わない。
 
 ### Deliverable 0A: LGS baseline
 
@@ -1738,7 +1745,7 @@ real gameを対象とするVerified Game Structure claimには、さらに次を
 - G600 route、Migration Safety、Frame／Observation契約の次の決定ができる。
 - Phase 1へ進めるLaneと、追加実験が必要なLaneを別々に判定できる。
 
-### 次の着手package: Phase 9 G0
+### Historical package: Phase 9 G0（完了済み）
 
 - zero-seed seed inventoryとhidden-oracle dependency testの受入fixture
 - EXP-GS-01用held-out Frame corpus、metric、provider benchmark harness
@@ -1747,7 +1754,7 @@ real gameを対象とするVerified Game Structure claimには、さらに次を
 - NIKKE lobby safe sliceのGame Policy Recordとnon-impact boundary
 - G0結果を反映したExploration contract revisionとPhase 9Aのfocused test一覧
 
-G0ではScreen Graph builderや自動探索loopを先に実装しない。provider／recognizer、data、input、policyのadmissionが成立してからPhase 9Aへ進む。
+このpackageはPhase 9で完了した。次工程は§0.3の逐次探索を上位runtimeへ統一する工程であり、旧G0 gateを再起動しない。
 
 ## 16. 未決定事項と決定期限
 

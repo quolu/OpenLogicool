@@ -17,6 +17,12 @@ public interface IProductGameTargetDiscovery
         CancellationToken cancellationToken = default);
 }
 
+public interface IProductGameRediscoveryTrigger
+{
+    void MarkTransitionUnconfirmed(ObservedScene before, AffordanceCandidate target);
+    void MarkTransitionConfirmed(ObservedScene before, AffordanceCandidate target);
+}
+
 public interface IProductGameFrameEvidenceSink
 {
     ValueTask<CapturedFrameArtifact> SaveAsync(
@@ -32,7 +38,7 @@ public sealed class ProductGameObservationRuntime(
     IProductGameFrameSource frameSource,
     IObservationSource observationSource,
     IProductGameTargetDiscovery targetDiscovery,
-    IProductGameFrameEvidenceSink evidenceSink) : IGameObservationRuntime
+    IProductGameFrameEvidenceSink evidenceSink) : IGameObservationRuntime, IProductGameRediscoveryTrigger
 {
     private readonly object gate = new();
     private CapturedFrame? currentFrame;
@@ -81,6 +87,26 @@ public sealed class ProductGameObservationRuntime(
             ?? throw new InvalidOperationException("target discoveryがsceneを返しませんでした。");
         ValidateScene(observation, scene);
         return scene;
+    }
+
+    public void MarkTransitionUnconfirmed(ObservedScene before, AffordanceCandidate target)
+    {
+        ArgumentNullException.ThrowIfNull(before);
+        ArgumentNullException.ThrowIfNull(target);
+        if (targetDiscovery is IProductGameRediscoveryTrigger rediscovery)
+        {
+            rediscovery.MarkTransitionUnconfirmed(before, target);
+        }
+    }
+
+    public void MarkTransitionConfirmed(ObservedScene before, AffordanceCandidate target)
+    {
+        ArgumentNullException.ThrowIfNull(before);
+        ArgumentNullException.ThrowIfNull(target);
+        if (targetDiscovery is IProductGameRediscoveryTrigger rediscovery)
+        {
+            rediscovery.MarkTransitionConfirmed(before, target);
+        }
     }
 
     private static void ValidateObservation(CapturedFrame frame, ObservationResult observation)

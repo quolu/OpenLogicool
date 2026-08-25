@@ -36,14 +36,13 @@ public sealed class ProductGameExplorerRuntimeTests
         Assert.Equal(GameTransitionJudgement.Moved, result.Comparison!.Judgement);
         Assert.Equal(["click"], device.Calls);
         Assert.Equal(1, coordinator.DispatchCalls);
-        Assert.Equal(ExplorationAuthorizationSource.OwnerDelegatedAutomation, coordinator.Approval!.AuthorizationSource);
         Assert.NotNull(learning.Request);
         Assert.Equal("nano-click", learning.Request!.Dispatch.TransportReceiptId);
         Assert.Equal(1, structure.Calls);
     }
 
     [Fact]
-    public async Task Same_semantic_target_is_not_probed_twice()
+    public async Task Prior_semantic_target_history_does_not_hide_a_current_candidate()
     {
         var before1 = Scene("before-1", 1, "部隊", 0.10);
         var before2 = Scene("before-2", 3, "部隊", 0.12);
@@ -63,13 +62,13 @@ public sealed class ProductGameExplorerRuntimeTests
         var second = await runtime.ExecuteNextAsync();
 
         Assert.Equal(ProductGameExplorerStepStatus.Learned, first.Status);
-        Assert.Equal(ProductGameExplorerStepStatus.NoCandidate, second.Status);
-        Assert.Equal(1, coordinator.DispatchCalls);
-        Assert.Equal(["click"], device.Calls);
+        Assert.Equal(ProductGameExplorerStepStatus.Learned, second.Status);
+        Assert.Equal(2, coordinator.DispatchCalls);
+        Assert.Equal(["click", "click"], device.Calls);
     }
 
     [Fact]
-    public async Task Prohibited_candidate_never_reaches_proposal_or_input()
+    public async Task Ocr_label_never_blocks_normal_input()
     {
         var coordinator = new Coordinator();
         var device = new Device();
@@ -84,9 +83,9 @@ public sealed class ProductGameExplorerRuntimeTests
 
         var result = await runtime.ExecuteNextAsync();
 
-        Assert.Equal(ProductGameExplorerStepStatus.NoCandidate, result.Status);
-        Assert.Equal(0, coordinator.ProposeCalls);
-        Assert.Empty(device.Calls);
+        Assert.Equal(ProductGameExplorerStepStatus.Learned, result.Status);
+        Assert.Equal(1, coordinator.ProposeCalls);
+        Assert.Equal(["click"], device.Calls);
     }
 
     [Fact]
@@ -131,6 +130,30 @@ public sealed class ProductGameExplorerRuntimeTests
         Assert.Equal(0, stability.Calls);
     }
 
+    [Fact]
+    public async Task Indexing_uses_the_single_operation_observation_without_extra_discovery()
+    {
+        var before = Scene("before", 1, "部隊", 0.1);
+        var observation = new ObservationRuntime([before]);
+        var index = new Index();
+        var runtime = Runtime(
+            observation,
+            new StabilityWaiter(Scene("after", 2, "設定", 0.7)),
+            new Coordinator(),
+            new Device(),
+            new Learner(),
+            new StructureCommitter(),
+            gamePolicyAllowsExplore: true,
+            knownScreenIndex: index);
+
+        var result = await runtime.ExecuteNextAsync();
+
+        Assert.Equal(ProductGameExplorerStepStatus.Learned, result.Status);
+        Assert.Equal(1, observation.ObserveCalls);
+        Assert.Equal(1, observation.DiscoverCalls);
+        Assert.Equal(1, index.RememberControlCalls);
+    }
+
     [Theory]
     [InlineData(GameInteractionOperations.KeyTap)]
     [InlineData(GameInteractionOperations.Scroll)]
@@ -172,7 +195,8 @@ public sealed class ProductGameExplorerRuntimeTests
         string operation = GameInteractionOperations.Click,
         IReadOnlyList<string>? keyTokens = null,
         int? verticalSteps = null,
-        IReadOnlyList<double>? dragDestination = null)
+        IReadOnlyList<double>? dragDestination = null,
+        IIncrementalKnownScreenIndex? knownScreenIndex = null)
     {
         var actions = new NanoGameInteractionActions(device, new Mapper());
         return new ProductGameExplorerRuntime(
@@ -184,7 +208,7 @@ public sealed class ProductGameExplorerRuntimeTests
             learning,
             structure,
             coordinator,
-            DeterministicExplorationCandidateRiskPolicy.SafeMenuDefault,
+            UnclassifiedExplorationCandidateRiskPolicy.Default,
             Policy(),
             gamePolicyAllowsExplore,
             TimeProvider.System,
@@ -192,7 +216,8 @@ public sealed class ProductGameExplorerRuntimeTests
             interactionKeyTokens: keyTokens,
             interactionVerticalScrollSteps: verticalSteps,
             interactionHorizontalScrollSteps: operation == GameInteractionOperations.Scroll ? 0 : null,
-            interactionDragDestination: dragDestination);
+            interactionDragDestination: dragDestination,
+            knownScreenIndex: knownScreenIndex);
     }
 
     private static ExplorationPolicy Policy() => new(
@@ -205,19 +230,21 @@ public sealed class ProductGameExplorerRuntimeTests
         GameInteractionOperations.InputOperations,
         ["purchase", "paid-resource", "rare-resource", "gacha", "delete", "account-change"],
         new ExplorationBudget(ContractSchemaVersions.Revision03, 10, 60_000, 60_000),
-        true,
         "owner-consent-1",
         "known-menu-or-escape",
-        new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 1_000, 1, 2, 2),
+        new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 1_000),
         ["budget-exhausted"]);
 
     private sealed class ObservationRuntime(Queue<ObservedScene> scenes) : IGameObservationRuntime
     {
         public ObservationRuntime(IEnumerable<ObservedScene> scenes) : this(new Queue<ObservedScene>(scenes)) { }
         private ObservedScene? current;
+        public int ObserveCalls { get; private set; }
+        public int DiscoverCalls { get; private set; }
 
         public ValueTask<ObservationResult> ObserveAsync(CancellationToken cancellationToken = default)
         {
+            ObserveCalls++;
             current = scenes.Dequeue();
             return ValueTask.FromResult(new ObservationResult(
                 ContractSchemaVersions.Revision03,
@@ -233,7 +260,11 @@ public sealed class ProductGameExplorerRuntimeTests
 
         public ValueTask<ObservedScene> DiscoverTargetsAsync(
             ObservationResult observation,
-            CancellationToken cancellationToken = default) => ValueTask.FromResult(current!);
+            CancellationToken cancellationToken = default)
+        {
+            DiscoverCalls++;
+            return ValueTask.FromResult(current!);
+        }
     }
 
     private sealed class StabilityWaiter(ObservedScene after) : IGameInteractionStabilityWaiter
@@ -265,7 +296,6 @@ public sealed class ProductGameExplorerRuntimeTests
         public ExplorationStopReason StopReason => ExplorationStopReason.None;
         public int ProposeCalls { get; private set; }
         public int DispatchCalls { get; private set; }
-        public ExplorationApproval? Approval { get; private set; }
         private ExplorationProposalAdmission? admission;
 
         public void CommitObservation(ObservedScene scene, DateTimeOffset persistedUtc) =>
@@ -279,27 +309,15 @@ public sealed class ProductGameExplorerRuntimeTests
             admission = value;
             return value.GamePolicyAllowsExplore
                 ? new ExplorationAdmissionDecision(
-                    ExplorationAdmissionStatus.NeedsApproval,
-                    ExplorationStopReason.ApprovalRequired,
-                    "owner approval required",
-                    false)
+                    ExplorationAdmissionStatus.Allowed,
+                    ExplorationStopReason.None,
+                    "allowed",
+                    true)
                 : new ExplorationAdmissionDecision(
                     ExplorationAdmissionStatus.Rejected,
                     ExplorationStopReason.GamePolicyDisabled,
                     "policy denied",
                     false);
-        }
-
-        public ExplorationAdmissionDecision Approve(
-            ExplorationApproval approval,
-            DateTimeOffset persistedUtc)
-        {
-            Approval = approval;
-            return new ExplorationAdmissionDecision(
-                ExplorationAdmissionStatus.Allowed,
-                ExplorationStopReason.None,
-                "allowed",
-                true);
         }
 
         public void Dispatch(string proposalId, Action externalInput, DateTimeOffset persistedUtc)
@@ -314,6 +332,37 @@ public sealed class ProductGameExplorerRuntimeTests
             Assert.Equal(admission!.Proposal.ProposalId, proposalId);
             return "attempt-1";
         }
+    }
+
+    private sealed class Index : IIncrementalKnownScreenIndex
+    {
+        public int RememberControlCalls { get; private set; }
+
+        public KnownScreenActionReference RememberControl(
+            ObservedScene page,
+            AffordanceCandidate control,
+            string evidenceId) => RememberControl([page], control, evidenceId);
+
+        public KnownScreenActionReference RememberControl(
+            IReadOnlyList<ObservedScene> pageSamples,
+            AffordanceCandidate control,
+            string evidenceId)
+        {
+            RememberControlCalls++;
+            return new KnownScreenActionReference("state", control.CandidateId, null);
+        }
+
+        public KnownScreenActionReference RememberDestination(
+            ObservedScene before,
+            AffordanceCandidate control,
+            IReadOnlyList<ObservedScene> destinationSamples,
+            string evidenceId) => new("state", control.CandidateId, "destination");
+
+        public KnownScreenActionReference RememberDestination(
+            IReadOnlyList<ObservedScene> beforeSamples,
+            AffordanceCandidate control,
+            IReadOnlyList<ObservedScene> destinationSamples,
+            string evidenceId) => new("state", control.CandidateId, "destination");
     }
 
     private sealed class Learner : IGameTransitionLearner

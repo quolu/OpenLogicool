@@ -23,7 +23,7 @@ public sealed class GuidExplorationIdSource : IExplorationIdSource
 }
 
 /// <summary>
-/// Observation→proposal→policy／approval→Durable Attempt→再観測→Transition Evidenceを順序付ける。
+/// Observation→proposal→明示policy→Durable Attempt→再観測→Transition Evidenceを順序付ける。
 /// AI、Input、SQLite実装を参照せず、proposal data・Playbooks gate・store portだけを扱う。
 /// </summary>
 public sealed class ExplorationCoordinator
@@ -36,15 +36,11 @@ public sealed class ExplorationCoordinator
     private readonly ExplorationPolicy policy;
     private readonly IExplorationIdSource ids;
     private readonly Dictionary<string, CompletedProbe> completed = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, int> probeCounts = new(StringComparer.Ordinal);
-    private readonly List<string> observedStateHistory = [];
     private ActiveProbe? active;
     private ObservedScene? currentScene;
     private string currentStructureRevisionId;
     private long nextRunSequence;
     private int remainingProbes;
-    private int consecutiveNoProgress;
-    private int oscillationCount;
     private ExplorationStopReason stopReason;
 
     public ExplorationCoordinator(
@@ -121,7 +117,6 @@ public sealed class ExplorationCoordinator
             persistedUtc,
             runJournal.Append);
         currentScene = scene;
-        RecordState(scene);
     }
 
     public ExplorationAdmissionDecision Propose(
@@ -133,7 +128,7 @@ public sealed class ExplorationCoordinator
             throw new InvalidOperationException("未完了のprobeがある間、新しいproposalは登録できません。");
         }
 
-        var decision = Evaluate(admission, approval: null);
+        var decision = Evaluate(admission);
         var correlationId = ids.Next("correlation");
         AppendStructure(
             StructureEventKind.ProbeProposed,
@@ -155,39 +150,8 @@ public sealed class ExplorationCoordinator
             return decision;
         }
 
-        active = new ActiveProbe(admission, decision, correlationId, null, false, false, null);
-        if (decision.Status == ExplorationAdmissionStatus.Allowed)
-        {
-            var automaticApproval = new ExplorationApproval(
-                ContractSchemaVersions.Revision03,
-                ids.Next("approval"),
-                admission.Proposal.ProposalId,
-                admission.Proposal.SourceObservationId,
-                policy.PolicyRevisionId,
-                admission.Proposal.SourceStructureRevisionId,
-                "deterministic-policy",
-                persistedUtc);
-            Authorize(automaticApproval, RunEventActorType.System, persistedUtc);
-        }
-        return decision;
-    }
-
-    public ExplorationAdmissionDecision Approve(
-        ExplorationApproval approval,
-        DateTimeOffset persistedUtc)
-    {
-        var probe = RequireActive();
-        var decision = Evaluate(probe.Admission, approval, proposalAlreadyRecorded: true);
-        active = probe with { Decision = decision };
-        if (decision.Status == ExplorationAdmissionStatus.Allowed)
-        {
-            Authorize(
-                approval,
-                approval.AuthorizationSource == ExplorationAuthorizationSource.OwnerDelegatedAutomation
-                    ? RunEventActorType.Automation
-                    : RunEventActorType.User,
-                persistedUtc);
-        }
+        active = new ActiveProbe(admission, decision, correlationId, null, false, false);
+        Authorize(persistedUtc);
         return decision;
     }
 
@@ -197,7 +161,7 @@ public sealed class ExplorationCoordinator
         var probe = RequireActive(proposalId);
         if (!probe.Authorized || probe.AttemptId is null || probe.Decision.Status != ExplorationAdmissionStatus.Allowed)
         {
-            throw new InvalidOperationException("policyと承認を通過していないproposalはdispatchできません。");
+            throw new InvalidOperationException("現在frameと明示policyを通過していないproposalはdispatchできません。");
         }
         if (remainingProbes <= 0)
         {
@@ -380,7 +344,6 @@ public sealed class ExplorationCoordinator
             report.RecordedUtc);
 
         currentScene = report.AfterScene;
-        RecordProgress(probe.Admission.Proposal, report.AfterScene, report.Outcome);
         completed[report.ProposalId] = new CompletedProbe(probe, evidence);
         active = null;
         return evidence;
@@ -399,9 +362,7 @@ public sealed class ExplorationCoordinator
     }
 
     private ExplorationAdmissionDecision Evaluate(
-        ExplorationProposalAdmission admission,
-        ExplorationApproval? approval,
-        bool proposalAlreadyRecorded = false)
+        ExplorationProposalAdmission admission)
     {
         ArgumentNullException.ThrowIfNull(admission);
         var context = admission.Context;
@@ -421,8 +382,7 @@ public sealed class ExplorationCoordinator
             return Reject(ExplorationStopReason.PolicyMismatch, "Run開始時に固定したpolicy／consentと一致しません。");
         }
         if (!string.Equals(context.StructureRevisionId, proposal.SourceStructureRevisionId, StringComparison.Ordinal)
-            || !proposalAlreadyRecorded
-                && !string.Equals(proposal.SourceStructureRevisionId, currentStructureRevisionId, StringComparison.Ordinal))
+            || !string.Equals(proposal.SourceStructureRevisionId, currentStructureRevisionId, StringComparison.Ordinal))
         {
             return Reject(ExplorationStopReason.SourceRevisionMismatch, "proposalのsource revisionが現在revisionではありません。");
         }
@@ -436,11 +396,11 @@ public sealed class ExplorationCoordinator
         }
         if (context.CurrentScene.CaptureAvailability != CaptureAvailability.Available)
         {
-            return StopRun(ExplorationStopReason.CaptureUnavailable, "captureがAvailableではありません。");
+            return Reject(ExplorationStopReason.CaptureUnavailable, "captureがAvailableではありません。再観測してください。");
         }
         if (context.CurrentScene.Frame.FreshnessMs > policy.StopPolicy.MaximumFrameFreshnessMilliseconds)
         {
-            return StopRun(ExplorationStopReason.StaleFrame, "frame freshness budgetを超えています。");
+            return Reject(ExplorationStopReason.StaleFrame, "frame freshness budgetを超えています。再観測してください。");
         }
         if (!string.Equals(proposal.SourceObservationId, context.CurrentScene.ObservationId, StringComparison.Ordinal)
             || currentScene is null
@@ -481,44 +441,20 @@ public sealed class ExplorationCoordinator
         {
             return Reject(ExplorationStopReason.RiskProhibited, "deterministic risk policyがprobeを禁止しました。");
         }
-        if (risk.RecoveryEdgeIds.Any(edgeId =>
-                !context.KnownReturnPathEdgeIds.Contains(edgeId, StringComparer.Ordinal)))
-        {
-            return StopRun(ExplorationStopReason.RecoveryLost, "deterministic policyが指定した復帰経路を現在構造で確認できません。");
-        }
         if (remainingProbes <= 0
             || admission.ElapsedMilliseconds > policy.Budget.RemainingElapsedMilliseconds
             || admission.InferenceMilliseconds > policy.Budget.RemainingInferenceMilliseconds)
         {
             return StopRun(ExplorationStopReason.BudgetExhausted, "探索budgetを使い切りました。");
         }
-        var requiresApproval = policy.OneStepApprovalRequired
-            || risk.Level != ExplorationRiskLevel.Low
-            || !risk.SideEffectFree
-            || !risk.Reversible
-            || risk.RecoveryEdgeIds.Count == 0;
-        if (approval is null && requiresApproval)
-        {
-            return new ExplorationAdmissionDecision(
-                ExplorationAdmissionStatus.NeedsApproval,
-                ExplorationStopReason.ApprovalRequired,
-                "Observation／proposal／policy／revisionへ束縛した一手承認が必要です。",
-                false);
-        }
-        if (approval is not null && !ApprovalMatches(approval, proposal))
-        {
-            return Reject(ExplorationStopReason.ApprovalMismatch, "承認の束縛先がproposal前提と一致しません。");
-        }
-        if (!requiresApproval && (!risk.Reversible || risk.RecoveryEdgeIds.Count == 0))
-        {
-            return Reject(ExplorationStopReason.RecoveryMissing, "自動probeに必要な復帰経路がありません。");
-        }
         return new ExplorationAdmissionDecision(ExplorationAdmissionStatus.Allowed, ExplorationStopReason.None, "dispatch可能です。", true);
     }
 
-    private void Authorize(ExplorationApproval approval, RunEventActorType actor, DateTimeOffset persistedUtc)
+    private void Authorize(DateTimeOffset persistedUtc)
     {
-        var probe = RequireActive(approval.ProposalId);
+        var probe = RequireActive();
+        var proposal = probe.Admission.Proposal;
+        var authorizationId = ids.Next("authorization");
         var attemptId = ids.Next("attempt");
         AppendRun(
             RunEventPayloadTypes.Proposal,
@@ -532,36 +468,46 @@ public sealed class ExplorationCoordinator
             persistedUtc,
             attemptGate.CommitProposed);
         AppendRun(
-            RunEventPayloadTypes.Approval,
-            actor,
+            RunEventPayloadTypes.Authorization,
+            RunEventActorType.System,
             probe.CorrelationId,
-            approval.ApprovalId,
-            approval.ObservationId,
-            probe.Admission.Proposal.ProposalId,
+            authorizationId,
+            proposal.SourceObservationId,
+            proposal.ProposalId,
             attemptId,
-            JsonSerializer.Serialize(approval, Json),
+            JsonSerializer.Serialize(new
+            {
+                AuthorizationId = authorizationId,
+                proposal.ProposalId,
+                proposal.SourceObservationId,
+                policy.PolicyRevisionId,
+                proposal.SourceStructureRevisionId,
+                Reason = "current-frame-and-explicit-policy-admitted",
+            }, Json),
             persistedUtc,
             attemptGate.CommitAuthorized);
         AppendStructure(
-            StructureEventKind.ProbeApproved,
-            actor switch
-            {
-                RunEventActorType.User => StructureEventActor.User,
-                RunEventActorType.Automation => StructureEventActor.Automation,
-                _ => StructureEventActor.Controller,
-            },
+            StructureEventKind.ProbeAdmitted,
+            StructureEventActor.Controller,
             probe.CorrelationId,
-            approval.ApprovalId,
-            approval.ObservationId,
-            approval.ProposalId,
+            authorizationId,
+            proposal.SourceObservationId,
+            proposal.ProposalId,
             attemptId,
-            [approval.ApprovalId, approval.ObservationId, approval.ProposalId, approval.PolicyRevisionId],
-            StructureEventPayloadTypes.ExplorationApproval,
-            JsonSerializer.Serialize(approval, Json),
+            [authorizationId, proposal.SourceObservationId, proposal.ProposalId, policy.PolicyRevisionId],
+            StructureEventPayloadTypes.ExplorationAdmission,
+            JsonSerializer.Serialize(new
+            {
+                AuthorizationId = authorizationId,
+                proposal.ProposalId,
+                proposal.SourceObservationId,
+                policy.PolicyRevisionId,
+                proposal.SourceStructureRevisionId,
+            }, Json),
             null,
             persistedUtc,
             persistedUtc);
-        active = probe with { AttemptId = attemptId, Authorized = true, Approval = approval, Decision = new(
+        active = probe with { AttemptId = attemptId, Authorized = true, Decision = new(
             ExplorationAdmissionStatus.Allowed,
             ExplorationStopReason.None,
             "dispatch可能です。",
@@ -592,41 +538,6 @@ public sealed class ExplorationCoordinator
             throw new InvalidOperationException("after Observationまたは安定窓がproposal契約を満たしません。");
         }
     }
-
-    private void RecordProgress(ExplorationProposal proposal, ObservedScene scene, ExplorationOutcomeKind outcome)
-    {
-        var probeKey = $"{proposal.AffordanceCandidateId}\n{proposal.Primitive}";
-        probeCounts.TryGetValue(probeKey, out var count);
-        count++;
-        probeCounts[probeKey] = count;
-        if (count > policy.StopPolicy.MaximumRepeatedProbeCount)
-        {
-            stopReason = ExplorationStopReason.RepeatedProbe;
-        }
-
-        consecutiveNoProgress = outcome == ExplorationOutcomeKind.NoChange ? consecutiveNoProgress + 1 : 0;
-        if (consecutiveNoProgress >= policy.StopPolicy.MaximumConsecutiveNoProgressCount)
-        {
-            stopReason = ExplorationStopReason.NoProgress;
-        }
-
-        RecordState(scene);
-        if (observedStateHistory.Count >= 4)
-        {
-            var tail = observedStateHistory.TakeLast(4).ToArray();
-            if (tail[0] == tail[2] && tail[1] == tail[3] && tail[0] != tail[1])
-            {
-                oscillationCount++;
-                if (oscillationCount >= policy.StopPolicy.MaximumOscillationCount)
-                {
-                    stopReason = ExplorationStopReason.Oscillation;
-                }
-            }
-        }
-    }
-
-    private void RecordState(ObservedScene scene) =>
-        observedStateHistory.Add(scene.StateHypothesisId ?? $"observation:{scene.ObservationId}");
 
     private void AppendStructure(
         StructureEventKind kind,
@@ -732,14 +643,6 @@ public sealed class ExplorationCoordinator
         return probe;
     }
 
-    private bool ApprovalMatches(ExplorationApproval approval, ExplorationProposal proposal) =>
-        string.Equals(approval.SchemaVersion, ContractSchemaVersions.Revision03, StringComparison.Ordinal)
-        && string.Equals(approval.ProposalId, proposal.ProposalId, StringComparison.Ordinal)
-        && string.Equals(approval.ObservationId, proposal.SourceObservationId, StringComparison.Ordinal)
-        && string.Equals(approval.PolicyRevisionId, policy.PolicyRevisionId, StringComparison.Ordinal)
-        && string.Equals(approval.StructureRevisionId, proposal.SourceStructureRevisionId, StringComparison.Ordinal)
-        && !string.IsNullOrWhiteSpace(approval.ActorId);
-
     private static bool SchemasAreCurrent(
         ExplorationContext context,
         ExplorationProposal proposal,
@@ -771,10 +674,7 @@ public sealed class ExplorationCoordinator
             || policy.Budget.RemainingProbes <= 0
             || policy.Budget.RemainingInferenceMilliseconds <= 0
             || policy.Budget.RemainingElapsedMilliseconds <= 0
-            || policy.StopPolicy.MaximumFrameFreshnessMilliseconds < 0
-            || policy.StopPolicy.MaximumRepeatedProbeCount <= 0
-            || policy.StopPolicy.MaximumConsecutiveNoProgressCount <= 0
-            || policy.StopPolicy.MaximumOscillationCount <= 0)
+            || policy.StopPolicy.MaximumFrameFreshnessMilliseconds < 0)
         {
             throw new ArgumentException("Exploration Run bindingまたはimmutable policyが不正です。");
         }
@@ -846,8 +746,7 @@ public sealed class ExplorationCoordinator
         string CorrelationId,
         string? AttemptId,
         bool Authorized,
-        bool Dispatched,
-        ExplorationApproval? Approval);
+        bool Dispatched);
 
     private sealed record CompletedProbe(ActiveProbe Probe, TransitionEvidence Evidence);
 }

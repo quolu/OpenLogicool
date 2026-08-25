@@ -32,7 +32,6 @@ public static class PersonalLearningKnowledgeImporter
             || string.IsNullOrWhiteSpace(document.Goal)
             || string.IsNullOrWhiteSpace(document.InputRoute)
             || document.ProhibitedRiskTags is null
-            || document.ProhibitedRiskTags.Count == 0
             || document.ProhibitedRiskTags.Any(string.IsNullOrWhiteSpace)
             || document.Steps is null
             || document.Steps.Count == 0

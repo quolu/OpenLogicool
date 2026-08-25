@@ -5,6 +5,8 @@
 - 正本: 本書と[製品・開発計画](development-plan.md) Phase 10
 - 前提: [Phase 9 Exit判定](phase9-exit-assessment.md)
 
+> Historical scope: 本campaignのダイヤ、購入、戦闘等の制限は、この一件実証へ明示したGame Policyだけに属する。コア製品の既定禁止語または通常操作gateとして継承しない。
+
 ## 目的
 
 GameWithの公開情報を未信頼の参考仮説として取り込み、NIKKEの実画面から日課一覧を発見する。その一覧を根拠に、ダイヤを消費しない日課を一件、Nano Serial HIDだけで実行し、画面の進捗または報酬変化で完了を確認する。

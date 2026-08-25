@@ -34,14 +34,14 @@ public sealed class HostSupervisedMacroIntentsTests
         var events = intents.JournalStore.ReadRun(completed.RunId);
         Assert.Equal(
             [RunEventPayloadTypes.Observation, RunEventPayloadTypes.Observation,
-                RunEventPayloadTypes.Proposal, RunEventPayloadTypes.Approval,
+                RunEventPayloadTypes.Proposal, RunEventPayloadTypes.Authorization,
                 RunEventPayloadTypes.Dispatch, RunEventPayloadTypes.DispatchResult, RunEventPayloadTypes.Observation,
                 RunEventPayloadTypes.Confirmation],
             events.Select(item => item.PayloadType));
         Assert.Contains(events, item => item.PayloadType == RunEventPayloadTypes.Confirmation);
         Assert.Equal(
             RunEventActorType.User,
-            Assert.Single(events, item => item.PayloadType == RunEventPayloadTypes.Approval).ActorType);
+            Assert.Single(events, item => item.PayloadType == RunEventPayloadTypes.Authorization).ActorType);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class HostSupervisedMacroIntentsTests
 
         var approval = Assert.Single(
             intents.JournalStore.ReadRun(completed.RunId),
-            item => item.PayloadType == RunEventPayloadTypes.Approval);
+            item => item.PayloadType == RunEventPayloadTypes.Authorization);
         Assert.Equal(RunEventActorType.Automation, approval.ActorType);
         Assert.Contains("owner-delegated-automation", approval.PayloadJson, StringComparison.Ordinal);
     }

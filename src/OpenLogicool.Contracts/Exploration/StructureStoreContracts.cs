@@ -7,6 +7,7 @@ public enum StructureEventKind
 {
     ObservationRecorded,
     ProbeProposed,
+    // 0.3.0以前のevent replay専用。新規eventはProbeAdmittedを使う。
     ProbeApproved,
     DispatchArmed,
     OutcomeRecorded,
@@ -15,6 +16,7 @@ public enum StructureEventKind
     VerificationAccepted,
     CorrectionApplied,
     ManualInterventionRecorded,
+    ProbeAdmitted,
 }
 
 public enum StructureEventActor
@@ -29,7 +31,9 @@ public static class StructureEventPayloadTypes
     public const string None = "none";
     public const string Observation = "observed-scene";
     public const string ExplorationProposal = "exploration-proposal";
+    // 0.3.0以前のevent replay専用。新規payloadはExplorationAdmissionを使う。
     public const string ExplorationApproval = "exploration-approval";
+    public const string ExplorationAdmission = "exploration-admission";
     public const string StructureDelta = "structure-delta-proposal";
     public const string MutationBatch = "structure-mutation-batch";
     public const string TransitionEvidence = "transition-evidence";

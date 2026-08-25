@@ -6,6 +6,8 @@
 
 **Phase 11 Exit成立。**
 
+本書はPhase 11当時のhistorical acceptanceである。実ゲームdispatchは後続のPhase 12 Supervised Visual Macro Runnerで成立済み。`Confirmed`／destination一致を要求した旧記述は現行操作gateではなく、現在は10秒の`Moved`を進行条件とする。
+
 Game Operatorは、保存済みGame Structureから人が読める操作列を作り、利用者が修正し、理由付きの不変revisionとして保存し、検証付きVisual Macroへ変換できる。Visual Macroは操作前後の画面を決定的に監査し、`Confirmed`以外では継続を許さない。
 
 この判定は「学習コンソールと検証付きマクロ生成」までであり、NIKKE全日課の無人完遂、実ゲームへの生成macro dispatch、AI provider選定を含まない。

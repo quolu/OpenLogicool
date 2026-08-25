@@ -13,15 +13,13 @@ namespace OpenLogicool.Host;
 /// </summary>
 public sealed class HostSupervisedMacroIntents : ISupervisedMacroIntents
 {
-    private static readonly string[] ProhibitedRiskTags =
-        ["spend-premium-currency", "spend-rare-resource", "spend-real-money"];
-
     private readonly SqliteGameStructureStore structures;
     private readonly SqliteLearningRouteStore routes;
     private readonly ISupervisedMacroRuntimePort runtime;
     private readonly IEngineeringLogSink engineeringLog;
     private readonly TimeProvider timeProvider;
     private readonly SupervisedMacroAuthorizationSource authorizationSource;
+    private readonly IReadOnlyCollection<string> prohibitedRiskTags;
     private SupervisedVisualMacroRunner? runner;
     private ObservedScene? beforeScene;
 
@@ -30,7 +28,8 @@ public sealed class HostSupervisedMacroIntents : ISupervisedMacroIntents
         ISupervisedMacroRuntimePort runtime,
         IEngineeringLogSink engineeringLog,
         TimeProvider? timeProvider = null,
-        SupervisedMacroAuthorizationSource authorizationSource = SupervisedMacroAuthorizationSource.InteractiveUser)
+        SupervisedMacroAuthorizationSource authorizationSource = SupervisedMacroAuthorizationSource.InteractiveUser,
+        IReadOnlyCollection<string>? prohibitedRiskTags = null)
     {
         ArgumentNullException.ThrowIfNull(connection);
         this.runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
@@ -40,6 +39,7 @@ public sealed class HostSupervisedMacroIntents : ISupervisedMacroIntents
         JournalStore = new SqliteRunJournalStore(connection);
         this.timeProvider = timeProvider ?? TimeProvider.System;
         this.authorizationSource = authorizationSource;
+        this.prohibitedRiskTags = prohibitedRiskTags ?? [];
     }
 
     internal IRunJournalStore JournalStore { get; }
@@ -70,11 +70,7 @@ public sealed class HostSupervisedMacroIntents : ISupervisedMacroIntents
             throw new InvalidOperationException("学習ルート版は選択中のゲーム環境と一致しません。");
         }
         var structure = structures.LoadRevision(gameId, environmentScope);
-        if (!string.Equals(route.StructureRevisionId, structure.RevisionId, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException("学習ルートが固定した構造版は現在の構造正本と一致しません。");
-        }
-        var program = VisualMacroCompiler.Compile(route, structure, ProhibitedRiskTags);
+        var program = VisualMacroCompiler.Compile(route, structure, prohibitedRiskTags);
         var journal = RunJournal.Restore(JournalStore, engineeringLog);
         var gate = AttemptDispatchGate.Recover(JournalStore, journal);
         var unresolved = gate.Attempts.FirstOrDefault(candidate => candidate.IsUnresolvedAfterArm);

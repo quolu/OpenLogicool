@@ -149,7 +149,7 @@ public sealed class SupervisedVisualMacroRunner
             causationId: causationId,
             payload: new { CurrentStep.Sequence, CurrentStep.Primitive, CurrentStep.AffordanceCandidateId }));
         attemptGate.CommitAuthorized(Event(
-            RunEventPayloadTypes.Approval,
+            RunEventPayloadTypes.Authorization,
             authorizationActor,
             attemptId,
             commandId,
@@ -204,57 +204,6 @@ public sealed class SupervisedVisualMacroRunner
             statusMessage = $"入力結果を確定できないため停止しました: {exception.Message}";
             throw;
         }
-    }
-
-    public VisualMacroAuditResult AuditAfter(ObservedScene scene)
-    {
-        RequireState(SupervisedMacroRunState.AwaitingAfterAudit);
-        var attemptId = history[^1].AttemptId!;
-        var result = VisualMacroAuditor.AuditAfter(CurrentStep, scene);
-        attemptGate.CommitObserving(Event(
-            RunEventPayloadTypes.Observation,
-            RunEventActorType.System,
-            attemptId,
-            observationId: scene.ObservationId,
-            payload: new { Phase = "after", Audit = result, Scene = scene }));
-        ReplaceHistory(history[^1] with { AfterAudit = result });
-        if (!result.CanContinue)
-        {
-            if (result.Status == VisualMacroAuditStatus.UnexpectedState)
-            {
-                attemptGate.CommitRejected(Event(
-                    RunEventPayloadTypes.Rejection,
-                    RunEventActorType.System,
-                    attemptId,
-                    observationId: scene.ObservationId,
-                    payload: new { Phase = "after", Audit = result }));
-            }
-            else
-            {
-                attemptGate.ResolveLocally(attemptId, AttemptState.OutcomeUnknown);
-            }
-            Stop(SupervisedMacroStopReason.AfterAuditFailed, result.Message);
-            return result;
-        }
-
-        attemptGate.CommitConfirmed(Event(
-            RunEventPayloadTypes.Confirmation,
-            RunEventActorType.System,
-            attemptId,
-            observationId: scene.ObservationId,
-            payload: new { Phase = "after", Audit = result }));
-        stepIndex++;
-        if (stepIndex == program.Steps.Count)
-        {
-            state = SupervisedMacroRunState.Completed;
-            statusMessage = "全stepの結果画面を確認し、マクロを完了しました。";
-        }
-        else
-        {
-            state = SupervisedMacroRunState.AwaitingBeforeAudit;
-            statusMessage = "次stepの操作前画面を確認してください。";
-        }
-        return result;
     }
 
     public VisualMacroAuditResult AuditAfterTransition(

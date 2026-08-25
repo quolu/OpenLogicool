@@ -118,7 +118,7 @@ public sealed class HiddenOracleDiscoveryTests
     }
 
     [Fact]
-    public void Stale_frame_stops_with_zero_dispatch()
+    public void Stale_frame_rejects_the_attempt_with_zero_dispatch()
     {
         using var database = new DiscoveryDatabase();
         var game = new HiddenOracleDiscoveryGame();
@@ -128,7 +128,7 @@ public sealed class HiddenOracleDiscoveryTests
 
         var decision = session.Coordinator.Propose(session.Admission(scene, scene.Affordances[0], "proposal-stale"), Time(2));
 
-        Assert.Equal(ExplorationAdmissionStatus.Stopped, decision.Status);
+        Assert.Equal(ExplorationAdmissionStatus.Rejected, decision.Status);
         Assert.Equal(ExplorationStopReason.StaleFrame, decision.Reason);
         Assert.Equal(0, game.ReadOracleAudit().AcceptedClicks);
     }
@@ -152,7 +152,7 @@ public sealed class HiddenOracleDiscoveryTests
     }
 
     [Fact]
-    public void Recovery_loss_stops_with_zero_dispatch()
+    public void Recovery_metadata_does_not_block_a_current_policy_allowed_target()
     {
         using var database = new DiscoveryDatabase();
         var game = new HiddenOracleDiscoveryGame();
@@ -165,7 +165,8 @@ public sealed class HiddenOracleDiscoveryTests
 
         var decision = session.Coordinator.Propose(admission, Time(2));
 
-        Assert.Equal(ExplorationStopReason.RecoveryLost, decision.Reason);
+        Assert.True(decision.DispatchAllowed);
+        Assert.Equal(ExplorationStopReason.None, decision.Reason);
         Assert.Equal(0, game.ReadOracleAudit().AcceptedClicks);
     }
 
@@ -291,182 +292,6 @@ public sealed class HiddenOracleDiscoveryTests
             StructureVerificationState.Candidate,
             discovery.StructureStore.LoadRevision(DiscoverySession.GameId, DiscoverySession.Environment)
                 .ScreenGraph.Nodes.Single(node => node.StateId == stateId).VerificationState);
-    }
-
-    [Fact]
-    public void Verified_structure_synthesizes_and_replays_as_a_separate_supervised_run()
-    {
-        using var database = new DiscoveryDatabase();
-        string sourceStateId;
-        string destinationStateId;
-        string edgeId;
-        using (var discovery = database.Open(new HiddenOracleDiscoveryGame(), "playbook-discovery"))
-        {
-            var before = discovery.ObserveAndCommit();
-            sourceStateId = discovery.EnsureNode(before, before.ObservationId);
-            var result = discovery.Probe(before, before.Affordances[0]);
-            edgeId = discovery.CommitTransition(before, result.After, result.Evidence);
-            destinationStateId = discovery.FindStateId(result.After);
-        }
-
-        using (var replay = database.Open(new HiddenOracleDiscoveryGame(), "playbook-replay"))
-        {
-            var before = replay.ObserveAndCommit();
-            var result = replay.Probe(before, before.Affordances[0]);
-            PromoteRoute(
-                replay,
-                sourceStateId,
-                destinationStateId,
-                edgeId,
-                StructureVerificationState.Replayed,
-                "playbook-discovery",
-                result.Evidence.EvidenceId);
-        }
-
-        GameStructureRevision verified;
-        IReadOnlyList<StructureEvent> events;
-        ExplorationPolicy supervisedPolicy;
-        using (var verification = database.Open(new HiddenOracleDiscoveryGame(), "playbook-verification"))
-        {
-            var before = verification.ObserveAndCommit();
-            var result = verification.Probe(before, before.Affordances[0]);
-            PromoteRoute(
-                verification,
-                sourceStateId,
-                destinationStateId,
-                edgeId,
-                StructureVerificationState.Verified,
-                "playbook-discovery",
-                result.Evidence.EvidenceId);
-            verified = verification.StructureStore.LoadRevision(DiscoverySession.GameId, DiscoverySession.Environment);
-            events = verification.StructureStore.ReadEvents(DiscoverySession.GameId, DiscoverySession.Environment);
-            supervisedPolicy = verification.Policy with
-            {
-                PolicyRevisionId = "policy:playbook-supervised",
-                OneStepApprovalRequired = true,
-                ConsentRevisionId = "consent:playbook-supervised",
-            };
-        }
-
-        var candidate = StructurePlaybookSynthesizer.Synthesize(
-            verified,
-            [edgeId],
-            "playbook:hidden-oracle:supervised:v1",
-            StructurePlaybookExecutionMode.Supervised);
-        Assert.Equal(StructureVerificationState.Verified, candidate.WeakestEvidence);
-        var run = PlaybookRun.Start("run:hidden-oracle:supervised", PlaybookMaterializer.ToGraph(candidate.Playbook));
-        var action = StructurePlaybookActionResolver.Resolve(
-            candidate,
-            verified,
-            events,
-            run.PinnedVersion.Nodes.Single(node => node.SemanticActionId is not null).SemanticActionId!,
-            supervisedPolicy);
-        var supervisedGame = new HiddenOracleDiscoveryGame();
-        var fresh = new ZeroSeedFrameRecognizer().Observe(supervisedGame.Capture(), "supervised:before");
-        Assert.Throws<InvalidOperationException>(() => StructurePlaybookActionRebinder.Rebind(
-            verified,
-            action,
-            fresh with { Frame = fresh.Frame with { SourceId = "window:other" } },
-            supervisedPolicy));
-        Assert.Throws<InvalidOperationException>(() => StructurePlaybookActionRebinder.Rebind(
-            verified,
-            action,
-            fresh with
-            {
-                Frame = fresh.Frame with
-                {
-                    FreshnessMs = supervisedPolicy.StopPolicy.MaximumFrameFreshnessMilliseconds + 1,
-                },
-            },
-            supervisedPolicy));
-        action = StructurePlaybookActionRebinder.Rebind(verified, action, fresh, supervisedPolicy);
-        var approval = new StructurePlaybookStepApproval(
-            ContractSchemaVersions.Revision03,
-            candidate.Playbook.VersionId,
-            candidate.StructureRevisionId,
-            action.SemanticActionId,
-            action.SourceStateId,
-            action.BeforeObservationId,
-            action.FrameSequence,
-            action.TransformRevision,
-            action.PolicyRevisionId,
-            action.ConsentRevisionId,
-            true);
-        var authorized = StructurePlaybookSupervisedGate.Authorize(
-            candidate,
-            action,
-            sourceStateId,
-            approval);
-
-        using var supervisedConnection = database.OpenConnection();
-        var supervisedStore = new SqliteRunJournalStore(supervisedConnection);
-        var journal = new RunJournal(supervisedStore, new NoopLog());
-        var attemptGate = new AttemptDispatchGate(journal);
-        const string runId = "run:hidden-oracle:supervised";
-        const string attemptId = "attempt:hidden-oracle:supervised:1";
-        const string commandId = "command:hidden-oracle:supervised:1";
-        journal.Append(RunEventFor(
-            1, runId, candidate.Playbook.VersionId, RunEventPayloadTypes.Observation,
-            attemptId, commandId, fresh.ObservationId, "step:1", RunEventActorType.Automation, fresh));
-        attemptGate.CommitProposed(RunEventFor(
-            2, runId, candidate.Playbook.VersionId, RunEventPayloadTypes.Proposal,
-            attemptId, commandId, fresh.ObservationId, "step:1", RunEventActorType.Automation, action));
-        attemptGate.CommitAuthorized(RunEventFor(
-            3, runId, candidate.Playbook.VersionId, RunEventPayloadTypes.Approval,
-            attemptId, commandId, fresh.ObservationId, "step:1", RunEventActorType.User, approval));
-        attemptGate.MarkPrepared(attemptId);
-        var bounds = authorized.Locator.NormalizedBounds;
-        attemptGate.ArmThenDispatch(
-            RunEventFor(
-                4, runId, candidate.Playbook.VersionId, RunEventPayloadTypes.Dispatch,
-                attemptId, commandId, fresh.ObservationId, "step:1", RunEventActorType.Automation, authorized),
-            () => supervisedGame.Click(bounds[0] + bounds[2] / 2, bounds[1] + bounds[3] / 2));
-        attemptGate.CommitReported(RunEventFor(
-            5, runId, candidate.Playbook.VersionId, RunEventPayloadTypes.DispatchResult,
-            attemptId, commandId, fresh.ObservationId, "step:1", RunEventActorType.Automation,
-            new { dispatched = true, authorized.Primitive, authorized.TargetWindowSourceId, authorized.FrameSequence }));
-        var after = new ZeroSeedFrameRecognizer().Observe(supervisedGame.Capture(), "supervised:after");
-        var destination = verified.ScreenGraph.Nodes.Single(node => node.StateId == action.DestinationStateId);
-        attemptGate.CommitObserving(RunEventFor(
-            6, runId, candidate.Playbook.VersionId, RunEventPayloadTypes.Observation,
-            attemptId, commandId, after.ObservationId, "step:1", RunEventActorType.Automation, after));
-        attemptGate.CommitConfirmed(RunEventFor(
-            7, runId, candidate.Playbook.VersionId, RunEventPayloadTypes.Confirmation,
-            attemptId, commandId, after.ObservationId, "step:1", RunEventActorType.Automation,
-            new
-            {
-                destinationStateId = destination.StateId,
-                stateHypothesisId = after.StateHypothesisId,
-                outcome = AttemptState.Confirmed.ToString(),
-            }));
-
-        Assert.Equal("playbook:hidden-oracle:supervised:v1", run.PinnedVersionId);
-        Assert.Contains(after.StateHypothesisId!, destination.SceneSignatureIds, StringComparer.Ordinal);
-        Assert.Equal(1, supervisedGame.ReadOracleAudit().AcceptedClicks);
-        Assert.Equal(AttemptState.Confirmed, attemptGate.Get(attemptId).State);
-        Assert.Equal(7, supervisedStore.ReadRun(runId).Count);
-        supervisedConnection.Close();
-        using var recoveredConnection = database.OpenConnection();
-        var recoveredEvents = new SqliteRunJournalStore(recoveredConnection).ReadRun(runId);
-        var recoveredBefore = JsonSerializer.Deserialize<ObservedScene>(recoveredEvents[0].PayloadJson)!;
-        var recoveredApproval = JsonSerializer.Deserialize<StructurePlaybookStepApproval>(recoveredEvents[2].PayloadJson)!;
-        var recoveredAction = JsonSerializer.Deserialize<StructurePlaybookAction>(recoveredEvents[3].PayloadJson)!;
-        var recoveredAfter = JsonSerializer.Deserialize<ObservedScene>(recoveredEvents[5].PayloadJson)!;
-        using var recoveredConfirmation = JsonDocument.Parse(recoveredEvents[6].PayloadJson);
-        Assert.Equal(RunEventActorType.User, recoveredEvents[2].ActorType);
-        Assert.Equal(fresh.ObservationId, recoveredBefore.ObservationId);
-        Assert.Equal(candidate.StructureRevisionId, recoveredApproval.StructureRevisionId);
-        Assert.Equal(action.PolicyRevisionId, recoveredApproval.PolicyRevisionId);
-        Assert.Equal(action.ConsentRevisionId, recoveredApproval.ConsentRevisionId);
-        Assert.Equal(fresh.Frame.Sequence, recoveredAction.FrameSequence);
-        Assert.Equal(fresh.Frame.TransformRevision, recoveredAction.TransformRevision);
-        Assert.Equal(after.ObservationId, recoveredAfter.ObservationId);
-        Assert.Equal(
-            destination.StateId,
-            recoveredConfirmation.RootElement.GetProperty("destinationStateId").GetString());
-        Assert.Equal(
-            after.StateHypothesisId,
-            recoveredConfirmation.RootElement.GetProperty("stateHypothesisId").GetString());
     }
 
     private static void PromoteRoute(
@@ -618,10 +443,9 @@ public sealed class HiddenOracleDiscoveryTests
                 ["click"],
                 ["purchase", "delete", "account-change"],
                 new ExplorationBudget(ContractSchemaVersions.Revision03, 12, 5_000, 60_000),
-                false,
                 $"consent:{runId}",
                 "recovery:reset",
-                new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500, 4, 3, 3),
+                new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500),
                 ["capture-unavailable", "stale", "budget", "recovery-lost"]);
             Coordinator = new ExplorationCoordinator(
                 StructureStore,

@@ -19,58 +19,24 @@ public interface IExplorationCandidateRiskPolicy
     ExplorationCandidateRiskDecision Evaluate(AffordanceCandidate candidate);
 }
 
-public sealed class DeterministicExplorationCandidateRiskPolicy(
-    IReadOnlyDictionary<string, string> prohibitedTerms) : IExplorationCandidateRiskPolicy
+/// <summary>
+/// 候補文字やOCR推測へ操作拒否の権限を与えない既定policy。
+/// 禁止事項は候補認識から推測せず、ExplorationPolicyの明示tagだけをcontrollerが評価する。
+/// </summary>
+public sealed class UnclassifiedExplorationCandidateRiskPolicy : IExplorationCandidateRiskPolicy
 {
-    public static DeterministicExplorationCandidateRiskPolicy SafeMenuDefault { get; } = new(
-        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["購入"] = "purchase",
-            ["課金"] = "purchase",
-            ["支払"] = "purchase",
-            ["有償"] = "paid-resource",
-            ["ダイヤ"] = "rare-resource",
-            ["ジュエル"] = "rare-resource",
-            ["ショップ"] = "purchase",
-            ["募集"] = "gacha",
-            ["ガチャ"] = "gacha",
-            ["戦闘"] = "combat",
-            ["出発"] = "combat",
-            ["開始"] = "activity-start",
-            ["削除"] = "delete",
-            ["引退"] = "account-change",
-            ["アカウント"] = "account-change",
-            ["purchase"] = "purchase",
-            ["buy"] = "purchase",
-            ["start"] = "activity-start",
-            ["delete"] = "delete",
-            ["account"] = "account-change",
-        });
+    public static UnclassifiedExplorationCandidateRiskPolicy Default { get; } = new();
 
     public ExplorationCandidateRiskDecision Evaluate(AffordanceCandidate candidate)
     {
         ArgumentNullException.ThrowIfNull(candidate);
-        var label = candidate.SemanticLabel ?? string.Empty;
-        var matched = prohibitedTerms
-            .Where(item => label.Contains(item.Key, StringComparison.OrdinalIgnoreCase))
-            .Select(item => item.Value)
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
-        return matched.Length > 0
-            ? new ExplorationCandidateRiskDecision(
-                ExplorationRiskLevel.Prohibited,
-                matched,
-                false,
-                false,
-                [],
-                $"禁止語に一致: {label}")
-            : new ExplorationCandidateRiskDecision(
-                ExplorationRiskLevel.Elevated,
-                ["unknown-side-effect"],
-                false,
-                false,
-                [],
-                "owner delegated one-step approval required");
+        return new ExplorationCandidateRiskDecision(
+            ExplorationRiskLevel.Unknown,
+            [],
+            false,
+            false,
+            [],
+            "OCR／AI候補からriskを推測しません。明示Game Policyだけを適用します。");
     }
 }
 
@@ -82,7 +48,6 @@ public interface IProductExplorationCoordinator
 
     void CommitObservation(ObservedScene scene, DateTimeOffset persistedUtc);
     ExplorationAdmissionDecision Propose(ExplorationProposalAdmission admission, DateTimeOffset persistedUtc);
-    ExplorationAdmissionDecision Approve(ExplorationApproval approval, DateTimeOffset persistedUtc);
     void Dispatch(string proposalId, Action externalInput, DateTimeOffset persistedUtc);
     string GetActiveAttemptId(string proposalId);
 }
@@ -97,8 +62,6 @@ public sealed class ProductExplorationCoordinatorAdapter(ExplorationCoordinator 
         coordinator.CommitObservation(scene, persistedUtc);
     public ExplorationAdmissionDecision Propose(ExplorationProposalAdmission admission, DateTimeOffset persistedUtc) =>
         coordinator.Propose(admission, persistedUtc);
-    public ExplorationAdmissionDecision Approve(ExplorationApproval approval, DateTimeOffset persistedUtc) =>
-        coordinator.Approve(approval, persistedUtc);
     public void Dispatch(string proposalId, Action externalInput, DateTimeOffset persistedUtc) =>
         coordinator.Dispatch(proposalId, externalInput, persistedUtc);
     public string GetActiveAttemptId(string proposalId) => coordinator.GetActiveAttemptId(proposalId);
@@ -148,13 +111,11 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     private readonly IReadOnlyList<double>? interactionDragDestination;
     private readonly TimeProvider time;
     private readonly SemaphoreSlim execution = new(1, 1);
-    private readonly HashSet<string> tried = new(StringComparer.Ordinal);
     private ObservationResult? currentObservation;
     private volatile bool paused;
     private volatile bool abandoned;
     private string activeProbeLabel = "（実行中の一手なし）";
     private string riskLabel = "（実行中の評価なし）";
-    private string approvalReason = "（承認待ちなし）";
     private string stopReasonLabel = "停止していません";
 
     public ProductGameExplorerRuntime(
@@ -226,7 +187,6 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         EnvironmentScope,
         activeProbeLabel,
         riskLabel,
-        approvalReason,
         coordinator.RemainingProbes,
         policy.Budget.RemainingElapsedMilliseconds,
         policy.Budget.RemainingInferenceMilliseconds,
@@ -414,29 +374,13 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 ElapsedMilliseconds: 0,
                 InferenceMilliseconds: 0);
             var decision = coordinator.Propose(admission, now);
-            if (decision.Status == ExplorationAdmissionStatus.NeedsApproval)
-            {
-                approvalReason = decision.Detail;
-                decision = coordinator.Approve(
-                    new ExplorationApproval(
-                        ContractSchemaVersions.Revision03,
-                        $"approval:{proposal.ProposalId}",
-                        proposal.ProposalId,
-                        before.ObservationId,
-                        policy.PolicyRevisionId,
-                        proposal.SourceStructureRevisionId,
-                        "owner-delegated-automation",
-                        now,
-                        ExplorationAuthorizationSource.OwnerDelegatedAutomation),
-                    now);
-            }
             if (!decision.DispatchAllowed)
             {
                 stopReasonLabel = decision.Detail;
                 return Result(ProductGameExplorerStepStatus.AdmissionStopped, decision.Detail, before, target);
             }
-            var sourceSamples = await CaptureSourceSamplesAsync(before, cancellationToken).ConfigureAwait(false);
-            var stableBefore = ConsolidateSourceScene(before, sourceSamples);
+            IReadOnlyList<ObservedScene> sourceSamples = [before];
+            var stableBefore = before;
             currentObservation = observed;
             var indexedTarget = target with
             {
@@ -483,6 +427,16 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             }
             var waited = await WaitStableAsync(stableBefore, proposal.WaitCondition, cancellationToken).ConfigureAwait(false);
             var comparison = Compare(stableBefore, waited);
+            if (comparison.Judgement != GameTransitionJudgement.Moved
+                && observation is IProductGameRediscoveryTrigger rediscovery)
+            {
+                rediscovery.MarkTransitionUnconfirmed(stableBefore, target);
+            }
+            else if (comparison.Judgement == GameTransitionJudgement.Moved
+                     && observation is IProductGameRediscoveryTrigger confirmed)
+            {
+                confirmed.MarkTransitionConfirmed(stableBefore, target);
+            }
             if (waited.Observations.Count == 0)
             {
                 stopReasonLabel = "after Observationを取得できずOutcomeUnknown";
@@ -535,9 +489,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                     risk.Reversible,
                     time.GetUtcNow());
             }
-            tried.Add(ProbeKey(before, target));
             activeProbeLabel = "（実行中の一手なし）";
-            approvalReason = "（承認待ちなし）";
             stopReasonLabel = "停止していません";
             return new ProductGameExplorerStepResult(
                 ProductGameExplorerStepStatus.Learned,
@@ -556,53 +508,11 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         }
     }
 
-    private static ObservedScene ConsolidateSourceScene(
-        ObservedScene before,
-        IReadOnlyList<ObservedScene> samples)
-    {
-        var stable = before.Affordances
-            .Where(candidate => string.Equals(candidate.SemanticKind, "probe-target", StringComparison.Ordinal)
-                || samples.Skip(1).All(sample => sample.Affordances.Any(other =>
-                    GameSceneSemanticComparer.AffordanceKeySimilar(
-                        GameSceneSemanticComparer.TargetKey(candidate),
-                        GameSceneSemanticComparer.TargetKey(other)))))
-            .ToArray();
-        return before with { Affordances = stable };
-    }
-
-    private async ValueTask<IReadOnlyList<ObservedScene>> CaptureSourceSamplesAsync(
-        ObservedScene before,
-        CancellationToken cancellationToken)
-    {
-        if (knownScreenIndex is null)
-        {
-            return [before];
-        }
-        var samples = new List<ObservedScene> { before };
-        for (var index = 0; index < 2; index++)
-        {
-            await Task.Delay(150, cancellationToken).ConfigureAwait(false);
-            var observed = await ObserveAsync(cancellationToken).ConfigureAwait(false);
-            var sample = await DiscoverTargetsAsync(observed, cancellationToken).ConfigureAwait(false);
-            if (!string.Equals(sample.Frame.SourceId, before.Frame.SourceId, StringComparison.Ordinal)
-                || sample.Frame.TransformRevision != before.Frame.TransformRevision)
-            {
-                throw new InvalidOperationException("送出前のsourceページが安定していないため操作を開始しません。");
-            }
-            samples.Add(sample);
-        }
-        return samples;
-    }
-
     private (AffordanceCandidate Candidate, ExplorationCandidateRiskDecision Risk)? Select(ObservedScene scene)
     {
         foreach (var candidate in scene.Affordances
                      .Where(candidate => candidate.AllowedPrimitives.Contains(interactionOperation, StringComparer.Ordinal)))
         {
-            if (tried.Contains(ProbeKey(scene, candidate)))
-            {
-                continue;
-            }
             var risk = riskPolicy.Evaluate(candidate);
             if (risk.Level != ExplorationRiskLevel.Prohibited)
             {
@@ -611,9 +521,6 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         }
         return null;
     }
-
-    private static string ProbeKey(ObservedScene scene, AffordanceCandidate candidate) =>
-        $"{GameSceneSemanticComparer.SignatureId(scene)}|{GameSceneSemanticComparer.TargetKey(candidate)}";
 
     private ExplorationProposal Proposal(
         ObservedScene scene,

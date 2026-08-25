@@ -11,21 +11,23 @@ namespace OpenLogicool.Host;
 /// <summary>構造正本と学習ルート版をGame Operatorの一つの編集journeyへ投影するHost境界。</summary>
 public sealed class HostLearningRouteIntents : ILearningRouteIntents
 {
-    private static readonly string[] ProhibitedRiskTags =
-        ["spend-premium-currency", "spend-rare-resource", "spend-real-money"];
-
     private readonly SqliteConnection connection;
     private readonly SqliteGameStructureStore structures;
     private readonly SqliteLearningRouteStore routes;
     private readonly TimeProvider timeProvider;
+    private readonly IReadOnlyCollection<string> prohibitedRiskTags;
     private readonly Dictionary<string, string> macroStates = new(StringComparer.Ordinal);
 
-    public HostLearningRouteIntents(SqliteConnection connection, TimeProvider? timeProvider = null)
+    public HostLearningRouteIntents(
+        SqliteConnection connection,
+        TimeProvider? timeProvider = null,
+        IReadOnlyCollection<string>? prohibitedRiskTags = null)
     {
         this.connection = connection ?? throw new ArgumentNullException(nameof(connection));
         structures = new SqliteGameStructureStore(connection);
         routes = new SqliteLearningRouteStore(connection);
         this.timeProvider = timeProvider ?? TimeProvider.System;
+        this.prohibitedRiskTags = prohibitedRiskTags ?? [];
     }
 
     public IReadOnlyList<LearningRouteScopeOption> ListScopes()
@@ -169,7 +171,7 @@ public sealed class HostLearningRouteIntents : ILearningRouteIntents
             throw new InvalidOperationException("最新の保存版を読み直してからマクロを生成してください。");
         }
         var structure = structures.LoadRevision(gameId, environmentScope);
-        var macro = VisualMacroCompiler.Compile(route, structure, ProhibitedRiskTags);
+        var macro = VisualMacroCompiler.Compile(route, structure, prohibitedRiskTags);
         macroStates[routeId] = macro.ExecutionMode == VisualMacroExecutionMode.Verified
             ? $"確認済みとして生成（{macro.Steps.Count} step）"
             : $"教師付きとして生成（{macro.Steps.Count} step）";

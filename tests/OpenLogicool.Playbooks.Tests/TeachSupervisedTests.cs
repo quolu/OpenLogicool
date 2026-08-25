@@ -9,17 +9,14 @@ namespace OpenLogicool.Playbooks.Tests;
 public sealed class TeachSupervisedTests
 {
     [Fact]
-    public void fake_plannerのTeach提案は明示承認まで承認待ちに留まる()
+    public void fake_plannerのTeach提案は追加承認型を作らず一件を返す()
     {
         var planner = new FakePlanner(TeachProposal());
 
-        var pending = TeachSupervised.Request(planner, Context());
-        var approved = TeachSupervised.Approve(pending, "approval-1");
+        var proposal = TeachSupervised.Request(planner, Context());
 
         Assert.Equal(1, planner.CallCount);
-        Assert.Equal(ProposalMode.Teach, pending.Proposal.Mode);
-        Assert.Equal("approval-1", approved.ApprovalId);
-        Assert.Same(pending.Proposal, approved.Proposal);
+        Assert.Equal(ProposalMode.Teach, proposal.Proposal.Mode);
     }
 
     [Fact]

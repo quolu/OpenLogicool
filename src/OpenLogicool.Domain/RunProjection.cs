@@ -6,7 +6,7 @@ namespace OpenLogicool.Domain;
 public sealed record RunEventTally(
     long Observations,
     long Proposals,
-    long Approvals,
+    long Authorizations,
     long Dispatches,
     long DispatchResults,
     long Confirmations,
@@ -24,7 +24,8 @@ public sealed record RunEventTally(
     {
         RunEventPayloadTypes.Observation => this with { Observations = checked(Observations + 1) },
         RunEventPayloadTypes.Proposal => this with { Proposals = checked(Proposals + 1) },
-        RunEventPayloadTypes.Approval => this with { Approvals = checked(Approvals + 1) },
+        RunEventPayloadTypes.Authorization or RunEventPayloadTypes.Approval =>
+            this with { Authorizations = checked(Authorizations + 1) },
         RunEventPayloadTypes.Dispatch => this with { Dispatches = checked(Dispatches + 1) },
         RunEventPayloadTypes.DispatchResult => this with { DispatchResults = checked(DispatchResults + 1) },
         RunEventPayloadTypes.Confirmation => this with { Confirmations = checked(Confirmations + 1) },

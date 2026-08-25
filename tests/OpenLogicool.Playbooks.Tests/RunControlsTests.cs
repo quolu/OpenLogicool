@@ -105,7 +105,7 @@ public sealed class RunControlsTests
     private static long PrepareAttempt(AttemptDispatchGate gate, string attemptId, long firstSequence)
     {
         gate.CommitProposed(Event(firstSequence, RunEventPayloadTypes.Proposal, attemptId, actorType: RunEventActorType.Automation));
-        gate.CommitAuthorized(Event(firstSequence + 1, RunEventPayloadTypes.Approval, attemptId, actorType: RunEventActorType.User));
+        gate.CommitAuthorized(Event(firstSequence + 1, RunEventPayloadTypes.Authorization, attemptId, actorType: RunEventActorType.System));
         gate.MarkPrepared(attemptId);
         return firstSequence + 2;
     }

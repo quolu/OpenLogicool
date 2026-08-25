@@ -21,27 +21,9 @@ public sealed record ExplorationRiskAssessment(
     IReadOnlyList<string> RecoveryEdgeIds,
     string AssessorRevisionId);
 
-public sealed record ExplorationApproval(
-    string SchemaVersion,
-    string ApprovalId,
-    string ProposalId,
-    string ObservationId,
-    string PolicyRevisionId,
-    string StructureRevisionId,
-    string ActorId,
-    DateTimeOffset ApprovedUtc,
-    ExplorationAuthorizationSource AuthorizationSource = ExplorationAuthorizationSource.InteractiveUser);
-
-public enum ExplorationAuthorizationSource
-{
-    InteractiveUser,
-    OwnerDelegatedAutomation,
-}
-
 public enum ExplorationAdmissionStatus
 {
     Allowed,
-    NeedsApproval,
     Rejected,
     Stopped,
 }
@@ -58,17 +40,10 @@ public enum ExplorationStopReason
     TargetWindowMismatch,
     PrimitiveNotAllowed,
     RiskProhibited,
-    ApprovalRequired,
-    ApprovalMismatch,
     BudgetExhausted,
-    RecoveryMissing,
     GamePolicyDisabled,
     ScopeViolation,
-    RepeatedProbe,
-    NoProgress,
-    Oscillation,
     StabilityInsufficient,
-    RecoveryLost,
 }
 
 public sealed record ExplorationAdmissionDecision(

@@ -73,10 +73,6 @@ using OpenLogicool.Playbooks;
 //       IWorkspaceEditorIntents で実行し、結果を機械的に突き合わせる（実機接続台数だけを環境差として
 //       除外）。JSON 証跡を probe-output へ書く。常駐 host が動いている間は実行しない（stage 表示の
 //       hostResident 判定が fake 側と食い違うため）。不一致があれば exit code 1。
-//   capture-dispatch <continuity|resume> [--capture available|stale|unavailable] [--recalibrate]
-//       Game Operator の dispatch 境界を CLI から明示的に一回駆動する。外部入力はこの初期 CLI では
-//       コンソールへの handoff 記録だけであり、OS input を合成しない。capture/read と resume の gate は
-//       製品の CaptureContinuityDispatch をそのまま通す（FastPathPump は使わない）。
 //   game-index <discover|execute|back|inspect> --process <name> --db <path> --allow-explore [--goal <目的>] [--foundry-endpoint <uri>] [--action <id>]
 //       初回discoverは必要な一つのcontrolだけを索引へ追記し、executeは保存済みactionをAIなしで実行する。
 
@@ -98,10 +94,9 @@ return command switch
     "leftover" when args.Length >= 2 => Leftover(args[1], args[2..]),
     "onboard" when args.Length >= 2 => Onboard(args[1], args[2..]),
     "ui-test-scenario" => UiTestScenarioCommand(args[1..]),
-    "capture-dispatch" when args.Length >= 2 => CaptureDispatch(args[1], args[2..]),
     "supervised-import" when args.Length >= 2 => SupervisedImport(args[1], args[2..]),
     "game-index" when args.Length >= 2 => HostGameIndexCommand.Run(args[1], args[2..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>] | capture-dispatch <continuity|resume> [--capture available|stale|unavailable] [--recalibrate]]"),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>]]"),
 };
 
 static int SupervisedImport(string packagePath, string[] arguments)
@@ -127,99 +122,6 @@ static int SupervisedImport(string packagePath, string[] arguments)
     Console.WriteLine(JsonSerializer.Serialize(result));
     return 0;
 }
-
-static int CaptureDispatch(string mode, string[] arguments)
-{
-    var capture = "available";
-    var recalibrate = false;
-    for (var index = 0; index < arguments.Length; index++)
-    {
-        switch (arguments[index])
-        {
-            case "--capture" when index + 1 < arguments.Length:
-                capture = arguments[++index];
-                break;
-            case "--recalibrate":
-                recalibrate = true;
-                break;
-            default:
-                return Fail($"unknown capture-dispatch option: {arguments[index]}");
-        }
-    }
-
-    if (mode is not ("continuity" or "resume"))
-    {
-        return Fail("capture-dispatch mode は continuity または resume です。");
-    }
-
-    var frame = new CapturedFrame(
-        "0.2.0", "cli:dispatch", CaptureBackend.WindowsGraphicsCapture,
-        1, 1_000, DateTimeOffset.UtcNow, 8, 8, "B8G8R8A8_UNorm", 96, 96, 1, 0, 100,
-        Pixels: new FramePixels(new byte[] { 1, 2, 3, 4 }, 4));
-    var read = capture switch
-    {
-        "available" => CaptureRead.Available(frame),
-        "stale" => CaptureRead.Available(frame with { FreshnessMs = 101 }),
-        "unavailable" => CaptureRead.Unavailable("CLI で capture frame は未到着です。"),
-        _ => throw new ArgumentException($"capture-dispatch --capture '{capture}' は未対応です。"),
-    };
-
-    var journal = new RunJournal(new CliRunJournalStore(), new CliEngineeringLogSink());
-    var gate = new AttemptDispatchGate(journal);
-    var graph = PlaybookMaterializer.ToGraph(new PlaybookVersion(
-        ContractSchemaVersions.Revision01,
-        "cli-version",
-        null,
-        [new PlaybookNode(ContractSchemaVersions.Revision01, "entry", true, "state:entry", [], null, [])],
-        [],
-        "CLI capture dispatch"));
-    var controls = new RunControls(journal, gate, "cli-run", PlaybookRun.Start("cli-playbook", graph));
-    gate.CommitProposed(CliEvent(1, RunEventPayloadTypes.Proposal));
-    gate.CommitAuthorized(CliEvent(2, RunEventPayloadTypes.Approval, RunEventActorType.User));
-    gate.MarkPrepared("cli-attempt");
-    controls.Pause();
-
-    var continuity = new CaptureContinuityGate();
-    var loop = new CaptureContinuityDispatchLoop(new CaptureContinuityDispatch(controls, continuity), continuity);
-    var handedOff = false;
-    Action externalInput = () =>
-    {
-        handedOff = true;
-        Console.WriteLine("dispatch handoff: 承認済み。OS input はこの CLI では送出しません。");
-    };
-
-    var allowed = mode == "continuity"
-        ? loop.TryStepOnce(read, staleAfterMs: 100, recalibrate ? frame : null, CliEvent(3, RunEventPayloadTypes.Dispatch), externalInput)
-        : loop.TryResumeStepOnce(
-            read,
-            staleAfterMs: 100,
-            recalibrate ? frame : null,
-            new LiveResumeBinding("cli-host.exe", "cli:window", frame.SourceId, "cli-version", "cli-version"),
-            new LiveResumeContext("cli-host.exe", "cli:window", frame.SourceId, "cli:window", CliObservation(frame)),
-            [],
-            "cli-state",
-            freshnessBudgetMs: 100,
-            stabilityWindowMs: 100,
-            CliEvent(3, RunEventPayloadTypes.Dispatch),
-            externalInput);
-
-    Console.WriteLine($"capture dispatch: {(allowed ? "許可" : "停止")}（handoff: {(handedOff ? "あり" : "なし")}）");
-    return allowed ? 0 : 2;
-}
-
-static ObservationResult CliObservation(CapturedFrame frame) => new(
-    "0.3.0",
-    "observation:cli",
-    new CapturedFrameReference("0.3.0", frame.SourceId, frame.Backend, frame.Sequence, frame.MonotonicMs, frame.WallClockUtc, frame.TransformRevision, frame.FreshnessMs, frame.LastChangeMs),
-    CaptureAvailability.Available,
-    StateIdentityStatus.Known,
-    [new StateCandidate("0.3.0", "cli-state", 1, [new EvidenceRegion("0.3.0", "rect", [0d, 0d, 1d, 1d], "cli")])],
-    "cli", frame.FreshnessMs, null);
-
-static RunEvent CliEvent(long sequence, string payloadType, RunEventActorType actor = RunEventActorType.Automation) => new(
-    "0.1.0", $"cli-event-{sequence}", "cli-run", sequence, "cli-playbook", "cli-version", null,
-    "cli-command", "cli-attempt", "cli-cause", $"cli-correlation-{sequence}", 1, actor,
-    DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, null, payloadType, "{}");
 
 static int Fail(string message)
 {
@@ -1421,17 +1323,6 @@ static int UiTestScenarioCommand(string[] arguments)
     Console.WriteLine($"evidence: {path}");
 
     return comparison.IsMatch ? 0 : 1;
-}
-
-sealed class CliRunJournalStore : IRunJournalStore
-{
-    private readonly List<RunEvent> events = [];
-
-    public void Append(RunEvent runEvent) => events.Add(runEvent);
-    public IReadOnlyList<RunEvent> ReadRun(string runId) => events.Where(item => item.RunId == runId).ToArray();
-    public IReadOnlyList<string> ListRunIds() => events.Select(item => item.RunId).Distinct().ToArray();
-    public IReadOnlyList<ExpiredRunPreview> PreviewExpiredRuns(DateTimeOffset asOfUtc, int retentionDays) => [];
-    public void DeleteRun(string runId) => events.RemoveAll(item => item.RunId == runId);
 }
 
 sealed class CliEngineeringLogSink : IEngineeringLogSink

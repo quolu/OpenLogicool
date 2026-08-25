@@ -2,7 +2,7 @@ namespace OpenLogicool.Contracts.Playbooks;
 
 /// <summary>
 /// journal に保存できる RunEvent の payload type 閉集合（PB-006）。
-/// 観測・提案・承認・dispatch・結果・確定・訂正・手動介入の8種（t03）に、
+/// 観測・提案・内部authorization・dispatch・結果・確定・訂正・手動介入を基本とし、
 /// run 制御の skip・abandon・version-switch の3種（PB-007・§6.8・t05）と
 /// explorationの観測済み不成立を表すrejection、fault解決のdisarm（§6.7）、入力前の実行環境不成立を
 /// 表すruntime-unavailableを加えた14種だけを受け入れ、
@@ -13,6 +13,8 @@ public static class RunEventPayloadTypes
 {
     public const string Observation = "observation";
     public const string Proposal = "proposal";
+    public const string Authorization = "authorization";
+    /// <summary>0.3.0以前のjournal replay専用。新規eventはAuthorizationを使う。</summary>
     public const string Approval = "approval";
     public const string Dispatch = "dispatch";
     public const string DispatchResult = "dispatch-result";
@@ -42,7 +44,7 @@ public static class RunEventPayloadTypes
     public const string Disarm = "disarm";
 
     public static IReadOnlyList<string> All { get; } =
-        [Observation, Proposal, Approval, Dispatch, DispatchResult, Confirmation, Rejection, Correction, ManualIntervention, RuntimeUnavailable, Skip, Abandon, VersionSwitch, Disarm];
+        [Observation, Proposal, Authorization, Approval, Dispatch, DispatchResult, Confirmation, Rejection, Correction, ManualIntervention, RuntimeUnavailable, Skip, Abandon, VersionSwitch, Disarm];
 
     public static bool IsKnown(string payloadType) => All.Contains(payloadType, StringComparer.Ordinal);
 }

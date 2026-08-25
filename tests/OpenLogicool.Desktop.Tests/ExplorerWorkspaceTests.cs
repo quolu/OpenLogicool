@@ -59,7 +59,7 @@ public sealed class ExplorerWorkspaceTests
         {
             Calls.Add(name);
             return new ExplorerScreenSnapshot(
-                "game-1", "env-1", "structure:1", 0, 0, [], "なし", "なし", "なし",
+                "game-1", "env-1", "structure:1", 0, 0, [], "なし", "なし",
                 0, 0, 0, [], "停止なし", new ExplorerVerificationCounts(0, 0, 0, 0), [],
                 false, false, false, false);
         }

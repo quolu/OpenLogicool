@@ -8,6 +8,8 @@ Phase 9で作成した`ObservedScene`、`AffordanceCandidate`、`ExplorationCoor
 
 工程の正本はLattice plan `phase12-game-interaction-foundation`とする。本書は目的、判断、受入条件、非目標だけを所有する。
 
+2026-08-25の現行裁定により、一手承認、既知復帰edge、OCR禁止語、反復回数、destination ID完全一致は操作受付条件から失効した。`Stayed`／`Undetermined`を含む各outcomeの保存を探索成果とし、全候補の遷移成功をRun合格条件にしない。
+
 ## 着手理由
 
 2026-08-25のNIKKE実走で、Phase 9／12の既存実装には次の欠落があると確認した。
@@ -48,10 +50,10 @@ Phase 9で作成した`ObservedScene`、`AffordanceCandidate`、`ExplorationCoor
 
 ## 共通不変条件
 
-- 入力は操作直前のObservation、frame sequence、transform revision、target window、locator revisionへ束縛する。
+- 入力は操作直前のObservation、frame sequence、transform revision、target window、current boundsへ束縛する。保存locator revisionは証拠であり完全一致gateにしない。
 - buttonの実座標は操作前に確定し、pointer移動後のOCR枠を追跡して補正しない。
 - 入力routeはNano Serial HIDだけとし、SendInput／Computer Use／別routeへfallbackしない。
-- 一操作につきdispatchは一回だけとし、自動retryを持たない。
+- 一Attemptにつきdispatchは一回だけとし、同じ入力のblind retryを持たない。10秒非遷移後の新しいDiscoverTargetsは別の学習Attemptである。
 - 入力送信結果とゲーム内結果を別軸で記録する。
 - OS固有capture／window／cursor処理、Nano transport、Foundry／OCR、Probe evidence harnessを別ファイル・別adapterに隔離する。
 - Probeは製品portを呼ぶだけとし、探索判断、安定判定、遷移判定をProbe内へ実装しない。

@@ -67,11 +67,6 @@ public static class VisualMacroCompiler
         var executionMode = allVerified
             ? VisualMacroExecutionMode.Verified
             : VisualMacroExecutionMode.Supervised;
-        if (route.Status == LearningRouteStatus.Verified && executionMode != VisualMacroExecutionMode.Verified)
-        {
-            throw new InvalidOperationException("Verifiedルートの構造根拠がVerified条件を満たしていません。");
-        }
-
         return new VisualMacroProgram(
             ContractSchemaVersions.Revision03,
             $"macro:{route.VersionId["route:".Length..]}",
@@ -79,7 +74,7 @@ public static class VisualMacroCompiler
             route.VersionId,
             route.GameId,
             route.EnvironmentScope,
-            route.StructureRevisionId,
+            structure.RevisionId,
             executionMode,
             steps);
     }

@@ -19,7 +19,6 @@ public sealed record ExplorerScreenSnapshot(
     IReadOnlyList<string> FrontierIds,
     string ActiveProbeLabel,
     string RiskLabel,
-    string ApprovalReason,
     int RemainingProbeCount,
     long RemainingElapsedMilliseconds,
     long RemainingInferenceMilliseconds,

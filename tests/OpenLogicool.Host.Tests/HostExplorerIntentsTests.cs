@@ -153,7 +153,6 @@ public sealed class HostExplorerIntentsTests
             "env-1",
             "候補 button-1 を click",
             "中",
-            "初回の一手承認が必要",
             4,
             10_000,
             2_000,

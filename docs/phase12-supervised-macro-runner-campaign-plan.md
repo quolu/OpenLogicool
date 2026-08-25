@@ -7,9 +7,9 @@ Phase 11で生成できるVisual Macroを、利用者が各stepを視認でき�
 ## 成功条件
 
 1. 保存済みLearning RouteからVisual Macroを再構築し、実行対象の版をrun開始時に固定する。
-2. `Before=Confirmed`でないstepは入力を一切送らない。
+2. 保存page／actionをcurrent frameへ再同定できないstepは入力を送らない。OCR完全一致、locator revision一致、verification labelは要求しない。
 3. dispatch eventを永続化した後にだけNano Serial HIDへ一回送信し、失敗・timeout・結果不明を自動再送しない。
-4. `After=Confirmed`だけが次stepへ進み、それ以外は停止理由と観測証拠を残す。
+4. 10秒の意味比較が`Moved`ならdestination ID不一致でも次stepへ進む。`Stayed`／`Undetermined`は観測証拠を残し、AI再探索を許可する。
 5. 利用者はアプリ上で現在step、操作、期待画面、前後監査、送信有無、停止理由、履歴を読める。
 6. NIKKEの安全な可逆sliceを実ゲームで一巡し、SendInput 0、Computer Use input dispatch 0、fallback 0を証拠化する。
 7. ダイヤ、希少資源、現金を消費するrisk tagはcompile時とrun時の両方で拒否する。
@@ -17,7 +17,7 @@ Phase 11で生成できるVisual Macroを、利用者が各stepを視認でき�
 ## 実行契約
 
 - 実行対象は`VisualMacroProgram`の`ProgramId`、`RouteVersionId`、`StructureRevisionId`をrun開始時にpinする。
-- 画面監査は`ObservedScene`と`VisualMacroAuditor`だけで決める。ACK、API戻り値、時間経過、AI予測を成功根拠にしない。
+- 画面監査は10の基盤機能の`WaitStable`と`Compare`だけで決める。ACK、API戻り値、AI予測、destination ID完全一致を成功根拠にしない。
 - 入力はNano Serial HIDだけを許可する。SendInputやComputer Use入力へのfallbackを持たない。
 - 一つのAttemptが未解決の間は次のdispatchを作らない。dispatchし得た後の例外は`OutcomeUnknown`として停止する。
 - UIの「次の一手」は一stepだけを進める。連打や二重commandは同じstepを二回送らない。

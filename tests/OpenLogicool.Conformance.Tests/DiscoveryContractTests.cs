@@ -92,10 +92,9 @@ public sealed class DiscoveryContractTests
             ["click", "back"],
             ["purchase", "resource-consumption"],
             budget,
-            true,
             "consent-1",
             "back",
-            new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500, 2, 2, 2),
+            new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500),
             ["budget-exhausted", "recovery-lost"]);
         var context = new ExplorationContext(
             ContractSchemaVersions.Revision03,
@@ -135,7 +134,7 @@ public sealed class DiscoveryContractTests
             DateTimeOffset.UnixEpoch);
 
         Assert.Equal(StateIdentityStatus.Novel, context.CurrentScene.StateIdentity);
-        Assert.True(context.Policy.OneStepApprovalRequired);
+        Assert.Contains("purchase", context.Policy.ProhibitedRiskTags);
         Assert.Equal("structure-0", revision.ParentRevisionId);
         Assert.Equal(StructureVerificationState.Candidate, Assert.Single(revision.StateFacts).VerificationState);
     }
