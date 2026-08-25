@@ -37,7 +37,8 @@ public sealed class GameOperatorWindow : Window
         ILearningRouteIntents? learningRouteIntents = null,
         ISupervisedMacroIntents? supervisedMacroIntents = null,
         string? supervisedUnavailableReason = null,
-        IMacroAutomationIntents? macroAutomationIntents = null)
+        IMacroAutomationIntents? macroAutomationIntents = null,
+        bool openMacroTab = false)
     {
         ArgumentNullException.ThrowIfNull(intent);
         _workspace = new WebResearchWorkspace(intent);
@@ -48,6 +49,7 @@ public sealed class GameOperatorWindow : Window
         MinHeight = 640;
         Background = Theme.Bg;
         Foreground = Theme.Text;
+        Resources[typeof(Button)] = Theme.CreateFlatButtonStyle();
 
         _terms.ItemsSource = new[]
         {
@@ -75,7 +77,8 @@ public sealed class GameOperatorWindow : Window
             learningRouteIntents,
             supervisedMacroIntents,
             supervisedUnavailableReason,
-            macroAutomationIntents);
+            macroAutomationIntents,
+            openMacroTab);
         RefreshDocuments();
     }
 
@@ -84,7 +87,8 @@ public sealed class GameOperatorWindow : Window
         ILearningRouteIntents? learningRouteIntents,
         ISupervisedMacroIntents? supervisedMacroIntents,
         string? supervisedUnavailableReason,
-        IMacroAutomationIntents? macroAutomationIntents)
+        IMacroAutomationIntents? macroAutomationIntents,
+        bool openMacroTab)
     {
         var tabs = new TabControl
         {
@@ -110,14 +114,24 @@ public sealed class GameOperatorWindow : Window
         }
         if (macroAutomationIntents is not null)
         {
-            tabs.Items.Add(new TabItem
+            var macroTab = new TabItem
             {
                 Header = "マクロ",
                 Content = new MacroAutomationPanel(macroAutomationIntents),
                 MinWidth = 130,
-            });
+            };
+            tabs.Items.Add(macroTab);
+            if (openMacroTab) tabs.SelectedItem = macroTab;
         }
         return tabs;
+    }
+
+    public void SelectMacroTab()
+    {
+        if (Content is not TabControl tabs) return;
+        var macro = tabs.Items.Cast<TabItem>()
+            .FirstOrDefault(item => string.Equals(item.Header?.ToString(), "マクロ", StringComparison.Ordinal));
+        if (macro is not null) tabs.SelectedItem = macro;
     }
 
     private UIElement BuildResearchContent()

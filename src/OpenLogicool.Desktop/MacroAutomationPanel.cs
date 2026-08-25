@@ -1,6 +1,7 @@
 using OpenLogicool.Contracts.Playbooks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace OpenLogicool.Desktop;
 
@@ -13,12 +14,12 @@ internal sealed class MacroAutomationPanel : UserControl
 
     private readonly MacroAutomationWorkspace workspace;
     private readonly IMacroAutomationIntents intents;
-    private readonly ComboBox targets = new() { MinWidth = 320, DisplayMemberPath = nameof(MacroTargetOption.DisplayLabel) };
-    private readonly TextBox goal = new() { MinWidth = 420 };
-    private readonly ListBox catalog = new() { MinHeight = 190, DisplayMemberPath = nameof(MacroCatalogItem.DisplayLabel) };
-    private readonly ComboBox mode = new() { MinWidth = 180 };
-    private readonly ListBox composition = new() { MinHeight = 110, DisplayMemberPath = nameof(MacroCatalogItem.DisplayLabel) };
-    private readonly TextBox compositionGoal = new() { MinWidth = 320 };
+    private readonly ComboBox targets = new() { MinWidth = 320, DisplayMemberPath = nameof(MacroTargetOption.DisplayLabel), Background = Brushes.White, Foreground = Brushes.Black, BorderBrush = Theme.Line };
+    private readonly TextBox goal = new() { MinWidth = 420, Background = Theme.Raised, Foreground = Theme.Text, BorderBrush = Theme.Line, CaretBrush = Theme.Text, Padding = new Thickness(6, 4, 6, 4) };
+    private readonly ListBox catalog = new() { MinHeight = 190, DisplayMemberPath = nameof(MacroCatalogItem.DisplayLabel), Background = Theme.Sunken, Foreground = Theme.Text, BorderBrush = Theme.Line };
+    private readonly ComboBox mode = new() { MinWidth = 180, Background = Brushes.White, Foreground = Brushes.Black, BorderBrush = Theme.Line };
+    private readonly ListBox composition = new() { MinHeight = 110, DisplayMemberPath = nameof(MacroCatalogItem.DisplayLabel), Background = Theme.Sunken, Foreground = Theme.Text, BorderBrush = Theme.Line };
+    private readonly TextBox compositionGoal = new() { MinWidth = 320, Background = Theme.Raised, Foreground = Theme.Text, BorderBrush = Theme.Line, CaretBrush = Theme.Text, Padding = new Thickness(6, 4, 6, 4) };
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
     private readonly Button create = Button("AIに作ってもらう");
     private readonly Button play = Button("再生");
@@ -28,6 +29,8 @@ internal sealed class MacroAutomationPanel : UserControl
 
     public MacroAutomationPanel(IMacroAutomationIntents intents)
     {
+        Background = Theme.Bg;
+        Foreground = Theme.Text;
         this.intents = intents;
         workspace = new MacroAutomationWorkspace(intents);
         mode.ItemsSource = new[]
@@ -91,7 +94,14 @@ internal sealed class MacroAutomationPanel : UserControl
         playback.Children.Add(playbackActions);
         Add(root, playback, 3);
 
-        var compose = new GroupBox { Header = "複数マクロを順番に統合", Margin = new Thickness(0, 14, 0, 0) };
+        var compose = new GroupBox
+        {
+            Header = "複数マクロを順番に統合",
+            Margin = new Thickness(0, 14, 0, 0),
+            Foreground = Theme.Text,
+            BorderBrush = Theme.Line,
+            Background = Theme.Panel,
+        };
         var composeBody = new Grid { Margin = new Thickness(10) };
         composeBody.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         composeBody.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });

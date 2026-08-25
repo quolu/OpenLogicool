@@ -32,6 +32,30 @@ public sealed class GameOperatorMacroUiTests
         if (failure is not null) throw failure;
     }
 
+    [Fact]
+    public void Direct_macro_entry_selects_the_macro_tab()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var window = new GameOperatorWindow(
+                    new WebIntent(),
+                    macroAutomationIntents: new MacroIntents(),
+                    openMacroTab: true);
+                var tabs = Assert.IsType<TabControl>(window.Content);
+                Assert.Equal("マクロ", Assert.IsType<TabItem>(tabs.SelectedItem).Header);
+                window.Close();
+            }
+            catch (Exception error) { failure = error; }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null) throw failure;
+    }
+
     private sealed class MacroIntents : IMacroAutomationIntents
     {
         public event Action<MacroRunSnapshot>? StateChanged { add { } remove { } }

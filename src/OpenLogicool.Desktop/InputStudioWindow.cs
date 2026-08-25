@@ -185,7 +185,7 @@ public sealed class InputStudioWindow : Window
     private readonly Button _recordUpdateButton = new() { Content = "録って更新", Padding = new Thickness(10, 6, 10, 6) };
     private readonly Button _selectMacroButton = new()
     {
-        Content = "マクロを選ぶ",
+        Content = "保存済みマクロを選ぶ",
         Padding = new Thickness(10, 6, 10, 6),
         HorizontalAlignment = HorizontalAlignment.Stretch,
         Margin = new Thickness(0, 0, 0, 12),
@@ -466,7 +466,7 @@ public sealed class InputStudioWindow : Window
 
     private void SelectMacroForCurrentAction()
     {
-        if (_selectedActionId is null || _macroAutomationIntents is null)
+        if (_macroAutomationIntents is null)
         {
             return;
         }
@@ -477,8 +477,21 @@ public sealed class InputStudioWindow : Window
             return;
         }
 
-        var actionId = _selectedActionId;
         var macro = dialog.SelectedMacro;
+        if (_selectedActionId is null)
+        {
+            var newActionId = GenerateActionId("macro");
+            if (TryMutateDocument(document => WorkspaceDocumentEditor.AddAction(
+                document, newActionId, macro.Goal, [dialog.ResultToken])))
+            {
+                _selectedActionId = newActionId;
+                ArmAssignByPress();
+                Render();
+            }
+            return;
+        }
+
+        var actionId = _selectedActionId;
         if (TryMutateDocument(document =>
             {
                 var updated = WorkspaceDocumentEditor.SetActionOutputs(document, actionId, [dialog.ResultToken]);
@@ -628,7 +641,7 @@ public sealed class InputStudioWindow : Window
         }
     }
 
-    private void OpenGameOperator()
+    private void OpenGameOperator(bool openMacroTab = false)
     {
         if (_webResearchIntent is null)
         {
@@ -643,11 +656,13 @@ public sealed class InputStudioWindow : Window
                 _learningRouteIntents,
                 _supervisedMacroIntents,
                 _supervisedUnavailableReason,
-                _macroAutomationIntents) { Owner = this };
+                _macroAutomationIntents,
+                openMacroTab) { Owner = this };
             _gameOperatorWindow.Show();
         }
         else
         {
+            if (openMacroTab) _gameOperatorWindow.SelectMacroTab();
             _gameOperatorWindow.Activate();
         }
     }
@@ -1207,6 +1222,21 @@ public sealed class InputStudioWindow : Window
             right.Children.Add(gameOperatorButton);
         }
 
+        if (_macroAutomationIntents is not null)
+        {
+            var macroButton = new Button
+            {
+                Content = "マクロを作る",
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Foreground = Theme.Accent,
+                Padding = new Thickness(8, 2, 8, 2),
+            };
+            AutomationProperties.SetName(macroButton, "マクロ作成画面を開く");
+            macroButton.Click += (_, _) => OpenGameOperator(openMacroTab: true);
+            right.Children.Add(macroButton);
+        }
+
         var diagnosticsButton = new Button
         {
             Content = "診断",
@@ -1745,7 +1775,7 @@ public sealed class InputStudioWindow : Window
 
         _deleteActionButton.Visibility = inspector is null ? Visibility.Collapsed : Visibility.Visible;
         _recordUpdateButton.IsEnabled = inspector is not null;
-        _selectMacroButton.IsEnabled = inspector is not null && _macroAutomationIntents is not null;
+        _selectMacroButton.IsEnabled = _macroAutomationIntents is not null;
         if (_pendingAssign && inspector is not null)
         {
             // 待機中の注意文（層切替キー・左右クリック等）は Render で上書きしない
