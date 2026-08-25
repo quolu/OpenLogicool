@@ -74,3 +74,44 @@
 
 Contracts、Profiles、Input、Host、Desktopが同じmacro tokenとroute意味を依存順に変更し、Input Studioの単一Windowへ最終統合する。共有dirty treeには別作業所有のProbe差分もある。複数writerの衝突と受入費用が利益を上回るため、親が直列実装する。独立read-only反証だけを終端で使う。
 
+## 工程
+
+### t01-characterization 既存UIと通常bindingの不変契約
+
+Input Studioのヘッダ、3ペイン、G13／G600模式図、保存領域、通常WorkspaceDocument compile、通常fast path outputをcharacterizationし、macro追加による巻込みを拒否する。
+
+### t02-macro-domain macro token・catalog・合成契約
+
+Learning Route revisionを唯一のmacro正本とし、macro invocation token、catalog projection、同一scope route合成、source revision不変をpure contractとSQLite testで固定する。
+
+### t03-playback-modes AI監視あり／なし再生と修復
+
+一つのPurpose runnerへrepair policyを与え、監視なしはAI 0・非遷移停止・revision不変、監視ありは失敗stepだけ修復してappend-only新版へ更新する。
+
+### t04-fastpath-trigger 非blocking物理macro trigger
+
+Device Mappingがmacro tokenをdown一回へ解決し、FastPathPumpが物理outputと分離して有界queueへTryEnqueueする。AI／capture／SQLite／UI待ち0と通常ownership不変を実証する。
+
+### t05-game-operator-ui Game Operatorマクロ作成・再生・合成UI
+
+既存GameOperatorWindowのTabControlへマクロtabを追加し、goal会話、catalog、2mode再生、修復結果、合成順序をHost intentだけで操作する。
+
+### t06-input-studio-assignment 既存G13／G600 UIへのmacro割当
+
+既存Input Studio右Inspectorへマクロ選択入口だけを追加し、現在のdevice図・layer・binding・保存journeyでmacro actionを割り当てる。既存配置を再設計しない。
+
+### t07-resident-worker resident macro automation worker
+
+UI手動開始と物理queueを同じexecution coordinatorへ接続する。Serial HID resident時は既存sessionを借用し、二重COM openをしない。
+
+### t08-scenario fake・SQLite一貫scenario
+
+AI作成→G13／G600割当→監視なし→監視あり修復→2macro合成→再起動を同じpublic intent経路でfakeとSQLiteに通し、source revisionと通常binding不変を確認する。
+
+### t09-live-ui Windows実UI・NIKKE・Nano受入
+
+既存Input StudioとGame Operator実UIからmacroを作成・割当・2mode再生・修復・合成・再起動し、Nano-only、AI call、route revision、fast path非blockingを証拠化する。
+
+### t10-terminal 関連試験・監査・full regression・push
+
+既存UI不変監査、関連test、円卓反証、full regression一回、Exit判定、対象限定commit、origin/main pushを完了する。
