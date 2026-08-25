@@ -15,6 +15,7 @@ using OpenLogicool.Devices.G600;
 using OpenLogicool.Domain;
 using OpenLogicool.Host;
 using OpenLogicool.Host.Research;
+using OpenLogicool.Input;
 using OpenLogicool.Persistence;
 using OpenLogicool.Profiles;
 using OpenLogicool.Playbooks;
@@ -75,6 +76,8 @@ using OpenLogicool.Playbooks;
 //       hostResident 判定が fake 側と食い違うため）。不一致があれば exit code 1。
 //   game-index <discover|execute|back|inspect> --process <name> --db <path> --allow-explore [--goal <目的>] [--foundry-endpoint <uri>] [--action <id>]
 //       初回discoverは必要な一つのcontrolだけを索引へ追記し、executeは保存済みactionをAIなしで実行する。
+//   macro list [--db <path>]
+//       保存済みmacroのgoal・route・版・step数をread-onlyで一覧表示する。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -94,10 +97,95 @@ return command switch
     "leftover" when args.Length >= 2 => Leftover(args[1], args[2..]),
     "onboard" when args.Length >= 2 => Onboard(args[1], args[2..]),
     "ui-test-scenario" => UiTestScenarioCommand(args[1..]),
+    "macro" when args.Length >= 2 => Macro(args[1], args[2..]),
     "supervised-import" when args.Length >= 2 => SupervisedImport(args[1], args[2..]),
     "game-index" when args.Length >= 2 => HostGameIndexCommand.Run(args[1], args[2..]),
     _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>]]"),
 };
+
+static int Macro(string operation, string[] arguments)
+{
+    if (operation is not ("list" or "play"))
+    {
+        return Fail("macro operationはlistまたはplayです。");
+    }
+    var routeId = operation == "play" && arguments.Length > 0
+        ? arguments[0]
+        : null;
+    var optionStart = routeId is null ? 0 : 1;
+    var databasePath = DefaultDatabasePath();
+    string? processName = null;
+    string? versionId = null;
+    string? outputPath = null;
+    var mode = MacroPlaybackMode.AiFree;
+    for (var index = optionStart; index < arguments.Length; index++)
+    {
+        if (arguments[index] == "--db" && index + 1 < arguments.Length)
+            databasePath = Path.GetFullPath(arguments[++index]);
+        else if (arguments[index] == "--process" && index + 1 < arguments.Length)
+            processName = arguments[++index];
+        else if (arguments[index] == "--version" && index + 1 < arguments.Length)
+            versionId = arguments[++index];
+        else if (arguments[index] == "--out" && index + 1 < arguments.Length)
+            outputPath = Path.GetFullPath(arguments[++index]);
+        else if (arguments[index] == "--mode" && index + 1 < arguments.Length)
+            mode = arguments[++index] switch
+            {
+                "free" => MacroPlaybackMode.AiFree,
+                "monitored" => MacroPlaybackMode.AiMonitored,
+                _ => throw new ArgumentException("--modeはfreeまたはmonitoredです。"),
+            };
+        else
+            return Fail($"unknown macro option: {arguments[index]}");
+    }
+    if (!File.Exists(databasePath)) return Fail($"databaseがありません: {databasePath}");
+    if (operation == "play")
+    {
+        var output = SerialHidOutputSettingsStore.ForDatabase(databasePath).Load();
+        using var intents = new HostMacroAutomationIntents(
+            databasePath,
+            new WindowsPurposeMacroExecutionEngine(
+                databasePath,
+                CreateSerialHidDiscovery(),
+                output.SelectedDeviceInstanceId));
+        var reference = new MacroVersionReference(routeId!, versionId, mode);
+        var item = intents.ListMacros().SingleOrDefault(candidate => candidate.RouteId == routeId)
+            ?? throw new InvalidOperationException("指定したmacroがありません。");
+        var progress = new Progress<MacroRunSnapshot>(snapshot =>
+            Console.WriteLine($"macro: {snapshot.Phase} step={snapshot.StepNumber} AI={snapshot.AiCallCount} {snapshot.Detail}"));
+        var terminal = intents.PlayAsync(
+            new MacroPlaybackRequest(processName ?? item.GameId, reference), progress).GetAwaiter().GetResult();
+        var evidence = new
+        {
+            ProductHostEntry = true,
+            PlaybackMode = mode.ToString(),
+            ExecutionRoute = "NanoSerialHid",
+            ComputerUse = false,
+            SendInput = false,
+            Terminal = terminal,
+        };
+        var json = JsonSerializer.Serialize(evidence, new JsonSerializerOptions { WriteIndented = true });
+        if (outputPath is not null)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+            File.WriteAllText(outputPath, json);
+        }
+        Console.WriteLine(json);
+        return terminal.Phase == MacroRunPhase.Completed ? 0 : 2;
+    }
+    using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
+    {
+        DataSource = databasePath,
+        Mode = SqliteOpenMode.ReadOnly,
+        Pooling = false,
+    }.ToString());
+    connection.Open();
+    var macros = new HostMacroCatalog(connection).ListMacros();
+    foreach (var macro in macros)
+        Console.WriteLine($"{macro.RouteId}\t{macro.VersionId}\t{macro.GameId}\t{macro.Goal}\t版{macro.RevisionNumber}\t{macro.StepCount} step");
+    Console.WriteLine($"macro: {macros.Count} 件");
+    return 0;
+}
 
 static int SupervisedImport(string packagePath, string[] arguments)
 {
@@ -168,14 +256,35 @@ static int Run(string[] arguments)
         return Fail("OpenLogicool.Host は既に起動しています（二重起動防止・計画 §6.2）。");
     }
 
+    using var macroQueue = new MacroInvocationQueue();
+    var serialHidDiscovery = CreateSerialHidDiscovery();
+    var outputSettings = SerialHidOutputSettingsStore.ForDatabase(databasePath).Load();
     using var host = new ResidentInputHost(
         databasePath,
         watchdogPath,
         traceEnabled,
         G600LeftoverHostSupport.CreateSession(databasePath),
         G600OnboardModeStore.ForDatabase(databasePath),
-        CreateOutputSessionFactory(databasePath, watchdogPath));
+        CreateOutputSessionFactory(databasePath, watchdogPath),
+        macroInvocations: macroQueue);
     var status = host.Start();
+    using var macroIntents = new HostMacroAutomationIntents(
+        databasePath,
+        new WindowsPurposeMacroExecutionEngine(
+            databasePath,
+            serialHidDiscovery,
+            outputSettings.SelectedDeviceInstanceId,
+            () => host.BorrowedNanoSession));
+    macroIntents.StateChanged += snapshot =>
+    {
+        if (snapshot.Phase == MacroRunPhase.Faulted)
+            Console.Error.WriteLine($"macro fault: {snapshot.Detail}");
+    };
+    using var macroWorker = new MacroAutomationWorker(
+        macroQueue,
+        macroIntents,
+        snapshot => Console.WriteLine($"macro: {snapshot.Detail}"));
+    macroWorker.Start();
 
     Console.WriteLine($"db: {databasePath}");
     Console.WriteLine($"profiles: [{string.Join(", ", status.LoadedProfileIds)}]");
@@ -228,10 +337,14 @@ static int Run(string[] arguments)
     if (host.Failure is not null)
     {
         Console.Error.WriteLine($"resident fault: {host.Failure}");
+        macroIntents.Stop();
+        macroWorker.Dispose();
         host.Stop();
         return 2;
     }
 
+    macroIntents.Stop();
+    macroWorker.Dispose();
     host.Stop();
     Console.WriteLine($"resident: 停止（処理 input {host.Pump.ProcessedCount} 件・handled shutdown 完了）");
     return 0;
@@ -266,6 +379,7 @@ static int Ui(string[] arguments)
     SingleInstanceGuard? residentGuard = null;
     ResidentInputHost? residentHost = null;
     ResidentHostStatus? residentStatus = null;
+    MacroInvocationQueue? macroQueue = resident ? new MacroInvocationQueue() : null;
     var outputSettingsStore = SerialHidOutputSettingsStore.ForDatabase(databasePath);
     var serialHidDiscovery = CreateSerialHidDiscovery();
     if (resident)
@@ -283,12 +397,14 @@ static int Ui(string[] arguments)
             enableTrace: true,
             G600LeftoverHostSupport.CreateSession(databasePath),
             G600OnboardModeStore.ForDatabase(databasePath),
-            ResidentOutputSessionFactory.Create(outputSettingsStore.Load(), watchdogPath, serialHidDiscovery));
+            ResidentOutputSessionFactory.Create(outputSettingsStore.Load(), watchdogPath, serialHidDiscovery),
+            macroInvocations: macroQueue);
         residentStatus = residentHost.Start();
     }
 
     using var residentGuardDisposable = residentGuard;
     using var residentHostDisposable = residentHost;
+    using var macroQueueDisposable = macroQueue;
 
     Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
     using var connection = new SqliteConnection($"Data Source={databasePath}");
@@ -372,6 +488,18 @@ static int Ui(string[] arguments)
             new WebReferenceHtmlNormalizer()));
     var explorerIntents = new HostExplorerIntents(connection);
     var learningRouteIntents = new HostLearningRouteIntents(connection);
+    var outputSettingsForMacro = outputSettingsStore.Load();
+    using var macroAutomationIntents = new HostMacroAutomationIntents(
+        databasePath,
+        new WindowsPurposeMacroExecutionEngine(
+            databasePath,
+            serialHidDiscovery,
+            outputSettingsForMacro.SelectedDeviceInstanceId,
+            () => residentHost?.BorrowedNanoSession));
+    using var macroWorker = macroQueue is null
+        ? null
+        : new MacroAutomationWorker(macroQueue, macroAutomationIntents);
+    macroWorker?.Start();
     ProductSupervisedMacroRuntime? supervisedMacroRuntime = null;
     HostSupervisedMacroIntents? supervisedMacroIntents = null;
     string? supervisedUnavailableReason = null;
@@ -435,7 +563,8 @@ static int Ui(string[] arguments)
             explorerIntents,
             learningRouteIntents,
             supervisedMacroIntents,
-            supervisedUnavailableReason);
+            supervisedUnavailableReason,
+            macroAutomationIntents);
         System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
         if (residentHost is not null)
         {
@@ -477,6 +606,10 @@ static int Ui(string[] arguments)
     thread.SetApartmentState(ApartmentState.STA);
     thread.Start();
     thread.Join();
+    macroAutomationIntents.Stop();
+    macroWorker?.Dispose();
+    residentHost?.Stop();
+    macroQueue?.Dispose();
     return exitCode;
 }
 

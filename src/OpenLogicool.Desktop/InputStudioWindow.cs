@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Contracts.Profiles;
 
 namespace OpenLogicool.Desktop;
@@ -30,6 +31,7 @@ public sealed class InputStudioWindow : Window
     private readonly IExplorerIntents? _explorerIntents;
     private readonly ILearningRouteIntents? _learningRouteIntents;
     private readonly ISupervisedMacroIntents? _supervisedMacroIntents;
+    private readonly IMacroAutomationIntents? _macroAutomationIntents;
     private readonly string? _supervisedUnavailableReason;
     private DiagnosticsWindow? _diagnosticsWindow;
     private GameOperatorWindow? _gameOperatorWindow;
@@ -181,6 +183,13 @@ public sealed class InputStudioWindow : Window
     };
     private readonly Button _recordAddButton = new() { Content = "録って追加", Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(0, 0, 8, 0) };
     private readonly Button _recordUpdateButton = new() { Content = "録って更新", Padding = new Thickness(10, 6, 10, 6) };
+    private readonly Button _selectMacroButton = new()
+    {
+        Content = "マクロを選ぶ",
+        Padding = new Thickness(10, 6, 10, 6),
+        HorizontalAlignment = HorizontalAlignment.Stretch,
+        Margin = new Thickness(0, 0, 0, 12),
+    };
     // 実機ボタン押しで割当先を指定する待機状態（録画確定後に自動で入る。常駐同居時のみ機能）。
     private bool _pendingAssign;
     private KeyCaptureDialog? _activeKeyCaptureDialog;
@@ -215,7 +224,8 @@ public sealed class InputStudioWindow : Window
         IExplorerIntents? explorerIntents = null,
         ILearningRouteIntents? learningRouteIntents = null,
         ISupervisedMacroIntents? supervisedMacroIntents = null,
-        string? supervisedUnavailableReason = null)
+        string? supervisedUnavailableReason = null,
+        IMacroAutomationIntents? macroAutomationIntents = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
@@ -227,6 +237,7 @@ public sealed class InputStudioWindow : Window
         _explorerIntents = explorerIntents;
         _learningRouteIntents = learningRouteIntents;
         _supervisedMacroIntents = supervisedMacroIntents;
+        _macroAutomationIntents = macroAutomationIntents;
         _supervisedUnavailableReason = supervisedUnavailableReason;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
@@ -453,6 +464,34 @@ public sealed class InputStudioWindow : Window
         }
     }
 
+    private void SelectMacroForCurrentAction()
+    {
+        if (_selectedActionId is null || _macroAutomationIntents is null)
+        {
+            return;
+        }
+
+        var dialog = new MacroAssignmentDialog(_macroAutomationIntents.ListMacros()) { Owner = this };
+        if (dialog.ShowDialog() != true || dialog.ResultToken is null || dialog.SelectedMacro is null)
+        {
+            return;
+        }
+
+        var actionId = _selectedActionId;
+        var macro = dialog.SelectedMacro;
+        if (TryMutateDocument(document =>
+            {
+                var updated = WorkspaceDocumentEditor.SetActionOutputs(document, actionId, [dialog.ResultToken]);
+                var action = updated.Actions.First(candidate => candidate.ActionId == actionId);
+                return WorkspaceEditorProjection.IsDefaultActionName(action.Name)
+                    ? WorkspaceDocumentEditor.RenameAction(updated, actionId, macro.Goal)
+                    : updated;
+            }))
+        {
+            Render();
+        }
+    }
+
     private bool ShowKeyCaptureDialog(KeyCaptureDialog dialog)
     {
         _activeKeyCaptureDialog = dialog;
@@ -603,7 +642,8 @@ public sealed class InputStudioWindow : Window
                 _explorerIntents,
                 _learningRouteIntents,
                 _supervisedMacroIntents,
-                _supervisedUnavailableReason) { Owner = this };
+                _supervisedUnavailableReason,
+                _macroAutomationIntents) { Owner = this };
             _gameOperatorWindow.Show();
         }
         else
@@ -1076,6 +1116,10 @@ public sealed class InputStudioWindow : Window
         _recordUpdateButton.Click += (_, _) => RecordUpdateSelected();
         recordRow.Children.Add(_recordUpdateButton);
         stack.Children.Add(recordRow);
+        _selectMacroButton.Click += (_, _) => SelectMacroForCurrentAction();
+        _selectMacroButton.ToolTip = "保存済みマクロを、この操作の機能として使います";
+        AutomationProperties.SetName(_selectMacroButton, "選んだ操作へマクロを設定する");
+        stack.Children.Add(_selectMacroButton);
         stack.Children.Add(_assignHint);
 
         stack.Children.Add(BuildDeviceBlockHeader("G13 キーパッド", Theme.G13));
@@ -1701,6 +1745,7 @@ public sealed class InputStudioWindow : Window
 
         _deleteActionButton.Visibility = inspector is null ? Visibility.Collapsed : Visibility.Visible;
         _recordUpdateButton.IsEnabled = inspector is not null;
+        _selectMacroButton.IsEnabled = inspector is not null && _macroAutomationIntents is not null;
         if (_pendingAssign && inspector is not null)
         {
             // 待機中の注意文（層切替キー・左右クリック等）は Render で上書きしない

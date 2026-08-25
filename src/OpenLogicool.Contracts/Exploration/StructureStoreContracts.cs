@@ -128,7 +128,11 @@ public sealed record StructureScreenEdge(
     string? UpdatedRevisionId = null,
     bool Retired = false,
     string? TargetSemanticKey = null,
-    IReadOnlyList<double>? TargetNormalizedBounds = null);
+    IReadOnlyList<double>? TargetNormalizedBounds = null,
+    IReadOnlyList<string>? KeyTokens = null,
+    int? VerticalScrollSteps = null,
+    int? HorizontalScrollSteps = null,
+    IReadOnlyList<double>? DragDestinationNormalized = null);
 
 public sealed record StructureContradiction(
     string SchemaVersion,

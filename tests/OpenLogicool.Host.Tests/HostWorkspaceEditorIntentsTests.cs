@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using OpenLogicool.Contracts.Profiles;
+using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Desktop;
 using OpenLogicool.Host;
@@ -101,6 +102,24 @@ public sealed class HostWorkspaceEditorIntentsTests : IDisposable
         Assert.Equal("dodge", dodge.ActionId);
         var binding = Assert.Single(reloaded.Document.Bindings);
         Assert.Equal(("G13", "G1", "base"), (binding.DeviceKind, binding.ControlId, binding.LayerId));
+    }
+
+    [Fact]
+    public void Macro_action_compiles_and_saves_through_the_existing_workspace_path()
+    {
+        var token = MacroInvocationTokens.Create(new MacroVersionReference(
+            "route:daily", null, MacroPlaybackMode.AiMonitored));
+        var draft = WorkspaceDocumentEditor.CreateDraft("ws-macro");
+        draft = WorkspaceDocumentEditor.AddAction(draft, "daily", "日課", [token]);
+        draft = WorkspaceDocumentEditor.SetBinding(draft, "daily", "G600", "G9", "base");
+
+        Assert.True(_intents.Compile(draft).IsValid);
+        var saved = _intents.Save(draft, "*");
+
+        Assert.Equal(1, saved.RevisionNumber);
+        var persisted = Assert.Single(new SqliteWorkspaceRevisionStore(_connection).ListRevisions("ws-macro")).Document;
+        Assert.Equal(token, Assert.Single(persisted.Actions).Outputs.Single());
+        Assert.Equal("G9", Assert.Single(persisted.Bindings).ControlId);
     }
 
     [Fact]

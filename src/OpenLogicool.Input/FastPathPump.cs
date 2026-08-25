@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using OpenLogicool.Contracts.Devices.Shared;
+using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Domain;
 
 namespace OpenLogicool.Input;
@@ -26,6 +27,7 @@ public sealed class FastPathPump : IDisposable
     private readonly IReadOnlyList<FastPathSource> _sources;
     private readonly IReadOnlyDictionary<string, DeviceMappingRuntime> _runtimes;
     private readonly IOutputEmitter _emitter;
+    private readonly IMacroInvocationSink? _macroInvocations;
     private readonly ConcurrentQueue<(string DeviceInstanceId, MappingProfile Profile)> _profileChangeRequests = new();
     private readonly Thread _worker;
     private readonly AutoResetEvent _controlWake = new(false);
@@ -40,6 +42,9 @@ public sealed class FastPathPump : IDisposable
     private long _processedCount;
     private long _traceSequence;
     private long _traceApproxCount;
+    private long _acceptedMacroInvocations;
+    private long _rejectedMacroInvocations;
+    private MacroInvocationEnqueueResult? _lastMacroRejection;
     private bool _disposed;
 
     /// <summary>
@@ -52,11 +57,13 @@ public sealed class FastPathPump : IDisposable
         IReadOnlyDictionary<string, DeviceMappingRuntime> runtimesByDeviceInstanceId,
         IOutputEmitter emitter,
         bool enableTrace = false,
-        int traceCapacity = 256)
+        int traceCapacity = 256,
+        IMacroInvocationSink? macroInvocations = null)
     {
         _sources = sources;
         _runtimes = runtimesByDeviceInstanceId;
         _emitter = emitter;
+        _macroInvocations = macroInvocations;
         _traceEnabled = enableTrace;
         _traceCapacity = traceCapacity;
         var sourceSignals = sources
@@ -76,6 +83,12 @@ public sealed class FastPathPump : IDisposable
 
     /// <summary>処理済み PhysicalInput 件数。</summary>
     public long ProcessedCount => Interlocked.Read(ref _processedCount);
+
+    public long AcceptedMacroInvocations => Interlocked.Read(ref _acceptedMacroInvocations);
+
+    public long RejectedMacroInvocations => Interlocked.Read(ref _rejectedMacroInvocations);
+
+    public MacroInvocationEnqueueResult? LastMacroRejection => _lastMacroRejection;
 
     public void Start()
     {
@@ -139,8 +152,8 @@ public sealed class FastPathPump : IDisposable
 
                 var layerId = runtime.CurrentLayerId;
                 var edges = runtime.Process(input);
-                _emitter.Emit(edges);
-                RecordTrace(input, layerId, edges, MonotonicMilliseconds());
+                var emitted = Dispatch(edges);
+                RecordTrace(input, layerId, edges, emitted, MonotonicMilliseconds());
                 processed++;
                 Interlocked.Increment(ref _processedCount);
             }
@@ -155,6 +168,50 @@ public sealed class FastPathPump : IDisposable
         }
 
         return processed;
+    }
+
+    private bool Dispatch(IReadOnlyList<MappedOutputEdge> edges)
+    {
+        if (edges.Count == 0)
+        {
+            return false;
+        }
+
+        List<MappedOutputEdge>? physical = null;
+        var dispatched = false;
+        foreach (var edge in edges)
+        {
+            if (!MacroInvocationTokens.IsMacro(edge.Output))
+            {
+                (physical ??= []).Add(edge);
+                continue;
+            }
+
+            if (edge.Edge != PhysicalInputEdge.Down)
+            {
+                throw new FastPathFaultException("macro invocationはbutton downでだけ起動できます。");
+            }
+
+            var result = _macroInvocations?.TryEnqueue(MacroInvocationTokens.Parse(edge.Output))
+                ?? MacroInvocationEnqueueResult.Unavailable;
+            if (result == MacroInvocationEnqueueResult.Accepted)
+            {
+                Interlocked.Increment(ref _acceptedMacroInvocations);
+                dispatched = true;
+            }
+            else
+            {
+                _lastMacroRejection = result;
+                Interlocked.Increment(ref _rejectedMacroInvocations);
+            }
+        }
+
+        if (physical is { Count: > 0 })
+        {
+            _emitter.Emit(physical);
+            dispatched = true;
+        }
+        return dispatched;
     }
 
     /// <summary>
@@ -237,6 +294,7 @@ public sealed class FastPathPump : IDisposable
         PhysicalInput input,
         string layerId,
         IReadOnlyList<MappedOutputEdge> edges,
+        bool emitted,
         double dispatchCompletedMonotonicMs)
     {
         if (!_traceEnabled)
@@ -250,7 +308,7 @@ public sealed class FastPathPump : IDisposable
             input.Edge,
             layerId,
             edges.Select(edge => edge.Output).ToArray(),
-            edges.Count > 0,
+            emitted,
             input.MonotonicMs,
             dispatchCompletedMonotonicMs,
             Math.Max(0, dispatchCompletedMonotonicMs - input.MonotonicMs),

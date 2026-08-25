@@ -35,6 +35,7 @@ public sealed class ResidentInputHost : IDisposable
     private readonly G600OnboardModeStore? _onboardMode;
     private readonly Func<IResidentOutputSession> _outputSessionFactory;
     private readonly Func<G13LcdRuntime> _g13LcdRuntimeFactory;
+    private readonly IMacroInvocationSink? _macroInvocations;
     private volatile bool _g600OnboardSuppressed;
     private SqliteConnection? _connection;
     private G13RawInputSource? _g13Source;
@@ -59,7 +60,8 @@ public sealed class ResidentInputHost : IDisposable
         G600LeftoverSession? leftover = null,
         G600OnboardModeStore? onboardMode = null,
         Func<IResidentOutputSession>? outputSessionFactory = null,
-        Func<G13LcdRuntime>? g13LcdRuntimeFactory = null)
+        Func<G13LcdRuntime>? g13LcdRuntimeFactory = null,
+        IMacroInvocationSink? macroInvocations = null)
     {
         _databasePath = databasePath;
         _enableTrace = enableTrace;
@@ -69,6 +71,7 @@ public sealed class ResidentInputHost : IDisposable
             ?? (() => new SendInputResidentOutputSession(watchdogExePath));
         _g13LcdRuntimeFactory = g13LcdRuntimeFactory
             ?? (() => new G13LcdRuntime(new G13LcdHidTransport()));
+        _macroInvocations = macroInvocations;
     }
 
     /// <summary>onboard 書込み中で G600 の SendInput 送出を抑止しているか（二重入力防止）。</summary>
@@ -76,6 +79,10 @@ public sealed class ResidentInputHost : IDisposable
 
     public ResidentOutputRoute OutputRoute =>
         _outputSession?.Route ?? throw new InvalidOperationException("resident host は未起動です。");
+
+    /// <summary>Serial HID resident時だけ、Nano操作が同じCOM sessionを借用する。</summary>
+    public SerialHidResidentOutputSession? BorrowedNanoSession =>
+        _outputSession as SerialHidResidentOutputSession;
 
     /// <summary>fast pathまたはoutput sessionのresident停止原因（nullなら正常）。</summary>
     public Exception? Failure => _pump?.Failure ?? _outputSession?.BackgroundFailure ?? _stopFailure;
@@ -190,7 +197,8 @@ public sealed class ResidentInputHost : IDisposable
             inputSources,
             runtimes,
             emitter,
-            enableTrace: _enableTrace);
+            enableTrace: _enableTrace,
+            macroInvocations: _macroInvocations);
         _pump.Start();
 
         _instancesByKind = instancesByKind;

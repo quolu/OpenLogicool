@@ -1421,6 +1421,14 @@ Exit:
 - **G13 Native LCD campaign Phase 2機能中核成立（2026-08-23）**: resident LCD worker、workspace単位の画像／テキスト保存、Input Studio G13ペイン、app-first前面連動、共通Windows表示を実装し、実機G13と実SQLiteで確認した。特定アプリが共通profileを再利用していた場合は編集前に専用workspaceへ分岐し、共通設定の巻込みを防ぐ。証跡は[プリセット表示・設定 delivery](../evidence/g13-native-lcd/p2-preset-lcd-delivery.md)。Phase 2 Exit全体はfocused latencyと実機hotplug再表示の確認待ち。
 - **Phase 12 Game Interaction Foundation／Supervised Visual Macro Runner Exit成立（2026-08-25）**: 10の基盤機能、逐次Screen Index、AIなし既知実行、NIKKEのHover／Click／KeyTap／Scroll／Drag、10秒の意味遷移判定、保存済みLearning Routeの可逆2step教師付き実行まで成立した。destination ID不一致は診断だけとし、`Moved`で進む。旧zero-seed複数target harnessの`Passed=false`は上位探索loopのhistorical判定であり、基盤Exitを否定しない。判定は[Phase 12 Foundation](phase12-game-interaction-foundation-exit-assessment.md)と[Supervised Macro Exit](phase12-supervised-macro-runner-exit-assessment.md)。
 
+### Phase 13: Macro Product Flow（製品実装成立・Exit未宣言 2026-08-26）
+
+目的: 目的指向のLearning Routeを製品macroの唯一の正本とし、AI会話による作成、既存Input StudioからG13／G600への割当、AI監視あり／なし再生、失敗stepだけのappend-only修復、複数macroの順序付き統合を一つの製品journeyとして提供する。
+
+実装状態: 既存Game Operatorへ「マクロ」tab、既存Input Studio右Inspectorへ「マクロを選ぶ」入口だけを追加した。G13／G600 fast pathはmacro tokenをbutton down一回の有界queueへ非blockingで渡し、UI手動起動と同じHost execution coordinatorが10基盤を通して逐次実行する。AI監視なしは保存actionだけで非遷移時停止・route更新なし、AI監視ありは保存actionの10秒非遷移時だけ同じstepを再探索して新revisionへ更新する。統合macroはsource routeを変更せずedge列を連結する。NIKKE実windowの「アークを開く」は製品macro executorからNano Serial HID、AI 0、Movedで完了し、Nano Escでホーム復帰した。
+
+工程正本はLattice plan `macro-product-flow`、設計と受入は[Macro Product Flow campaign](macro-product-flow-campaign-plan.md)、4値判定は[Phase 13 assessment](phase13-macro-product-flow-assessment.md)を正とする。公開claimはGame Operator Previewのまま維持し、NIKKE liveでAI修復が発動した実証、一般game自律操作、課金／消費／戦闘macroを含めない。
+
 ## 9. Blockerを潰すfocused experiment
 
 | ID | 実験 | 成功条件 | 失敗時の分岐 |

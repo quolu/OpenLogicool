@@ -1,0 +1,21 @@
+{
+  "ProductHostEntry": true,
+  "PlaybackMode": "AiMonitored",
+  "ExecutionRoute": "NanoSerialHid",
+  "ComputerUse": false,
+  "SendInput": false,
+  "Terminal": {
+    "Phase": 4,
+    "Goal": "\u30A2\u30FC\u30AF\u3092\u958B\u304F",
+    "TargetProcessName": "nikke",
+    "StepNumber": 1,
+    "ActionSourceLabel": "\u4FDD\u5B58\u6E08\u307F",
+    "ActionLabel": "\u30A2\u30FC\u30AF",
+    "TransitionLabel": "Moved",
+    "AiCallCount": 0,
+    "RouteRevision": 1,
+    "Detail": "\u76EE\u7684\u3092\u5B8C\u4E86\u3057\u307E\u3057\u305F\u3002",
+    "CanStart": true,
+    "CanStop": false
+  }
+}

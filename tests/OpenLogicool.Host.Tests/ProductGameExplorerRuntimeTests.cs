@@ -70,6 +70,40 @@ public sealed class ProductGameExplorerRuntimeTests
     }
 
     [Fact]
+    public async Task Saved_route_edge_selects_its_own_operation_and_parameters()
+    {
+        var before = Scene("before-scroll", 1, "一覧", 0.1);
+        before = before with
+        {
+            Affordances = [before.Affordances[0] with
+            {
+                AllowedPrimitives = [GameInteractionOperations.Scroll],
+                VerticalScrollSteps = -3,
+                HorizontalScrollSteps = 0,
+            }],
+        };
+        var after = Scene("after-scroll", 2, "次", 0.7);
+        var device = new Device();
+        var runtime = Runtime(
+            new ObservationRuntime([before]), new StabilityWaiter(after), new Coordinator(), device,
+            new Learner(), new StructureCommitter(), gamePolicyAllowsExplore: true);
+        runtime.SetRouteTarget(new StructureScreenEdge(
+            ContractSchemaVersions.Revision03, "edge-scroll", "source", "destination", null,
+            "candidate", "locator", GameInteractionOperations.Scroll, "goal", [], false,
+            "before", "after", new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
+            [new StructureOutcomeCount(ExplorationOutcomeKind.Destination, 1)], ["evidence"],
+            StructureVerificationState.Candidate,
+            TargetSemanticKey: "text|一覧|0|0", TargetNormalizedBounds: [0.1, 0.1, 0.1, 0.1],
+            VerticalScrollSteps: -3, HorizontalScrollSteps: 0), repairing: false);
+
+        var result = await runtime.ExecuteNextAsync();
+
+        Assert.Equal(ProductGameExplorerStepStatus.Learned, result.Status);
+        Assert.Equal([GameInteractionOperations.Scroll], device.Calls);
+        Assert.Equal(GameInteractionOperations.Scroll, result.Dispatch!.Operation);
+    }
+
+    [Fact]
     public async Task Compare_uses_the_same_local_representation_before_and_after_input()
     {
         var targetScene = Scene("before", 1, "AIだけの候補", 0.1);
@@ -90,13 +124,34 @@ public sealed class ProductGameExplorerRuntimeTests
         var before = Scene("before", 1, "部隊", 0.1);
         var after = Scene("after", 2, "部隊編成", 0.7);
         var structure = new StructureCommitter();
+        var index = new Index();
         var runtime = Runtime(new ObservationRuntime([before]), new StabilityWaiter(after),
-            new Coordinator(), new Device(), new Learner(), structure, gamePolicyAllowsExplore: true);
+            new Coordinator(), new Device(), new Learner(), structure, gamePolicyAllowsExplore: true,
+            knownScreenIndex: index);
         runtime.SetRouteTarget(RouteEdge("edge:saved"), repairing: false);
 
         var result = await runtime.ExecuteNextAsync();
 
         Assert.Equal(ProductGameExplorerStepStatus.Learned, result.Status);
+        Assert.Equal("edge:saved", result.CommittedEdgeId);
+        Assert.Equal(0, structure.Calls);
+        Assert.Equal(0, index.RememberControlCalls);
+    }
+
+    [Fact]
+    public async Task Ai_free_saved_route_records_stayed_evidence_without_mutating_structure()
+    {
+        var scene = Scene("same", 1, "部隊", 0.1);
+        var structure = new StructureCommitter();
+        var runtime = Runtime(new ObservationRuntime([scene]), new StabilityWaiter(scene),
+            new Coordinator(), new Device(), new Learner(), structure, gamePolicyAllowsExplore: true,
+            learnNonMovedRouteOutcomes: false);
+        runtime.SetRouteTarget(RouteEdge("edge:saved"), repairing: false);
+
+        var result = await runtime.ExecuteNextAsync();
+
+        Assert.Equal(GameTransitionJudgement.Stayed, result.Comparison!.Judgement);
+        Assert.NotNull(result.Learning!.Evidence);
         Assert.Equal("edge:saved", result.CommittedEdgeId);
         Assert.Equal(0, structure.Calls);
     }
@@ -234,7 +289,8 @@ public sealed class ProductGameExplorerRuntimeTests
         IReadOnlyList<string>? keyTokens = null,
         int? verticalSteps = null,
         IReadOnlyList<double>? dragDestination = null,
-        IIncrementalKnownScreenIndex? knownScreenIndex = null)
+        IIncrementalKnownScreenIndex? knownScreenIndex = null,
+        bool learnNonMovedRouteOutcomes = true)
     {
         var actions = new NanoGameInteractionActions(device, new Mapper());
         return new ProductGameExplorerRuntime(
@@ -255,7 +311,8 @@ public sealed class ProductGameExplorerRuntimeTests
             interactionVerticalScrollSteps: verticalSteps,
             interactionHorizontalScrollSteps: operation == GameInteractionOperations.Scroll ? 0 : null,
             interactionDragDestination: dragDestination,
-            knownScreenIndex: knownScreenIndex);
+            knownScreenIndex: knownScreenIndex,
+            learnNonMovedRouteOutcomes: learnNonMovedRouteOutcomes);
     }
 
     private static ExplorationPolicy Policy() => new(

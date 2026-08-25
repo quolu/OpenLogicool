@@ -1,4 +1,5 @@
 using OpenLogicool.Contracts.Research;
+using OpenLogicool.Contracts.Playbooks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -35,7 +36,8 @@ public sealed class GameOperatorWindow : Window
         IExplorerIntents? explorerIntents = null,
         ILearningRouteIntents? learningRouteIntents = null,
         ISupervisedMacroIntents? supervisedMacroIntents = null,
-        string? supervisedUnavailableReason = null)
+        string? supervisedUnavailableReason = null,
+        IMacroAutomationIntents? macroAutomationIntents = null)
     {
         ArgumentNullException.ThrowIfNull(intent);
         _workspace = new WebResearchWorkspace(intent);
@@ -72,7 +74,8 @@ public sealed class GameOperatorWindow : Window
             explorerIntents,
             learningRouteIntents,
             supervisedMacroIntents,
-            supervisedUnavailableReason);
+            supervisedUnavailableReason,
+            macroAutomationIntents);
         RefreshDocuments();
     }
 
@@ -80,7 +83,8 @@ public sealed class GameOperatorWindow : Window
         IExplorerIntents? explorerIntents,
         ILearningRouteIntents? learningRouteIntents,
         ISupervisedMacroIntents? supervisedMacroIntents,
-        string? supervisedUnavailableReason)
+        string? supervisedUnavailableReason,
+        IMacroAutomationIntents? macroAutomationIntents)
     {
         var tabs = new TabControl
         {
@@ -101,6 +105,15 @@ public sealed class GameOperatorWindow : Window
                     learningRouteIntents,
                     supervisedMacroIntents,
                     supervisedUnavailableReason),
+                MinWidth = 130,
+            });
+        }
+        if (macroAutomationIntents is not null)
+        {
+            tabs.Items.Add(new TabItem
+            {
+                Header = "マクロ",
+                Content = new MacroAutomationPanel(macroAutomationIntents),
                 MinWidth = 130,
             });
         }

@@ -1,4 +1,5 @@
 using OpenLogicool.Contracts.Devices.Shared;
+using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Domain;
 using Xunit;
@@ -243,6 +244,36 @@ public sealed class DeviceMappingRuntimeTests
             latchSelectors: new Dictionary<string, string>(),
             holdSelectors: new Dictionary<string, string>(),
             bindings: [new MappingBinding("G1", "base", ["Tap:Key:A", "Key:B"])]);
+
+        Assert.Throws<ArgumentException>(() => new DeviceMappingRuntime(DeviceId, profile));
+    }
+
+    [Fact]
+    public void Macro_binding_emits_one_down_invocation_and_owns_nothing()
+    {
+        var token = MacroInvocationTokens.Create(new MacroVersionReference(
+            "route:daily", null, MacroPlaybackMode.AiMonitored));
+        var runtime = new DeviceMappingRuntime(DeviceId, new MappingProfile(
+            "profile-r1", "map-r1", "base", ["base"],
+            new Dictionary<string, string>(), new Dictionary<string, string>(),
+            [new MappingBinding("G1", "base", [token])]));
+
+        Assert.Equal(
+            [new MappedOutputEdge(token, PhysicalInputEdge.Down)],
+            runtime.Process(Edge("G1", PhysicalInputEdge.Down)));
+        Assert.Empty(runtime.Process(Edge("G1", PhysicalInputEdge.Up)));
+        Assert.Empty(runtime.StopAndReleaseAll());
+    }
+
+    [Fact]
+    public void Macro_binding_cannot_be_mixed_with_physical_outputs()
+    {
+        var token = MacroInvocationTokens.Create(new MacroVersionReference(
+            "route:daily", null, MacroPlaybackMode.AiFree));
+        var profile = new MappingProfile(
+            "profile-r1", "map-r1", "base", ["base"],
+            new Dictionary<string, string>(), new Dictionary<string, string>(),
+            [new MappingBinding("G1", "base", [token, "Key:A"])]);
 
         Assert.Throws<ArgumentException>(() => new DeviceMappingRuntime(DeviceId, profile));
     }

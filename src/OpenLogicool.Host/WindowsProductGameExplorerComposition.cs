@@ -58,7 +58,9 @@ public static class WindowsProductGameExplorerComposition
         int? interactionHorizontalScrollSteps = null,
         IReadOnlyList<double>? interactionDragDestination = null,
         IReadOnlyList<double>? visualSearchRegion = null,
-        ExplorationWaitCondition? interactionWaitCondition = null)
+        ExplorationWaitCondition? interactionWaitCondition = null,
+        bool allowAiDiscovery = true,
+        bool learnNonMovedRouteOutcomes = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
         if (!string.Equals(gameId, gamePolicy.GameId, StringComparison.Ordinal))
@@ -114,7 +116,8 @@ public static class WindowsProductGameExplorerComposition
                 gameId,
                 explorationPolicy.EnvironmentScope,
                 targetIntent,
-                interactionOperation);
+                interactionOperation,
+                allowAiDiscovery);
         }
         var observationRuntime = new ProductGameObservationRuntime(
             frameSource,
@@ -174,7 +177,8 @@ public static class WindowsProductGameExplorerComposition
             interactionKeyTokens: interactionKeyTokens,
             interactionVerticalScrollSteps: interactionVerticalScrollSteps,
             interactionHorizontalScrollSteps: interactionHorizontalScrollSteps,
-            interactionDragDestination: interactionDragDestination);
+            interactionDragDestination: interactionDragDestination,
+            learnNonMovedRouteOutcomes: learnNonMovedRouteOutcomes);
         return new WindowsProductGameExplorerSession(
             runtime,
             frameSource,

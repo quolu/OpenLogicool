@@ -2,6 +2,8 @@ using OpenLogicool.Contracts.Devices.G13;
 using OpenLogicool.Contracts.Devices.G600;
 using OpenLogicool.Contracts.Profiles;
 
+using OpenLogicool.Contracts.Playbooks;
+
 namespace OpenLogicool.Desktop;
 
 /// <summary>Action 盤の1行（設計 §2 案A: 行=Semantic Action、列=出力／device ごとの割当）。</summary>
@@ -68,7 +70,7 @@ public static class WorkspaceEditorProjection
                 return new ActionBoardRowView(
                     action.ActionId,
                     action.Name,
-                    FormatOutputs(action.Outputs),
+                    FormatOutputsForDisplay(action.Outputs),
                     assignments,
                     IsSelected: action.ActionId == selectedActionId);
             })
@@ -90,7 +92,7 @@ public static class WorkspaceEditorProjection
             inspector = new BindingInspectorView(
                 selectedAction.ActionId,
                 selectedAction.Name,
-                FormatOutputs(selectedAction.Outputs),
+                FormatOutputsForDisplay(selectedAction.Outputs),
                 bindingRows,
                 deviceOptions);
         }
@@ -105,6 +107,11 @@ public static class WorkspaceEditorProjection
     /// <summary>textbox の表示文字列を outputs 列へ戻す（空白区切り・空要素は落とす）。</summary>
     public static IReadOnlyList<string> ParseOutputs(string text) =>
         text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private static string FormatOutputsForDisplay(IReadOnlyList<string> outputs) =>
+        outputs.Count == 1 && MacroInvocationTokens.IsMacro(outputs[0])
+            ? TokenDisplayName(outputs[0])
+            : FormatOutputs(outputs);
 
     /// <summary>自動生成の既定名（「新しい操作」「新しい操作 N」）かどうか。利用者が付けた名前は対象外。</summary>
     public static bool IsDefaultActionName(string name)
@@ -129,6 +136,12 @@ public static class WorkspaceEditorProjection
 
     private static string TokenDisplayName(string token) => token switch
     {
+        _ when MacroInvocationTokens.IsMacro(token) => MacroInvocationTokens.Parse(token).PlaybackMode switch
+        {
+            MacroPlaybackMode.AiMonitored => "マクロ（AI監視あり）",
+            MacroPlaybackMode.AiFree => "マクロ（AI監視なし）",
+            _ => "マクロ",
+        },
         _ when token.StartsWith("Key:", StringComparison.Ordinal) => token["Key:".Length..],
         "Mouse:Left" => "マウス左",
         "Mouse:Right" => "マウス右",

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using OpenLogicool.Contracts.Devices.Shared;
+using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Domain;
 using OpenLogicool.Fakes;
@@ -44,6 +45,17 @@ public sealed class FastPathPumpTests
             {
                 throw new InvalidOperationException("release failed");
             }
+        }
+    }
+
+    private sealed class RecordingMacroSink(MacroInvocationEnqueueResult result) : IMacroInvocationSink
+    {
+        public List<MacroVersionReference> Invocations { get; } = [];
+
+        public MacroInvocationEnqueueResult TryEnqueue(MacroVersionReference invocation)
+        {
+            Invocations.Add(invocation);
+            return result;
         }
     }
 
@@ -95,6 +107,82 @@ public sealed class FastPathPumpTests
                 new MappedOutputEdge("Key:F14", PhysicalInputEdge.Up),
             ],
             emitter.Emitted);
+    }
+
+    [Fact]
+    public void Macro_down_is_enqueued_once_and_never_reaches_the_physical_emitter()
+    {
+        var reference = new MacroVersionReference("route:daily", null, MacroPlaybackMode.AiMonitored);
+        var token = MacroInvocationTokens.Create(reference);
+        var source = new FakeDeviceInputSource(
+            [Device("dev-a")],
+            [
+                Edge("dev-a", "G9", PhysicalInputEdge.Down, 1),
+                Edge("dev-a", "G9", PhysicalInputEdge.Up, 2),
+            ]);
+        var emitter = new RecordingEmitter();
+        var sink = new RecordingMacroSink(MacroInvocationEnqueueResult.Accepted);
+        using var pump = new FastPathPump(
+            [new FastPathSource(source)],
+            new Dictionary<string, DeviceMappingRuntime> { ["dev-a"] = Runtime("dev-a", token) },
+            emitter,
+            macroInvocations: sink);
+
+        Assert.Equal(2, pump.RunOnce());
+        Assert.Equal([reference], sink.Invocations);
+        Assert.Empty(emitter.Emitted);
+        Assert.Equal(1, pump.AcceptedMacroInvocations);
+        Assert.Equal(0, pump.RejectedMacroInvocations);
+    }
+
+    [Fact]
+    public void Rejected_macro_is_observable_and_does_not_fault_normal_fast_path()
+    {
+        var reference = new MacroVersionReference("route:daily", null, MacroPlaybackMode.AiFree);
+        var token = MacroInvocationTokens.Create(reference);
+        var source = new FakeDeviceInputSource(
+            [Device("dev-a"), Device("dev-b")],
+            [
+                Edge("dev-a", "G9", PhysicalInputEdge.Down, 1),
+                Edge("dev-b", "G9", PhysicalInputEdge.Down, 2),
+            ]);
+        var emitter = new RecordingEmitter();
+        var sink = new RecordingMacroSink(MacroInvocationEnqueueResult.QueueFull);
+        using var pump = new FastPathPump(
+            [new FastPathSource(source)],
+            new Dictionary<string, DeviceMappingRuntime>
+            {
+                ["dev-a"] = Runtime("dev-a", token),
+                ["dev-b"] = Runtime("dev-b", "Key:F13"),
+            },
+            emitter,
+            enableTrace: true,
+            macroInvocations: sink);
+
+        Assert.Equal(2, pump.RunOnce());
+        Assert.Null(pump.Failure);
+        Assert.Equal(MacroInvocationEnqueueResult.QueueFull, pump.LastMacroRejection);
+        Assert.Equal(1, pump.RejectedMacroInvocations);
+        Assert.Equal([new MappedOutputEdge("Key:F13", PhysicalInputEdge.Down)], emitter.Emitted);
+        Assert.Equal([false, true], pump.DrainTrace().Select(entry => entry.Emitted).ToArray());
+    }
+
+    [Fact]
+    public void Macro_queue_is_bounded_and_preserves_order()
+    {
+        using var queue = new MacroInvocationQueue(capacity: 2);
+        var first = new MacroVersionReference("route:1", null, MacroPlaybackMode.AiFree);
+        var second = new MacroVersionReference("route:2", "v2", MacroPlaybackMode.AiMonitored);
+
+        Assert.Equal(MacroInvocationEnqueueResult.Accepted, queue.TryEnqueue(first));
+        Assert.Equal(MacroInvocationEnqueueResult.Accepted, queue.TryEnqueue(second));
+        Assert.Equal(MacroInvocationEnqueueResult.QueueFull,
+            queue.TryEnqueue(new MacroVersionReference("route:3", null, MacroPlaybackMode.AiFree)));
+        Assert.True(queue.TryDequeue(out var dequeuedFirst));
+        Assert.True(queue.TryDequeue(out var dequeuedSecond));
+        Assert.Equal(first, dequeuedFirst);
+        Assert.Equal(second, dequeuedSecond);
+        Assert.False(queue.TryDequeue(out _));
     }
 
     [Fact]

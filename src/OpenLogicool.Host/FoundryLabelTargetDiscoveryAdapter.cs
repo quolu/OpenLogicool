@@ -17,12 +17,11 @@ public sealed class FoundryLabelTargetDiscoveryAdapter(
     IGameFramePngEncoder pngEncoder,
     Func<string> structureRevisionId,
     string? targetIntent = null,
-    string interactionOperation = GameInteractionOperations.Click) : IProductGameTargetDiscovery, ILocalAiCallCounter
+    string interactionOperation = GameInteractionOperations.Click) : IProductGameTargetDiscovery, ILocalAiCallCounter, IProductGameOperationControl
 {
     private const int MaximumVisionDimension = 640;
-    private int discoveryCount;
     private int aiCallCount;
-    private IReadOnlyList<AffordanceCandidate> initialTargets = [];
+    private string activeOperation = interactionOperation;
 
     public int AiCallCount => Volatile.Read(ref aiCallCount);
 
@@ -34,10 +33,6 @@ public sealed class FoundryLabelTargetDiscoveryAdapter(
         var ocrResult = await ocr.RecognizeAsync(frame, cancellationToken).ConfigureAwait(false);
         var textRegions = WindowsGameOcrSpanBuilder.Canonicalize(
             WindowsGameOcrSpanBuilder.Build(ocrResult, frame.Width, frame.Height));
-        if (Interlocked.Increment(ref discoveryCount) > 1)
-        {
-            return LocalTargetTrackingSceneBuilder.Build(observation, frame, textRegions, initialTargets);
-        }
         var png = pngEncoder.Encode(frame, MaximumVisionDimension);
         Interlocked.Increment(ref aiCallCount);
         var request = new LocalVisionSceneRequest(
@@ -52,11 +47,11 @@ public sealed class FoundryLabelTargetDiscoveryAdapter(
             $"locator:{observation.ObservationId}",
             textRegions,
             observation.StateCandidates,
-            [interactionOperation],
+            [activeOperation],
             structureRevisionId(),
             targetIntent);
         var discovered = await provider.ObserveAsync(request, png.Bytes, cancellationToken).ConfigureAwait(false);
-        initialTargets = discovered.Scene.Affordances
+        var initialTargets = discovered.Scene.Affordances
             .Select(target => target with
             {
                 SemanticKind = "probe-target",
@@ -81,4 +76,6 @@ public sealed class FoundryLabelTargetDiscoveryAdapter(
             SceneVisualPatch = VisualPatchMatcher.Capture(frame, [0d, 0d, 1d, 1d]),
         };
     }
+
+    public void SetInteractionOperation(string operation) => activeOperation = operation;
 }

@@ -39,6 +39,20 @@ public sealed class WindowsKnownFirstTargetDiscoveryTests
     }
 
     [Fact]
+    public async Task Ai_free_mode_returns_no_candidate_when_saved_route_is_unusable_without_calling_ai()
+    {
+        var ai = new AiDiscovery();
+        var discovery = Discovery(new ProfileStore(null), ai, allowAiDiscovery: false);
+        var frame = Frame();
+
+        var scene = await discovery.DiscoverAsync(Observation(frame), frame);
+
+        Assert.DoesNotContain(scene.Affordances,
+            candidate => candidate.AllowedPrimitives.Contains(GameInteractionOperations.Click, StringComparer.Ordinal));
+        Assert.Equal(0, ai.CallCount);
+    }
+
+    [Fact]
     public async Task Saved_action_with_unconfirmed_transition_uses_ai_on_next_observation()
     {
         var ai = new AiDiscovery();
@@ -161,14 +175,16 @@ public sealed class WindowsKnownFirstTargetDiscoveryTests
     private static WindowsKnownFirstTargetDiscovery Discovery(
         ILearnedSceneProfileStore profiles,
         IProductGameTargetDiscovery ai,
-        string? goal = "部隊を開く") => new(
+        string? goal = "部隊を開く",
+        bool allowAiDiscovery = true) => new(
         ai,
         new Ocr(),
         profiles,
         "game",
         "env",
         goal,
-        GameInteractionOperations.Click);
+        GameInteractionOperations.Click,
+        allowAiDiscovery);
 
     private static LearnedSceneProfileDocument Profile() => new(
         ContractSchemaVersions.Revision03,

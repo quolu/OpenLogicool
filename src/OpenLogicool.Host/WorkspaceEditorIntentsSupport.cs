@@ -1,5 +1,6 @@
 using System.IO;
 using OpenLogicool.Contracts.Profiles;
+using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Desktop;
 using OpenLogicool.Input;
 using OpenLogicool.Profiles;
@@ -100,6 +101,17 @@ internal static class WorkspaceEditorIntentsSupport
         {
             if (action.Outputs.Count == 0)
             {
+                continue;
+            }
+
+            var macroCount = action.Outputs.Count(MacroInvocationTokens.IsMacro);
+            if (macroCount > 0)
+            {
+                if (action.Outputs.Count != 1 || macroCount != 1)
+                {
+                    throw new ArgumentException($"action '{action.ActionId}' のマクロは単独で指定してください。");
+                }
+                _ = MacroInvocationTokens.Parse(action.Outputs[0]);
                 continue;
             }
 

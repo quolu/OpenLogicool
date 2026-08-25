@@ -30,6 +30,11 @@ public interface IProductGameRouteControl
     void EndComparison();
 }
 
+public interface IProductGameOperationControl
+{
+    void SetInteractionOperation(string operation);
+}
+
 public interface IProductGameFrameEvidenceSink
 {
     ValueTask<CapturedFrameArtifact> SaveAsync(

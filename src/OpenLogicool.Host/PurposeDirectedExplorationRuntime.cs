@@ -90,6 +90,7 @@ public sealed class PurposeDirectedExplorationRuntime
     private readonly string environmentScope;
     private readonly string goal;
     private readonly string routeId;
+    private readonly MacroPlaybackMode playbackMode;
     private LearningRouteRevision? route;
     private int stepIndex;
     private bool repairing;
@@ -102,7 +103,9 @@ public sealed class PurposeDirectedExplorationRuntime
         IGameStructureStore structures,
         ILearningRouteStore routes,
         IPurposeGoalCompletionEvaluator completion,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        MacroPlaybackMode playbackMode = MacroPlaybackMode.AiMonitored,
+        LearningRouteRevision? initialRoute = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
         ArgumentException.ThrowIfNullOrWhiteSpace(environmentScope);
@@ -115,8 +118,9 @@ public sealed class PurposeDirectedExplorationRuntime
         this.routes = routes;
         this.completion = completion;
         time = timeProvider ?? TimeProvider.System;
-        routeId = PurposeLearningRouteIds.Create(gameId, environmentScope, goal);
-        route = routes.LoadLatest(routeId);
+        this.playbackMode = playbackMode;
+        routeId = initialRoute?.RouteId ?? PurposeLearningRouteIds.Create(gameId, environmentScope, goal);
+        route = initialRoute ?? routes.LoadLatest(routeId);
         if (route is not null && (route.GameId != gameId || route.EnvironmentScope != environmentScope || route.Goal != goal))
             throw new InvalidOperationException("目的routeのscopeまたはgoalが一致しません。");
     }
@@ -137,6 +141,11 @@ public sealed class PurposeDirectedExplorationRuntime
             return new(PurposeDirectedStepStatus.Stopped, stepIndex, step, route, saved, step.Detail);
         if (step.Comparison.Judgement != GameTransitionJudgement.Moved)
         {
+            if (playbackMode == MacroPlaybackMode.AiFree)
+            {
+                return new(PurposeDirectedStepStatus.Stopped, stepIndex, step, route, saved,
+                    "AI監視なし再生で非遷移を確認したため停止しました。マクロは変更していません。");
+            }
             repairing = saved || repairing;
             return new(PurposeDirectedStepStatus.LearningContinues, stepIndex, step, route, saved,
                 "非遷移outcomeを保存し、同じstepだけをAI再探索します。");

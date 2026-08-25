@@ -76,11 +76,28 @@ public sealed class PurposeDirectedExplorationRuntimeTests
     }
 
     [Fact]
+    public async Task Ai_free_playback_stops_on_non_move_without_ai_repair_or_route_update()
+    {
+        var initial = Route(["e1", "e3"]);
+        var routes = new Routes(initial);
+        var steps = new Steps([Stayed("e1-failed")]);
+        var runtime = Runtime(steps, routes, new Completion(false), MacroPlaybackMode.AiFree);
+
+        var stopped = await runtime.ExecuteNextAsync();
+
+        Assert.Equal(PurposeDirectedStepStatus.Stopped, stopped.Status);
+        Assert.Equal(["e1", "e3"], stopped.Route!.EdgeIds);
+        Assert.Empty(routes.Appended);
+        Assert.Equal([false], steps.RepairFlags);
+        Assert.Contains("AI監視なし", stopped.Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Restart_replays_all_saved_steps_without_writing_a_new_route_revision()
     {
         var routes = new Routes(Route(["e1", "e3"]));
         var steps = new Steps([Moved("replay1"), Moved("replay2")]);
-        var runtime = Runtime(steps, routes, new Completion(false));
+        var runtime = Runtime(steps, routes, new Completion(false), MacroPlaybackMode.AiFree);
 
         var first = await runtime.ExecuteNextAsync();
         var second = await runtime.ExecuteNextAsync();
@@ -108,6 +125,24 @@ public sealed class PurposeDirectedExplorationRuntimeTests
         Assert.Equal(LearningRouteStatus.Compiled, completed.Route.Status);
         Assert.Equal("e1", steps.Hints[0]!.EdgeId);
         Assert.Null(steps.Hints[1]);
+    }
+
+    [Fact]
+    public async Task Explicit_composed_route_keeps_its_route_identity_when_repaired()
+    {
+        var initial = Route(["e1", "e3"]) with { RouteId = "macro:composed:daily", VersionId = "macro:composed:daily:v1" };
+        var routes = new Routes(initial);
+        var steps = new Steps([Stayed("failed"), Moved("e2")]);
+        var runtime = new PurposeDirectedExplorationRuntime(
+            "game", "env", "ランキングを開く", steps, new Structures(), routes,
+            new Completion(false), new FixedTimeProvider(DateTimeOffset.UnixEpoch),
+            MacroPlaybackMode.AiMonitored, initial);
+
+        _ = await runtime.ExecuteNextAsync();
+        var repaired = await runtime.ExecuteNextAsync();
+
+        Assert.Equal("macro:composed:daily", repaired.Route!.RouteId);
+        Assert.Equal(["e2", "e3"], repaired.Route.EdgeIds);
     }
 
     [Fact]
@@ -156,9 +191,12 @@ public sealed class PurposeDirectedExplorationRuntimeTests
     }
 
     private static PurposeDirectedExplorationRuntime Runtime(
-        Steps steps, Routes routes, IPurposeGoalCompletionEvaluator completion) =>
+        Steps steps,
+        Routes routes,
+        IPurposeGoalCompletionEvaluator completion,
+        MacroPlaybackMode playbackMode = MacroPlaybackMode.AiMonitored) =>
         new("game", "env", "ランキングを開く", steps, new Structures(), routes, completion,
-            new FixedTimeProvider(DateTimeOffset.UnixEpoch));
+            new FixedTimeProvider(DateTimeOffset.UnixEpoch), playbackMode);
 
     private static ProductGameExplorerStepResult Moved(string evidence) => Step(
         evidence, GameTransitionJudgement.Moved, ExplorationOutcomeKind.Destination);

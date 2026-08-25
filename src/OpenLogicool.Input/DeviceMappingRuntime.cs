@@ -1,4 +1,5 @@
 using OpenLogicool.Contracts.Devices.Shared;
+using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Domain;
 
 namespace OpenLogicool.Input;
@@ -124,6 +125,11 @@ public sealed class DeviceMappingRuntime
             return BuildSequenceEdges(outputs);
         }
 
+        if (MacroInvocationTokens.IsMacro(outputs[0]))
+        {
+            return [new MappedOutputEdge(outputs[0], PhysicalInputEdge.Down)];
+        }
+
         var result = _state.Down(input, outputs);
         _state = result.State;
         _ownedControls.Add(input.ControlId);
@@ -192,6 +198,18 @@ public sealed class DeviceMappingRuntime
     {
         foreach (var ((controlId, layerId), outputs) in profile.Bindings)
         {
+            var macroCount = outputs.Count(MacroInvocationTokens.IsMacro);
+            if (macroCount > 0)
+            {
+                if (outputs.Count != 1 || macroCount != 1)
+                {
+                    throw new ArgumentException(
+                        $"binding ({controlId}, {layerId}) のmacroは単独で指定してください。");
+                }
+                _ = MacroInvocationTokens.Parse(outputs[0]);
+                continue;
+            }
+
             var isSequence = OutputTokens.IsSequenceStep(outputs[0]);
             foreach (var output in outputs)
             {

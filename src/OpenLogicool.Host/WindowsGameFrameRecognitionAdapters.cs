@@ -347,12 +347,11 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
     Func<string> structureRevisionId,
     string? targetIntent = null,
     string interactionOperation = GameInteractionOperations.Click,
-    IReadOnlyList<double>? visualSearchRegion = null) : IProductGameTargetDiscovery, ILocalAiCallCounter
+    IReadOnlyList<double>? visualSearchRegion = null) : IProductGameTargetDiscovery, ILocalAiCallCounter, IProductGameOperationControl
 {
     private const int MaximumVisionDimension = 1280;
-    private int discoveryCount;
     private int aiCallCount;
-    private IReadOnlyList<AffordanceCandidate> initialTargets = [];
+    private string activeOperation = interactionOperation;
 
     public int AiCallCount => Volatile.Read(ref aiCallCount);
 
@@ -365,10 +364,6 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
         ArgumentNullException.ThrowIfNull(frame);
         var ocrResult = await ocr.RecognizeAsync(frame, cancellationToken).ConfigureAwait(false);
         var textRegions = WindowsGameOcrSpanBuilder.Build(ocrResult, frame.Width, frame.Height);
-        if (Interlocked.Increment(ref discoveryCount) > 1)
-        {
-            return LocalTargetTrackingSceneBuilder.Build(observation, frame, textRegions, initialTargets);
-        }
         var png = visualSearchRegion is null
             ? pngEncoder.Encode(frame, MaximumVisionDimension)
             : pngEncoder.EncodeRegion(frame, visualSearchRegion, MaximumVisionDimension);
@@ -385,7 +380,7 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
             $"locator:{observation.ObservationId}",
             textRegions,
             observation.StateCandidates,
-            [interactionOperation],
+            [activeOperation],
             structureRevisionId(),
             targetIntent);
         var discovered = await provider.ObserveAsync(request, png.Bytes, cancellationToken).ConfigureAwait(false);
@@ -398,7 +393,6 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
             .Where(candidate => candidate is not null)
             .Select(candidate => candidate! with { SemanticKind = "probe-target" })
             .ToArray();
-        initialTargets = groundedTargets;
         return discovered.Scene with
         {
             Affordances = LocalTargetTrackingSceneBuilder.MergeInitial(
@@ -416,6 +410,8 @@ public sealed class FoundryControlTargetDiscoveryAdapter(
             SceneVisualPatch = VisualPatchMatcher.Capture(frame, [0d, 0d, 1d, 1d]),
         };
     }
+
+    public void SetInteractionOperation(string operation) => activeOperation = operation;
 
     private static AffordanceCandidate MapFromCrop(
         AffordanceCandidate candidate,

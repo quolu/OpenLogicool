@@ -18,7 +18,8 @@ public sealed class WindowsKnownFirstTargetDiscovery(
     string gameId,
     string environmentScope,
     string? goal,
-    string operation) :
+    string operation,
+    bool allowAiDiscovery = true) :
     IProductGameTargetDiscovery,
     IProductGameRediscoveryTrigger,
     IProductGameRouteControl,
@@ -45,7 +46,7 @@ public sealed class WindowsKnownFirstTargetDiscovery(
         var profile = profiles.Load(gameId, environmentScope);
         if (profile is null)
         {
-            if (comparisonOnly)
+            if (comparisonOnly || !allowAiDiscovery)
             {
                 return LocalScene(observation, frame, recognized);
             }
@@ -111,6 +112,7 @@ public sealed class WindowsKnownFirstTargetDiscovery(
 
         if (forceAiRepair)
         {
+            if (!allowAiDiscovery) return scene with { Affordances = [] };
             return await aiDiscovery.DiscoverAsync(observation, frame, cancellationToken).ConfigureAwait(false);
         }
 
@@ -135,7 +137,9 @@ public sealed class WindowsKnownFirstTargetDiscovery(
             }
         }
 
-        return await aiDiscovery.DiscoverAsync(observation, frame, cancellationToken).ConfigureAwait(false);
+        return allowAiDiscovery
+            ? await aiDiscovery.DiscoverAsync(observation, frame, cancellationToken).ConfigureAwait(false)
+            : scene with { Affordances = [] };
     }
 
     public void MarkTransitionUnconfirmed(ObservedScene before, AffordanceCandidate target)
@@ -200,7 +204,12 @@ public sealed class WindowsKnownFirstTargetDiscovery(
         return scene.Affordances.FirstOrDefault(candidate => usable.Contains(candidate.CandidateId));
     }
 
-    public void SetRouteTarget(StructureScreenEdge? edge) => routeTarget = edge;
+    public void SetRouteTarget(StructureScreenEdge? edge)
+    {
+        routeTarget = edge;
+        if (aiDiscovery is IProductGameOperationControl operationControl)
+            operationControl.SetInteractionOperation(edge?.Primitive ?? operation);
+    }
 
     public void BeginComparison() => comparisonOnly = true;
 
@@ -228,7 +237,11 @@ public sealed class WindowsKnownFirstTargetDiscovery(
             1,
             [routeTarget.Primitive],
             kind,
-            label);
+            label,
+            KeyTokens: routeTarget.KeyTokens,
+            VerticalScrollSteps: routeTarget.VerticalScrollSteps,
+            HorizontalScrollSteps: routeTarget.HorizontalScrollSteps,
+            DragDestinationNormalized: routeTarget.DragDestinationNormalized);
     }
 
     private static ObservedScene LocalScene(

@@ -110,6 +110,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     private readonly int? interactionVerticalScrollSteps;
     private readonly int? interactionHorizontalScrollSteps;
     private readonly IReadOnlyList<double>? interactionDragDestination;
+    private readonly bool learnNonMovedRouteOutcomes;
     private readonly TimeProvider time;
     private readonly SemaphoreSlim execution = new(1, 1);
     private ObservationResult? currentObservation;
@@ -120,6 +121,13 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     private string activeProbeLabel = "（実行中の一手なし）";
     private string riskLabel = "（実行中の評価なし）";
     private string stopReasonLabel = "停止していません";
+
+    private string ActiveOperation => routeTarget?.Primitive ?? interactionOperation;
+    private IReadOnlyList<string>? ActiveKeyTokens => routeTarget?.KeyTokens ?? interactionKeyTokens;
+    private int? ActiveVerticalScrollSteps => routeTarget?.VerticalScrollSteps ?? interactionVerticalScrollSteps;
+    private int? ActiveHorizontalScrollSteps => routeTarget?.HorizontalScrollSteps ?? interactionHorizontalScrollSteps;
+    private IReadOnlyList<double>? ActiveDragDestination => routeTarget?.DragDestinationNormalized ?? interactionDragDestination;
+    private ExplorationWaitCondition ActiveWaitCondition => routeTarget?.WaitCondition ?? interactionWaitCondition;
 
     public ProductGameExplorerRuntime(
         string gameId,
@@ -140,7 +148,8 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     IReadOnlyList<string>? interactionKeyTokens = null,
     int? interactionVerticalScrollSteps = null,
     int? interactionHorizontalScrollSteps = null,
-    IReadOnlyList<double>? interactionDragDestination = null)
+    IReadOnlyList<double>? interactionDragDestination = null,
+    bool learnNonMovedRouteOutcomes = true)
     {
         GameId = gameId;
         EnvironmentScope = policy.EnvironmentScope;
@@ -179,6 +188,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         this.interactionVerticalScrollSteps = interactionVerticalScrollSteps;
         this.interactionHorizontalScrollSteps = interactionHorizontalScrollSteps;
         this.interactionDragDestination = interactionDragDestination;
+        this.learnNonMovedRouteOutcomes = learnNonMovedRouteOutcomes;
         time = timeProvider ?? TimeProvider.System;
     }
 
@@ -241,20 +251,20 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                     target.FrameSequence,
                     target.TransformRevision,
                     target.TargetWindowSourceId,
-                    interactionKeyTokens!),
+                    ActiveKeyTokens!),
                 cancellationToken),
             GameInteractionOperations.Scroll => ScrollAsync(
                 new GameInteractionScrollRequest(
                     ContractSchemaVersions.Revision03,
                     target,
-                    interactionVerticalScrollSteps.GetValueOrDefault(),
-                    interactionHorizontalScrollSteps.GetValueOrDefault()),
+                    ActiveVerticalScrollSteps.GetValueOrDefault(),
+                    ActiveHorizontalScrollSteps.GetValueOrDefault()),
                 cancellationToken),
             GameInteractionOperations.Drag => DragAsync(
                 new GameInteractionDragRequest(
                     ContractSchemaVersions.Revision03,
                     target,
-                    interactionDragDestination!),
+                    ActiveDragDestination!),
                 cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(operation)),
         };
@@ -298,6 +308,15 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
 
     public void SetRouteTarget(StructureScreenEdge? edge, bool repairing)
     {
+        if (edge?.Primitive == GameInteractionOperations.KeyTap && edge.KeyTokens is not { Count: > 0 }
+            || edge?.Primitive == GameInteractionOperations.Scroll
+                && edge.VerticalScrollSteps.GetValueOrDefault() == 0
+                && edge.HorizontalScrollSteps.GetValueOrDefault() == 0
+            || edge?.Primitive == GameInteractionOperations.Drag
+                && edge.DragDestinationNormalized is not { Count: 2 })
+        {
+            throw new InvalidOperationException($"保存edge '{edge.EdgeId}' に {edge.Primitive} の操作parameterがありません。");
+        }
         routeTarget = edge;
         routeTargetIsRepairing = repairing;
         if (observation is IProductGameRouteControl routeControl)
@@ -354,7 +373,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             var routeControl = observation as IProductGameRouteControl;
             ObservedScene? precomputedComparison = null;
             ObservedScene before;
-            if (interactionOperation == GameInteractionOperations.KeyTap)
+            if (ActiveOperation == GameInteractionOperations.KeyTap)
             {
                 routeControl?.BeginComparison();
                 try
@@ -420,13 +439,14 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             currentObservation = observed;
             var indexedTarget = target with
             {
-                AllowedPrimitives = [interactionOperation],
-                KeyTokens = interactionKeyTokens,
-                VerticalScrollSteps = interactionVerticalScrollSteps,
-                HorizontalScrollSteps = interactionHorizontalScrollSteps,
-                DragDestinationNormalized = interactionDragDestination,
+                AllowedPrimitives = [ActiveOperation],
+                KeyTokens = ActiveKeyTokens,
+                VerticalScrollSteps = ActiveVerticalScrollSteps,
+                HorizontalScrollSteps = ActiveHorizontalScrollSteps,
+                DragDestinationNormalized = ActiveDragDestination,
             };
-            if (interactionOperation != GameInteractionOperations.KeyTap)
+            if (ActiveOperation != GameInteractionOperations.KeyTap
+                && (currentRouteTarget is null || currentRouteTargetIsRepairing))
             {
                 _ = knownScreenIndex?.RememberControl(
                     sourceSamples,
@@ -452,7 +472,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 coordinator.Dispatch(proposal.ProposalId, () =>
                 {
                     dispatch = DispatchOperationAsync(
-                            interactionOperation,
+                            ActiveOperation,
                             GameInteractionTargetBinding.From(target),
                             cancellationToken)
                         .AsTask().GetAwaiter().GetResult();
@@ -529,16 +549,16 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             string? committedEdgeId = null;
             if (learned.Evidence is not null)
             {
-                if (comparison.Judgement == GameTransitionJudgement.Moved
-                    && currentRouteTarget is not null
-                    && !currentRouteTargetIsRepairing)
+                if (currentRouteTarget is not null
+                    && !currentRouteTargetIsRepairing
+                    && (comparison.Judgement == GameTransitionJudgement.Moved || !learnNonMovedRouteOutcomes))
                 {
                     committedEdgeId = currentRouteTarget.EdgeId;
                 }
                 else
                 {
                     if (comparison.Judgement == GameTransitionJudgement.Moved
-                        && interactionOperation != GameInteractionOperations.KeyTap)
+                        && ActiveOperation != GameInteractionOperations.KeyTap)
                     {
                         _ = knownScreenIndex?.RememberDestination(
                             sourceSamples,
@@ -582,8 +602,8 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     private (AffordanceCandidate Candidate, ExplorationCandidateRiskDecision Risk)? Select(ObservedScene scene)
     {
         var candidates = scene.Affordances
-            .Where(candidate => candidate.AllowedPrimitives.Contains(interactionOperation, StringComparer.Ordinal));
-        if (interactionOperation == GameInteractionOperations.KeyTap)
+            .Where(candidate => candidate.AllowedPrimitives.Contains(ActiveOperation, StringComparer.Ordinal));
+        if (ActiveOperation == GameInteractionOperations.KeyTap)
         {
             candidates = candidates.Where(candidate => string.Equals(candidate.SemanticKind, "global-key", StringComparison.Ordinal));
         }
@@ -608,7 +628,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             scene.ObservationId,
             structureRevisionId,
             candidate.CandidateId,
-            interactionOperation,
+            ActiveOperation,
             $"probe:{GameSceneSemanticComparer.TargetKey(candidate)}",
             [
                 ExplorationOutcomeKind.Destination,
@@ -619,7 +639,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 ExplorationOutcomeKind.Fault,
                 ExplorationOutcomeKind.OutcomeUnknown,
             ],
-            interactionWaitCondition,
+            ActiveWaitCondition,
             ["capture-unavailable", "stale-transform", "budget-exhausted"]);
 
     private AffordanceCandidate GlobalKeyCandidate(ObservationResult observed) => new(
@@ -634,7 +654,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         1,
         [GameInteractionOperations.KeyTap],
         "global-key",
-        string.Join('+', interactionKeyTokens!));
+        string.Join('+', ActiveKeyTokens!));
 
     private ProductGameExplorerStepResult Result(
         ProductGameExplorerStepStatus status,

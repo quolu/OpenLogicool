@@ -80,7 +80,11 @@ public sealed class GameInteractionStructureLearner(
             [evidence.EvidenceId],
             StructureVerificationState.Candidate,
             TargetSemanticKey: GameSceneSemanticComparer.TargetKey(candidate),
-            TargetNormalizedBounds: candidate.Locator.NormalizedBounds.ToArray());
+            TargetNormalizedBounds: candidate.Locator.NormalizedBounds.ToArray(),
+            KeyTokens: candidate.KeyTokens?.ToArray(),
+            VerticalScrollSteps: candidate.VerticalScrollSteps,
+            HorizontalScrollSteps: candidate.HorizontalScrollSteps,
+            DragDestinationNormalized: candidate.DragDestinationNormalized?.ToArray());
         var mutation = new StructureMutation(
             ContractSchemaVersions.Revision03,
             StructureMutationKind.UpsertEdge,
