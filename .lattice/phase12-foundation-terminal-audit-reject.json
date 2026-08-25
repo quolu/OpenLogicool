@@ -1,0 +1,14 @@
+{
+  "schema": "lattice.phase_reject_input.v1",
+  "review_event_digest": "1f4c12c3847527c2ca67882d8c3e6deb1cb4e53a37f746f58c0cfbd9ada7a161",
+  "reason": "10の基盤機能は完成したが、同一runtime・同一DBのzero-seed複数target探索は未成立のため、Phase 12全体Exitは宣言しない",
+  "decision_evidence": {
+    "anchor_digest": null,
+    "content_digest": "e3ee705788a80367195372ac5413b91ac11c0356c5230d69589f095cdfea0277",
+    "evidence_id": "ev-phase12-foundation-terminal-audit",
+    "git_blob_oid": "4c93073f0fb7a9735bedea8a6cf498f4d420bb69",
+    "media_type": "text/markdown",
+    "path": "evidence/phase12-game-interaction-foundation/t09-foundation-final-20260825.md",
+    "repo_id": "self"
+  }
+}
