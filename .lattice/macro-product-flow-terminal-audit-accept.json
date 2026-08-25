@@ -1,0 +1,27 @@
+{
+  "schema": "lattice.phase_accept_input.v1",
+  "review_event_digest": "1a039f89e6001494d0cf9f6b19d8fa5b8177b55aece51418a6f100e834fe3188",
+  "decision_evidence": {
+    "anchor_digest": null,
+    "content_digest": "009a6b7f6391f3cbda5cfed74307f3fc869b580e31a4b59205ab8803b07fd0e8",
+    "evidence_id": "phase13-macro-product-flow-assessment",
+    "git_blob_oid": "977d0285c595c13674455a0470a76742cc8a70b4",
+    "media_type": "text/markdown",
+    "path": "docs/phase13-macro-product-flow-assessment.md",
+    "repo_id": "self"
+  },
+  "evidence_slots": [
+    {
+      "slot_id": "terminal-audit",
+      "evidence": {
+        "anchor_digest": null,
+        "content_digest": "57c255b7544159189432a5995d61e94249315fb9574c7a25bd98de15eca7157e",
+        "evidence_id": "macro-product-flow-terminal-audit",
+        "git_blob_oid": "bb240122de065410d8d2102db43092ee404e6a4f",
+        "media_type": "text/markdown",
+        "path": "evidence/macro-product-flow/t10-terminal-audit.md",
+        "repo_id": "self"
+      }
+    }
+  ]
+}
