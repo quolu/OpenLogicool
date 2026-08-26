@@ -44,7 +44,8 @@ internal static class LiveDiscoveryNanoActionSmoke
         var processName = RequiredArgument(arguments, "--process");
         var label = RequiredArgument(arguments, "--label");
         var observationPath = Path.GetFullPath(RequiredArgument(arguments, "--observation"));
-        var pinnedAnchor = ValidatePinnedObservation(observationPath, label);
+        var explicitOcrLabel = arguments.Contains("--allow-explicit-ocr-label", StringComparer.Ordinal);
+        var pinnedAnchor = ValidatePinnedObservation(observationPath, label, explicitOcrLabel);
         Directory.CreateDirectory(outputDirectory);
 
         var target = LiveDiscoveryObserveSmoke.FindWindow(processName);
@@ -92,6 +93,7 @@ internal static class LiveDiscoveryNanoActionSmoke
                 Capabilities = $"0x{(ushort)residentSession.Protocol.ReadyInfo.Capabilities:X4}",
                 Route = "NanoSerialHid",
                 Fallback = "None",
+                PinMode = explicitOcrLabel ? "ExplicitSameFrameOcr" : "VisionProposedGrounded",
                 AltTabCount = altTabCount,
                 Escape = "down/up; matching ACK per state",
                 AllUp = true,
@@ -127,7 +129,8 @@ internal static class LiveDiscoveryNanoActionSmoke
         var label = RequiredArgument(arguments, "--label");
         var observationPath = Path.GetFullPath(RequiredArgument(arguments, "--observation"));
         var expectLabelAbsent = arguments.Contains("--expect-label-absent", StringComparer.Ordinal);
-        var pinnedAnchor = ValidatePinnedObservation(observationPath, label);
+        var explicitOcrLabel = arguments.Contains("--allow-explicit-ocr-label", StringComparer.Ordinal);
+        var pinnedAnchor = ValidatePinnedObservation(observationPath, label, explicitOcrLabel);
 
         Directory.CreateDirectory(outputDirectory);
         var target = LiveDiscoveryObserveSmoke.FindWindow(processName);
@@ -214,6 +217,7 @@ internal static class LiveDiscoveryNanoActionSmoke
                 Capabilities = $"0x{(ushort)session.ReadyInfo.Capabilities:X4}",
                 Route = "NanoSerialHid",
                 Fallback = "None",
+                PinMode = explicitOcrLabel ? "ExplicitSameFrameOcr" : "VisionProposedGrounded",
                 AltTabCount = altTabCount,
                 FirstMove = firstMove,
                 CorrectionMove = correctionMove,
@@ -247,10 +251,14 @@ internal static class LiveDiscoveryNanoActionSmoke
         return passed ? 0 : 3;
     }
 
-    internal static WindowsOcrWord ValidatePinnedObservation(string path, string label)
+    internal static WindowsOcrWord ValidatePinnedObservation(
+        string path,
+        string label,
+        bool allowExplicitOcrLabel = false)
     {
         using var document = JsonDocument.Parse(File.ReadAllText(path));
-        var candidates = document.RootElement.GetProperty("GroundedCandidates").EnumerateArray()
+        var root = document.RootElement;
+        var candidates = root.GetProperty("GroundedCandidates").EnumerateArray()
             .Where(candidate => candidate.GetProperty("Status").GetString() == "Grounded"
                 && candidate.GetProperty("Box").ValueKind == JsonValueKind.Object)
             .Select(candidate =>
@@ -281,14 +289,40 @@ internal static class LiveDiscoveryNanoActionSmoke
             .Select(group => group.OrderByDescending(candidate => candidate.Score).First())
             .OrderByDescending(candidate => candidate.Score)
             .ToArray();
-        if (candidates.Length == 0
-            || (candidates.Length > 1 && candidates[0].Score - candidates[1].Score < 0.15))
+        if (candidates.Length > 0
+            && (candidates.Length == 1 || candidates[0].Score - candidates[1].Score >= 0.15))
         {
-            throw new InvalidOperationException(
-                $"pinned observationにGroundedなlabel '{label}' の一意な近似候補がありません。inputを送らず停止します。");
+            return candidates[0].Box;
         }
 
-        return candidates[0].Box;
+        if (allowExplicitOcrLabel)
+        {
+            var ocr = root.GetProperty("Ocr");
+            var snapshot = new WindowsOcrSnapshot(
+                ocr.GetProperty("Text").GetString() ?? string.Empty,
+                ocr.GetProperty("ElapsedMs").GetInt64(),
+                ocr.GetProperty("RecognizerLanguage").GetString() ?? string.Empty,
+                ocr.GetProperty("MaxImageDimension").GetUInt32(),
+                ocr.GetProperty("VisualLines").EnumerateArray()
+                    .Select(item => item.GetString() ?? string.Empty)
+                    .ToArray(),
+                ocr.GetProperty("Words").EnumerateArray()
+                    .Select(item => new WindowsOcrWord(
+                        item.GetProperty("Text").GetString() ?? string.Empty,
+                        item.GetProperty("X").GetDouble(),
+                        item.GetProperty("Y").GetDouble(),
+                        item.GetProperty("Width").GetDouble(),
+                        item.GetProperty("Height").GetDouble()))
+                    .ToArray());
+            var grounded = LiveDiscoveryObserveSmoke.Ground(label, snapshot);
+            if (grounded.Status == "Grounded" && grounded.Box is not null)
+            {
+                return grounded.Box;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"pinned observationにGroundedなlabel '{label}' の一意な近似候補がありません。inputを送らず停止します。");
     }
 
     internal static bool EvaluateOutcome(

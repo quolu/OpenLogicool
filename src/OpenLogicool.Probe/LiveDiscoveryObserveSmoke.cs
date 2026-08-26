@@ -221,7 +221,7 @@ internal static class LiveDiscoveryObserveSmoke
         WindowsOcrSnapshot snapshot,
         WindowsOcrWord? anchor = null)
     {
-        var matches = FindCandidateSpans(label, snapshot.Words);
+        var matches = RemoveNestedSubspans(FindCandidateSpans(label, snapshot.Words));
         var exact = matches.Where(match => match.Similarity == 1).ToArray();
         if (exact.Length == 1)
         {
@@ -263,6 +263,22 @@ internal static class LiveDiscoveryObserveSmoke
             null,
             "same-frame OCR span: exact unique; similarity >= 0.85 with runner-up margin >= 0.15; or anchored tracking >= 0.70");
     }
+
+    private static OcrSpanMatch[] RemoveNestedSubspans(IReadOnlyList<OcrSpanMatch> matches) => matches
+        .Where(candidate => !matches.Any(other =>
+            !ReferenceEquals(other, candidate)
+            && (other.Similarity > candidate.Similarity
+                || (other.Similarity == candidate.Similarity && Area(other.Box) < Area(candidate.Box)))
+            && (Contains(other.Box, candidate.Box) || Contains(candidate.Box, other.Box))))
+        .ToArray();
+
+    private static double Area(WindowsOcrWord value) => value.Width * value.Height;
+
+    private static bool Contains(WindowsOcrWord outer, WindowsOcrWord inner) =>
+        outer.X <= inner.X
+        && outer.Y <= inner.Y
+        && outer.X + outer.Width >= inner.X + inner.Width
+        && outer.Y + outer.Height >= inner.Y + inner.Height;
 
     private static GroundedCandidate Grounded(
         string label,
