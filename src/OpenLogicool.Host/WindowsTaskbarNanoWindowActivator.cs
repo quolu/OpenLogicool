@@ -31,13 +31,18 @@ public static class WindowsTaskbarNanoWindowActivator
         var condition = new PropertyCondition(
             AutomationElement.ClassNameProperty,
             "Taskbar.TaskListButtonAutomationPeer");
-        var expectedPrefix = target.ProcessName + " -";
+        var expectedPrefixes = new[] { target.ProcessName, target.WindowTitle }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(value => value + " -")
+            .ToArray();
         var candidates = AutomationElement.RootElement
             .FindAll(TreeScope.Descendants, condition)
             .Cast<AutomationElement>()
             .Where(element => element.Current.IsEnabled
                 && !element.Current.IsOffscreen
-                && element.Current.Name.StartsWith(expectedPrefix, StringComparison.Ordinal))
+                && expectedPrefixes.Any(prefix =>
+                    element.Current.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
             .ToArray();
         if (candidates.Length == 0)
             throw new InvalidOperationException($"taskbarにtarget '{target.ProcessName}' のbuttonがありません。");

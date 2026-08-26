@@ -6,6 +6,16 @@ namespace OpenLogicool.Host.Tests;
 public sealed class WindowsLazyFoundryControlDiscoveryProviderTests
 {
     [Fact]
+    public void Loaded_multimodal_detection_distinguishes_empty_and_speech_only_lists()
+    {
+        Assert.False(WindowsFoundryLocalRuntimeResolver.HasLoadedMultimodalModel("{\"models\":[]}"));
+        Assert.False(WindowsFoundryLocalRuntimeResolver.HasLoadedMultimodalModel(
+            "{\"models\":[{\"type\":\"Speech\"}]}"));
+        Assert.True(WindowsFoundryLocalRuntimeResolver.HasLoadedMultimodalModel(
+            "{\"models\":[{\"type\":\"Multimodal\"}]}"));
+    }
+
+    [Fact]
     public void ConstructionAndUnusedDisposalDoNotResolveFoundry()
     {
         var resolveCount = 0;

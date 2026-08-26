@@ -339,6 +339,8 @@ public sealed class FoundryLocalVisionClientTests
         Assert.Contains("never its center", prompt, StringComparison.Ordinal);
         Assert.Contains("goal may require several pages", prompt, StringComparison.Ordinal);
         Assert.Contains("Choose an intermediate control", prompt, StringComparison.Ordinal);
+        Assert.Contains("modal dialog, notice, tutorial, or overlay", prompt, StringComparison.Ordinal);
+        Assert.Contains("close, skip, or dismiss", prompt, StringComparison.Ordinal);
     }
 
     [Fact]

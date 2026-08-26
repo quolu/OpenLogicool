@@ -80,7 +80,7 @@ internal sealed record FoundryVisionRawResponse(
 public sealed class FoundryLocalVisionClient : IDisposable
 {
     public const string PromptRevision = "clickable-visible-labels-v2";
-    public const string ControlsPromptRevision = "clickable-controls-v6";
+    public const string ControlsPromptRevision = "clickable-controls-v7";
 
     private const string Prompt =
         "Read the image. Find visually clickable controls that contain visible words. " +
@@ -371,6 +371,7 @@ public sealed class FoundryLocalVisionClient : IDisposable
               + ". Inspect the image and return exactly one visible clickable control that directly advances this goal. "
               + "The goal may require several pages. If the final destination is not visible, select the single continue, login, menu, or navigation control needed for the next step toward it. "
               + "Choose an intermediate control even when its label does not contain words from the final goal. "
+              + "If a modal dialog, notice, tutorial, or overlay blocks the path and the goal is outside it, choose its visible close, skip, or dismiss control as that intermediate control. "
               + "The control may contain text, be icon-only, or be an image button. "
               + "Return one JSON object whose only property is controls. controls must be an array. "
               + "The one item must have exactly kind, label, x, y, width, and height. "

@@ -29,7 +29,6 @@ public sealed class SemanticTextGoalCompletionEvaluator : IPurposeGoalCompletion
         var core = GoalCore(goal);
         if (Matches(core, target.SemanticLabel)) return true;
         return scene.Affordances.Select(candidate => candidate.SemanticLabel)
-            .Concat(scene.DiscoveryEvidence?.LocalGroundingTexts ?? [])
             .Where(text => !string.IsNullOrWhiteSpace(text))
             .Any(text => Matches(core, text));
     }

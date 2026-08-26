@@ -36,7 +36,7 @@ public sealed class FoundryLocalControlDiscoveryProviderTests
             });
         Assert.Equal(2, result.Proposals.Count);
         Assert.Equal("Completed", result.Scene.DiscoveryEvidence!.Status);
-        Assert.Equal("clickable-controls-v6", result.Scene.DiscoveryEvidence.PromptRevision);
+        Assert.Equal("clickable-controls-v7", result.Scene.DiscoveryEvidence.PromptRevision);
         Assert.All(result.Proposals, proposal => Assert.Equal(GameInteractionOperations.Click, proposal.Primitive));
         Assert.Equal(0, result.Telemetry.ExternalAiTransmissionCount);
     }

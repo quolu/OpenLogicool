@@ -4,26 +4,61 @@ using OpenLogicool.Contracts.AI;
 namespace OpenLogicool.Host;
 
 /// <summary>AI探索が実際に必要になった時だけWindows上のFoundry Localを解決するvendor adapter。</summary>
-public sealed class WindowsLazyFoundryControlDiscoveryProvider(
-    Func<FoundryLocalRuntime> resolveRuntime) : ILocalControlDiscoveryProvider, IDisposable
+public sealed class WindowsLazyFoundryControlDiscoveryProvider : ILocalControlDiscoveryProvider, IDisposable
 {
-    private readonly Lazy<(FoundryLocalVisionClient Client, FoundryLocalControlDiscoveryProvider Provider)> lazy =
-        new(() => Create(resolveRuntime), LazyThreadSafetyMode.ExecutionAndPublication);
+    private readonly Lazy<(FoundryLocalRuntime Runtime, FoundryLocalVisionClient Client, FoundryLocalControlDiscoveryProvider Provider)> lazy;
+    private readonly Action<string> loadModel;
+    private readonly Action<string> unloadModel;
+    private readonly SemaphoreSlim execution = new(1, 1);
+    private bool requiresReload;
+
+    public WindowsLazyFoundryControlDiscoveryProvider(
+        Func<FoundryLocalRuntime> resolveRuntime,
+        Action<string>? loadModel = null,
+        Action<string>? unloadModel = null)
+    {
+        this.loadModel = loadModel ?? WindowsFoundryLocalRuntimeResolver.LoadModel;
+        this.unloadModel = unloadModel ?? WindowsFoundryLocalRuntimeResolver.UnloadModel;
+        lazy = new(() => Create(resolveRuntime), LazyThreadSafetyMode.ExecutionAndPublication);
+    }
 
     public bool IsResolved => lazy.IsValueCreated;
 
-    public Task<LocalControlDiscoveryResult> ObserveAsync(
+    public async Task<LocalControlDiscoveryResult> ObserveAsync(
         LocalVisionSceneRequest request,
         ReadOnlyMemory<byte> pngBytes,
-        CancellationToken cancellationToken = default) =>
-        lazy.Value.Provider.ObserveAsync(request, pngBytes, cancellationToken);
+        CancellationToken cancellationToken = default)
+    {
+        await execution.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var resolved = lazy.Value;
+            if (requiresReload) loadModel(resolved.Runtime.ModelId);
+            try
+            {
+                return await resolved.Provider
+                    .ObserveAsync(request, pngBytes, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                unloadModel(resolved.Runtime.ModelId);
+                requiresReload = true;
+            }
+        }
+        finally
+        {
+            execution.Release();
+        }
+    }
 
     public void Dispose()
     {
         if (lazy.IsValueCreated) lazy.Value.Client.Dispose();
+        execution.Dispose();
     }
 
-    private static (FoundryLocalVisionClient Client, FoundryLocalControlDiscoveryProvider Provider) Create(
+    private static (FoundryLocalRuntime Runtime, FoundryLocalVisionClient Client, FoundryLocalControlDiscoveryProvider Provider) Create(
         Func<FoundryLocalRuntime> resolveRuntime)
     {
         var runtime = resolveRuntime();
@@ -31,6 +66,6 @@ public sealed class WindowsLazyFoundryControlDiscoveryProvider(
             runtime.Endpoint,
             runtime.ModelId,
             TimeSpan.FromSeconds(30));
-        return (client, new FoundryLocalControlDiscoveryProvider(client));
+        return (runtime, client, new FoundryLocalControlDiscoveryProvider(client));
     }
 }

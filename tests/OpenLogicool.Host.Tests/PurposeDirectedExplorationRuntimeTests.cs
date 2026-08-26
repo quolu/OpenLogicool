@@ -42,6 +42,23 @@ public sealed class PurposeDirectedExplorationRuntimeTests
     }
 
     [Fact]
+    public void Goal_completion_does_not_use_local_ocr_substrings_as_goal_evidence()
+    {
+        var original = Scene("after");
+        var scene = original with
+        {
+            Affordances = [original.Affordances[0] with { SemanticLabel = "お知らせ" }],
+            DiscoveryEvidence = new SceneDiscoveryEvidence(
+                "windows-ocr-local", "none", "local-target-tracking-v1", "none",
+                "Completed", "None", null, "{}", 0, 0, 0m,
+                LocalGroundingTexts: ["る", "す", "日"]),
+        };
+
+        Assert.False(new SemanticTextGoalCompletionEvaluator().IsSatisfied(
+            "日課の情報を取得する", scene, scene.Affordances[0] with { SemanticLabel = "Continue" }));
+    }
+
+    [Fact]
     public async Task First_run_appends_each_moved_edge_and_completes_from_goal_evaluator()
     {
         var routes = new Routes();

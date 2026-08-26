@@ -43,7 +43,7 @@ public sealed class WindowsPurposeMacroExecutionEngine(
         }
         var connections = new MacroSqliteConnectionFactory(databasePath);
         var unusedFoundry = new FoundryLocalRuntime(new Uri("http://127.0.0.1:1"), "lazy-not-resolved");
-        using var lazyFoundry = new WindowsLazyFoundryControlDiscoveryProvider(foundry.Resolve);
+        using var lazyFoundry = new WindowsLazyFoundryControlDiscoveryProvider(foundry.ResolvePreferredVisionModel);
         var borrowed = borrowedNanoSession();
         SerialHidResidentOutputSession? owned = null;
         var nano = borrowed;
