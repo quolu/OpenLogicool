@@ -18,7 +18,7 @@ public sealed class ZeroSeedFrameStateRecognizer : IFrameRecognizer
 public sealed class WindowsProductGameExplorerSession(
     ProductGameExplorerRuntime runtime,
     WindowsWgcGameFrameSource frameSource,
-    FoundryLocalVisionClient visionClient,
+    IDisposable? visionResource,
     ILocalAiCallCounter aiCallCounter) : IDisposable
 {
     public ProductGameExplorerRuntime Runtime { get; } = runtime;
@@ -27,7 +27,7 @@ public sealed class WindowsProductGameExplorerSession(
     public void Dispose()
     {
         frameSource.Dispose();
-        visionClient.Dispose();
+        visionResource?.Dispose();
     }
 }
 
@@ -60,7 +60,10 @@ public static class WindowsProductGameExplorerComposition
         IReadOnlyList<double>? visualSearchRegion = null,
         ExplorationWaitCondition? interactionWaitCondition = null,
         bool allowAiDiscovery = true,
-        bool learnNonMovedRouteOutcomes = true)
+        bool learnNonMovedRouteOutcomes = true,
+        bool forceAiDiscovery = false,
+        ILocalControlDiscoveryProvider? controlDiscoveryProvider = null,
+        IDisposable? controlDiscoveryResource = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
         if (!string.Equals(gameId, gamePolicy.GameId, StringComparison.Ordinal))
@@ -87,26 +90,44 @@ public static class WindowsProductGameExplorerComposition
             window,
             explorationPolicy.TargetWindowSourceId,
             TimeSpan.FromSeconds(10));
-        var visionClient = new FoundryLocalVisionClient(
-            foundryEndpoint,
-            foundryModelId,
-            TimeSpan.FromSeconds(30));
-        IProductGameTargetDiscovery targetDiscovery = includeVisualTargets
-            ? new FoundryControlTargetDiscoveryAdapter(
-                new FoundryLocalControlDiscoveryProvider(visionClient),
+        FoundryLocalVisionClient? visionClient = null;
+        IDisposable? visionResource;
+        IProductGameTargetDiscovery targetDiscovery;
+        if (includeVisualTargets)
+        {
+            if (controlDiscoveryProvider is null)
+            {
+                visionClient = new FoundryLocalVisionClient(
+                    foundryEndpoint,
+                    foundryModelId,
+                    TimeSpan.FromSeconds(30));
+                controlDiscoveryProvider = new FoundryLocalControlDiscoveryProvider(visionClient);
+            }
+            visionResource = controlDiscoveryResource ?? visionClient;
+            targetDiscovery = new FoundryControlTargetDiscoveryAdapter(
+                controlDiscoveryProvider,
                 new WindowsGameOcrRecognizer(),
                 new WindowsGameFramePngEncoder(),
                 () => coordinator.CurrentStructureRevisionId,
                 targetIntent,
                 interactionOperation,
-                visualSearchRegion)
-            : new FoundryLabelTargetDiscoveryAdapter(
+                visualSearchRegion);
+        }
+        else
+        {
+            visionClient = new FoundryLocalVisionClient(
+                foundryEndpoint,
+                foundryModelId,
+                TimeSpan.FromSeconds(30));
+            visionResource = visionClient;
+            targetDiscovery = new FoundryLabelTargetDiscoveryAdapter(
                 new FoundryLocalDiscoveryVisionProvider(visionClient),
                 new WindowsGameOcrRecognizer(),
                 new WindowsGameFramePngEncoder(),
                 () => coordinator.CurrentStructureRevisionId,
                 targetIntent,
                 interactionOperation);
+        }
         if (learnedSceneProfileStore is not null)
         {
             targetDiscovery = new WindowsKnownFirstTargetDiscovery(
@@ -117,7 +138,8 @@ public static class WindowsProductGameExplorerComposition
                 explorationPolicy.EnvironmentScope,
                 targetIntent,
                 interactionOperation,
-                allowAiDiscovery);
+                allowAiDiscovery,
+                forceAiDiscovery);
         }
         var observationRuntime = new ProductGameObservationRuntime(
             frameSource,
@@ -182,7 +204,7 @@ public static class WindowsProductGameExplorerComposition
         return new WindowsProductGameExplorerSession(
             runtime,
             frameSource,
-            visionClient,
+            visionResource,
             (ILocalAiCallCounter)targetDiscovery);
     }
 }

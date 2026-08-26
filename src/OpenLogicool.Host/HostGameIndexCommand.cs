@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Data.Sqlite;
+using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Playbooks;
@@ -41,7 +42,7 @@ public static class HostGameIndexCommand
         new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
         var profiles = new SqliteLearnedSceneProfileStore(connection);
         var target = WindowsGameTargetLocator.Locate(processName);
-        WindowsGameWindowActivator.Activate(target.Window);
+        if (mode is not ("focus-nano" or "focus-taskbar")) WindowsGameWindowActivator.Activate(target.Window);
         var discovery = new SerialHidDiscoveryService(
             new SetupApiSerialCandidateEnumerator(),
             new SerialPortExchangeFactory());
@@ -85,11 +86,14 @@ public static class HostGameIndexCommand
                 allowExplore),
             "back" => await BackAsync(nano, emitter, target, sourceId),
             "point" => await PointAsync(arguments, nano, emitter, target, sourceId),
+            "click-point" => await ClickPointAsync(arguments, nano, emitter, target, sourceId),
             "scroll-point" => await ScrollPointAsync(arguments, nano, emitter, target, sourceId),
             "drag-points" => await DragPointsAsync(arguments, nano, emitter, target, sourceId),
             "capture" => await CaptureAsync(arguments, target, sourceId),
+            "focus-nano" => FocusWithNano(target, emitter),
+            "focus-taskbar" => FocusWithTaskbar(target, nano.Protocol, emitter),
             "inspect" => Inspect(profiles, target.ProcessName, environment),
-            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、point、scroll-point、drag-points、capture、inspectです。"),
+            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、point、click-point、scroll-point、drag-points、capture、focus-nano、focus-taskbar、inspectです。"),
         };
         nano.Protocol.SendAllUp();
         var json = JsonSerializer.Serialize(result, Json);
@@ -102,6 +106,30 @@ public static class HostGameIndexCommand
         }
         Console.WriteLine(json);
         return 0;
+    }
+
+    private static object FocusWithNano(WindowsGameTarget target, SerialHidEmitter emitter)
+    {
+        var result = WindowsTaskbarNanoWindowActivator.ActivateByAltTab(target, emitter);
+        return new { Mode = "focus-nano", ProductHostEntry = true, target.ProcessName, result.Attempts, AiCallCount = 0 };
+    }
+
+    private static object FocusWithTaskbar(
+        WindowsGameTarget target,
+        SerialHidProtocolSession session,
+        SerialHidEmitter emitter)
+    {
+        var result = WindowsTaskbarNanoWindowActivator.ActivateFromTaskbar(target, session, emitter);
+        return new
+        {
+            Mode = "focus-taskbar",
+            ProductHostEntry = true,
+            target.ProcessName,
+            result.TaskbarButton,
+            result.ScreenPoint,
+            result.Receipt,
+            AiCallCount = 0,
+        };
     }
 
     private static async Task<object> DiscoverAsync(
@@ -170,7 +198,9 @@ public static class HostGameIndexCommand
         }
         var endpoint = new Uri(Required(arguments, "--foundry-endpoint"));
         var visualSearchRegion = includeVisualTargets
-            ? FindRediscoveryRegion(profiles.Load(target.ProcessName, environment), goal, operation)
+            ? known.FailedActionBounds is { Count: 4 } failedBounds
+                ? RediscoveryRegion(failedBounds)
+                : FindRediscoveryRegion(profiles.Load(target.ProcessName, environment), goal, operation)
             : null;
         var model = Optional(arguments, "--model") ?? "qwen3-vl-4b-instruct-cuda-gpu:2";
         var frameDirectory = Path.GetFullPath(Optional(arguments, "--frames")
@@ -208,7 +238,8 @@ public static class HostGameIndexCommand
             verticalScrollSteps,
             horizontalScrollSteps,
             dragDestination,
-            visualSearchRegion);
+            visualSearchRegion,
+            forceAiDiscovery: known.Execution is not null && !known.Execution.TransitionObserved);
         var explorerIntents = new HostExplorerIntents(connection, product.Runtime);
         var step = await product.Runtime.ExecuteNextAsync();
         var indexed = profiles.Load(target.ProcessName, environment);
@@ -259,19 +290,27 @@ public static class HostGameIndexCommand
             {
                 continue;
             }
-            var bounds = selection.Action.NormalizedBounds;
-            var centerX = bounds[0] + bounds[2] / 2;
-            var centerY = bounds[1] + bounds[3] / 2;
-            var width = Math.Min(1, Math.Max(bounds[2] * 6, 0.50));
-            var height = Math.Min(1, Math.Max(bounds[3] * 6, 0.50));
-            var left = Math.Clamp(centerX - width / 2, 0, 1 - width);
-            var top = Math.Clamp(centerY - height / 2, 0, 1 - height);
-            return [left, top, width, height];
+            return RediscoveryRegion(selection.Action.NormalizedBounds);
         }
         return null;
     }
 
-    private static async Task<(KnownScreenActionExecutionResult? Execution, string Reason)> TryExecuteKnownForGoalAsync(
+    internal static IReadOnlyList<double> RediscoveryRegion(IReadOnlyList<double> bounds)
+    {
+        if (bounds.Count != 4) throw new ArgumentException("boundsは4要素です。", nameof(bounds));
+        var centerX = bounds[0] + bounds[2] / 2;
+        var centerY = bounds[1] + bounds[3] / 2;
+        var width = Math.Min(1, Math.Max(bounds[2] * 6, 0.50));
+        var height = Math.Min(1, Math.Max(bounds[3] * 6, 0.50));
+        var left = Math.Clamp(centerX - width / 2, 0, 1 - width);
+        var top = Math.Clamp(centerY - height / 2, 0, 1 - height);
+        return [left, top, width, height];
+    }
+
+    private static async Task<(
+        KnownScreenActionExecutionResult? Execution,
+        string Reason,
+        IReadOnlyList<double>? FailedActionBounds)> TryExecuteKnownForGoalAsync(
         ILearnedSceneProfileStore profiles,
         SerialHidResidentOutputSession nano,
         SerialHidEmitter emitter,
@@ -285,7 +324,7 @@ public static class HostGameIndexCommand
         var profile = profiles.Load(target.ProcessName, environment);
         if (profile is null)
         {
-            return (null, "現在ページ用の保存済みボタンデータがありません。");
+            return (null, "現在ページ用の保存済みボタンデータがありません。", null);
         }
         using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId, TimeSpan.FromSeconds(10));
         var observation = new WindowsKnownScreenObservationRuntime(
@@ -298,13 +337,13 @@ public static class HostGameIndexCommand
         var scene = await observation.DiscoverTargetsAsync(observed);
         if (scene.StateIdentity != StateIdentityStatus.Known || scene.StateHypothesisId is null)
         {
-            return (null, "現在ページを保存済みボタンデータへ一意に照合できません。");
+            return (null, "現在ページを保存済みボタンデータへ一意に照合できません。", null);
         }
         var state = profile.States.Single(item => item.StateId == scene.StateHypothesisId);
         var selection = KnownGoalActionSelector.Select(state, goal, operation);
         if (selection.Kind != KnownGoalActionSelectionKind.UseKnown)
         {
-            return (null, selection.Reason);
+            return (null, selection.Reason, null);
         }
         var actions = new NanoGameInteractionActions(
             new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()),
@@ -322,8 +361,8 @@ public static class HostGameIndexCommand
             gamePolicyAllowsExecute: allowExplore);
         var execution = await runtime.ExecuteKnownAsync(selection.Action!.CandidateId);
         return execution.TransitionObserved
-            ? (execution, "保存済みボタンで正常に遷移しました。")
-            : (execution, "保存済みボタンで正常な画面遷移を確認できませんでした。");
+            ? (execution, "保存済みボタンで正常に遷移しました。", null)
+            : (execution, "保存済みボタンで正常な画面遷移を確認できませんでした。", selection.Action.NormalizedBounds);
     }
 
 
@@ -672,6 +711,22 @@ public static class HostGameIndexCommand
             new GameInteractionScrollRequest(ContractSchemaVersions.Revision03, binding, vertical, horizontal),
             observation);
         return new { Mode = "scroll-point", ProductHostEntry = true, X = x, Y = y, Vertical = vertical, Horizontal = horizontal, dispatch, AiCallCount = 0 };
+    }
+
+    private static async Task<object> ClickPointAsync(
+        string[] arguments,
+        SerialHidResidentOutputSession nano,
+        SerialHidEmitter emitter,
+        WindowsGameTarget target,
+        string sourceId)
+    {
+        var x = RequiredUnitDouble(arguments, "--x");
+        var y = RequiredUnitDouble(arguments, "--y");
+        var observation = await CaptureBoundObservationAsync(target, sourceId, "host-click-point-no-ai");
+        var actions = DirectActions(nano, emitter, target);
+        var binding = PointBinding(observation, x, y, "host-click-point");
+        var dispatch = actions.Click(binding, observation);
+        return new { Mode = "click-point", ProductHostEntry = true, X = x, Y = y, dispatch, AiCallCount = 0 };
     }
 
     private static async Task<object> DragPointsAsync(

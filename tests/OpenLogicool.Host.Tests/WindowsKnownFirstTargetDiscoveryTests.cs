@@ -69,6 +69,21 @@ public sealed class WindowsKnownFirstTargetDiscoveryTests
     }
 
     [Fact]
+    public async Task Prior_runtime_non_transition_starts_directly_with_ai_repair()
+    {
+        var ai = new AiDiscovery();
+        var discovery = new WindowsKnownFirstTargetDiscovery(
+            ai, new Ocr(), new ProfileStore(Profile()), "game", "env", "部隊を開く",
+            GameInteractionOperations.Click, startWithAiRepair: true);
+        var frame = Frame();
+
+        var scene = await discovery.DiscoverAsync(Observation(frame), frame);
+
+        Assert.Equal("ai-target", Assert.Single(scene.Affordances).CandidateId);
+        Assert.Equal(1, ai.CallCount);
+    }
+
+    [Fact]
     public async Task Failed_saved_action_stays_on_ai_repair_until_a_moved_result()
     {
         var ai = new AiDiscovery();

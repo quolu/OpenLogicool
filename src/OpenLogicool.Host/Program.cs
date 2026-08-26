@@ -105,9 +105,9 @@ return command switch
 
 static int Macro(string operation, string[] arguments)
 {
-    if (operation is not ("list" or "play" or "target"))
+    if (operation is not ("list" or "play" or "target" or "create"))
     {
-        return Fail("macro operationはlist、target、playです。");
+        return Fail("macro operationはlist、target、create、playです。");
     }
     var routeId = operation == "play" && arguments.Length > 0
         ? arguments[0]
@@ -120,6 +120,7 @@ static int Macro(string operation, string[] arguments)
     string? processName = null;
     string? versionId = null;
     string? outputPath = null;
+    string? goal = null;
     var mode = MacroPlaybackMode.AiFree;
     for (var index = optionStart; index < arguments.Length; index++)
     {
@@ -131,6 +132,8 @@ static int Macro(string operation, string[] arguments)
             versionId = arguments[++index];
         else if (arguments[index] == "--out" && index + 1 < arguments.Length)
             outputPath = Path.GetFullPath(arguments[++index]);
+        else if (arguments[index] == "--goal" && index + 1 < arguments.Length)
+            goal = arguments[++index];
         else if (arguments[index] == "--mode" && index + 1 < arguments.Length)
             mode = arguments[++index] switch
             {
@@ -148,6 +151,34 @@ static int Macro(string operation, string[] arguments)
         var selected = intents.SelectTarget(targetProcessName!);
         Console.WriteLine($"macro target: {selected.ProcessName}（アプリ側へ保存）");
         return 0;
+    }
+    if (operation == "create")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(goal);
+        var target = intents.CurrentTarget()
+            ?? throw new InvalidOperationException("先にアプリ側でマクロ対象game profileを選んでください。");
+        var progress = new Progress<MacroRunSnapshot>(snapshot =>
+            Console.WriteLine($"macro: {snapshot.Phase} step={snapshot.StepNumber} AI={snapshot.AiCallCount} {snapshot.Detail}"));
+        var terminal = intents.CreateAsync(
+            new MacroCreateRequest(target.ProcessName, goal), progress).GetAwaiter().GetResult();
+        var evidence = new
+        {
+            ProductHostEntry = true,
+            Operation = "create",
+            FixedTarget = target.ProcessName,
+            ExecutionRoute = "NanoSerialHid",
+            ComputerUse = false,
+            SendInput = false,
+            Terminal = terminal,
+        };
+        var json = JsonSerializer.Serialize(evidence, new JsonSerializerOptions { WriteIndented = true });
+        if (outputPath is not null)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+            File.WriteAllText(outputPath, json);
+        }
+        Console.WriteLine(json);
+        return terminal.Phase == MacroRunPhase.Completed ? 0 : 2;
     }
     if (operation == "play")
     {

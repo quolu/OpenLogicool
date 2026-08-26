@@ -80,7 +80,7 @@ internal sealed record FoundryVisionRawResponse(
 public sealed class FoundryLocalVisionClient : IDisposable
 {
     public const string PromptRevision = "clickable-visible-labels-v2";
-    public const string ControlsPromptRevision = "clickable-controls-v3";
+    public const string ControlsPromptRevision = "clickable-controls-v6";
 
     private const string Prompt =
         "Read the image. Find visually clickable controls that contain visible words. " +
@@ -98,6 +98,7 @@ public sealed class FoundryLocalVisionClient : IDisposable
         "Each item must have exactly kind, label, x, y, width, and height. " +
         "kind must be text or icon. label must copy visible control text, or briefly name the visible icon when no text exists. " +
         "x, y, width, and height must be numbers from 0 to 1, relative to the full image, and describe the clickable control bounds. " +
+        "x and y are the top-left corner of the control, never its center. width extends right and height extends down. " +
         "Return at most 20 controls. Do not repeat a control with the same label and overlapping bounds. " +
         "Do not include decorative images, characters, backgrounds, status text, or markdown. " +
         "Return compact single-line JSON with no explanatory whitespace. " +
@@ -354,14 +355,6 @@ public sealed class FoundryLocalVisionClient : IDisposable
         }
         if (!string.IsNullOrWhiteSpace(targetIntent))
         {
-            var relevant = controls
-                .Where(control => DirectlyMatchesTargetIntent(targetIntent, control.Label))
-                .ToArray();
-            if (relevant.Length != controls.Count)
-            {
-                normalization |= FoundryVisionNormalization.TargetIntentMismatchDropped;
-            }
-            controls = relevant;
             if (controls.Count > 1)
             {
                 controls = controls.Take(1).ToArray();
@@ -371,30 +364,23 @@ public sealed class FoundryLocalVisionClient : IDisposable
         return ControlsFromRaw(raw, controls, normalization);
     }
 
-    private static bool DirectlyMatchesTargetIntent(string targetIntent, string label)
-    {
-        var goal = OcrTextMatcher.Normalize(targetIntent);
-        var candidate = OcrTextMatcher.Normalize(label);
-        return candidate.Length > 0
-            && (goal.Contains(candidate, StringComparison.Ordinal)
-                || candidate.Contains(goal, StringComparison.Ordinal)
-                || OcrTextMatcher.Similarity(goal, candidate) >= OcrTextMatcher.DefaultMinimumSimilarity);
-    }
-
     private static string BuildControlsPrompt(string? targetIntent) =>
         string.IsNullOrWhiteSpace(targetIntent)
             ? ControlsPrompt
             : "The current goal is: " + targetIntent.Trim()
               + ". Inspect the image and return exactly one visible clickable control that directly advances this goal. "
+              + "The goal may require several pages. If the final destination is not visible, select the single continue, login, menu, or navigation control needed for the next step toward it. "
+              + "Choose an intermediate control even when its label does not contain words from the final goal. "
               + "The control may contain text, be icon-only, or be an image button. "
               + "Return one JSON object whose only property is controls. controls must be an array. "
               + "The one item must have exactly kind, label, x, y, width, and height. "
               + "kind must be text or icon. For a text control, label must copy its visible words exactly. "
-              + "For an icon-only or image control, label must be the shortest exact substring copied from the current goal that names the control. "
+              + "For an icon-only or image control, briefly name its visible navigation role. The label does not need to repeat words from the final goal. "
               + "x, y, width, and height must be numbers from 0 to 1 relative to the full image and describe the clickable bounds. "
+              + "x and y are the top-left corner of the control, never its center. width extends right and height extends down. "
               + "Do not return a merely clickable control that does not advance the current goal. "
               + "Do not include decorative images, characters, backgrounds, status text, explanations, or markdown. "
-              + "If no visible control directly advances the goal, return {\"controls\":[]}.";
+              + "Return {\"controls\":[]} only when no visible control can make progress toward the goal.";
 
     private async Task<FoundryVisionRawResponse> SendVisionAsync(
         string prompt,

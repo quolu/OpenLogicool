@@ -32,7 +32,6 @@ public sealed class WindowsPurposeMacroExecutionEngine(
     {
         ArgumentNullException.ThrowIfNull(request);
         var target = WindowsGameTargetLocator.Locate(request.TargetProcessName);
-        WindowsGameWindowActivator.Activate(target.Window);
         if (request.InitialRoute is not null
             && !string.Equals(request.InitialRoute.GameId, target.ProcessName, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("macro routeと対象windowのgameが一致しません。");
@@ -43,9 +42,8 @@ public sealed class WindowsPurposeMacroExecutionEngine(
             environment = request.InitialRoute?.EnvironmentScope ?? ResolveEnvironment(connection, target);
         }
         var connections = new MacroSqliteConnectionFactory(databasePath);
-        var runtime = request.PlaybackMode == MacroPlaybackMode.AiFree
-            ? new FoundryLocalRuntime(new Uri("http://127.0.0.1:1"), "ai-free-not-used")
-            : foundry.Resolve();
+        var unusedFoundry = new FoundryLocalRuntime(new Uri("http://127.0.0.1:1"), "lazy-not-resolved");
+        using var lazyFoundry = new WindowsLazyFoundryControlDiscoveryProvider(foundry.Resolve);
         var borrowed = borrowedNanoSession();
         SerialHidResidentOutputSession? owned = null;
         var nano = borrowed;
@@ -63,6 +61,7 @@ public sealed class WindowsPurposeMacroExecutionEngine(
         {
             var emitter = nano.Emitter as SerialHidEmitter
                 ?? throw new InvalidOperationException("Nano sessionがSerialHidEmitterを返しませんでした。");
+            _ = WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
             var structures = new MacroGameStructureStore(connections);
             var routes = new MacroLearningRouteStore(connections);
             var profiles = new MacroLearnedSceneProfileStore(connections);
@@ -99,8 +98,8 @@ public sealed class WindowsPurposeMacroExecutionEngine(
                 gamePolicy,
                 new ZeroSeedFrameStateRecognizer(),
                 frameDirectory,
-                runtime.Endpoint,
-                runtime.ModelId,
+                unusedFoundry.Endpoint,
+                unusedFoundry.ModelId,
                 nano.Protocol,
                 emitter,
                 () => target.Bounds,
@@ -110,7 +109,9 @@ public sealed class WindowsPurposeMacroExecutionEngine(
                 interactionWaitCondition: new ExplorationWaitCondition(
                     ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
                 allowAiDiscovery: request.PlaybackMode != MacroPlaybackMode.AiFree,
-                learnNonMovedRouteOutcomes: request.PlaybackMode != MacroPlaybackMode.AiFree);
+                learnNonMovedRouteOutcomes: request.PlaybackMode != MacroPlaybackMode.AiFree,
+                controlDiscoveryProvider: lazyFoundry,
+                controlDiscoveryResource: null);
             var purpose = new PurposeDirectedExplorationRuntime(
                 target.ProcessName,
                 environment,
@@ -157,8 +158,7 @@ public sealed class WindowsPurposeMacroExecutionEngine(
         {
             if (owned is not null)
             {
-                try { owned.Protocol.SendAllUp(); }
-                finally { owned.Dispose(); }
+                owned.Dispose();
             }
         }
     }

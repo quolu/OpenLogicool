@@ -327,17 +327,22 @@ public sealed class FoundryLocalVisionClientTests
         var control = Assert.Single(result.Controls);
         Assert.Equal("icon", control.Kind);
         Assert.Equal("ホーム", control.Label);
-        Assert.True(result.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
+        Assert.False(result.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
+        Assert.True(result.Normalization.HasFlag(FoundryVisionNormalization.OutputLimitApplied));
         using var request = JsonDocument.Parse(observedBody!);
         var prompt = request.RootElement.GetProperty("input")[0].GetProperty("content")[0].GetProperty("text").GetString();
         Assert.Contains("ホームへ戻る", prompt, StringComparison.Ordinal);
         Assert.Contains("return exactly one visible clickable control", prompt, StringComparison.Ordinal);
         Assert.Contains("icon-only, or be an image button", prompt, StringComparison.Ordinal);
-        Assert.Contains("shortest exact substring copied from the current goal", prompt, StringComparison.Ordinal);
+        Assert.Contains("visible navigation role", prompt, StringComparison.Ordinal);
+        Assert.Contains("top-left corner", prompt, StringComparison.Ordinal);
+        Assert.Contains("never its center", prompt, StringComparison.Ordinal);
+        Assert.Contains("goal may require several pages", prompt, StringComparison.Ordinal);
+        Assert.Contains("Choose an intermediate control", prompt, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task Goal_specific_controls_drop_a_control_unrelated_to_the_requested_goal()
+    public async Task Goal_specific_controls_keep_the_models_single_intermediate_step_without_text_matching()
     {
         var handler = new StubHandler((_, _) => Task.FromResult(EventStream(
             "{\"type\":\"response.output_text.delta\",\"delta\":\"{\\\"controls\\\":[{\\\"kind\\\":\\\"icon\\\",\\\"label\\\":\\\"出撃\\\",\\\"x\\\":0.5,\\\"y\\\":0.7,\\\"width\\\":0.2,\\\"height\\\":0.1}]}\"}",
@@ -347,8 +352,8 @@ public sealed class FoundryLocalVisionClientTests
 
         var result = await client.ProposeControlsAsync(new byte[] { 1 }, "部隊編成を開く");
 
-        Assert.Empty(result.Controls);
-        Assert.True(result.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
+        Assert.Equal("出撃", Assert.Single(result.Controls).Label);
+        Assert.False(result.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
     }
 
     [Fact]

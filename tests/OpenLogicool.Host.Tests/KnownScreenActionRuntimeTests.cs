@@ -137,6 +137,31 @@ public sealed class KnownScreenActionRuntimeTests
     }
 
     [Fact]
+    public async Task Destination_unknown_executes_saved_action_and_advances_on_moved()
+    {
+        var profile = Profile(destinationStateId: null);
+        var device = new RecordingDevice();
+        var runtime = new KnownScreenActionRuntime(
+            new ObservationRuntime(Scene("state-a", 1, includeAction: true)),
+            new NanoGameInteractionActions(device, new Mapper()),
+            new Stability(Scene("state-b", 2, includeAction: false)),
+            new GameTransitionJudge(),
+            new ProfileStore(profile),
+            "nikke",
+            "env",
+            new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
+            UnclassifiedExplorationCandidateRiskPolicy.Default,
+            gamePolicyAllowsExecute: true);
+
+        var result = await runtime.ExecuteKnownAsync("action-a");
+
+        Assert.Equal(1, device.ClickCount);
+        Assert.Null(result.ExpectedDestinationStateId);
+        Assert.True(result.TransitionObserved);
+        Assert.False(result.DestinationMatched);
+    }
+
+    [Fact]
     public async Task Stale_known_screen_never_reaches_nano_dispatch()
     {
         var device = new RecordingDevice();
@@ -216,7 +241,7 @@ public sealed class KnownScreenActionRuntimeTests
 
     private static LearnedSceneProfileDocument Profile(
         string operation = GameInteractionOperations.Click,
-        string destinationStateId = "state-b") => new(
+        string? destinationStateId = "state-b") => new(
         ContractSchemaVersions.Revision03,
         "profile-1",
         "known-screen-index-v1",

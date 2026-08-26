@@ -19,7 +19,8 @@ public sealed class WindowsKnownFirstTargetDiscovery(
     string environmentScope,
     string? goal,
     string operation,
-    bool allowAiDiscovery = true) :
+    bool allowAiDiscovery = true,
+    bool startWithAiRepair = false) :
     IProductGameTargetDiscovery,
     IProductGameRediscoveryTrigger,
     IProductGameRouteControl,
@@ -29,7 +30,7 @@ public sealed class WindowsKnownFirstTargetDiscovery(
     private StructureScreenEdge? routeTarget;
     private string? selectedSavedKey;
     private bool comparisonOnly;
-    private bool forceAiRepair;
+    private bool forceAiRepair = startWithAiRepair;
     public int AiCallCount => (aiDiscovery as ILocalAiCallCounter)?.AiCallCount ?? 0;
 
     public async ValueTask<ObservedScene> DiscoverAsync(

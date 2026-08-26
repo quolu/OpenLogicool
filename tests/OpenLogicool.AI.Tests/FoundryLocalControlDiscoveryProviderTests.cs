@@ -36,7 +36,7 @@ public sealed class FoundryLocalControlDiscoveryProviderTests
             });
         Assert.Equal(2, result.Proposals.Count);
         Assert.Equal("Completed", result.Scene.DiscoveryEvidence!.Status);
-        Assert.Equal("clickable-controls-v3", result.Scene.DiscoveryEvidence.PromptRevision);
+        Assert.Equal("clickable-controls-v6", result.Scene.DiscoveryEvidence.PromptRevision);
         Assert.All(result.Proposals, proposal => Assert.Equal(GameInteractionOperations.Click, proposal.Primitive));
         Assert.Equal(0, result.Telemetry.ExternalAiTransmissionCount);
     }
@@ -65,12 +65,13 @@ public sealed class FoundryLocalControlDiscoveryProviderTests
 
         var affordance = Assert.Single(result.Scene.Affordances);
         Assert.Equal("ホーム", affordance.SemanticLabel);
-        Assert.True(result.ProviderResult.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
+        Assert.True(result.ProviderResult.Normalization.HasFlag(FoundryVisionNormalization.OutputLimitApplied));
+        Assert.False(result.ProviderResult.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
         Assert.Equal(client.ControlsPromptSha256For("ホームへ戻る"), result.Scene.DiscoveryEvidence!.PromptSha256);
     }
 
     [Fact]
-    public async Task Goal_mismatched_visual_control_is_dropped_before_input_proposal()
+    public async Task Model_selected_intermediate_control_is_kept_without_client_text_gate()
     {
         using var client = ClientReturning(
             "{\"controls\":[{\"kind\":\"icon\",\"label\":\"アーツ\",\"x\":0.2,\"y\":0.8,\"width\":0.1,\"height\":0.1}]}");
@@ -78,9 +79,9 @@ public sealed class FoundryLocalControlDiscoveryProviderTests
 
         var result = await provider.ObserveAsync(Request("ホームへ戻る"), new byte[] { 1 });
 
-        Assert.Empty(result.Scene.Affordances);
-        Assert.Empty(result.Proposals);
-        Assert.True(result.ProviderResult.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
+        Assert.Equal("アーツ", Assert.Single(result.Scene.Affordances).SemanticLabel);
+        Assert.Single(result.Proposals);
+        Assert.False(result.ProviderResult.Normalization.HasFlag(FoundryVisionNormalization.TargetIntentMismatchDropped));
     }
 
     private static LocalVisionSceneRequest Request(string? targetIntent = null) => new(

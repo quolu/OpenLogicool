@@ -53,10 +53,6 @@ public sealed class KnownScreenActionRuntime(
         var state = profile.States.Single(item => item.StateId == before.StateHypothesisId);
         var signature = state.Affordances.SingleOrDefault(item => item.CandidateId == actionId)
             ?? throw new InvalidOperationException("現在ページに指定actionは保存されていません。");
-        if (signature.DestinationStateId is null)
-        {
-            throw new InvalidOperationException("行き先未確定の既知actionは実行できません。");
-        }
         var target = before.Affordances.SingleOrDefault(item => item.CandidateId == actionId)
             ?? throw new InvalidOperationException("保存済みactionを最新OCR frameへ再束縛できません。");
         if (!gamePolicyAllowsExecute)
