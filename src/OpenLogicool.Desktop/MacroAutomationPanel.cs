@@ -157,8 +157,13 @@ internal sealed class MacroAutomationPanel : UserControl
 
     private IProgress<MacroRunSnapshot> Progress() => new Progress<MacroRunSnapshot>(Render);
 
-    private void Render(MacroRunSnapshot snapshot) =>
-        status.Text = $"{snapshot.Detail}\nstep {snapshot.StepNumber}　{snapshot.ActionLabel}　{snapshot.TransitionLabel}　AI {snapshot.AiCallCount}回　版 {snapshot.RouteRevision}";
+    private void Render(MacroRunSnapshot snapshot)
+    {
+        var information = snapshot.Information is { Count: > 0 }
+            ? "\n取得情報\n" + string.Join("\n", snapshot.Information.Select(value => $"・{value}"))
+            : string.Empty;
+        status.Text = $"{snapshot.Detail}\nstep {snapshot.StepNumber}　{snapshot.ActionLabel}　{snapshot.TransitionLabel}　AI {snapshot.AiCallCount}回　版 {snapshot.RouteRevision}{information}";
+    }
 
     private void OnStateChanged(MacroRunSnapshot snapshot)
     {

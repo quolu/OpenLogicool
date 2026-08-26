@@ -119,6 +119,28 @@ public sealed class ProductGameExplorerRuntimeTests
     }
 
     [Fact]
+    public async Task Missing_after_observation_is_recorded_as_outcome_unknown()
+    {
+        var before = Scene("before", 1, "部隊", 0.1);
+        var learner = new Learner();
+        var runtime = Runtime(
+            new ObservationRuntime([before]),
+            new EmptyStabilityWaiter(),
+            new Coordinator(),
+            new Device(),
+            learner,
+            new StructureCommitter(),
+            gamePolicyAllowsExplore: true);
+
+        var result = await runtime.ExecuteNextAsync();
+
+        Assert.Equal(ProductGameExplorerStepStatus.ObservationUndetermined, result.Status);
+        Assert.Equal(GameTransitionJudgement.Undetermined, result.Comparison!.Judgement);
+        Assert.NotNull(result.Learning?.Evidence);
+        Assert.Equal(ExplorationOutcomeKind.OutcomeUnknown, result.Learning!.Evidence!.Outcome);
+    }
+
+    [Fact]
     public async Task Successful_saved_route_step_reuses_its_edge_without_recommitting_structure()
     {
         var before = Scene("before", 1, "部隊", 0.1);
@@ -391,6 +413,23 @@ public sealed class ProductGameExplorerRuntimeTests
         }
     }
 
+    private sealed class EmptyStabilityWaiter : IGameInteractionStabilityWaiter
+    {
+        public ValueTask<GameInteractionStabilityResult> WaitStableAsync(
+            ObservedScene before,
+            ExplorationWaitCondition condition,
+            CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new GameInteractionStabilityResult(
+                ContractSchemaVersions.Revision03,
+                GameInteractionStabilityStatus.TimedOut,
+                [],
+                null,
+                0,
+                0,
+                condition.TimeoutMilliseconds,
+                "no after observation"));
+    }
+
     private sealed class Coordinator : IProductExplorationCoordinator
     {
         public string CurrentStructureRevisionId { get; private set; } = "structure:root";
@@ -474,15 +513,18 @@ public sealed class ProductGameExplorerRuntimeTests
         public GameTransitionLearningResult Learn(GameTransitionLearningRequest request)
         {
             Request = request;
+            var after = request.Stability.StableScene ?? request.Stability.Observations[^1];
             var evidence = new TransitionEvidence(
                 ContractSchemaVersions.Revision03,
                 request.TransitionEvidenceId,
                 request.Before.ObservationId,
-                request.Stability.StableScene!.ObservationId,
+                after.ObservationId,
                 request.AttemptId,
                 request.Dispatch.CandidateId!,
                 request.Dispatch.Operation,
-                ExplorationOutcomeKind.Novel,
+                request.Comparison.Judgement == GameTransitionJudgement.Undetermined
+                    ? ExplorationOutcomeKind.OutcomeUnknown
+                    : ExplorationOutcomeKind.Novel,
                 request.EnvironmentScope,
                 request.DispatchMonotonicMilliseconds,
                 request.ObservationCompletedMonotonicMilliseconds,

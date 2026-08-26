@@ -1429,6 +1429,8 @@ Exit:
 
 工程正本はLattice plan `macro-product-flow`、設計と受入は[Macro Product Flow campaign](macro-product-flow-campaign-plan.md)、4値判定は[Phase 13 assessment](phase13-macro-product-flow-assessment.md)を正とする。公開claimはGame Operator Previewのまま維持し、NIKKE liveでAI修復が発動した実証、一般game自律操作、課金／消費／戦闘macroを含めない。
 
+実装更新（2026-08-26）: AI監視ありの目的統括はFoundry Local単独plannerではなく、ChatGPT subscription認証済みCodex App Serverを正規入口とする。アプリがgame profileごとの相対workspace、`AGENTS.md`、durable thread、run evidenceを所有し、CodexへWGC／保存action／Nano／10秒Compare／route commitのdynamic toolsだけを渡す。NIKKE実goal「日課の未完了項目と進捗を最下端まで取得して一覧化する」は、親AI介入0で14項目の取得、禁止操作0、route revision 11まで成立した。判定証拠は[Codex subscription game agent live acceptance](../evidence/macro-product-flow/codex-subscription-game-agent-20260826.md)。
+
 ## 9. Blockerを潰すfocused experiment
 
 | ID | 実験 | 成功条件 | 失敗時の分岐 |

@@ -520,14 +520,38 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             if (waited.Observations.Count == 0)
             {
                 stopReasonLabel = "after Observationを取得できずOutcomeUnknown";
+                var unknownComparison = comparison with
+                {
+                    AfterObservationId = comparisonBefore.ObservationId,
+                    Judgement = GameTransitionJudgement.Undetermined,
+                };
+                var unknownStability = waited with
+                {
+                    Observations = [comparisonBefore],
+                    StableScene = null,
+                };
+                var unknownLearning = LearnTransition(new GameTransitionLearningRequest(
+                    ContractSchemaVersions.Revision03,
+                    proposal.ProposalId,
+                    before,
+                    dispatch!,
+                    unknownStability,
+                    unknownComparison,
+                    attemptId,
+                    $"transition:{proposal.ProposalId}",
+                    EnvironmentScope,
+                    checked((long)before.Frame.MonotonicMs),
+                    checked((long)comparisonBefore.Frame.MonotonicMs),
+                    time.GetUtcNow(),
+                    policy.PolicyRevisionId));
                 return new ProductGameExplorerStepResult(
                     ProductGameExplorerStepStatus.ObservationUndetermined,
                     before,
                     target,
                     dispatch,
-                    waited,
-                    comparison,
-                    null,
+                    unknownStability,
+                    unknownComparison,
+                    unknownLearning,
                     coordinator.CurrentStructureRevisionId,
                     stopReasonLabel);
             }

@@ -221,10 +221,32 @@ static HostMacroAutomationIntents CreateMacroIntents(string databasePath)
     var output = SerialHidOutputSettingsStore.ForDatabase(databasePath).Load();
     return new HostMacroAutomationIntents(
         databasePath,
-        new WindowsPurposeMacroExecutionEngine(
+        CreateMacroExecutionEngine(
             databasePath,
             CreateSerialHidDiscovery(),
             output.SelectedDeviceInstanceId));
+}
+
+static IProductMacroExecutionEngine CreateMacroExecutionEngine(
+    string databasePath,
+    SerialHidDiscoveryService serialHidDiscovery,
+    string? selectedDeviceInstanceId,
+    Func<SerialHidResidentOutputSession?>? borrowedNanoSession = null)
+{
+    var aiFree = new WindowsPurposeMacroExecutionEngine(
+        databasePath,
+        serialHidDiscovery,
+        selectedDeviceInstanceId,
+        borrowedNanoSession);
+    return new CodexPurposeMacroExecutionEngine(
+        databasePath,
+        serialHidDiscovery,
+        selectedDeviceInstanceId,
+        new WindowsGameAgentWorkspaceManager(
+            Path.GetDirectoryName(Path.GetFullPath(databasePath))!,
+            AppContext.BaseDirectory),
+        aiFree,
+        borrowedNanoSession);
 }
 
 static int SupervisedImport(string packagePath, string[] arguments)
@@ -310,7 +332,7 @@ static int Run(string[] arguments)
     var status = host.Start();
     using var macroIntents = new HostMacroAutomationIntents(
         databasePath,
-        new WindowsPurposeMacroExecutionEngine(
+        CreateMacroExecutionEngine(
             databasePath,
             serialHidDiscovery,
             outputSettings.SelectedDeviceInstanceId,
@@ -531,7 +553,7 @@ static int Ui(string[] arguments)
     var outputSettingsForMacro = outputSettingsStore.Load();
     using var macroAutomationIntents = new HostMacroAutomationIntents(
         databasePath,
-        new WindowsPurposeMacroExecutionEngine(
+        CreateMacroExecutionEngine(
             databasePath,
             serialHidDiscovery,
             outputSettingsForMacro.SelectedDeviceInstanceId,

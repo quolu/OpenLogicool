@@ -47,7 +47,8 @@ public sealed record MacroRunSnapshot(
     long RouteRevision,
     string Detail,
     bool CanStart,
-    bool CanStop);
+    bool CanStop,
+    IReadOnlyList<string>? Information = null);
 
 public sealed record MacroCreateRequest(
     string TargetProcessName,

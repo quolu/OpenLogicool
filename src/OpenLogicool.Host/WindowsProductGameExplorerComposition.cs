@@ -19,10 +19,10 @@ public sealed class WindowsProductGameExplorerSession(
     ProductGameExplorerRuntime runtime,
     WindowsWgcGameFrameSource frameSource,
     IDisposable? visionResource,
-    ILocalAiCallCounter aiCallCounter) : IDisposable
+    ILocalAiCallCounter? aiCallCounter) : IDisposable
 {
     public ProductGameExplorerRuntime Runtime { get; } = runtime;
-    public int AiCallCount => aiCallCounter.AiCallCount;
+    public int AiCallCount => aiCallCounter?.AiCallCount ?? 0;
 
     public void Dispose()
     {
@@ -63,7 +63,8 @@ public static class WindowsProductGameExplorerComposition
         bool learnNonMovedRouteOutcomes = true,
         bool forceAiDiscovery = false,
         ILocalControlDiscoveryProvider? controlDiscoveryProvider = null,
-        IDisposable? controlDiscoveryResource = null)
+        IDisposable? controlDiscoveryResource = null,
+        IProductGameTargetDiscovery? targetDiscoveryOverride = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
         if (!string.Equals(gameId, gamePolicy.GameId, StringComparison.Ordinal))
@@ -93,7 +94,12 @@ public static class WindowsProductGameExplorerComposition
         FoundryLocalVisionClient? visionClient = null;
         IDisposable? visionResource;
         IProductGameTargetDiscovery targetDiscovery;
-        if (includeVisualTargets)
+        if (targetDiscoveryOverride is not null)
+        {
+            visionResource = controlDiscoveryResource;
+            targetDiscovery = targetDiscoveryOverride;
+        }
+        else if (includeVisualTargets)
         {
             if (controlDiscoveryProvider is null)
             {
@@ -128,7 +134,7 @@ public static class WindowsProductGameExplorerComposition
                 targetIntent,
                 interactionOperation);
         }
-        if (learnedSceneProfileStore is not null)
+        if (learnedSceneProfileStore is not null && targetDiscoveryOverride is null)
         {
             targetDiscovery = new WindowsKnownFirstTargetDiscovery(
                 targetDiscovery,
@@ -205,6 +211,6 @@ public static class WindowsProductGameExplorerComposition
             runtime,
             frameSource,
             visionResource,
-            (ILocalAiCallCounter)targetDiscovery);
+            targetDiscovery as ILocalAiCallCounter);
     }
 }
