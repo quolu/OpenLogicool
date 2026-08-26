@@ -105,14 +105,17 @@ return command switch
 
 static int Macro(string operation, string[] arguments)
 {
-    if (operation is not ("list" or "play"))
+    if (operation is not ("list" or "play" or "target"))
     {
-        return Fail("macro operationはlistまたはplayです。");
+        return Fail("macro operationはlist、target、playです。");
     }
     var routeId = operation == "play" && arguments.Length > 0
         ? arguments[0]
         : null;
-    var optionStart = routeId is null ? 0 : 1;
+    var targetProcessName = operation == "target" && arguments.Length > 0
+        ? arguments[0]
+        : null;
+    var optionStart = routeId is not null || targetProcessName is not null ? 1 : 0;
     var databasePath = DefaultDatabasePath();
     string? processName = null;
     string? versionId = null;
@@ -139,15 +142,15 @@ static int Macro(string operation, string[] arguments)
             return Fail($"unknown macro option: {arguments[index]}");
     }
     if (!File.Exists(databasePath)) return Fail($"databaseがありません: {databasePath}");
+    using var intents = CreateMacroIntents(databasePath);
+    if (operation == "target")
+    {
+        var selected = intents.SelectTarget(targetProcessName!);
+        Console.WriteLine($"macro target: {selected.ProcessName}（アプリ側へ保存）");
+        return 0;
+    }
     if (operation == "play")
     {
-        var output = SerialHidOutputSettingsStore.ForDatabase(databasePath).Load();
-        using var intents = new HostMacroAutomationIntents(
-            databasePath,
-            new WindowsPurposeMacroExecutionEngine(
-                databasePath,
-                CreateSerialHidDiscovery(),
-                output.SelectedDeviceInstanceId));
         var reference = new MacroVersionReference(routeId!, versionId, mode);
         var item = intents.ListMacros().SingleOrDefault(candidate => candidate.RouteId == routeId)
             ?? throw new InvalidOperationException("指定したmacroがありません。");
@@ -173,18 +176,24 @@ static int Macro(string operation, string[] arguments)
         Console.WriteLine(json);
         return terminal.Phase == MacroRunPhase.Completed ? 0 : 2;
     }
-    using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
-    {
-        DataSource = databasePath,
-        Mode = SqliteOpenMode.ReadOnly,
-        Pooling = false,
-    }.ToString());
-    connection.Open();
-    var macros = new HostMacroCatalog(connection).ListMacros();
+    var currentTarget = intents.CurrentTarget();
+    Console.WriteLine($"macro target: {currentTarget?.ProcessName ?? "未選択"}");
+    var macros = intents.ListMacros();
     foreach (var macro in macros)
         Console.WriteLine($"{macro.RouteId}\t{macro.VersionId}\t{macro.GameId}\t{macro.Goal}\t版{macro.RevisionNumber}\t{macro.StepCount} step");
     Console.WriteLine($"macro: {macros.Count} 件");
     return 0;
+}
+
+static HostMacroAutomationIntents CreateMacroIntents(string databasePath)
+{
+    var output = SerialHidOutputSettingsStore.ForDatabase(databasePath).Load();
+    return new HostMacroAutomationIntents(
+        databasePath,
+        new WindowsPurposeMacroExecutionEngine(
+            databasePath,
+            CreateSerialHidDiscovery(),
+            output.SelectedDeviceInstanceId));
 }
 
 static int SupervisedImport(string packagePath, string[] arguments)

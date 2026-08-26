@@ -24,8 +24,10 @@ internal sealed class MacroAutomationPanel : UserControl
     private readonly Button create = Button("AIに作ってもらう");
     private readonly Button play = Button("再生");
     private readonly Button stop = Button("停止");
+    private readonly TextBlock targetHeading = new() { FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Theme.Text };
     private CancellationTokenSource? running;
     private List<MacroCatalogItem> compositionItems = [];
+    private bool refreshingTargets;
 
     public MacroAutomationPanel(IMacroAutomationIntents intents)
     {
@@ -42,7 +44,7 @@ internal sealed class MacroAutomationPanel : UserControl
         create.Click += async (_, _) => await CreateAsync();
         play.Click += async (_, _) => await PlayAsync();
         stop.Click += (_, _) => Stop();
-        catalog.SelectionChanged += (_, _) => SelectMatchingTarget();
+        targets.SelectionChanged += (_, _) => PersistTargetSelection();
         intents.StateChanged += OnStateChanged;
         Unloaded += (_, _) => intents.StateChanged -= OnStateChanged;
         stop.IsEnabled = false;
@@ -57,7 +59,8 @@ internal sealed class MacroAutomationPanel : UserControl
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
         var heading = new StackPanel();
-        heading.Children.Add(new TextBlock { Text = "マクロ", FontSize = 24, FontWeight = FontWeights.Bold });
+        targetHeading.Text = "マクロ対象ゲームを選んでください";
+        heading.Children.Add(targetHeading);
         heading.Children.Add(new TextBlock
         {
             Text = "AIに目的を伝えて操作を覚えさせ、保存済みマクロを監視あり／なしで再生します。",
@@ -66,7 +69,7 @@ internal sealed class MacroAutomationPanel : UserControl
         });
         Add(root, heading, 0);
 
-        var targetRow = Row("操作するアプリ", targets);
+        var targetRow = Row("対象ゲーム（保存）", targets);
         Add(root, targetRow, 1);
 
         var createRow = new StackPanel { Margin = new Thickness(0, 12, 0, 12) };
@@ -215,9 +218,18 @@ internal sealed class MacroAutomationPanel : UserControl
 
     private void Refresh(string? selectRouteId = null)
     {
+        refreshingTargets = true;
         var targetItems = workspace.ListTargets();
         targets.ItemsSource = targetItems;
-        if (targets.SelectedIndex < 0 && targetItems.Count > 0) targets.SelectedIndex = 0;
+        var currentTarget = workspace.CurrentTarget();
+        targets.SelectedItem = currentTarget is null
+            ? null
+            : targetItems.FirstOrDefault(target => string.Equals(
+                target.ProcessName, currentTarget.ProcessName, StringComparison.OrdinalIgnoreCase));
+        targetHeading.Text = currentTarget is null
+            ? "マクロ対象ゲームを選んでください"
+            : $"{currentTarget.ProcessName.ToUpperInvariant()}用マクロ";
+        refreshingTargets = false;
         var macros = workspace.ListMacros();
         catalog.ItemsSource = macros;
         if (selectRouteId is not null)
@@ -225,12 +237,16 @@ internal sealed class MacroAutomationPanel : UserControl
         if (catalog.SelectedIndex < 0 && macros.Count > 0) catalog.SelectedIndex = 0;
     }
 
-    private void SelectMatchingTarget()
+    private void PersistTargetSelection()
     {
-        if (catalog.SelectedItem is not MacroCatalogItem macro) return;
-        var match = targets.Items.Cast<MacroTargetOption>().FirstOrDefault(target =>
-            string.Equals(target.ProcessName, macro.GameId, StringComparison.OrdinalIgnoreCase));
-        if (match is not null) targets.SelectedItem = match;
+        if (refreshingTargets || targets.SelectedItem is not MacroTargetOption selected) return;
+        try
+        {
+            var fixedTarget = workspace.SelectTarget(selected.ProcessName);
+            targetHeading.Text = $"{fixedTarget.ProcessName.ToUpperInvariant()}用マクロ";
+            Refresh();
+        }
+        catch (Exception error) { status.Text = error.Message; }
     }
 
     private void RenderComposition(int selectedIndex)

@@ -1425,7 +1425,7 @@ Exit:
 
 目的: 目的指向のLearning Routeを製品macroの唯一の正本とし、AI会話による作成、既存Input StudioからG13／G600への割当、AI監視あり／なし再生、失敗stepだけのappend-only修復、複数macroの順序付き統合を一つの製品journeyとして提供する。
 
-実装状態: 既存Game Operatorへ「マクロ」tab、既存Input Studio右Inspectorへ「マクロを選ぶ」入口だけを追加した。G13／G600 fast pathはmacro tokenをbutton down一回の有界queueへ非blockingで渡し、UI手動起動と同じHost execution coordinatorが10基盤を通して逐次実行する。AI監視なしは保存actionだけで非遷移時停止・route更新なし、AI監視ありは保存actionの10秒非遷移時だけ同じstepを再探索して新revisionへ更新する。統合macroはsource routeを変更せずedge列を連結する。NIKKE実windowの「アークを開く」は製品macro executorからNano Serial HID、AI 0、Movedで完了し、Nano Escでホーム復帰した。
+実装状態: 既存Game Operatorへ「マクロ」tab、既存Input Studio右Inspectorへ「マクロを選ぶ」入口だけを追加した。マクロ対象game profileはアプリ側のmachine-local設定へ永続化し、目的入力requestから別gameを指定しても拒否する。現在の対象は`nikke`。G13／G600 fast pathはmacro tokenをbutton down一回の有界queueへ非blockingで渡し、UI手動起動と同じHost execution coordinatorが10基盤を通して逐次実行する。AI監視なしは保存actionだけで非遷移時停止・route更新なし、AI監視ありは保存actionの10秒非遷移時だけ同じstepを再探索して新revisionへ更新する。統合macroはsource routeを変更せずedge列を連結する。NIKKE実windowの「アークを開く」は製品macro executorからNano Serial HID、AI 0、Movedで完了し、Nano Escでホーム復帰した。
 
 工程正本はLattice plan `macro-product-flow`、設計と受入は[Macro Product Flow campaign](macro-product-flow-campaign-plan.md)、4値判定は[Phase 13 assessment](phase13-macro-product-flow-assessment.md)を正とする。公開claimはGame Operator Previewのまま維持し、NIKKE liveでAI修復が発動した実証、一般game自律操作、課金／消費／戦闘macroを含めない。
 

@@ -46,8 +46,12 @@ public sealed class MacroAutomationWorkspaceTests
         public MacroCreateRequest? Created { get; private set; }
         public MacroPlaybackRequest? Played { get; private set; }
         public MacroCompositionRequest? Composed { get; private set; }
+        public MacroTargetOption? SelectedTarget { get; private set; }
 
         public IReadOnlyList<MacroTargetOption> ListTargets() => Targets;
+        public MacroTargetOption? CurrentTarget() => SelectedTarget ?? Targets[0];
+        public MacroTargetOption SelectTarget(string processName) =>
+            SelectedTarget = Targets.Single(target => target.ProcessName == processName);
         public IReadOnlyList<MacroCatalogItem> ListMacros() => Macros;
         public MacroCatalogItem Compose(MacroCompositionRequest request) { Composed = request; return Macros[0]; }
         public Task<MacroRunSnapshot> CreateAsync(MacroCreateRequest request, IProgress<MacroRunSnapshot> progress, CancellationToken cancellationToken = default)

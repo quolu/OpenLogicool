@@ -33,6 +33,7 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
     private readonly string databasePath;
     private readonly IProductMacroExecutionEngine engine;
     private readonly Func<IReadOnlyList<MacroTargetOption>> targets;
+    private readonly MacroTargetSettingsStore targetSettings;
     private readonly SemaphoreSlim executionGate = new(1, 1);
     private readonly object stateGate = new();
     private CancellationTokenSource? activeCancellation;
@@ -49,20 +50,67 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
         this.databasePath = Path.GetFullPath(databasePath);
         this.engine = engine ?? throw new ArgumentNullException(nameof(engine));
         this.targets = targets ?? ListVisibleTargets;
+        targetSettings = MacroTargetSettingsStore.ForDatabase(this.databasePath);
     }
 
-    public IReadOnlyList<MacroTargetOption> ListTargets() => targets();
+    public IReadOnlyList<MacroTargetOption> ListTargets()
+    {
+        var result = targets().ToDictionary(
+            target => target.ProcessName,
+            StringComparer.OrdinalIgnoreCase);
+        using var connection = Open();
+        foreach (var association in new SqliteAppAssociationStore(connection).ListAll()
+                     .Where(item => item.MatcherKind == OpenLogicool.Contracts.Profiles.AppMatcherKind.Path
+                                    && item.ApplicationFullPath != "*"))
+        {
+            var processName = Path.GetFileNameWithoutExtension(association.ApplicationFullPath);
+            if (!string.IsNullOrWhiteSpace(processName) && !result.ContainsKey(processName))
+                result[processName] = new MacroTargetOption(processName, "保存済みアプリprofile");
+        }
+        if (targetSettings.Load() is { } current && !result.ContainsKey(current.ProcessName))
+            result[current.ProcessName] = new MacroTargetOption(current.ProcessName, "保存済みマクロ対象");
+        return result.Values.OrderBy(target => target.ProcessName, StringComparer.OrdinalIgnoreCase).ToArray();
+    }
+
+    public MacroTargetOption? CurrentTarget()
+    {
+        var current = targetSettings.Load();
+        return current is null
+            ? null
+            : ListTargets().First(target => string.Equals(
+                target.ProcessName, current.ProcessName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public MacroTargetOption SelectTarget(string processName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(processName);
+        var selected = ListTargets().SingleOrDefault(target => string.Equals(
+            target.ProcessName, Path.GetFileNameWithoutExtension(processName), StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"対象game profile '{processName}' がありません。");
+        _ = targetSettings.Save(selected.ProcessName);
+        return selected;
+    }
 
     public IReadOnlyList<MacroCatalogItem> ListMacros()
     {
         using var connection = Open();
-        return new HostMacroCatalog(connection).ListMacros();
+        var target = CurrentTarget();
+        return target is null
+            ? []
+            : new HostMacroCatalog(connection).ListMacros()
+                .Where(macro => string.Equals(macro.GameId, target.ProcessName, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
     }
 
     public MacroCatalogItem Compose(MacroCompositionRequest request)
     {
         using var connection = Open();
-        return new HostMacroCatalog(connection).Compose(request);
+        var target = RequireTarget(null);
+        var catalog = new HostMacroCatalog(connection);
+        if (request.Sources.Select(catalog.Resolve).Any(route => !string.Equals(
+                route.GameId, target.ProcessName, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("固定中のgame profile以外のマクロは統合できません。");
+        return catalog.Compose(request);
     }
 
     public Task<MacroRunSnapshot> CreateAsync(
@@ -71,8 +119,9 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var target = RequireTarget(request.TargetProcessName);
         return ExecuteAsync(new ProductMacroExecutionRequest(
-            request.TargetProcessName, request.Goal, MacroPlaybackMode.AiMonitored, null), progress, cancellationToken);
+            target.ProcessName, request.Goal, MacroPlaybackMode.AiMonitored, null), progress, cancellationToken);
     }
 
     public async Task<MacroRunSnapshot> PlayAsync(
@@ -81,13 +130,14 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var target = RequireTarget(request.TargetProcessName);
         var route = Resolve(request.Macro);
-        if (!string.Equals(route.GameId, request.TargetProcessName, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(route.GameId, target.ProcessName, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("選択したアプリとマクロの対象gameが一致しません。");
         }
         return await ExecuteAsync(new ProductMacroExecutionRequest(
-            request.TargetProcessName, route.Goal, request.Macro.PlaybackMode, route),
+            target.ProcessName, route.Goal, request.Macro.PlaybackMode, route),
             progress, cancellationToken).ConfigureAwait(false);
     }
 
@@ -97,8 +147,9 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
         CancellationToken cancellationToken)
     {
         var route = Resolve(invocation);
+        var target = RequireTarget(route.GameId);
         return ExecuteAsync(new ProductMacroExecutionRequest(
-            route.GameId, route.Goal, invocation.PlaybackMode, route), progress, cancellationToken);
+            target.ProcessName, route.Goal, invocation.PlaybackMode, route), progress, cancellationToken);
     }
 
     public MacroRunSnapshot Stop()
@@ -180,6 +231,17 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
     {
         using var connection = Open();
         return new HostMacroCatalog(connection).Resolve(reference);
+    }
+
+    private MacroTargetOption RequireTarget(string? requestedProcessName)
+    {
+        var selected = CurrentTarget()
+            ?? throw new InvalidOperationException("先にアプリ側でマクロ対象game profileを選んでください。");
+        if (requestedProcessName is not null && !string.Equals(
+                selected.ProcessName, requestedProcessName, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException(
+                $"マクロ対象はアプリ側で'{selected.ProcessName}'に固定されています。'{requestedProcessName}'は実行できません。");
+        return selected;
     }
 
     private SqliteConnection Open()

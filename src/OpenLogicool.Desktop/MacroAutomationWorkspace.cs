@@ -9,6 +9,10 @@ public sealed class MacroAutomationWorkspace(IMacroAutomationIntents intents)
 
     public IReadOnlyList<MacroTargetOption> ListTargets() => intents.ListTargets();
 
+    public MacroTargetOption? CurrentTarget() => intents.CurrentTarget();
+
+    public MacroTargetOption SelectTarget(string processName) => intents.SelectTarget(processName);
+
     public IReadOnlyList<MacroCatalogItem> ListMacros() => intents.ListMacros();
 
     public Task<MacroRunSnapshot> CreateAsync(

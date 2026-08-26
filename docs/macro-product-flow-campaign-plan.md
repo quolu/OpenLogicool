@@ -10,7 +10,7 @@
 
 ## 利用者journey
 
-1. Game Operatorの「マクロ」tabで、対象ゲームと達成したいことを入力する。
+1. Game Operatorの「マクロ」tabで対象game profileを一度選び、アプリ側へ永続化してから達成したいことを入力する。以後の目的入力は固定中profileを継承する。
 2. AIが既存10基盤を通って不足stepだけを発見し、Learning Routeのappend-only revisionとしてマクロを作る。
 3. 保存済みマクロをAI監視なし、またはAI監視ありで再生する。
 4. AI監視なしは保存actionだけをAI 0で実行し、非遷移なら停止してマクロを変更しない。
@@ -29,6 +29,7 @@
 - **fast path非blocking**: Device Mappingはmacro tokenを一回のdown eventへ解決する。FastPathPumpは物理outputから分離し、有界in-memory queueへ`TryEnqueue`するだけで、AI、capture、SQLite、UI、macro完了を待たない。
 - **出力session共有**: resident routeがSerial HIDなら既存protocol／emitterを借用し、別COM sessionを開かない。SendInput residentまたは非resident UIではSerial HID discoveryからmacro専用sessionを開く。
 - **既存UI不変**: Input Studioへ新しい画面や新3ペインを作らない。右Inspectorの録画rowへ「マクロを選ぶ」を追加し、選んだactionを既存device図へ割り当てる。Game Operatorは既存TabControlへ「マクロ」tabを追加する。
+- **対象gameはアプリ側authority**: 選択したgame profileをアプリ設定へ永続化し、作成・再生・修復・合成・物理button起動はそのprofileだけを使う。会話の記憶やrequest側game指定で切り替えない。
 
 ## F/A/H
 
@@ -40,6 +41,7 @@
 
 1. 既存Input Studioの通常actionを保存・適用した時、WorkspaceDocument、MappingProfile、emitted edges、主要UI Automation名が変更前と一致する。
 2. Game Operator UIからgoalを入力し、実gameまたは同じpublic fake経路でLearning Routeを作成できる。DesktopはSQLite、capture、AI、Nano実装を直接参照しない。
+2a. 対象game profileは再起動後も復元し、目的入力requestから別gameを指定しても実行を拒否する。macro catalogと合成sourceは固定中gameだけを表示する。
 3. 保存macro versionをAI監視なしで再生し、AI call 0、route revision不変、非遷移時は停止、正常step再commit 0となる。
 4. AI監視ありで一つの失敗stepだけを修復し、旧revisionと正常stepを保持した新版へ自動更新する。
 5. 2件以上のmacro versionをUI順に合成し、source不変、合成route restart復元、全step順序一致を確認する。

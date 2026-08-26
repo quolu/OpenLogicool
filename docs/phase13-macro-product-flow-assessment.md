@@ -10,6 +10,7 @@
 
 1. Learning Route revisionを唯一のmacro正本とし、別schema／別DB／Probe subprocessを作っていない。
 2. Game Operatorの既存TabControlへ「マクロ」tabを追加し、goal作成、catalog、AI監視あり／なし、停止、順序付き合成をHost intentだけで操作する。
+2a. マクロ対象game profileはアプリ側へ永続化し、現在は`nikke`に固定した。request側の別game指定は拒否し、catalog／合成もNIKKEだけに絞る。
 3. 既存Input Studioの3ペイン／G13・G600図／layer／保存導線を維持し、右Inspectorへ「マクロを選ぶ」だけを追加した。
 4. Macro tokenは既存Semantic ActionとWorkspace revisionへ保存し、G13／G600の既存bindingへ割り当てる。修復後のlatest routeを追従する。
 5. AI監視なしは保存actionだけを実行し、AI providerへ構造的に到達しない。非遷移時は停止し、route／Structureを更新しない。durable outcome evidenceは保持する。

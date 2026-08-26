@@ -14,7 +14,11 @@ public sealed class HostMacroAutomationIntentsTests : IDisposable
 {
     private readonly string path = Path.Combine(Path.GetTempPath(), $"openlogicool-macro-{Guid.NewGuid():N}.db");
 
-    public void Dispose() => File.Delete(path);
+    public void Dispose()
+    {
+        File.Delete(path);
+        File.Delete($"{path}.{MacroTargetSettingsStore.FileName}");
+    }
 
     [Fact]
     public async Task Manual_create_and_saved_play_use_the_same_execution_engine()
@@ -23,6 +27,7 @@ public sealed class HostMacroAutomationIntentsTests : IDisposable
         var engine = new RecordingEngine();
         using var intents = new HostMacroAutomationIntents(
             path, engine, () => [new MacroTargetOption("game", "Game")]);
+        _ = intents.SelectTarget("game");
 
         _ = await intents.CreateAsync(
             new MacroCreateRequest("game", "新しい目的"), new Progress<MacroRunSnapshot>());
@@ -36,6 +41,25 @@ public sealed class HostMacroAutomationIntentsTests : IDisposable
         Assert.Equal(MacroPlaybackMode.AiMonitored, engine.Requests[0].PlaybackMode);
         Assert.Equal(macro.VersionId, engine.Requests[1].InitialRoute!.VersionId);
         Assert.Equal(MacroPlaybackMode.AiFree, engine.Requests[1].PlaybackMode);
+    }
+
+    [Fact]
+    public async Task Selected_game_profile_persists_and_rejects_request_side_target_override()
+    {
+        var available = new Func<IReadOnlyList<MacroTargetOption>>(() =>
+            [new("game", "Game"), new("other", "Other")]);
+        using (var first = new HostMacroAutomationIntents(path, new RecordingEngine(), available))
+        {
+            Assert.Null(first.CurrentTarget());
+            Assert.Equal("game", first.SelectTarget("game").ProcessName);
+        }
+
+        var engine = new RecordingEngine();
+        using var reopened = new HostMacroAutomationIntents(path, engine, available);
+        Assert.Equal("game", reopened.CurrentTarget()!.ProcessName);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => reopened.CreateAsync(
+            new MacroCreateRequest("other", "別gameへ逸脱"), new Progress<MacroRunSnapshot>()));
+        Assert.Empty(engine.Requests);
     }
 
     [Fact]
@@ -71,7 +95,8 @@ public sealed class HostMacroAutomationIntentsTests : IDisposable
     public async Task Dispose_cancels_and_waits_for_an_active_macro_before_returning()
     {
         var engine = new BlockingEngine();
-        var intents = new HostMacroAutomationIntents(path, engine, () => []);
+        var intents = new HostMacroAutomationIntents(path, engine, () => [new MacroTargetOption("game", "Game")]);
+        _ = intents.SelectTarget("game");
         var running = intents.CreateAsync(
             new MacroCreateRequest("game", "停止確認"), new Progress<MacroRunSnapshot>());
         await engine.Started.Task.WaitAsync(TimeSpan.FromSeconds(2));
@@ -86,7 +111,9 @@ public sealed class HostMacroAutomationIntentsTests : IDisposable
     [Fact]
     public async Task Execution_failure_is_published_as_a_faulted_state_for_ui_and_physical_runs()
     {
-        using var intents = new HostMacroAutomationIntents(path, new ThrowingEngine(), () => []);
+        using var intents = new HostMacroAutomationIntents(
+            path, new ThrowingEngine(), () => [new MacroTargetOption("game", "Game")]);
+        _ = intents.SelectTarget("game");
         var states = new List<MacroRunSnapshot>();
         intents.StateChanged += states.Add;
 

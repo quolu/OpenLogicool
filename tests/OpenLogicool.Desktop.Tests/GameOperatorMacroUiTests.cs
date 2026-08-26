@@ -60,6 +60,8 @@ public sealed class GameOperatorMacroUiTests
     {
         public event Action<MacroRunSnapshot>? StateChanged { add { } remove { } }
         public IReadOnlyList<MacroTargetOption> ListTargets() => [new("game", "Game")];
+        public MacroTargetOption? CurrentTarget() => new("game", "Game");
+        public MacroTargetOption SelectTarget(string processName) => new(processName, "Game");
         public IReadOnlyList<MacroCatalogItem> ListMacros() => [];
         public MacroCatalogItem Compose(MacroCompositionRequest request) => throw new NotSupportedException();
         public Task<MacroRunSnapshot> CreateAsync(MacroCreateRequest request, IProgress<MacroRunSnapshot> progress, CancellationToken cancellationToken = default) => throw new NotSupportedException();

@@ -14,7 +14,11 @@ public sealed class MacroProductFlowScenarioTests : IDisposable
 {
     private readonly string path = Path.Combine(Path.GetTempPath(), $"openlogicool-macro-scenario-{Guid.NewGuid():N}.db");
 
-    public void Dispose() => File.Delete(path);
+    public void Dispose()
+    {
+        File.Delete(path);
+        File.Delete($"{path}.{MacroTargetSettingsStore.FileName}");
+    }
 
     [Fact]
     public async Task Create_assign_replay_repair_compose_and_reopen_are_one_product_flow()
@@ -24,6 +28,7 @@ public sealed class MacroProductFlowScenarioTests : IDisposable
         using (var intents = new HostMacroAutomationIntents(
             path, engine, () => [new MacroTargetOption("game", "Game")]))
         {
+            _ = intents.SelectTarget("game");
             var target = intents.ListTargets().Single();
             _ = await intents.CreateAsync(new MacroCreateRequest(target.ProcessName, "前半"), Progress());
             _ = await intents.CreateAsync(new MacroCreateRequest(target.ProcessName, "後半"), Progress());

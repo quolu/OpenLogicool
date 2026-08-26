@@ -63,6 +63,10 @@ public interface IMacroAutomationIntents
 
     IReadOnlyList<MacroTargetOption> ListTargets();
 
+    MacroTargetOption? CurrentTarget();
+
+    MacroTargetOption SelectTarget(string processName);
+
     IReadOnlyList<MacroCatalogItem> ListMacros();
 
     MacroCatalogItem Compose(MacroCompositionRequest request);
