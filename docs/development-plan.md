@@ -1433,6 +1433,8 @@ Exit:
 
 実装更新（2026-08-28）: NIKKEロビー開始で同goalをアプリ内CodexのAI監視付きモードから学習・修復し、保存route revision 69・9 stepを別runのAI 0で全step Moved・revision不変・Completedまで再現した。情報scrollはWindows adapterが対象領域の新規OCR textまたは同一textの縦移動をCompare直後に正規化し、監視あり／なしで同じ判定を使う。実走中に発生したNano CDC応答停止は、Arduino AVR coreのblocking USB sendと80ms Hello期限、firmware release retryのserial starvationが原因と確定した。firmware 1.1.1はreleasePending中のHello回復とserial優先処理、HostはHello 1秒／通常action 80msを分離し、verify付きflash、100 session連続handshake、17分＋16分の監視run、最終AI 0でtimeout再発0を確認した。証拠は[AI監視付き修復とAI 0再現](../evidence/macro-product-flow/ai-monitored-ai-zero-replay-20260828.md)。
 
+実装更新（2026-08-29）: 2本目の実目的として、NIKKEの一般ショップ無料品→費用0の商品更新→更新後無料品→ボディラベルショップSALE品→キャッシュショップ赤ポチ付き無料品を一つのgoalからアプリ内Codexが20 step・route revision 21で完遂した。一般ショップ無料クレジット60,000を更新前後に各1回、40% SALEの支援型共用コンソール10個をボディラベル2,400で、デイリー／ウィークリー無料パックを購入し、SOLD OUTと赤ポチ消失を確認した。有償通貨、ジュエル、現金、非無料商品、募集、戦闘は0。証拠は[NIKKE shop purchase macro](../evidence/macro-product-flow/nikke-shop-purchase-macro-20260829.md)。
+
 ## 9. Blockerを潰すfocused experiment
 
 | ID | 実験 | 成功条件 | 失敗時の分岐 |
