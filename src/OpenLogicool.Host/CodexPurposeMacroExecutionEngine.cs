@@ -121,7 +121,8 @@ public sealed class CodexPurposeMacroExecutionEngine(
                     ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
                 allowAiDiscovery: false,
                 learnNonMovedRouteOutcomes: true,
-                targetDiscoveryOverride: targetDiscovery);
+                targetDiscoveryOverride: targetDiscovery,
+                comparisonNormalizer: new WindowsInformationScrollComparisonNormalizer());
             var recorder = new CodexLearningRouteRecorder(
                 target.ProcessName,
                 environment,
@@ -214,7 +215,8 @@ public sealed class CodexPurposeMacroExecutionEngine(
         The OpenLogicool application fixed the game profile to `{processName}`.
         The user's only goal is: {goal}
         Use the OpenLogicool dynamic tools until the goal is complete. After every action call observe again.
-        If observe reports SavedAction, call use_saved_action before any new action.
+        If the goal is not complete and observe reports SavedAction, call use_saved_action before any new action.
+        If the goal is already complete on the current page, call finish immediately even when SavedAction remains. Do not execute a saved tail after all requested facts are collected.
         Never claim success without calling finish with all collected facts.
         """;
 

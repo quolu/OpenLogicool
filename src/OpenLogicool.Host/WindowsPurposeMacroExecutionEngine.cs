@@ -111,7 +111,8 @@ public sealed class WindowsPurposeMacroExecutionEngine(
                 allowAiDiscovery: request.PlaybackMode != MacroPlaybackMode.AiFree,
                 learnNonMovedRouteOutcomes: request.PlaybackMode != MacroPlaybackMode.AiFree,
                 controlDiscoveryProvider: lazyFoundry,
-                controlDiscoveryResource: null);
+                controlDiscoveryResource: null,
+                comparisonNormalizer: new WindowsInformationScrollComparisonNormalizer());
             var purpose = new PurposeDirectedExplorationRuntime(
                 target.ProcessName,
                 environment,

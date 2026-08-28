@@ -24,6 +24,7 @@ public sealed class SerialHidEmitterTests
         Assert.Equal(new SerialHidSemanticVersion(1, 1, 0), session.ReadyInfo.FirmwareVersion);
         Assert.Equal(SerialHidProtocolV1.BaselineCapabilities, session.ReadyInfo.Capabilities);
         Assert.Equal((ushort)150, session.ReadyInfo.LeaseMilliseconds);
+        Assert.Equal([Timeout], exchange.Timeouts);
     }
 
     [Fact]
@@ -44,6 +45,23 @@ public sealed class SerialHidEmitterTests
         Assert.Equal(SerialHidMessageKind.MouseDelta, delta.Kind);
         Assert.Equal([0x7F, 0x81, 0x01], delta.Payload);
         Assert.Equal((ushort)2, sequence);
+    }
+
+    [Fact]
+    public void Connect_can_wait_longer_for_firmware_recovery_without_relaxing_action_timeout()
+    {
+        var handshakeTimeout = TimeSpan.FromMilliseconds(1_000);
+        var exchange = new ScriptedExchange(Ready, Ack);
+        var session = SerialHidProtocolSession.Connect(
+            exchange,
+            new SerialHidSemanticVersion(1, 1, 1),
+            Timeout,
+            SerialHidProtocolV1.AllCapabilities,
+            handshakeTimeout);
+
+        session.SendAllUp();
+
+        Assert.Equal([handshakeTimeout, Timeout], exchange.Timeouts);
     }
 
     [Fact]
@@ -302,10 +320,11 @@ public sealed class SerialHidEmitterTests
         private readonly Queue<Func<byte[], byte[]>> _responses = new(responses);
 
         public List<byte[]> Requests { get; } = [];
+        public List<TimeSpan> Timeouts { get; } = [];
 
         public byte[] Exchange(ReadOnlyMemory<byte> requestFrame, TimeSpan timeout)
         {
-            Assert.Equal(Timeout, timeout);
+            Timeouts.Add(timeout);
             var request = requestFrame.ToArray();
             Requests.Add(request);
             Assert.NotEmpty(_responses);

@@ -31,6 +31,39 @@ public sealed class CodexLearningRouteRecorderTests
         Assert.Equal(3, routes.History.Count);
     }
 
+    [Fact]
+    public void Finish_after_saved_non_transition_keeps_successful_prefix_and_removes_tail()
+    {
+        var initial = Route(["e1", "e2", "e3"], LearningRouteStatus.Compiled);
+        var routes = new Routes(initial);
+        var recorder = new CodexLearningRouteRecorder(
+            "game", "env", "goal", new Structures(), routes, new FixedTimeProvider());
+
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e1"), usedSavedEdge: true);
+        recorder.Record(Outcome(GameTransitionJudgement.Stayed, "e2"), usedSavedEdge: true);
+        recorder.Complete(["goal fact"]);
+
+        Assert.Equal(["e1"], routes.History[^1].EdgeIds);
+        Assert.Equal(LearningRouteStatus.Compiled, routes.History[^1].Status);
+        Assert.Contains("tail 2件", routes.History[^1].ChangeReason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Finish_after_goal_is_satisfied_early_removes_unconsumed_saved_tail()
+    {
+        var initial = Route(["e1", "e2", "e3"], LearningRouteStatus.Compiled);
+        var routes = new Routes(initial);
+        var recorder = new CodexLearningRouteRecorder(
+            "game", "env", "goal", new Structures(), routes, new FixedTimeProvider());
+
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e1"), usedSavedEdge: true);
+        recorder.Complete(["all requested facts"]);
+
+        Assert.Equal(["e1"], routes.History[^1].EdgeIds);
+        Assert.Equal(LearningRouteStatus.Compiled, routes.History[^1].Status);
+        Assert.Contains("tail 2件", routes.History[^1].ChangeReason, StringComparison.Ordinal);
+    }
+
     private static CodexGameActionOutcome Outcome(GameTransitionJudgement judgement, string edgeId) =>
         new("Learned", judgement, edgeId, judgement.ToString());
 

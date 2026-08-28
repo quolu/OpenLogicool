@@ -181,6 +181,94 @@ public sealed class CodexProductGameToolRuntime(ProductGameExplorerRuntime produ
     }
 }
 
+/// <summary>Windows情報scrollの意味判定を、全画面変化でなくscroll対象領域の新規OCRへ揃える。</summary>
+public sealed class WindowsInformationScrollComparisonNormalizer : IProductGameTransitionComparisonNormalizer
+{
+    public GameTransitionComparison Normalize(
+        string operation,
+        StructureScreenEdge? routeTarget,
+        ObservedScene before,
+        GameInteractionStabilityResult after,
+        GameTransitionComparison comparison)
+    {
+        if (operation != GameInteractionOperations.Scroll
+            || routeTarget?.TargetNormalizedBounds is not { Count: 4 } bounds)
+        {
+            return comparison;
+        }
+        var judgement = HasScrollRegionProgress(before, after, bounds)
+            ? GameTransitionJudgement.Moved
+            : GameTransitionJudgement.Stayed;
+        if (judgement == comparison.Judgement) return comparison;
+        return comparison with
+        {
+            Judgement = judgement,
+            Reasons = comparison.Reasons
+                .Append("Windows情報scrollを対象領域の新規OCR textで判定")
+                .ToArray(),
+        };
+    }
+
+    internal static bool HasScrollRegionProgress(
+        ObservedScene before,
+        GameInteractionStabilityResult after,
+        IReadOnlyList<double> targetBounds)
+    {
+        var beforeTexts = TextsInScrollRegion(before, targetBounds);
+        var afterScene = after.StableScene ?? after.Observations.LastOrDefault();
+        var afterTexts = TextsInScrollRegion(afterScene, targetBounds);
+        if (beforeTexts is null || afterTexts is null) return true;
+        var beforeKeys = beforeTexts.Select(item => item.Text).ToHashSet(StringComparer.Ordinal);
+        if (afterTexts.Any(item => !beforeKeys.Contains(item.Text))) return true;
+        foreach (var current in afterTexts.Where(item => item.Text.Length >= 4))
+        {
+            var nearest = beforeTexts
+                .Where(previous => previous.Text == current.Text)
+                .Select(previous => Math.Abs(previous.CenterY - current.CenterY))
+                .DefaultIfEmpty(0)
+                .Min();
+            if (nearest >= 0.03) return true;
+        }
+        return false;
+    }
+
+    private static IReadOnlyList<ScrollRegionText>? TextsInScrollRegion(
+        ObservedScene? scene,
+        IReadOnlyList<double> targetBounds)
+    {
+        var regions = scene?.DiscoveryEvidence?.LocalGroundingRegions;
+        if (regions is null || targetBounds.Count != 4) return null;
+        var centerX = targetBounds[0] + targetBounds[2] / 2;
+        var centerY = targetBounds[1] + targetBounds[3] / 2;
+        var left = Math.Max(0, centerX - 0.35);
+        var top = Math.Max(0, centerY - 0.45);
+        var right = Math.Min(1, centerX + 0.35);
+        var bottom = Math.Min(1, centerY + 0.45);
+        return regions
+            .Where(region => Overlaps(region.EvidenceRegion.NormalizedBounds, left, top, right, bottom))
+            .Select(region => new ScrollRegionText(
+                OcrTextMatcher.Normalize(region.Text),
+                region.EvidenceRegion.NormalizedBounds[1]
+                    + region.EvidenceRegion.NormalizedBounds[3] / 2))
+            .Where(item => item.Text.Length > 0)
+            .ToArray();
+    }
+
+    private static bool Overlaps(
+        IReadOnlyList<double> bounds,
+        double left,
+        double top,
+        double right,
+        double bottom) =>
+        bounds.Count == 4
+        && bounds[0] < right
+        && bounds[1] < bottom
+        && bounds[0] + bounds[2] > left
+        && bounds[1] + bounds[3] > top;
+
+    private sealed record ScrollRegionText(string Text, double CenterY);
+}
+
 public sealed class CodexLearningRouteRecorder(
     string gameId,
     string environmentScope,
@@ -193,6 +281,7 @@ public sealed class CodexLearningRouteRecorder(
     private readonly TimeProvider time = timeProvider ?? TimeProvider.System;
     private LearningRouteRevision? route = routes.LoadLatest(PurposeLearningRouteIds.Create(gameId, environmentScope, goal));
     private int stepIndex;
+    private bool consumedSavedStep;
 
     public int StepNumber => stepIndex;
     public long RevisionNumber => route?.RevisionNumber ?? 0;
@@ -217,6 +306,7 @@ public sealed class CodexLearningRouteRecorder(
         }
         if (usedSavedEdge)
         {
+            consumedSavedStep = true;
             stepIndex++;
             Repairing = false;
             return;
@@ -248,8 +338,15 @@ public sealed class CodexLearningRouteRecorder(
 
     public void Complete(IReadOnlyList<string> facts)
     {
-        if (route is null || route.Status != LearningRouteStatus.Draft) return;
+        if (route is null) return;
+        var hasUnconsumedTail = stepIndex < route.EdgeIds.Count;
+        if (route.Status != LearningRouteStatus.Draft
+            && !(consumedSavedStep && hasUnconsumedTail)) return;
         var current = structures.LoadRevision(gameId, environmentScope);
+        var completedEdges = stepIndex < route.EdgeIds.Count
+            ? route.EdgeIds.Take(stepIndex).ToArray()
+            : route.EdgeIds;
+        var removedTail = route.EdgeIds.Count - completedEdges.Count;
         route = routes.Append(new LearningRouteDraft(
             ContractSchemaVersions.Revision03,
             routeId,
@@ -258,10 +355,12 @@ public sealed class CodexLearningRouteRecorder(
             environmentScope,
             current.RevisionId,
             goal,
-            route.EdgeIds,
+            completedEdges,
             LearningRouteAuthor.Ai,
             null,
-            $"Codexがgoal完了を確認（facts {facts.Count}件）",
+            removedTail > 0
+                ? $"Codexがgoal完了を確認し非遷移tail {removedTail}件を除去（facts {facts.Count}件）"
+                : $"Codexがgoal完了を確認（facts {facts.Count}件）",
             LearningRouteStatus.Compiled,
             time.GetUtcNow()));
     }

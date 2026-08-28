@@ -36,7 +36,9 @@ public sealed class GameAgentWorkspaceTests : IDisposable
         Assert.True(File.Exists(workspace.AgentsPath));
         Assert.True(File.Exists(workspace.ManifestPath));
         Assert.True(File.Exists(workspace.SessionPath));
-        Assert.Contains("fixed game profile `nikke`", File.ReadAllText(workspace.AgentsPath), StringComparison.Ordinal);
+        var agents = File.ReadAllText(workspace.AgentsPath);
+        Assert.Contains("fixed game profile `nikke`", agents, StringComparison.Ordinal);
+        Assert.Contains("Goal completion takes precedence over any remaining saved action", agents, StringComparison.Ordinal);
         var manifest = File.ReadAllText(workspace.ManifestPath);
         Assert.DoesNotContain(Path.GetFullPath(userRoot), manifest, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("thread-1", manager.LoadSession(workspace).ThreadId);

@@ -124,8 +124,8 @@ Assert-FileChecksum `
     --clean `
     --fqbn $fqbn `
     --build-path $buildPath `
-    --build-property 'build.usb_product=\"OpenLogicool\040Serial\040HID\"' `
-    --build-property 'build.usb_manufacturer=\"OpenLogicool\"' `
+    --build-property 'build.usb_product="OpenLogicool Serial HID"' `
+    --build-property 'build.usb_manufacturer="OpenLogicool"' `
     --warnings all `
     --config-file $configFile `
     $sketchPath

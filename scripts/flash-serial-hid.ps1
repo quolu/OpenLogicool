@@ -84,7 +84,7 @@ function Get-EnumerationSnapshot {
 $before = Get-EnumerationSnapshot
 $runtimePort = Get-TargetPort
 
-& powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'build-serial-hid.ps1')
+& pwsh.exe -NoProfile -File (Join-Path $PSScriptRoot 'build-serial-hid.ps1')
 if ($LASTEXITCODE -ne 0) { throw 'Serial HID firmware build failed.' }
 
 $hexPath = Join-Path $buildPath 'OpenLogicool.SerialHid.ino.hex'

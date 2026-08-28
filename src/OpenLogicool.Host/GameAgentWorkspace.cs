@@ -155,6 +155,7 @@ public static class CodexGameSystemPrompt
 
             - Observe the current page before every action.
             - Use a usable saved action before proposing a new action.
+            - If the user goal is already complete on the current page, call finish immediately. Goal completion takes precedence over any remaining saved action; do not execute a saved tail after all requested facts are collected.
             - Execute exactly one action, then observe the host's 10-second comparison result.
             - Treat Moved as progress even when a destination identifier differs.
             - Treat Stayed and Undetermined as learning results. Repair only the failed step and preserve every normal step and existing route revision.

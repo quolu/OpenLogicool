@@ -15,7 +15,7 @@ namespace {
 
 constexpr uint8_t kFirmwareVersionMajor = 1;
 constexpr uint8_t kFirmwareVersionMinor = 1;
-constexpr uint8_t kFirmwareVersionPatch = 0;
+constexpr uint8_t kFirmwareVersionPatch = 1;
 
 uint8_t inputFrame[kMaxFrameLength];
 uint16_t inputLength = 0;
@@ -187,13 +187,12 @@ void ProcessFrame(const uint8_t* bytes, uint16_t length) {
     return;
   }
 
-  if (releasePending) {
-    SendFault(FaultCode::InternalFault, frame.sequence, static_cast<uint8_t>(frame.kind));
-    return;
-  }
-
   if (frame.kind == MessageKind::Hello) {
     ProcessHello(frame);
+    return;
+  }
+  if (releasePending) {
+    SendFault(FaultCode::InternalFault, frame.sequence, static_cast<uint8_t>(frame.kind));
     return;
   }
   if (!HasExpectedSequence(frame.sequence)) {
@@ -289,9 +288,9 @@ void setup() {
 
 void loop() {
   PollUsbConfiguration();
-  RetryPendingRelease();
   while (Serial.available() > 0) {
     AcceptSerialByte(static_cast<uint8_t>(Serial.read()));
   }
+  RetryPendingRelease();
   ExpireLeaseIfNeeded();
 }

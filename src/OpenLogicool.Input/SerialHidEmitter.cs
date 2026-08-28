@@ -81,12 +81,18 @@ public sealed class SerialHidProtocolSession
         ISerialHidFrameExchange exchange,
         SerialHidSemanticVersion hostVersion,
         TimeSpan requestTimeout,
-        SerialHidCapability requestedCapabilities = SerialHidProtocolV1.BaselineCapabilities)
+        SerialHidCapability requestedCapabilities = SerialHidProtocolV1.BaselineCapabilities,
+        TimeSpan? handshakeTimeout = null)
     {
         ArgumentNullException.ThrowIfNull(exchange);
         if (requestTimeout <= TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(requestTimeout), "request timeoutは正でなければなりません。");
+        }
+        var helloTimeout = handshakeTimeout ?? requestTimeout;
+        if (helloTimeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(handshakeTimeout), "handshake timeoutは正でなければなりません。");
         }
 
         if (requestedCapabilities == 0
@@ -104,7 +110,11 @@ public sealed class SerialHidProtocolSession
 
         lock (session._gate)
         {
-            var ready = session.ExchangeCore(SerialHidMessageKind.Hello, helloPayload, SerialHidMessageKind.Ready);
+            var ready = session.ExchangeCore(
+                SerialHidMessageKind.Hello,
+                helloPayload,
+                SerialHidMessageKind.Ready,
+                helloTimeout);
             var capabilities = (SerialHidCapability)BinaryPrimitives.ReadUInt16LittleEndian(ready.Payload.AsSpan(4, 2));
             if ((capabilities & requestedCapabilities) != requestedCapabilities)
             {
@@ -185,7 +195,8 @@ public sealed class SerialHidProtocolSession
     private SerialHidFrame ExchangeCore(
         SerialHidMessageKind requestKind,
         ReadOnlySpan<byte> payload,
-        SerialHidMessageKind expectedResponseKind)
+        SerialHidMessageKind expectedResponseKind,
+        TimeSpan? timeout = null)
     {
         var sequence = SerialHidProtocolV1.NextRequestSequence(_lastIssuedSequence);
         var request = SerialHidProtocolV1.Encode(requestKind, sequence, payload);
@@ -194,7 +205,7 @@ public sealed class SerialHidProtocolSession
         byte[] responseBytes;
         try
         {
-            responseBytes = _exchange.Exchange(request, _requestTimeout);
+            responseBytes = _exchange.Exchange(request, timeout ?? _requestTimeout);
         }
         catch (TimeoutException exception)
         {

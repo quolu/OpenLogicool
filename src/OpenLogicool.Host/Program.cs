@@ -78,6 +78,8 @@ using OpenLogicool.Playbooks;
 //       初回discoverは必要な一つのcontrolだけを索引へ追記し、executeは保存済みactionをAIなしで実行する。
 //   macro list [--db <path>]
 //       保存済みmacroのgoal・route・版・step数をread-onlyで一覧表示する。
+//   serial-hid-test [--device-id <PnP instance id>] [--repeat N]
+//       game windowへ触れず、Serial HIDのHELLO→READY→ALL_UP→closeを指定回数確認する。
 
 var command = args.Length > 0 ? args[0] : "run";
 
@@ -98,10 +100,72 @@ return command switch
     "onboard" when args.Length >= 2 => Onboard(args[1], args[2..]),
     "ui-test-scenario" => UiTestScenarioCommand(args[1..]),
     "macro" when args.Length >= 2 => Macro(args[1], args[2..]),
+    "serial-hid-test" => SerialHidTest(args[1..]),
     "supervised-import" when args.Length >= 2 => SupervisedImport(args[1], args[2..]),
     "game-index" when args.Length >= 2 => HostGameIndexCommand.Run(args[1], args[2..]),
     _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>]]"),
 };
+
+static int SerialHidTest(string[] arguments)
+{
+    string? deviceId = null;
+    var repeat = 1;
+    for (var index = 0; index < arguments.Length; index++)
+    {
+        if (arguments[index] == "--device-id" && index + 1 < arguments.Length)
+            deviceId = arguments[++index];
+        else if (arguments[index] == "--repeat" && index + 1 < arguments.Length
+            && int.TryParse(arguments[++index], out var parsed) && parsed is >= 1 and <= 1_000)
+            repeat = parsed;
+        else
+            return Fail($"unknown serial-hid-test option: {arguments[index]}");
+    }
+
+    var discovery = CreateSerialHidDiscovery();
+    if (string.IsNullOrWhiteSpace(deviceId))
+    {
+        var candidates = discovery.ListCandidates();
+        if (candidates.Count != 1)
+            return Fail($"Serial HID候補を一意に選べません（count={candidates.Count}）。--device-idを指定してください。");
+        deviceId = candidates[0].DeviceInstanceId;
+    }
+
+    var started = DateTimeOffset.UtcNow;
+    SerialHidConnectionTestResult? last = null;
+    for (var attempt = 1; attempt <= repeat; attempt++)
+    {
+        last = discovery.Test(deviceId);
+        if (!last.Success)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ProductHostEntry = true,
+                Operation = "serial-hid-test",
+                Attempt = attempt,
+                Requested = repeat,
+                Success = false,
+                last.StatusLine,
+                InputSent = "AllUp only",
+                AiCallCount = 0,
+            }, new JsonSerializerOptions { WriteIndented = true }));
+            return 2;
+        }
+    }
+
+    Console.WriteLine(JsonSerializer.Serialize(new
+    {
+        ProductHostEntry = true,
+        Operation = "serial-hid-test",
+        Attempts = repeat,
+        Success = true,
+        DeviceInstanceId = deviceId,
+        FirmwareVersion = last is null ? null : $"{last.ReadyInfo!.FirmwareVersion.Major}.{last.ReadyInfo.FirmwareVersion.Minor}.{last.ReadyInfo.FirmwareVersion.Patch}",
+        ElapsedMilliseconds = (long)(DateTimeOffset.UtcNow - started).TotalMilliseconds,
+        InputSent = "AllUp only",
+        AiCallCount = 0,
+    }, new JsonSerializerOptions { WriteIndented = true }));
+    return 0;
+}
 
 static int Macro(string operation, string[] arguments)
 {

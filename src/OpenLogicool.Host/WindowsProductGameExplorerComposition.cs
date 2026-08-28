@@ -64,7 +64,8 @@ public static class WindowsProductGameExplorerComposition
         bool forceAiDiscovery = false,
         ILocalControlDiscoveryProvider? controlDiscoveryProvider = null,
         IDisposable? controlDiscoveryResource = null,
-        IProductGameTargetDiscovery? targetDiscoveryOverride = null)
+        IProductGameTargetDiscovery? targetDiscoveryOverride = null,
+        IProductGameTransitionComparisonNormalizer? comparisonNormalizer = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
         if (!string.Equals(gameId, gamePolicy.GameId, StringComparison.Ordinal))
@@ -206,7 +207,8 @@ public static class WindowsProductGameExplorerComposition
             interactionVerticalScrollSteps: interactionVerticalScrollSteps,
             interactionHorizontalScrollSteps: interactionHorizontalScrollSteps,
             interactionDragDestination: interactionDragDestination,
-            learnNonMovedRouteOutcomes: learnNonMovedRouteOutcomes);
+            learnNonMovedRouteOutcomes: learnNonMovedRouteOutcomes,
+            comparisonNormalizer: comparisonNormalizer);
         return new WindowsProductGameExplorerSession(
             runtime,
             frameSource,

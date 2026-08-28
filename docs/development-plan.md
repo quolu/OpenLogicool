@@ -1431,6 +1431,8 @@ Exit:
 
 実装更新（2026-08-26）: AI監視ありの目的統括はFoundry Local単独plannerではなく、ChatGPT subscription認証済みCodex App Serverを正規入口とする。アプリがgame profileごとの相対workspace、`AGENTS.md`、durable thread、run evidenceを所有し、CodexへWGC／保存action／Nano／10秒Compare／route commitのdynamic toolsだけを渡す。NIKKE実goal「日課の未完了項目と進捗を最下端まで取得して一覧化する」は、親AI介入0で14項目の取得、禁止操作0、route revision 11まで成立した。判定証拠は[Codex subscription game agent live acceptance](../evidence/macro-product-flow/codex-subscription-game-agent-20260826.md)。
 
+実装更新（2026-08-28）: NIKKEロビー開始で同goalをアプリ内CodexのAI監視付きモードから学習・修復し、保存route revision 69・9 stepを別runのAI 0で全step Moved・revision不変・Completedまで再現した。情報scrollはWindows adapterが対象領域の新規OCR textまたは同一textの縦移動をCompare直後に正規化し、監視あり／なしで同じ判定を使う。実走中に発生したNano CDC応答停止は、Arduino AVR coreのblocking USB sendと80ms Hello期限、firmware release retryのserial starvationが原因と確定した。firmware 1.1.1はreleasePending中のHello回復とserial優先処理、HostはHello 1秒／通常action 80msを分離し、verify付きflash、100 session連続handshake、17分＋16分の監視run、最終AI 0でtimeout再発0を確認した。証拠は[AI監視付き修復とAI 0再現](../evidence/macro-product-flow/ai-monitored-ai-zero-replay-20260828.md)。
+
 ## 9. Blockerを潰すfocused experiment
 
 | ID | 実験 | 成功条件 | 失敗時の分岐 |

@@ -52,6 +52,16 @@ public interface IProductExplorationCoordinator
     string GetActiveAttemptId(string proposalId);
 }
 
+public interface IProductGameTransitionComparisonNormalizer
+{
+    GameTransitionComparison Normalize(
+        string operation,
+        StructureScreenEdge? routeTarget,
+        ObservedScene before,
+        GameInteractionStabilityResult after,
+        GameTransitionComparison comparison);
+}
+
 public sealed class ProductExplorationCoordinatorAdapter(ExplorationCoordinator coordinator)
     : IProductExplorationCoordinator
 {
@@ -111,6 +121,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     private readonly int? interactionHorizontalScrollSteps;
     private readonly IReadOnlyList<double>? interactionDragDestination;
     private readonly bool learnNonMovedRouteOutcomes;
+    private readonly IProductGameTransitionComparisonNormalizer? comparisonNormalizer;
     private readonly TimeProvider time;
     private readonly SemaphoreSlim execution = new(1, 1);
     private ObservationResult? currentObservation;
@@ -149,7 +160,8 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     int? interactionVerticalScrollSteps = null,
     int? interactionHorizontalScrollSteps = null,
     IReadOnlyList<double>? interactionDragDestination = null,
-    bool learnNonMovedRouteOutcomes = true)
+    bool learnNonMovedRouteOutcomes = true,
+    IProductGameTransitionComparisonNormalizer? comparisonNormalizer = null)
     {
         GameId = gameId;
         EnvironmentScope = policy.EnvironmentScope;
@@ -189,6 +201,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         this.interactionHorizontalScrollSteps = interactionHorizontalScrollSteps;
         this.interactionDragDestination = interactionDragDestination;
         this.learnNonMovedRouteOutcomes = learnNonMovedRouteOutcomes;
+        this.comparisonNormalizer = comparisonNormalizer;
         time = timeProvider ?? TimeProvider.System;
     }
 
@@ -507,6 +520,15 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 routeControl?.EndComparison();
             }
             var comparison = Compare(comparisonBefore, waited);
+            if (comparisonNormalizer is not null)
+            {
+                comparison = comparisonNormalizer.Normalize(
+                    ActiveOperation,
+                    currentRouteTarget,
+                    comparisonBefore,
+                    waited,
+                    comparison);
+            }
             if (comparison.Judgement != GameTransitionJudgement.Moved
                 && observation is IProductGameRediscoveryTrigger rediscovery)
             {
