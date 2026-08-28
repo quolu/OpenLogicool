@@ -54,10 +54,14 @@ public sealed class CodexGameDynamicTools(
 {
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = false };
     private string? currentObservationId;
+    private readonly List<string> toolErrors = [];
 
     public IReadOnlyList<string> FinalFacts { get; private set; } = [];
     public string FinalSummary { get; private set; } = string.Empty;
     public bool IsCompleted { get; private set; }
+    public int ActionCallCount { get; private set; }
+    public IReadOnlyList<string> ToolErrors => toolErrors;
+    public bool IsReplayableCompletion => ActionCallCount == 0 || route.RevisionNumber > 0;
 
     public IReadOnlyList<CodexDynamicToolDefinition> Definitions { get; } =
     [
@@ -98,6 +102,7 @@ public sealed class CodexGameDynamicTools(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            toolErrors.Add($"{tool}: {exception}");
             return new CodexDynamicToolOutput(false, JsonSerializer.Serialize(new { error = exception.Message }, Json));
         }
     }
@@ -212,6 +217,7 @@ public sealed class CodexGameDynamicTools(
         bool usedSaved,
         CancellationToken cancellationToken)
     {
+        ActionCallCount++;
         var outcome = await runtime.ExecuteAsync(command, route.Repairing, cancellationToken).ConfigureAwait(false);
         route.Record(outcome, usedSaved);
         currentObservationId = null;

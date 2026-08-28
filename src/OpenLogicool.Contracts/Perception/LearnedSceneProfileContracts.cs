@@ -27,7 +27,8 @@ public sealed record LearnedStateSceneSignature(
     IReadOnlyList<LearnedSceneAnchor> Anchors,
     IReadOnlyList<LearnedAffordanceSignature> Affordances,
     IReadOnlyList<string> EvidenceIds,
-    IReadOnlyList<string>? SupersedesStateIds = null);
+    IReadOnlyList<string>? SupersedesStateIds = null,
+    VisualPatchSignature? VisualPatch = null);
 
 /// <summary>探索で得た画面同定規則をcodeではなくruntime dataとして保持する。</summary>
 public sealed record LearnedSceneProfileDocument(
@@ -85,7 +86,9 @@ public static class LearnedSceneProfileValidator
         || string.IsNullOrWhiteSpace(state.StateId)
         || string.IsNullOrWhiteSpace(state.SignatureVersion)
         || state.Anchors is null
-        || state.Anchors.Count == 0 && !state.Affordances.Any(affordance => affordance.VisualPatch is not null)
+        || state.Anchors.Count == 0
+            && state.VisualPatch is null
+            && !state.Affordances.Any(affordance => affordance.VisualPatch is not null)
         || state.Anchors.Any(anchor => string.IsNullOrWhiteSpace(anchor.Text)
             || string.IsNullOrWhiteSpace(anchor.EvidenceId)
             || anchor.PreviousTexts is not null && anchor.PreviousTexts.Any(string.IsNullOrWhiteSpace)

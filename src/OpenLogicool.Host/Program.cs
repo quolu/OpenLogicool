@@ -169,11 +169,11 @@ static int SerialHidTest(string[] arguments)
 
 static int Macro(string operation, string[] arguments)
 {
-    if (operation is not ("list" or "play" or "target" or "create"))
+    if (operation is not ("list" or "play" or "target" or "create" or "compose" or "token"))
     {
-        return Fail("macro operationはlist、target、create、playです。");
+        return Fail("macro operationはlist、target、create、play、compose、tokenです。");
     }
-    var routeId = operation == "play" && arguments.Length > 0
+    var routeId = (operation is "play" or "token") && arguments.Length > 0
         ? arguments[0]
         : null;
     var targetProcessName = operation == "target" && arguments.Length > 0
@@ -185,6 +185,7 @@ static int Macro(string operation, string[] arguments)
     string? versionId = null;
     string? outputPath = null;
     string? goal = null;
+    var sourceRouteIds = new List<string>();
     var mode = MacroPlaybackMode.AiFree;
     for (var index = optionStart; index < arguments.Length; index++)
     {
@@ -198,6 +199,8 @@ static int Macro(string operation, string[] arguments)
             outputPath = Path.GetFullPath(arguments[++index]);
         else if (arguments[index] == "--goal" && index + 1 < arguments.Length)
             goal = arguments[++index];
+        else if (arguments[index] == "--source" && index + 1 < arguments.Length)
+            sourceRouteIds.Add(arguments[++index]);
         else if (arguments[index] == "--mode" && index + 1 < arguments.Length)
             mode = arguments[++index] switch
             {
@@ -243,6 +246,50 @@ static int Macro(string operation, string[] arguments)
         }
         Console.WriteLine(json);
         return terminal.Phase == MacroRunPhase.Completed ? 0 : 2;
+    }
+    if (operation == "compose")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(goal);
+        if (sourceRouteIds.Count < 2)
+            return Fail("macro composeには--sourceを2件以上指定してください。");
+        var catalog = intents.ListMacros().ToDictionary(item => item.RouteId, StringComparer.Ordinal);
+        var sources = sourceRouteIds.Select(sourceRouteId =>
+        {
+            var source = catalog.GetValueOrDefault(sourceRouteId)
+                ?? throw new InvalidOperationException($"統合元macro '{sourceRouteId}' がありません。");
+            return new MacroVersionReference(
+                source.RouteId,
+                source.VersionId,
+                MacroPlaybackMode.AiFree);
+        }).ToArray();
+        var composed = intents.Compose(new MacroCompositionRequest(goal, sources));
+        Console.WriteLine(JsonSerializer.Serialize(new
+        {
+            ProductHostEntry = true,
+            Operation = "compose",
+            Macro = composed,
+            Sources = sources,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        return 0;
+    }
+    if (operation == "token")
+    {
+        var item = intents.ListMacros().SingleOrDefault(candidate => candidate.RouteId == routeId)
+            ?? throw new InvalidOperationException("指定したmacroがありません。");
+        var token = MacroInvocationTokens.Create(new MacroVersionReference(
+            item.RouteId,
+            versionId,
+            mode));
+        Console.WriteLine(JsonSerializer.Serialize(new
+        {
+            ProductHostEntry = true,
+            Operation = "token",
+            item.RouteId,
+            VersionId = versionId,
+            PlaybackMode = mode.ToString(),
+            Token = token,
+        }, new JsonSerializerOptions { WriteIndented = true }));
+        return 0;
     }
     if (operation == "play")
     {

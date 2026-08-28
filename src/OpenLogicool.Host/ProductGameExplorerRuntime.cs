@@ -478,6 +478,15 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 routeControl?.EndComparison();
                 throw;
             }
+            var structureBefore = comparisonBefore with
+            {
+                Affordances =
+                [
+                    .. comparisonBefore.Affordances.Where(candidate =>
+                        candidate.CandidateId != indexedTarget.CandidateId),
+                    indexedTarget with { SemanticKind = "probe-target" },
+                ],
+            };
             var attemptId = coordinator.GetActiveAttemptId(proposal.ProposalId);
             GameInteractionDispatchReceipt? dispatch = null;
             try
@@ -555,7 +564,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 var unknownLearning = LearnTransition(new GameTransitionLearningRequest(
                     ContractSchemaVersions.Revision03,
                     proposal.ProposalId,
-                    before,
+                    structureBefore,
                     dispatch!,
                     unknownStability,
                     unknownComparison,
@@ -581,7 +590,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             var learned = LearnTransition(new GameTransitionLearningRequest(
                 ContractSchemaVersions.Revision03,
                 proposal.ProposalId,
-                before,
+                structureBefore,
                 dispatch!,
                 waited,
                 comparison,
@@ -615,7 +624,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                             learned.Evidence.EvidenceId);
                     }
                     var committed = structure.Commit(
-                        before,
+                        structureBefore,
                         after,
                         learned.Evidence,
                         proposal.WaitCondition,

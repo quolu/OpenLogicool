@@ -50,7 +50,7 @@ public sealed class SerialHidEmitterTests
     [Fact]
     public void Connect_can_wait_longer_for_firmware_recovery_without_relaxing_action_timeout()
     {
-        var handshakeTimeout = TimeSpan.FromMilliseconds(1_000);
+        var handshakeTimeout = TimeSpan.FromMilliseconds(2_000);
         var exchange = new ScriptedExchange(Ready, Ack);
         var session = SerialHidProtocolSession.Connect(
             exchange,

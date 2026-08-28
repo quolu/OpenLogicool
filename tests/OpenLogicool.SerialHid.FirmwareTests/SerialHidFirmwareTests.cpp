@@ -5,6 +5,7 @@
 
 #include "FirmwareLease.h"
 #include "FirmwareMouseState.h"
+#include "FirmwareRecoveryTimer.h"
 #include "ProtocolV1.h"
 
 using namespace openlogicool;
@@ -116,6 +117,20 @@ int MouseDelta() {
   return 0;
 }
 
+int Recovery() {
+  FirmwareRecoveryTimer timer;
+  timer.Reset();
+  if (timer.ShouldReset(1000)) return 40;
+  timer.Arm(1000);
+  timer.Arm(1500);
+  if (timer.ShouldReset(1999) || !timer.ShouldReset(2000)) return 41;
+  timer.Reset();
+  timer.Arm(0xFFFFFFF0u);
+  if (timer.ShouldReset(0x000003D7u) || !timer.ShouldReset(0x000003D8u)) return 42;
+  std::printf("recovery|ok|1000\n");
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -123,5 +138,6 @@ int main(int argc, char** argv) {
   if (argc == 2 && std::strcmp(argv[1], "lease") == 0) return Lease();
   if (argc == 2 && std::strcmp(argv[1], "faults") == 0) return Faults();
   if (argc == 2 && std::strcmp(argv[1], "mouse-delta") == 0) return MouseDelta();
+  if (argc == 2 && std::strcmp(argv[1], "recovery") == 0) return Recovery();
   return 1;
 }

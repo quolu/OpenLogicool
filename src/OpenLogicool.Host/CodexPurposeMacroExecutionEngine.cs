@@ -141,9 +141,13 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 BuildDeveloperInstructions(target.ProcessName, request.Goal),
                 cancellationToken).ConfigureAwait(false);
             workspaceManager.SaveSession(workspace, result.ThreadId);
-            var completed = result.Status == "completed" && dynamicTools.IsCompleted;
+            var completed = result.Status == "completed"
+                && dynamicTools.IsCompleted
+                && dynamicTools.IsReplayableCompletion;
             var detail = completed
                 ? dynamicTools.FinalSummary
+                : dynamicTools.IsCompleted && !dynamicTools.IsReplayableCompletion
+                    ? "Codexはgoal完了を報告しましたが、実行actionをrouteへcommitできなかったため停止しました。"
                 : string.IsNullOrWhiteSpace(result.FinalText)
                     ? $"Codex turnは{result.Status}で終了し、finishされませんでした。"
                     : result.FinalText;
@@ -158,6 +162,8 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 Summary = detail,
                 Facts = dynamicTools.FinalFacts,
                 RouteRevision = recorder.RevisionNumber,
+                dynamicTools.ActionCallCount,
+                dynamicTools.ToolErrors,
             }, new JsonSerializerOptions { WriteIndented = true }));
             return new MacroRunSnapshot(
                 completed ? MacroRunPhase.Completed : MacroRunPhase.Stopped,

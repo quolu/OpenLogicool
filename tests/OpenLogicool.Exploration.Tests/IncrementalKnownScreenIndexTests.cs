@@ -98,6 +98,35 @@ public sealed class IncrementalKnownScreenIndexTests
     }
 
     [Fact]
+    public void Destination_without_ocr_anchor_is_saved_by_its_page_visual_patch()
+    {
+        var store = new MemoryProfileStore();
+        var index = new IncrementalKnownScreenIndex(store, "game", "env", "game");
+        var source = Scene("source", 1, "デイリー", "ミッション");
+        var control = Control(source, "閉じる", [0.9, 0.05, 0.05, 0.05]);
+        source = source with { Affordances = [control] };
+        var destination = Scene("destination", 2, "A", "B") with
+        {
+            DiscoveryEvidence = Scene("destination", 2, "A", "B").DiscoveryEvidence! with
+            {
+                LocalGroundingRegions = [],
+            },
+            SceneVisualPatch = new VisualPatchSignature(
+                ContractSchemaVersions.Revision03,
+                2,
+                2,
+                Convert.ToBase64String(new byte[] { 1, 2, 3, 4 }),
+                "page-sha"),
+        };
+
+        var linked = index.RememberDestination(source, control, [destination], "visual-destination");
+
+        var saved = store.Document!.States.Single(state => state.StateId == linked.DestinationStateId);
+        Assert.Empty(saved.Anchors);
+        Assert.Equal("page-sha", saved.VisualPatch?.Sha256);
+    }
+
+    [Fact]
     public void Cleaner_ocr_does_not_collapse_existing_same_position_variants()
     {
         var store = new MemoryProfileStore();
@@ -126,6 +155,24 @@ public sealed class IncrementalKnownScreenIndexTests
         LearnedSceneProfileValidator.Validate(store.Document!);
         Assert.Equal(2, store.Document!.States[0].Anchors
             .Select(anchor => OcrTextMatcher.Normalize(anchor.Text)).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public void Existing_duplicate_state_ids_are_canonicalized_when_the_page_is_seen_again()
+    {
+        var store = new MemoryProfileStore();
+        var index = new IncrementalKnownScreenIndex(store, "game", "env", "game");
+        var scene = Scene("source", 1, "ロビー", "隊員募集");
+        var control = Control(scene, "ショップ", [0.5, 0.5, 0.1, 0.05]);
+        scene = scene with { Affordances = [control] };
+        _ = index.RememberControl(scene, control, "first");
+        var state = Assert.Single(store.Document!.States);
+        store.Seed(store.Document with { States = [state, state] });
+
+        _ = index.RememberControl(scene, control, "second");
+
+        Assert.Single(store.Document!.States);
+        LearnedSceneProfileValidator.Validate(store.Document);
     }
 
     private static ObservedScene Scene(string id, long sequence, string anchor1, string anchor2)
@@ -201,6 +248,8 @@ public sealed class IncrementalKnownScreenIndexTests
     private sealed class MemoryProfileStore : ILearnedSceneProfileStore
     {
         public LearnedSceneProfileDocument? Document { get; private set; }
+
+        public void Seed(LearnedSceneProfileDocument document) => Document = document;
 
         public void Upsert(LearnedSceneProfileDocument document)
         {

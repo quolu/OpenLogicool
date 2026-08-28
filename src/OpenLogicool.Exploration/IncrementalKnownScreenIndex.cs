@@ -162,15 +162,28 @@ public sealed class IncrementalKnownScreenIndex(
         string evidenceId,
         AffordanceCandidate? visualStateControl = null)
     {
-        var anchors = Anchors(scenes, evidenceId, visualStateControl?.VisualPatch is not null);
+        var pageVisualPatch = scenes[0].SceneVisualPatch;
+        var anchors = Anchors(
+            scenes,
+            evidenceId,
+            visualStateControl?.VisualPatch is not null || pageVisualPatch is not null);
         var stateId = anchors.Count > 0
             ? StateId(anchors)
-            : VisualStateId(visualStateControl!);
-        var existing = states.SingleOrDefault(state => state.StateId == stateId)
-            ?? states.SingleOrDefault(state => StateMatches(
-                state,
-                anchors,
-                visualStateControl));
+            : visualStateControl?.VisualPatch is not null
+                ? VisualStateId(visualStateControl)
+                : PageVisualStateId(pageVisualPatch!);
+        var existing = states
+            .Where(state => state.StateId == stateId)
+            .OrderBy(state => state.StateId, StringComparer.Ordinal)
+            .FirstOrDefault()
+            ?? states
+                .Where(state => StateMatches(
+                    state,
+                    anchors,
+                    visualStateControl,
+                    pageVisualPatch))
+                .OrderBy(state => state.StateId, StringComparer.Ordinal)
+                .FirstOrDefault();
         if (existing is not null)
         {
             var refined = RefineExistingState(existing, anchors, evidenceId);
@@ -181,14 +194,16 @@ public sealed class IncrementalKnownScreenIndex(
             "known-screen-index-v1",
             anchors,
             [],
-            [evidenceId]);
+            [evidenceId],
+            VisualPatch: anchors.Count == 0 ? pageVisualPatch : null);
         return (created, states.Append(created).ToArray());
     }
 
     private static bool StateMatches(
         LearnedStateSceneSignature state,
         IReadOnlyList<LearnedSceneAnchor> anchors,
-        AffordanceCandidate? visualControl)
+        AffordanceCandidate? visualControl,
+        VisualPatchSignature? pageVisualPatch)
     {
         if (anchors.Count > 0 && state.Anchors.Count == anchors.Count)
         {
@@ -201,6 +216,12 @@ public sealed class IncrementalKnownScreenIndex(
             return state.Affordances.Any(action =>
                 OcrTextMatcher.IsSimilar(action.Text, visualControl.SemanticLabel ?? string.Empty)
                 && PositionMatches(action.NormalizedBounds, visualControl.Locator.NormalizedBounds));
+        }
+        if (anchors.Count == 0 && state.VisualPatch is not null && pageVisualPatch is not null)
+        {
+            return VisualPatchSignatureComparer.MeanAbsoluteDifference(
+                state.VisualPatch,
+                pageVisualPatch) < 6;
         }
         return false;
     }
@@ -407,6 +428,9 @@ public sealed class IncrementalKnownScreenIndex(
                 control.VisualPatch.Sha256,
                 Band(control.Locator.NormalizedBounds[0] + control.Locator.NormalizedBounds[2] / 2),
                 Band(control.Locator.NormalizedBounds[1] + control.Locator.NormalizedBounds[3] / 2)));
+
+    private static string PageVisualStateId(VisualPatchSignature patch) =>
+        Id("known-screen", $"page-visual\n{patch.Sha256}");
 
     private static string Id(string prefix, string value) =>
         $"{prefix}:{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant()}";

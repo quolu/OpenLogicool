@@ -22,7 +22,7 @@ public sealed class SerialHidDiscoveryService(
 {
     public static readonly SerialHidSemanticVersion HostVersion = new(1, 0, 0);
     public static readonly TimeSpan RequestTimeout = TimeSpan.FromMilliseconds(80);
-    public static readonly TimeSpan HandshakeTimeout = TimeSpan.FromMilliseconds(1_000);
+    public static readonly TimeSpan HandshakeTimeout = TimeSpan.FromMilliseconds(2_000);
 
     public IReadOnlyList<SerialHidCandidate> ListCandidates() => candidates.EnumerateCandidates();
 

@@ -1421,7 +1421,7 @@ Exit:
 - **G13 Native LCD campaign Phase 2機能中核成立（2026-08-23）**: resident LCD worker、workspace単位の画像／テキスト保存、Input Studio G13ペイン、app-first前面連動、共通Windows表示を実装し、実機G13と実SQLiteで確認した。特定アプリが共通profileを再利用していた場合は編集前に専用workspaceへ分岐し、共通設定の巻込みを防ぐ。証跡は[プリセット表示・設定 delivery](../evidence/g13-native-lcd/p2-preset-lcd-delivery.md)。Phase 2 Exit全体はfocused latencyと実機hotplug再表示の確認待ち。
 - **Phase 12 Game Interaction Foundation／Supervised Visual Macro Runner Exit成立（2026-08-25）**: 10の基盤機能、逐次Screen Index、AIなし既知実行、NIKKEのHover／Click／KeyTap／Scroll／Drag、10秒の意味遷移判定、保存済みLearning Routeの可逆2step教師付き実行まで成立した。destination ID不一致は診断だけとし、`Moved`で進む。旧zero-seed複数target harnessの`Passed=false`は上位探索loopのhistorical判定であり、基盤Exitを否定しない。判定は[Phase 12 Foundation](phase12-game-interaction-foundation-exit-assessment.md)と[Supervised Macro Exit](phase12-supervised-macro-runner-exit-assessment.md)。
 
-### Phase 13: Macro Product Flow（製品実装成立・Exit未宣言 2026-08-26）
+### Phase 13: Macro Product Flow（Exit成立 2026-08-29）
 
 目的: 目的指向のLearning Routeを製品macroの唯一の正本とし、AI会話による作成、既存Input StudioからG13／G600への割当、AI監視あり／なし再生、失敗stepだけのappend-only修復、複数macroの順序付き統合を一つの製品journeyとして提供する。
 
@@ -1434,6 +1434,8 @@ Exit:
 実装更新（2026-08-28）: NIKKEロビー開始で同goalをアプリ内CodexのAI監視付きモードから学習・修復し、保存route revision 69・9 stepを別runのAI 0で全step Moved・revision不変・Completedまで再現した。情報scrollはWindows adapterが対象領域の新規OCR textまたは同一textの縦移動をCompare直後に正規化し、監視あり／なしで同じ判定を使う。実走中に発生したNano CDC応答停止は、Arduino AVR coreのblocking USB sendと80ms Hello期限、firmware release retryのserial starvationが原因と確定した。firmware 1.1.1はreleasePending中のHello回復とserial優先処理、HostはHello 1秒／通常action 80msを分離し、verify付きflash、100 session連続handshake、17分＋16分の監視run、最終AI 0でtimeout再発0を確認した。証拠は[AI監視付き修復とAI 0再現](../evidence/macro-product-flow/ai-monitored-ai-zero-replay-20260828.md)。
 
 実装更新（2026-08-29）: 2本目の実目的として、NIKKEの一般ショップ無料品→費用0の商品更新→更新後無料品→ボディラベルショップSALE品→キャッシュショップ赤ポチ付き無料品を一つのgoalからアプリ内Codexが20 step・route revision 21で完遂した。一般ショップ無料クレジット60,000を更新前後に各1回、40% SALEの支援型共用コンソール10個をボディラベル2,400で、デイリー／ウィークリー無料パックを購入し、SOLD OUTと赤ポチ消失を確認した。有償通貨、ジュエル、現金、非無料商品、募集、戦闘は0。証拠は[NIKKE shop purchase macro](../evidence/macro-product-flow/nikke-shop-purchase-macro-20260829.md)。
+
+Phase 13 Exit（2026-08-29）: 別runで作成したロビー→MISSIONデイリーとMISSION→ロビーのCompiled routeを既存`MacroRouteComposer`で2 stepへ統合し、別Host processのAI 0で全step Moved・revision不変・Completedを確認した。同composed macroのlatest tokenを実DBコピー上でG13 G1／G600 G9へ割当し、workspace revision 1保存、device profile生成、別process再open export、FastPath down一回queueを確認した。文字anchorを持たないpageはoptional state visual patchで保存し、過去run由来の同一state／scene signature重複は決定的canonicalへ収束する。Nano firmware 1.1.2はfail-closed releaseが1秒継続した時にwatchdogでUSB自己再列挙し、wedgeした1.1.1から1200-baud bootloader経由でverify付きflashできた。Phase判定は[Phase 13 assessment](phase13-macro-product-flow-assessment.md)、終端証拠は[Phase 13 terminal acceptance](../evidence/macro-product-flow/phase13-terminal-acceptance-20260829.md)。手動UI入力の1:1確認はオーナー裁定どおりExit後UX確認、ショップrouteのAI 0は日次／週次reset後確認とし、一般game無人完走のclaimには含めない。
 
 ## 9. Blockerを潰すfocused experiment
 

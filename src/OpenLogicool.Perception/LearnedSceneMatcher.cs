@@ -183,6 +183,11 @@ public static class LearnedSceneMatcher
         LearnedStateSceneSignature state,
         CapturedFrame frame)
     {
+        if (state.VisualPatch is not null
+            && VisualPatchMatcher.Matches(state.VisualPatch, frame, [0d, 0d, 1d, 1d]))
+        {
+            return new StateMatch(state, []);
+        }
         var visual = state.Affordances
             .Where(affordance => affordance.VisualPatch is not null)
             .ToArray();

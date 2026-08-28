@@ -9,6 +9,54 @@ namespace OpenLogicool.Host.Tests;
 public sealed class CodexProductGameRuntimeTests
 {
     [Fact]
+    public void Codex_coordinate_route_candidate_carries_same_frame_visual_patch()
+    {
+        const int width = 100;
+        const int height = 100;
+        var frame = new CapturedFrame(
+            ContractSchemaVersions.Revision03,
+            "window:test",
+            CaptureBackend.WindowsGraphicsCapture,
+            1,
+            1,
+            DateTimeOffset.UnixEpoch,
+            width,
+            height,
+            "B8G8R8A8_UNorm",
+            96,
+            96,
+            1,
+            0,
+            0,
+            Pixels: new FramePixels(new byte[width * height * 4], width * 4));
+        var observation = new ObservationResult(
+            ContractSchemaVersions.Revision03,
+            "observation",
+            new CapturedFrameReference(
+                frame.SchemaVersion,
+                frame.SourceId,
+                frame.Backend,
+                frame.Sequence,
+                frame.MonotonicMs,
+                frame.WallClockUtc,
+                frame.TransformRevision,
+                frame.FreshnessMs,
+                frame.LastChangeMs),
+            CaptureAvailability.Available,
+            StateIdentityStatus.Novel,
+            [],
+            "test",
+            0,
+            null);
+
+        var candidate = CodexSuppliedTargetDiscovery.CreateRouteCandidate(
+            ScrollEdge(), observation, frame);
+
+        Assert.NotNull(candidate?.VisualPatch);
+        Assert.Equal("codex-supplied", candidate!.SemanticKind);
+    }
+
+    [Fact]
     public void Scroll_region_ignores_new_text_outside_the_information_area()
     {
         var result = Result(

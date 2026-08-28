@@ -65,7 +65,7 @@ public sealed class CodexSuppliedTargetDiscovery(
                 SceneVisualPatch = local.SceneVisualPatch,
             };
         }
-        if (!comparisonOnly && RouteCandidate(observation) is { } routeCandidate)
+        if (!comparisonOnly && RouteCandidate(observation, frame) is { } routeCandidate)
             scene = scene with { Affordances = [routeCandidate] };
         return scene;
     }
@@ -74,7 +74,13 @@ public sealed class CodexSuppliedTargetDiscovery(
     public void BeginComparison() => comparisonOnly = true;
     public void EndComparison() => comparisonOnly = false;
 
-    private AffordanceCandidate? RouteCandidate(ObservationResult observation)
+    private AffordanceCandidate? RouteCandidate(ObservationResult observation, CapturedFrame frame) =>
+        CreateRouteCandidate(routeTarget, observation, frame);
+
+    internal static AffordanceCandidate? CreateRouteCandidate(
+        StructureScreenEdge? routeTarget,
+        ObservationResult observation,
+        CapturedFrame frame)
     {
         if (routeTarget?.TargetNormalizedBounds is not { Count: 4 } bounds) return null;
         return new AffordanceCandidate(
@@ -94,6 +100,7 @@ public sealed class CodexSuppliedTargetDiscovery(
             [routeTarget.Primitive],
             "codex-supplied",
             routeTarget.TargetSemanticKey ?? routeTarget.AffordanceCandidateId,
+            VisualPatch: frame.Pixels is null ? null : VisualPatchMatcher.Capture(frame, bounds),
             KeyTokens: routeTarget.KeyTokens,
             VerticalScrollSteps: routeTarget.VerticalScrollSteps,
             HorizontalScrollSteps: routeTarget.HorizontalScrollSteps,

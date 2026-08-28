@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <HID.h>
+#include <avr/wdt.h>
 
+#include "FirmwareRecoveryTimer.h"
 #include "OpenLogicoolHid.h"
 #include "FirmwareLease.h"
 #include "FirmwareMouseState.h"
@@ -9,13 +11,14 @@
 using openlogicool::OpenLogicoolHid;
 using openlogicool::FirmwareLease;
 using openlogicool::FirmwareMouseState;
+using openlogicool::FirmwareRecoveryTimer;
 using namespace openlogicool::protocol_v1;
 
 namespace {
 
 constexpr uint8_t kFirmwareVersionMajor = 1;
 constexpr uint8_t kFirmwareVersionMinor = 1;
-constexpr uint8_t kFirmwareVersionPatch = 1;
+constexpr uint8_t kFirmwareVersionPatch = 2;
 
 uint8_t inputFrame[kMaxFrameLength];
 uint16_t inputLength = 0;
@@ -26,6 +29,16 @@ bool usbWasConfigured = false;
 uint16_t lastAcceptedSequence = 0;
 FirmwareLease lease;
 FirmwareMouseState mouseState;
+FirmwareRecoveryTimer recoveryTimer;
+
+void SetReleasePending(bool pending) {
+  releasePending = pending;
+  if (pending) {
+    recoveryTimer.Arm(millis());
+  } else {
+    recoveryTimer.Reset();
+  }
+}
 
 void ResetReader() {
   inputLength = 0;
@@ -42,7 +55,7 @@ void ResetProtocolState() {
 
 void EnterFailClosedRelease() {
   ResetProtocolState();
-  releasePending = !OpenLogicoolHid.AllUp();
+  SetReleasePending(!OpenLogicoolHid.AllUp());
 }
 
 uint16_t NextSequence(uint16_t current) {
@@ -258,16 +271,22 @@ void PollUsbConfiguration() {
   usbWasConfigured = configured;
   ResetProtocolState();
   if (configured) {
-    releasePending = !OpenLogicoolHid.AllUp();
+    SetReleasePending(!OpenLogicoolHid.AllUp());
   } else {
-    releasePending = false;
+    SetReleasePending(false);
   }
 }
 
 void RetryPendingRelease() {
   if (releasePending && USBDevice.configured()) {
-    releasePending = !OpenLogicoolHid.AllUp();
+    SetReleasePending(!OpenLogicoolHid.AllUp());
   }
+}
+
+void ResetUsbIfReleaseStalled() {
+  if (!recoveryTimer.ShouldReset(millis())) return;
+  wdt_enable(WDTO_15MS);
+  while (true) {}
 }
 
 void ExpireLeaseIfNeeded() {
@@ -280,10 +299,12 @@ void ExpireLeaseIfNeeded() {
 }  // namespace
 
 void setup() {
+  MCUSR &= static_cast<uint8_t>(~(1 << WDRF));
+  wdt_disable();
   ResetProtocolState();
   Serial.begin(115200);
   usbWasConfigured = USBDevice.configured();
-  releasePending = usbWasConfigured && !OpenLogicoolHid.AllUp();
+  SetReleasePending(usbWasConfigured && !OpenLogicoolHid.AllUp());
 }
 
 void loop() {
@@ -292,5 +313,6 @@ void loop() {
     AcceptSerialByte(static_cast<uint8_t>(Serial.read()));
   }
   RetryPendingRelease();
+  ResetUsbIfReleaseStalled();
   ExpireLeaseIfNeeded();
 }

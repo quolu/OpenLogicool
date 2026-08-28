@@ -117,8 +117,7 @@ public sealed class GameInteractionStructureLearner(
     {
         var signatureId = GameSceneSemanticComparer.SignatureId(scene);
         var current = store.LoadRevision(gameId, environmentScope);
-        var existing = current.ScreenGraph.Nodes.SingleOrDefault(node =>
-            node.SceneSignatureIds.Contains(signatureId, StringComparer.Ordinal));
+        var existing = SelectExistingNode(current.ScreenGraph.Nodes, signatureId);
         if (existing is not null)
         {
             return existing.StateId;
@@ -169,6 +168,14 @@ public sealed class GameInteractionStructureLearner(
         _ = coordinator.SynchronizeStructureRevision();
         return stateId;
     }
+
+    internal static StructureScreenNode? SelectExistingNode(
+        IReadOnlyList<StructureScreenNode> nodes,
+        string signatureId) => nodes
+        .Where(node => !node.Retired
+            && node.SceneSignatureIds.Contains(signatureId, StringComparer.Ordinal))
+        .OrderBy(node => node.StateId, StringComparer.Ordinal)
+        .FirstOrDefault();
 
     private StructureDeltaCommitRequest Delta(
         string revisionId,

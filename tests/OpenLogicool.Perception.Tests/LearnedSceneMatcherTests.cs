@@ -165,6 +165,33 @@ public sealed class LearnedSceneMatcherTests
     }
 
     [Fact]
+    public void Page_visual_patch_identifies_state_without_ocr_or_action_affordances()
+    {
+        var frame = PixelFrame(64);
+        var state = new LearnedStateSceneSignature(
+            "state:visual-page",
+            "signature:visual-page",
+            [],
+            [],
+            ["visual-evidence"],
+            VisualPatch: VisualPatchMatcher.Capture(frame, [0d, 0d, 1d, 1d]));
+        var profile = Profile() with
+        {
+            States = [state],
+            EvidenceIds = ["visual-evidence"],
+        };
+
+        var scene = LearnedSceneMatcher.Match(
+            profile,
+            frame,
+            new OcrFrameSnapshot("windows-ocr:v1", "ja", []));
+
+        Assert.Equal(StateIdentityStatus.Known, scene.StateIdentity);
+        Assert.Equal(state.StateId, scene.StateHypothesisId);
+        Assert.Empty(scene.Affordances);
+    }
+
+    [Fact]
     public void Cleaner_similar_ocr_replaces_saved_text_without_changing_ids_or_history()
     {
         var original = Profile();

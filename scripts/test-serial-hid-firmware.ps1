@@ -61,7 +61,11 @@ try {
     if ($LASTEXITCODE -ne 0 -or $mouseDelta -ne 'mouse-delta|ok|range|negotiation') {
         throw "firmware mouse delta contract failed: $mouseDelta"
     }
-    Write-Output "Firmware native tests: $($vectors.vectors.Count) golden vectors, checksum/version faults, lease 150ms, mouse delta negotiation"
+    $recovery = (& $executable recovery).Trim()
+    if ($LASTEXITCODE -ne 0 -or $recovery -ne 'recovery|ok|1000') {
+        throw "firmware recovery timer failed: $recovery"
+    }
+    Write-Output "Firmware native tests: $($vectors.vectors.Count) golden vectors, checksum/version faults, lease 150ms, mouse delta negotiation, recovery reset 1000ms"
 }
 finally {
     if (Test-Path -LiteralPath $temporaryDirectory) {

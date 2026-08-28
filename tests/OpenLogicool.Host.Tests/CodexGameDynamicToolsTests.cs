@@ -54,6 +54,26 @@ public sealed class CodexGameDynamicToolsTests
         Assert.True(route.Completed);
     }
 
+    [Fact]
+    public async Task Action_error_is_recorded_and_finish_is_not_replayable_without_a_route_commit()
+    {
+        var runtime = new Runtime { ThrowOnExecute = true };
+        var tools = new CodexGameDynamicTools(runtime, new Route());
+        _ = await tools.ExecuteAsync("observe", Args("{}"));
+
+        var click = await tools.ExecuteAsync("click", Args(
+            "{\"observationId\":\"observation-1\",\"label\":\"close\",\"x\":0.9,\"y\":0.1}"));
+        _ = await tools.ExecuteAsync("finish", Args(
+            "{\"summary\":\"lobby\",\"facts\":[\"lobby\"]}"));
+
+        Assert.False(click.Success);
+        Assert.Equal(1, tools.ActionCallCount);
+        Assert.Single(tools.ToolErrors);
+        Assert.Contains("fake commit error", tools.ToolErrors[0], StringComparison.Ordinal);
+        Assert.True(tools.IsCompleted);
+        Assert.False(tools.IsReplayableCompletion);
+    }
+
     private static JsonElement Args(string json)
     {
         using var document = JsonDocument.Parse(json);
@@ -84,6 +104,7 @@ public sealed class CodexGameDynamicToolsTests
     private sealed class Runtime : ICodexGameToolRuntime
     {
         public List<CodexGameActionCommand> Commands { get; } = [];
+        public bool ThrowOnExecute { get; init; }
         public ValueTask<CodexGameObservation> ObserveAsync(CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new CodexGameObservation(
                 "observation-1",
@@ -95,6 +116,7 @@ public sealed class CodexGameDynamicToolsTests
             bool repairing,
             CancellationToken cancellationToken = default)
         {
+            if (ThrowOnExecute) throw new InvalidOperationException("fake commit error");
             Commands.Add(command);
             return ValueTask.FromResult(new CodexGameActionOutcome(
                 "Learned",
