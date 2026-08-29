@@ -221,6 +221,9 @@ internal sealed class MacroAutomationPanel : UserControl
         catch (Exception error) { status.Text = error.Message; }
     }
 
+    /// <summary>他画面（デモ記録tab等）が新しいmacroを作った後に、このtabの一覧を反映させる。</summary>
+    public void RefreshFromExternalCreation(string routeId) => Refresh(routeId);
+
     private void Refresh(string? selectRouteId = null)
     {
         refreshingTargets = true;

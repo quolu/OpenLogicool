@@ -30,6 +30,7 @@ public sealed class GameOperatorWindow : Window
         VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         MinHeight = 220,
     };
+    private MacroAutomationPanel? _macroPanel;
 
     public GameOperatorWindow(
         IWebResearchIntent intent,
@@ -38,7 +39,8 @@ public sealed class GameOperatorWindow : Window
         ISupervisedMacroIntents? supervisedMacroIntents = null,
         string? supervisedUnavailableReason = null,
         IMacroAutomationIntents? macroAutomationIntents = null,
-        bool openMacroTab = false)
+        bool openMacroTab = false,
+        IDemonstrationRecordingIntents? demonstrationRecordingIntents = null)
     {
         ArgumentNullException.ThrowIfNull(intent);
         _workspace = new WebResearchWorkspace(intent);
@@ -78,7 +80,8 @@ public sealed class GameOperatorWindow : Window
             supervisedMacroIntents,
             supervisedUnavailableReason,
             macroAutomationIntents,
-            openMacroTab);
+            openMacroTab,
+            demonstrationRecordingIntents);
         RefreshDocuments();
     }
 
@@ -88,7 +91,8 @@ public sealed class GameOperatorWindow : Window
         ISupervisedMacroIntents? supervisedMacroIntents,
         string? supervisedUnavailableReason,
         IMacroAutomationIntents? macroAutomationIntents,
-        bool openMacroTab)
+        bool openMacroTab,
+        IDemonstrationRecordingIntents? demonstrationRecordingIntents)
     {
         var tabs = new TabControl
         {
@@ -112,18 +116,34 @@ public sealed class GameOperatorWindow : Window
                 MinWidth = 130,
             });
         }
+        if (demonstrationRecordingIntents is not null)
+        {
+            tabs.Items.Add(new TabItem
+            {
+                Header = "記録",
+                Content = new DemonstrationRecordingPanel(demonstrationRecordingIntents, OnMacroCreatedFromDemonstration),
+                MinWidth = 130,
+            });
+        }
         if (macroAutomationIntents is not null)
         {
+            _macroPanel = new MacroAutomationPanel(macroAutomationIntents);
             var macroTab = new TabItem
             {
                 Header = "マクロ",
-                Content = new MacroAutomationPanel(macroAutomationIntents),
+                Content = _macroPanel,
                 MinWidth = 130,
             };
             tabs.Items.Add(macroTab);
             if (openMacroTab) tabs.SelectedItem = macroTab;
         }
         return tabs;
+    }
+
+    private void OnMacroCreatedFromDemonstration(string routeId)
+    {
+        _macroPanel?.RefreshFromExternalCreation(routeId);
+        SelectMacroTab();
     }
 
     public void SelectMacroTab()

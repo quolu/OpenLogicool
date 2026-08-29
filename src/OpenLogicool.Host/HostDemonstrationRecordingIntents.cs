@@ -180,6 +180,46 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
             .ToArray();
     }
 
+    public IReadOnlyList<DemonstrationStepSummary> ListSteps(string sessionId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+        using var connection = OpenAndMigrate();
+        var store = new SqliteDemonstrationSessionStore(connection);
+        var session = store.Load(sessionId)
+            ?? throw new InvalidOperationException($"操作デモ原本 '{sessionId}' がありません。");
+        var stepNumber = 0;
+        return session.Events
+            .Where(item => item.Kind == DemonstrationEventKind.Operation)
+            .Select(item =>
+            {
+                stepNumber++;
+                var operation = item.Operation!;
+                return new DemonstrationStepSummary(
+                    stepNumber,
+                    OperationLabel(operation.Operation),
+                    TransitionLabel(operation.Comparison.Judgement));
+            })
+            .ToArray();
+    }
+
+    private static string OperationLabel(string operation) => operation switch
+    {
+        GameInteractionOperations.Click => "クリック",
+        GameInteractionOperations.KeyTap => "キー入力",
+        GameInteractionOperations.Scroll => "スクロール",
+        GameInteractionOperations.Drag => "ドラッグ",
+        GameInteractionOperations.Hover => "ホバー",
+        _ => operation,
+    };
+
+    private static string TransitionLabel(GameTransitionJudgement judgement) => judgement switch
+    {
+        GameTransitionJudgement.Moved => "画面が変わった",
+        GameTransitionJudgement.Stayed => "変化なし",
+        GameTransitionJudgement.Undetermined => "判定できず",
+        _ => judgement.ToString(),
+    };
+
     private static IReadOnlyList<string> ListEnvironmentScopes(SqliteConnection connection, string gameId)
     {
         using var command = connection.CreateCommand();

@@ -56,6 +56,67 @@ public sealed class GameOperatorMacroUiTests
         if (failure is not null) throw failure;
     }
 
+    [Fact]
+    public void Demonstration_recording_tab_appears_between_research_and_macro_tabs()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var window = new GameOperatorWindow(
+                    new WebIntent(),
+                    macroAutomationIntents: new MacroIntents(),
+                    demonstrationRecordingIntents: new RecordingIntents());
+                var tabs = Assert.IsType<TabControl>(window.Content);
+                Assert.Equal(["STEP 0　Web調査", "記録", "マクロ"],
+                    tabs.Items.Cast<TabItem>().Select(item => item.Header!.ToString()!).ToArray());
+                Assert.IsAssignableFrom<UserControl>(((TabItem)tabs.Items[1]).Content);
+                window.Close();
+            }
+            catch (Exception error) { failure = error; }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null) throw failure;
+    }
+
+    [Fact]
+    public void Window_without_demonstration_recording_intents_has_no_recording_tab()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var window = new GameOperatorWindow(
+                    new WebIntent(),
+                    macroAutomationIntents: new MacroIntents());
+                var tabs = Assert.IsType<TabControl>(window.Content);
+                Assert.DoesNotContain("記録", tabs.Items.Cast<TabItem>().Select(item => item.Header!.ToString()));
+                window.Close();
+            }
+            catch (Exception error) { failure = error; }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null) throw failure;
+    }
+
+    private sealed class RecordingIntents : IDemonstrationRecordingIntents
+    {
+        public Task<DemonstrationSessionSummary> StartAsync(string goal, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+        public Task<DemonstrationSessionSummary> StopAsync(CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+        public DemonstrationRecordingStatus Status() => new(DemonstrationRecorderStatus.Idle, null, 0, 0, 0, 0, 0);
+        public IReadOnlyList<DemonstrationSessionSummary> ListSessions() => [];
+        public IReadOnlyList<DemonstrationStepSummary> ListSteps(string sessionId) => [];
+        public MacroCatalogItem CreateMacroFromSession(string sessionId) => throw new NotSupportedException();
+    }
+
     private sealed class MacroIntents : IMacroAutomationIntents
     {
         public event Action<MacroRunSnapshot>? StateChanged { add { } remove { } }

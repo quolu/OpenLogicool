@@ -91,6 +91,12 @@ public sealed class HostDemonstrationRecordingIntentsTests : IDisposable
         var listed = Assert.Single(sessions);
         Assert.Equal(summary.SessionId, listed.SessionId);
         Assert.Equal(1, listed.OperationCount);
+
+        var steps = intents.ListSteps(summary.SessionId);
+        var step = Assert.Single(steps);
+        Assert.Equal(1, step.StepNumber);
+        Assert.Equal("クリック", step.OperationLabel);
+        Assert.Equal("画面が変わった", step.TransitionLabel);
     }
 
     [Fact]

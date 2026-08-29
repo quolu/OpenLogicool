@@ -8,7 +8,26 @@ public sealed record DemonstrationSessionSummary(
     string EnvironmentScope,
     DemonstrationSessionState State,
     int OperationCount,
-    DateTimeOffset StartedUtc);
+    DateTimeOffset StartedUtc)
+{
+    public string StateLabel => State switch
+    {
+        DemonstrationSessionState.Recording => "記録中",
+        DemonstrationSessionState.Stopped => "記録済み",
+        _ => State.ToString(),
+    };
+
+    public string DisplayLabel => $"{Goal}　{OperationCount} 操作　[{StateLabel}]　{StartedUtc.ToLocalTime():yyyy/MM/dd HH:mm}";
+}
+
+/// <summary>記録済み原本の1操作を、内部idを出さずに表す。</summary>
+public sealed record DemonstrationStepSummary(
+    int StepNumber,
+    string OperationLabel,
+    string TransitionLabel)
+{
+    public string DisplayLabel => $"{StepNumber}　{OperationLabel}　→　{TransitionLabel}";
+}
 
 /// <summary>記録器の現在状態。原本本文ではなく、UI表示に必要な要約だけを持つ。</summary>
 public sealed record DemonstrationRecordingStatus(
@@ -60,6 +79,8 @@ public interface IDemonstrationRecordingIntents
     DemonstrationRecordingStatus Status();
 
     IReadOnlyList<DemonstrationSessionSummary> ListSessions();
+
+    IReadOnlyList<DemonstrationStepSummary> ListSteps(string sessionId);
 
     MacroCatalogItem CreateMacroFromSession(string sessionId);
 }
