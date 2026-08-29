@@ -1,0 +1,34 @@
+{
+  "schema": "lattice.plan_scope_review.v1",
+  "authoring_digest": "98f6ed3525d61911287ca3e4fdebe0c2c5972372a8d79e6ec3627e3b39fb07a8",
+  "work_specs": [
+    {
+      "work_spec_id": "ws-app-completion",
+      "requirement": "OpenLogicoolをgoal入力、macro作成、AI監視あり／なし、統合、G13／G600割当まで一巡できるアプリとして完成させる。",
+      "acceptance": "Game Operatorと既存Input Studioのpublic intentsで全journeyが成立し、再起動後も復元される。"
+    },
+    {
+      "work_spec_id": "ws-preserve-existing-ui",
+      "requirement": "既存G13／G600設定interfaceを壊さず、OS／vendor適合は環境別fileで行う。",
+      "acceptance": "既存device配置・編集・保存は非回帰で、Windows入力取得は環境別adapterに隔離される。"
+    },
+    {
+      "work_spec_id": "ws-user-demonstration",
+      "requirement": "利用者が操作したmouse、keyboard、G13、G600操作を記録し、AI再生の材料にする。",
+      "acceptance": "操作原本をimmutable保存し、Learning Route候補へ導出して既存AI監視修復とAI 0へ通す。"
+    }
+  ],
+  "task_assessments": [
+    {"task_id":"t01-demonstration-contract","work_spec_ids":["ws-user-demonstration"],"judgment":"required","reason":"操作原本をAI修復可能routeから分離する公開contractと永続化が必要。"},
+    {"task_id":"t02-windows-input-recorder","work_spec_ids":["ws-preserve-existing-ui","ws-user-demonstration"],"judgment":"required","reason":"利用者の4入力系をforeground限定で取得し、Windows固有処理を環境別adapterへ隔離する。"},
+    {"task_id":"t03-demonstration-route-compiler","work_spec_ids":["ws-user-demonstration"],"judgment":"required","reason":"記録を既存AI監視修復とAI 0へ流すための唯一の導出境界。"},
+    {"task_id":"t04-recording-host-intents","work_spec_ids":["ws-app-completion","ws-user-demonstration"],"judgment":"required","reason":"UIとCLIが同じ記録・macro作成経路を使うために必要。"},
+    {"task_id":"t05-game-operator-recording-ui","work_spec_ids":["ws-app-completion","ws-preserve-existing-ui","ws-user-demonstration"],"judgment":"required","reason":"利用者がアプリから記録と再生を一巡し、既存Input Studioを維持する製品面。"},
+    {"task_id":"t06-macro-assignment-integration","work_spec_ids":["ws-app-completion","ws-preserve-existing-ui"],"judgment":"required","reason":"デモ由来macroを既存統合・G13／G600割当へ接続する。"},
+    {"task_id":"t07-product-journey-acceptance","work_spec_ids":["ws-app-completion","ws-preserve-existing-ui","ws-user-demonstration"],"judgment":"required","reason":"別々の機能実装を同一public journeyとして受け入れる。"},
+    {"task_id":"t08-owner-ui-live","work_spec_ids":["ws-app-completion","ws-user-demonstration"],"judgment":"required","reason":"人が実際に操作する記録UXは自動fixtureだけでは確定できない。"},
+    {"task_id":"t09-phase14-exit","work_spec_ids":["ws-app-completion","ws-preserve-existing-ui","ws-user-demonstration"],"judgment":"required","reason":"全要求の証拠、非回帰、配布面を統合してPhaseを閉じる。"}
+  ],
+  "verdict": "scope_preserved",
+  "review_digest": "03b5f71726b142751e1d10e4c20b17683d04dbab58a0cdb19608a7db1650b9a3"
+}

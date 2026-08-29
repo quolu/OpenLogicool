@@ -1,0 +1,281 @@
+{
+  "schema": "lattice.todo_extraction.v4",
+  "project_id": "OpenLogicool",
+  "plan_key": "phase14-product-completion",
+  "plan_version": "v1",
+  "actor": {
+    "host": "FOX",
+    "session": "phase14-product-completion",
+    "agent": "bell"
+  },
+  "recorded_at": "2026-08-29T01:18:51.446Z",
+  "tasks": [
+    {
+      "task_id": "t01-demonstration-contract",
+      "title": "Demonstration Session contract／store",
+      "lane": "A",
+      "design_memo": "Demonstration Sessionの公開contract、validator、append-only store、migration、再openを実装する。goal、game profile、focus区間、有限操作、frame binding、before／after、Compare、evidence、原本revisionを保持する。Learning RouteやUIをこの工程で実装しない。",
+      "narrative_ref": "docs/phase14-product-completion-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase14-product-completion-campaign-plan.md",
+        "origin_line": 77,
+        "source_commit": "ad6a69c2d9dfb9297f6ee878969f23aa7ebadb75",
+        "heading_path": ["Lattice task仕様", "t01-demonstration-contract"],
+        "markdown_depth": 3,
+        "parent_task_id": null,
+        "checkbox_state": "absent"
+      },
+      "migration_context": {
+        "external_canonical_ref": "docs/development-plan.md",
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": []
+      }
+    },
+    {
+      "task_id": "t02-windows-input-recorder",
+      "title": "Windows user input recorder／device observer",
+      "lane": "A",
+      "design_memo": "Windows環境別mouse／keyboard recorderと既存G13／G600 edge observerを実装する。対象game foregroundだけを記録し、focus喪失pause、client座標正規化、key down／upの有限化、記録・再生排他、fast path非blockingをfocused testとWindows native self-windowで確認する。",
+      "narrative_ref": "docs/phase14-product-completion-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase14-product-completion-campaign-plan.md",
+        "origin_line": 81,
+        "source_commit": "ad6a69c2d9dfb9297f6ee878969f23aa7ebadb75",
+        "heading_path": ["Lattice task仕様", "t02-windows-input-recorder"],
+        "markdown_depth": 3,
+        "parent_task_id": null,
+        "checkbox_state": "absent"
+      },
+      "migration_context": {
+        "external_canonical_ref": "docs/development-plan.md",
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": []
+      }
+    },
+    {
+      "task_id": "t03-demonstration-route-compiler",
+      "title": "DemonstrationからLearning Route導出",
+      "lane": "A",
+      "design_memo": "Demonstration Sessionを既存Game Structure／Transition Evidence／Learning Routeへ導出する。Moved操作を候補edge列にし、Stayed／Undetermined、寄り道、重複の採否理由を残す。元sessionと既存routeを変更せず、新route revisionだけを作る。",
+      "narrative_ref": "docs/phase14-product-completion-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase14-product-completion-campaign-plan.md",
+        "origin_line": 85,
+        "source_commit": "ad6a69c2d9dfb9297f6ee878969f23aa7ebadb75",
+        "heading_path": ["Lattice task仕様", "t03-demonstration-route-compiler"],
+        "markdown_depth": 3,
+        "parent_task_id": null,
+        "checkbox_state": "absent"
+      },
+      "migration_context": {
+        "external_canonical_ref": "docs/development-plan.md",
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": []
+      }
+    },
+    {
+      "task_id": "t04-recording-host-intents",
+      "title": "Recording Host public intents／Phase 13接続",
+      "lane": "A",
+      "design_memo": "記録開始／停止／状態／session一覧／記録からmacro作成をHost public intentsへ追加する。Phase 13のCodex monitored、AI free、game別workspace、Nano session、run evidenceへ接続し、同じ実行coordinator以外の経路を作らない。",
+      "narrative_ref": "docs/phase14-product-completion-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase14-product-completion-campaign-plan.md",
+        "origin_line": 89,
+        "source_commit": "ad6a69c2d9dfb9297f6ee878969f23aa7ebadb75",
+        "heading_path": ["Lattice task仕様", "t04-recording-host-intents"],
+        "markdown_depth": 3,
+        "parent_task_id": null,
+        "checkbox_state": "absent"
+      },
+      "migration_context": {
+        "external_canonical_ref": "docs/development-plan.md",
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": []
+      }
+    },
+    {
+      "task_id": "t05-game-operator-recording-ui",
+      "title": "Game Operator recording UI",
+      "lane": "A",
+      "design_memo": "既存Game Operatorへgoal、記録開始／停止、focus pause、記録step一覧、記録からmacro作成、2 mode再生、進捗、停止理由を追加する。既存Input StudioのG13／G600画面を変更せず、内部IDやtokenを利用者へ露出しない。",
+      "narrative_ref": "docs/phase14-product-completion-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase14-product-completion-campaign-plan.md",
+        "origin_line": 93,
+        "source_commit": "ad6a69c2d9dfb9297f6ee878969f23aa7ebadb75",
+        "heading_path": ["Lattice task仕様", "t05-game-operator-recording-ui"],
+        "markdown_depth": 3,
+        "parent_task_id": null,
+        "checkbox_state": "absent"
+      },
+      "migration_context": {
+        "external_canonical_ref": "docs/development-plan.md",
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": []
+      }
+    },
+    {
+      "task_id": "t06-macro-assignment-integration",
+      "title": "デモ由来macroの統合／G13・G600割当",
+      "lane": "A",
+      "design_memo": "デモ由来macroを既存合成、G13／G600割当、button queue、SQLite再openへ通す。同じmacro tokenとpublic intentsを使い、既存route、正常step、既存device設定を作り直さない。",
+      "narrative_ref": "docs/phase14-product-completion-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase14-product-completion-campaign-plan.md",
+        "origin_line": 97,
+        "source_commit": "ad6a69c2d9dfb9297f6ee878969f23aa7ebadb75",
+        "heading_path": ["Lattice task仕様", "t06-macro-assignment-integration"],
+        "markdown_depth": 3,
+        "parent_task_id": null,
+        "checkbox_state": "absent"
+      },
+      "migration_context": {
+        "external_canonical_ref": "docs/development-plan.md",
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": []
+      }
+    },
+    {
+      "task_id": "t07-product-journey-acceptance",
+      "title": "操作デモproduct journey acceptance",
+      "lane": "A",
+      "design_memo": "fakeと実SQLite、Windows self-window、Nano非injected入力を使い、記録→route導出→AI監視修復→別process AI 0→統合→G13／G600割当→再openを同一public経路で一巡する。Computer Use、SendInput、外部AI APIは0。",
+      "narrative_ref": "docs/phase14-product-completion-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase14-product-completion-campaign-plan.md",
+        "origin_line": 101,
+        "source_commit": "ad6a69c2d9dfb9297f6ee878969f23aa7ebadb75",
+        "heading_path": ["Lattice task仕様", "t07-product-journey-acceptance"],
+        "markdown_depth": 3,
+        "parent_task_id": null,
+        "checkbox_state": "absent"
+      },
+      "migration_context": {
+        "external_canonical_ref": "docs/development-plan.md",
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": []
+      }
+    },
+    {
+      "task_id": "t08-owner-ui-live",
+      "title": "NIKKE実UI操作デモ1:1（H）",
+      "lane": "H",
+      "design_memo": "NIKKEの可逆menu操作を利用者がGame Operatorの記録UIから一巡し、記録、候補route、AI監視修復、AI 0、割当表示を1:1確認する。課金、消費、募集、戦闘は対象外。これはH工程であり席はclaimしない。",
+      "narrative_ref": "docs/phase14-product-completion-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase14-product-completion-campaign-plan.md",
+        "origin_line": 105,
+        "source_commit": "ad6a69c2d9dfb9297f6ee878969f23aa7ebadb75",
+        "heading_path": ["Lattice task仕様", "t08-owner-ui-live"],
+        "markdown_depth": 3,
+        "parent_task_id": null,
+        "checkbox_state": "absent"
+      },
+      "migration_context": {
+        "external_canonical_ref": "docs/development-plan.md",
+        "carry_over_ref": null,
+        "h_required": true,
+        "condition": "利用者がNIKKEとGame Operator UIを操作できること",
+        "evidence_refs": [],
+        "notes": []
+      }
+    },
+    {
+      "task_id": "t09-phase14-exit",
+      "title": "Phase 14 terminal audit／Exit",
+      "lane": "F",
+      "design_memo": "全A工程の関連test後にfull regressionを一回だけ実行する。Peertableで契約クリティカル範囲を独立反証し、4値Exit assessment、終端証拠、開発版再install、対象限定commit、origin/main pushを完了する。Hが未実施なら未確認と明記し、実施済みへ読み替えない。",
+      "narrative_ref": "docs/phase14-product-completion-campaign-plan.md",
+      "compile_binding": null,
+      "disposition": "register_pending",
+      "start": null,
+      "completion": null,
+      "source": {
+        "origin_plan_ref": "docs/phase14-product-completion-campaign-plan.md",
+        "origin_line": 109,
+        "source_commit": "ad6a69c2d9dfb9297f6ee878969f23aa7ebadb75",
+        "heading_path": ["Lattice task仕様", "t09-phase14-exit"],
+        "markdown_depth": 3,
+        "parent_task_id": null,
+        "checkbox_state": "absent"
+      },
+      "migration_context": {
+        "external_canonical_ref": "docs/development-plan.md",
+        "carry_over_ref": null,
+        "h_required": false,
+        "condition": null,
+        "evidence_refs": [],
+        "notes": []
+      }
+    }
+  ],
+  "hard_dependencies": [
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t01-demonstration-contract"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t02-windows-input-recorder"},"reason":"Windows recorderは公開Demonstration event contractを実装する"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t01-demonstration-contract"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t03-demonstration-route-compiler"},"reason":"route導出はimmutable session contractを入力にする"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t02-windows-input-recorder"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t04-recording-host-intents"},"reason":"Host intentsはWindows recorder lifecycleを所有する"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t03-demonstration-route-compiler"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t04-recording-host-intents"},"reason":"Host intentsはrecording停止後にroute導出を呼ぶ"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t04-recording-host-intents"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t05-game-operator-recording-ui"},"reason":"UIはpublic intentsだけを使う"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t04-recording-host-intents"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t06-macro-assignment-integration"},"reason":"macro統合はデモ由来macro public intent成立後に接続する"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t05-game-operator-recording-ui"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t07-product-journey-acceptance"},"reason":"product journeyはGame Operator UI public pathを含む"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t06-macro-assignment-integration"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t07-product-journey-acceptance"},"reason":"product journeyは統合とG13／G600割当を含む"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t07-product-journey-acceptance"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t08-owner-ui-live"},"reason":"利用者liveは自動product journey成立後だけ実施する"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t07-product-journey-acceptance"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t09-phase14-exit"},"reason":"Exitは全A product journey成立を必要とする"},
+    {"from":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t08-owner-ui-live"},"to":{"project_id":"OpenLogicool","plan_key":"phase14-product-completion","task_id":"t09-phase14-exit"},"reason":"app完成Exitは利用者UI 1:1を必要とする"}
+  ],
+  "joins": [],
+  "extraction_digest": "98f6ed3525d61911287ca3e4fdebe0c2c5972372a8d79e6ec3627e3b39fb07a8"
+}
