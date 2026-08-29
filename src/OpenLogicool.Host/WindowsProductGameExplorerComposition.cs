@@ -92,62 +92,22 @@ public static class WindowsProductGameExplorerComposition
             window,
             explorationPolicy.TargetWindowSourceId,
             TimeSpan.FromSeconds(10));
-        FoundryLocalVisionClient? visionClient = null;
-        IDisposable? visionResource;
-        IProductGameTargetDiscovery targetDiscovery;
-        if (targetDiscoveryOverride is not null)
-        {
-            visionResource = controlDiscoveryResource;
-            targetDiscovery = targetDiscoveryOverride;
-        }
-        else if (includeVisualTargets)
-        {
-            if (controlDiscoveryProvider is null)
-            {
-                visionClient = new FoundryLocalVisionClient(
-                    foundryEndpoint,
-                    foundryModelId,
-                    TimeSpan.FromSeconds(30));
-                controlDiscoveryProvider = new FoundryLocalControlDiscoveryProvider(visionClient);
-            }
-            visionResource = controlDiscoveryResource ?? visionClient;
-            targetDiscovery = new FoundryControlTargetDiscoveryAdapter(
-                controlDiscoveryProvider,
-                new WindowsGameOcrRecognizer(),
-                new WindowsGameFramePngEncoder(),
-                () => coordinator.CurrentStructureRevisionId,
-                targetIntent,
-                interactionOperation,
-                visualSearchRegion);
-        }
-        else
-        {
-            visionClient = new FoundryLocalVisionClient(
-                foundryEndpoint,
-                foundryModelId,
-                TimeSpan.FromSeconds(30));
-            visionResource = visionClient;
-            targetDiscovery = new FoundryLabelTargetDiscoveryAdapter(
-                new FoundryLocalDiscoveryVisionProvider(visionClient),
-                new WindowsGameOcrRecognizer(),
-                new WindowsGameFramePngEncoder(),
-                () => coordinator.CurrentStructureRevisionId,
-                targetIntent,
-                interactionOperation);
-        }
-        if (learnedSceneProfileStore is not null && targetDiscoveryOverride is null)
-        {
-            targetDiscovery = new WindowsKnownFirstTargetDiscovery(
-                targetDiscovery,
-                new WindowsGameOcrRecognizer(),
-                learnedSceneProfileStore,
-                gameId,
-                explorationPolicy.EnvironmentScope,
-                targetIntent,
-                interactionOperation,
-                allowAiDiscovery,
-                forceAiDiscovery);
-        }
+        var (targetDiscovery, visionResource) = CreateTargetDiscovery(
+            gameId,
+            explorationPolicy.EnvironmentScope,
+            () => coordinator.CurrentStructureRevisionId,
+            foundryEndpoint,
+            foundryModelId,
+            learnedSceneProfileStore,
+            targetIntent,
+            includeVisualTargets,
+            interactionOperation,
+            visualSearchRegion,
+            allowAiDiscovery,
+            forceAiDiscovery,
+            controlDiscoveryProvider,
+            controlDiscoveryResource,
+            targetDiscoveryOverride);
         var observationRuntime = new ProductGameObservationRuntime(
             frameSource,
             new LiveObservationSource(frameRecognizer),
@@ -214,5 +174,86 @@ public static class WindowsProductGameExplorerComposition
             frameSource,
             visionResource,
             targetDiscovery as ILocalAiCallCounter);
+    }
+
+    /// <summary>
+    /// target discoveryの組み立て。探索と操作デモ記録が**同じ**discoveryを使うために切り出してある。
+    /// 別々のdiscoveryを使うと同じ画面が別のstateとして同定され、記録から作ったrouteが
+    /// 探索で育てたstructureへ繋がらなくなる。
+    /// </summary>
+    public static (IProductGameTargetDiscovery Discovery, IDisposable? VisionResource) CreateTargetDiscovery(
+        string gameId,
+        string environmentScope,
+        Func<string> currentStructureRevisionId,
+        Uri foundryEndpoint,
+        string foundryModelId,
+        ILearnedSceneProfileStore? learnedSceneProfileStore = null,
+        string? targetIntent = null,
+        bool includeVisualTargets = false,
+        string interactionOperation = GameInteractionOperations.Click,
+        IReadOnlyList<double>? visualSearchRegion = null,
+        bool allowAiDiscovery = true,
+        bool forceAiDiscovery = false,
+        ILocalControlDiscoveryProvider? controlDiscoveryProvider = null,
+        IDisposable? controlDiscoveryResource = null,
+        IProductGameTargetDiscovery? targetDiscoveryOverride = null)
+    {
+        FoundryLocalVisionClient? visionClient = null;
+        IDisposable? visionResource;
+        IProductGameTargetDiscovery targetDiscovery;
+        if (targetDiscoveryOverride is not null)
+        {
+            visionResource = controlDiscoveryResource;
+            targetDiscovery = targetDiscoveryOverride;
+        }
+        else if (includeVisualTargets)
+        {
+            if (controlDiscoveryProvider is null)
+            {
+                visionClient = new FoundryLocalVisionClient(
+                    foundryEndpoint,
+                    foundryModelId,
+                    TimeSpan.FromSeconds(30));
+                controlDiscoveryProvider = new FoundryLocalControlDiscoveryProvider(visionClient);
+            }
+            visionResource = controlDiscoveryResource ?? visionClient;
+            targetDiscovery = new FoundryControlTargetDiscoveryAdapter(
+                controlDiscoveryProvider,
+                new WindowsGameOcrRecognizer(),
+                new WindowsGameFramePngEncoder(),
+                currentStructureRevisionId,
+                targetIntent,
+                interactionOperation,
+                visualSearchRegion);
+        }
+        else
+        {
+            visionClient = new FoundryLocalVisionClient(
+                foundryEndpoint,
+                foundryModelId,
+                TimeSpan.FromSeconds(30));
+            visionResource = visionClient;
+            targetDiscovery = new FoundryLabelTargetDiscoveryAdapter(
+                new FoundryLocalDiscoveryVisionProvider(visionClient),
+                new WindowsGameOcrRecognizer(),
+                new WindowsGameFramePngEncoder(),
+                currentStructureRevisionId,
+                targetIntent,
+                interactionOperation);
+        }
+        if (learnedSceneProfileStore is not null && targetDiscoveryOverride is null)
+        {
+            targetDiscovery = new WindowsKnownFirstTargetDiscovery(
+                targetDiscovery,
+                new WindowsGameOcrRecognizer(),
+                learnedSceneProfileStore,
+                gameId,
+                environmentScope,
+                targetIntent,
+                interactionOperation,
+                allowAiDiscovery,
+                forceAiDiscovery);
+        }
+        return (targetDiscovery, visionResource);
     }
 }

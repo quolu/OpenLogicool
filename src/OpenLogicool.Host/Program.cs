@@ -662,13 +662,22 @@ static int Ui(string[] arguments)
     var explorerIntents = new HostExplorerIntents(connection);
     var learningRouteIntents = new HostLearningRouteIntents(connection);
     var outputSettingsForMacro = outputSettingsStore.Load();
+    // 記録と再生は同じgateを共有する。共有しないと、記録中にG13/G600のbuttonやUIから
+    // 再生が走り、Nanoが出した入力を自分で記録してしまう（injected flagでは送信元を確定できない）。
+    var demonstrationGate = new DemonstrationRecordingGate();
     using var macroAutomationIntents = new HostMacroAutomationIntents(
         databasePath,
         CreateMacroExecutionEngine(
             databasePath,
             serialHidDiscovery,
             outputSettingsForMacro.SelectedDeviceInstanceId,
-            () => residentHost?.BorrowedNanoSession));
+            () => residentHost?.BorrowedNanoSession),
+        targets: null,
+        recordingGate: demonstrationGate);
+    using var demonstrationRecordingIntents = new HostDemonstrationRecordingIntents(
+        databasePath,
+        new WindowsDemonstrationLiveSessionFactory(databasePath),
+        demonstrationGate);
     using var macroWorker = macroQueue is null
         ? null
         : new MacroAutomationWorker(macroQueue, macroAutomationIntents);
@@ -737,7 +746,8 @@ static int Ui(string[] arguments)
             learningRouteIntents,
             supervisedMacroIntents,
             supervisedUnavailableReason,
-            macroAutomationIntents);
+            macroAutomationIntents,
+            demonstrationRecordingIntents);
         System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
         if (residentHost is not null)
         {

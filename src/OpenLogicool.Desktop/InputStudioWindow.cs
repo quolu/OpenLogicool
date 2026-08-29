@@ -28,6 +28,7 @@ public sealed class InputStudioWindow : Window
     private readonly ISerialHidSettingsIntent? _serialHidSettingsIntent;
     private readonly IG13LcdSettingsIntent? _g13LcdSettingsIntent;
     private readonly IWebResearchIntent? _webResearchIntent;
+    private readonly IDemonstrationRecordingIntents? _demonstrationRecordingIntents;
     private readonly IExplorerIntents? _explorerIntents;
     private readonly ILearningRouteIntents? _learningRouteIntents;
     private readonly ISupervisedMacroIntents? _supervisedMacroIntents;
@@ -225,7 +226,8 @@ public sealed class InputStudioWindow : Window
         ILearningRouteIntents? learningRouteIntents = null,
         ISupervisedMacroIntents? supervisedMacroIntents = null,
         string? supervisedUnavailableReason = null,
-        IMacroAutomationIntents? macroAutomationIntents = null)
+        IMacroAutomationIntents? macroAutomationIntents = null,
+        IDemonstrationRecordingIntents? demonstrationRecordingIntents = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
@@ -234,6 +236,7 @@ public sealed class InputStudioWindow : Window
         _serialHidSettingsIntent = serialHidSettingsIntent;
         _g13LcdSettingsIntent = g13LcdSettingsIntent;
         _webResearchIntent = webResearchIntent;
+        _demonstrationRecordingIntents = demonstrationRecordingIntents;
         _explorerIntents = explorerIntents;
         _learningRouteIntents = learningRouteIntents;
         _supervisedMacroIntents = supervisedMacroIntents;
@@ -657,7 +660,8 @@ public sealed class InputStudioWindow : Window
                 _supervisedMacroIntents,
                 _supervisedUnavailableReason,
                 _macroAutomationIntents,
-                openMacroTab) { Owner = this };
+                openMacroTab,
+                _demonstrationRecordingIntents) { Owner = this };
             _gameOperatorWindow.Show();
         }
         else
