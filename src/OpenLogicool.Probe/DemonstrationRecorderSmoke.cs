@@ -260,6 +260,9 @@ internal static class DemonstrationRecorderSmoke
             return new SelfWindow(createdHandle, thread, procedure, createdThreadId);
         }
 
+        /// <summary>製品側が同じwindowを掴んでいるかを突合するために公開する。</summary>
+        public IntPtr Handle => handle;
+
         public ScreenBounds ClientBoundsOnScreen()
         {
             if (!GetClientRect(handle, out var client))

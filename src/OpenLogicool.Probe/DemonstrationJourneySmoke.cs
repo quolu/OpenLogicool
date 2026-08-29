@@ -59,6 +59,26 @@ internal static class DemonstrationJourneySmoke
         using (window)
         {
             var clientBounds = window.ClientBoundsOnScreen();
+
+            // 製品側は process 名から MainWindowHandle を引く。console から起動した probe では
+            // それが self-window とは限らないので、違う window を撮って一巡が成立したように
+            // 見えることを防ぐため、先に突合して違えば未確認で止める。
+            try
+            {
+                var located = WindowsGameTargetLocator.Locate(processName);
+                if (located.Window != window.Handle)
+                {
+                    return Unverified(
+                        outputDirectory, label,
+                        "製品側が解決したwindowがself-windowと一致しない。",
+                        $"located=0x{located.Window:X} self=0x{window.Handle:X} title={located.WindowTitle}");
+                }
+            }
+            catch (InvalidOperationException error)
+            {
+                return Unverified(outputDirectory, label, "製品側が対象windowを解決できなかった。", error.Message);
+            }
+
             MacroTargetSettingsStore.ForDatabase(databasePath).Save(processName);
 
             var gate = new DemonstrationRecordingGate();
