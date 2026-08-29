@@ -74,6 +74,38 @@ public sealed class CodexGameDynamicToolsTests
         Assert.False(tools.IsReplayableCompletion);
     }
 
+    [Fact]
+    public async Task Dispatch_failure_is_a_terminal_tool_failure_and_blocks_following_actions()
+    {
+        var runtime = new Runtime
+        {
+            Outcome = new CodexGameActionOutcome(
+                nameof(ProductGameExplorerStepStatus.DispatchFailed),
+                null,
+                null,
+                "Nano ACK timeout"),
+        };
+        var route = new Route { NextSavedEdge = Edge("saved") };
+        var tools = new CodexGameDynamicTools(runtime, route);
+        _ = await tools.ExecuteAsync("observe", Args("{}"));
+
+        var failed = await tools.ExecuteAsync("use_saved_action", Args(
+            "{\"observationId\":\"observation-1\",\"edgeId\":\"saved\"}"));
+        _ = await tools.ExecuteAsync("observe", Args("{}"));
+        var following = await tools.ExecuteAsync("back", Args(
+            "{\"observationId\":\"observation-1\"}"));
+        _ = await tools.ExecuteAsync("finish", Args(
+            "{\"summary\":\"done\",\"facts\":[]}"));
+
+        Assert.False(failed.Success);
+        Assert.Contains("RunMustStop", failed.Text, StringComparison.Ordinal);
+        Assert.False(following.Success);
+        Assert.Single(runtime.Commands);
+        Assert.Equal(2, tools.ActionCallCount);
+        Assert.False(tools.IsReplayableCompletion);
+        Assert.Contains(tools.ToolErrors, error => error.Contains("Nano ACK timeout", StringComparison.Ordinal));
+    }
+
     private static JsonElement Args(string json)
     {
         using var document = JsonDocument.Parse(json);
@@ -105,6 +137,7 @@ public sealed class CodexGameDynamicToolsTests
     {
         public List<CodexGameActionCommand> Commands { get; } = [];
         public bool ThrowOnExecute { get; init; }
+        public CodexGameActionOutcome? Outcome { get; init; }
         public ValueTask<CodexGameObservation> ObserveAsync(CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new CodexGameObservation(
                 "observation-1",
@@ -118,7 +151,7 @@ public sealed class CodexGameDynamicToolsTests
         {
             if (ThrowOnExecute) throw new InvalidOperationException("fake commit error");
             Commands.Add(command);
-            return ValueTask.FromResult(new CodexGameActionOutcome(
+            return ValueTask.FromResult(Outcome ?? new CodexGameActionOutcome(
                 "Learned",
                 GameTransitionJudgement.Moved,
                 command.SavedEdge?.EdgeId ?? "new-edge",

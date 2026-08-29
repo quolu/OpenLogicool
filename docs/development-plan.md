@@ -1437,6 +1437,8 @@ Exit:
 
 Phase 13 Exit（2026-08-29）: 別runで作成したロビー→MISSIONデイリーとMISSION→ロビーのCompiled routeを既存`MacroRouteComposer`で2 stepへ統合し、別Host processのAI 0で全step Moved・revision不変・Completedを確認した。同composed macroのlatest tokenを実DBコピー上でG13 G1／G600 G9へ割当し、workspace revision 1保存、device profile生成、別process再open export、FastPath down一回queueを確認した。文字anchorを持たないpageはoptional state visual patchで保存し、過去run由来の同一state／scene signature重複は決定的canonicalへ収束する。Nano firmware 1.1.2はfail-closed releaseが1秒継続した時にwatchdogでUSB自己再列挙し、wedgeした1.1.1から1200-baud bootloader経由でverify付きflashできた。Phase判定は[Phase 13 assessment](phase13-macro-product-flow-assessment.md)、終端証拠は[Phase 13 terminal acceptance](../evidence/macro-product-flow/phase13-terminal-acceptance-20260829.md)。手動UI入力の1:1確認はオーナー裁定どおりExit後UX確認、ショップrouteのAI 0は日次／週次reset後確認とし、一般game無人完走のclaimには含めない。
 
+Phase 13 follow-up（2026-08-29）: shop reset後のAI監視run中、Nano actionの物理効果後にACK timeoutし、firmware 1.1.2がCOM8列挙済みのままHelloへ応答しない事象を再現した。1.1.2のsoftware timerはUSB／CDC call内blockでは実行不能だったため、firmware 1.1.3はmain loop全体をAVR hardware watchdogで監視する。Hostは`DispatchFailed`をdynamic tool successとして返さず、同じrunの後続actionと偽Completedを拒否する。verify付きflash後、100 session×2と長時間shop monitored runでtimeout 0。shop routeは19 step・revision 25でCompletedした。証拠は[Nano CDC liveness repair](../evidence/macro-product-flow/nano-cdc-liveness-repair-20260829.md)。同reset分を監視runで購入したため、shop AI 0は次回reset後に実行する。
+
 ## 9. Blockerを潰すfocused experiment
 
 | ID | 実験 | 成功条件 | 失敗時の分岐 |

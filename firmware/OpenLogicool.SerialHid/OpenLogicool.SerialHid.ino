@@ -18,7 +18,7 @@ namespace {
 
 constexpr uint8_t kFirmwareVersionMajor = 1;
 constexpr uint8_t kFirmwareVersionMinor = 1;
-constexpr uint8_t kFirmwareVersionPatch = 2;
+constexpr uint8_t kFirmwareVersionPatch = 3;
 
 uint8_t inputFrame[kMaxFrameLength];
 uint16_t inputLength = 0;
@@ -305,12 +305,15 @@ void setup() {
   Serial.begin(115200);
   usbWasConfigured = USBDevice.configured();
   SetReleasePending(usbWasConfigured && !OpenLogicoolHid.AllUp());
+  wdt_enable(WDTO_2S);
 }
 
 void loop() {
+  wdt_reset();
   PollUsbConfiguration();
   while (Serial.available() > 0) {
     AcceptSerialByte(static_cast<uint8_t>(Serial.read()));
+    wdt_reset();
   }
   RetryPendingRelease();
   ResetUsbIfReleaseStalled();

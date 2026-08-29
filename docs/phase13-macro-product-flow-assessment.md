@@ -33,14 +33,17 @@ Game Operator実windowからの手動入力1:1確認は、オーナー裁定「�
 - 実データ合成: ロビー→MISSIONデイリー1 stepとMISSION→ロビー1 stepを`macro:composed:00b2081f045145b58b4d92819a26b762`へ統合。別Host processのAI 0で2/2 Moved・revision 1不変・Completed。
 - G13／G600割当: composed macro latest tokenを実DBコピー上のworkspace `phase13-composed-acceptance`へG13 G1／G600 G9として保存。revision 1、G13/G600 profile生成、別process再open exportでtoken・2 binding一致。
 - Nano firmware 1.1.2: releasePending 1秒でwatchdog自己再起動、native recovery test、公式build、wedgeした1.1.1から1200-baud verify付きflash、firmware 1.1.2 handshake成立。
+- Nano firmware 1.1.3 follow-up: USB／CDC call内blockでは1.1.2のsoftware timerへ戻れない欠陥を実走再現し、main loop全体を2秒のAVR hardware watchdogで監視した。Hostは`DispatchFailed`をCodex tool successとして返さず、同じrunの後続actionと偽Completedを拒否する。verify付きflash、100 session×2、shop monitored長時間run後のhandshakeが成立。
+- shop reset後のAI監視run: 19 step、AI 1、route revision 21→25、Completed。無料クレジット60,000、費用0更新、無料コアダスト30、40% SALEコンソール10個、デイリー無料パックを処理し、ウィークリー無料パックは開始時点SOLD OUT。有償通貨・現金・非無料商品・募集・戦闘0。
 - fake＋実SQLite scenario: 作成→AI 0→失敗step修復→2macro合成→G13 G1／G600 G9割当→DB再open復元を同じpublic intent経路で確認。
 - 関連test: Perception 32、Exploration 53、Input 157、Host 252、Desktop 98、Playbooks 164、Persistence 50、architecture 8、合計814件green。firmware native testとArduino buildもgreen。
 - 最終full regression: 22 test project・1258件green・failed 0・skipped 0。実装完了後に一回だけ実行した。
+- firmware 1.1.3／terminal tool failure follow-up最終full regression: 22 test project・1259件green・failed 0・skipped 0。follow-up修正完了後に一回だけ実行した。
 - Peertable read-only再反証: 修正後コードにP0／P1なし。受入証拠の未確認2点は上記どおり分離。
 
 ## Exit後の確認
 
 1. Game Operator実windowで、作成→G13／G600割当→2mode→修復→合成→再起動再生を手動入力で1:1確認する。
-2. NIKKE shopの日次／週次reset後、購入routeをAI 0で再現する。
+2. NIKKE shopの次回日次reset後、revision 25の購入routeをAI 0で再現する。同reset分はAI監視runで購入済み。
 
 公開claimは`Game Operator Preview`のまま維持する。一般game自律操作、Verified Autonomous Playbook、課金／消費／戦闘macroを含めない。

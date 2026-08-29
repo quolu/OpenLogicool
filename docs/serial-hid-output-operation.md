@@ -1,7 +1,7 @@
 # Serial HID Output 運用・復旧手順
 
 - 対象: OpenLogicool Input Studio の USB出力（Serial HID v1）
-- 確認済み環境: Windows 11 build 26200 / x64、SparkFun Pro Micro ATmega32U4 5V / 16MHz、firmware 1.1.2
+- 確認済み環境: Windows 11 build 26200 / x64、SparkFun Pro Micro ATmega32U4 5V / 16MHz、firmware 1.1.3
 - device identity: `USB\VID_1B4F&PID_9206\HIDFG`
 - protocol: v1、keyboard 6KRO、mouse button 5個、relative pointer／wheel、firmware lease 150ms
 
@@ -21,7 +21,7 @@
 dotnet run --project src/OpenLogicool.Host/OpenLogicool.Host.csproj -- ui --resident
 ```
 
-Serial HID v1は通常キー同時6個までである。relative pointer／wheelはfirmware 1.1.0以降の`MOUSE_DELTA`で扱う。firmware 1.1.2はCDC応答停止からのHello回復に加え、fail-closed releaseが1秒継続した場合にwatchdogでUSBを自己再列挙する。actionは自動再送しない。7個以上の同時押し、音量などのconsumer controlには対応しない。対応外の割り当ては部分送出せず、明示faultで停止する。
+Serial HID v1は通常キー同時6個までである。relative pointer／wheelはfirmware 1.1.0以降の`MOUSE_DELTA`で扱う。firmware 1.1.3はCDC応答停止からのHello回復に加え、fail-closed releaseが1秒継続した場合と、USB／CDC処理からmain loopへ2秒戻らない場合にwatchdogでUSBを自己再列挙する。actionは自動再送しない。7個以上の同時押し、音量などのconsumer controlには対応しない。対応外の割り当ては部分送出せず、明示faultで停止する。
 
 ## 正常終了
 
@@ -44,7 +44,7 @@ baselineが無い、またはbyte一致を確認できない場合は成功扱�
 
 ## firmware再flash
 
-repo内のfirmware 1.1.2を再flashする場合:
+repo内のfirmware 1.1.3を再flashする場合:
 
 ```powershell
 pwsh.exe -NoLogo -NoProfile -File scripts/build-serial-hid.ps1
@@ -61,8 +61,8 @@ flash scriptはexact target identity、固定toolchain、upload verify、CDC＋k
 |---|---|---|
 | firmware build／flash／再列挙 | 確認済み | 固定toolchain、Pro Micro 5V / 16MHz |
 | G13／G600 key・mouse button・chord・finite sequence | 確認済み | 同一Serial HID経路 |
-| relative pointer／wheel | 確認済み | firmware 1.1.2、Windows hookでnon-injected move／wheelを観測 |
-| CDC session回復 | 確認済み | firmware 1.1.2、Hello 2秒／通常action 80ms、releasePending 1秒でwatchdog自己再列挙 |
+| relative pointer／wheel | 確認済み | firmware 1.1.3、Windows hookでnon-injected move／wheelを観測 |
+| CDC session回復 | 確認済み | firmware 1.1.3、Hello 2秒／通常action 80ms、releasePending 1秒またはmain loop block 2秒でwatchdog自己再列挙 |
 | layer／profile／app-first切替／保存後再起動 | 確認済み | FOX reference machine |
 | handled stop／hard kill release | 確認済み | 250ms以内 |
 | dispatch latency | 確認済み | 200 edge、p99 3.425ms、max 12.902ms |

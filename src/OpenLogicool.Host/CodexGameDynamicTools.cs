@@ -55,13 +55,15 @@ public sealed class CodexGameDynamicTools(
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = false };
     private string? currentObservationId;
     private readonly List<string> toolErrors = [];
+    private bool terminalActionFailure;
 
     public IReadOnlyList<string> FinalFacts { get; private set; } = [];
     public string FinalSummary { get; private set; } = string.Empty;
     public bool IsCompleted { get; private set; }
     public int ActionCallCount { get; private set; }
     public IReadOnlyList<string> ToolErrors => toolErrors;
-    public bool IsReplayableCompletion => ActionCallCount == 0 || route.RevisionNumber > 0;
+    public bool IsReplayableCompletion => !terminalActionFailure
+        && (ActionCallCount == 0 || route.RevisionNumber > 0);
 
     public IReadOnlyList<CodexDynamicToolDefinition> Definitions { get; } =
     [
@@ -218,9 +220,29 @@ public sealed class CodexGameDynamicTools(
         CancellationToken cancellationToken)
     {
         ActionCallCount++;
+        if (terminalActionFailure)
+        {
+            throw new InvalidOperationException(
+                "直前actionがterminal failureのため、このrunでは新しいactionを実行できません。");
+        }
         var outcome = await runtime.ExecuteAsync(command, route.Repairing, cancellationToken).ConfigureAwait(false);
         route.Record(outcome, usedSaved);
         currentObservationId = null;
+        if (IsTerminalActionFailure(outcome.Status))
+        {
+            terminalActionFailure = true;
+            var error = $"{command.Operation}: {outcome.Status}: {outcome.Detail}";
+            toolErrors.Add(error);
+            return new CodexDynamicToolOutput(false, JsonSerializer.Serialize(new
+            {
+                error,
+                outcome.Status,
+                Judgement = outcome.Judgement?.ToString(),
+                outcome.Detail,
+                RouteRevision = route.RevisionNumber,
+                RunMustStop = true,
+            }, Json));
+        }
         return new CodexDynamicToolOutput(true, JsonSerializer.Serialize(new
         {
             outcome.Status,
@@ -232,6 +254,13 @@ public sealed class CodexGameDynamicTools(
             ObservationRequired = true,
         }, Json));
     }
+
+    private static bool IsTerminalActionFailure(string status) => status is
+        nameof(ProductGameExplorerStepStatus.NoCandidate)
+        or nameof(ProductGameExplorerStepStatus.AdmissionStopped)
+        or nameof(ProductGameExplorerStepStatus.DispatchFailed)
+        or nameof(ProductGameExplorerStepStatus.Paused)
+        or nameof(ProductGameExplorerStepStatus.Abandoned);
 
     private void RequireObservation(JsonElement arguments)
     {
