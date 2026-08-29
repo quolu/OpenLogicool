@@ -125,6 +125,25 @@ public sealed class HostMacroAutomationIntentsTests : IDisposable
     }
 
     [Fact]
+    public async Task Shared_recording_gate_refuses_playback_while_a_demonstration_is_recording()
+    {
+        var gate = new OpenLogicool.Playbooks.DemonstrationRecordingGate();
+        Assert.True(gate.TryBeginRecording(out _));
+        using var intents = new HostMacroAutomationIntents(
+            path, new RecordingEngine(), () => [new MacroTargetOption("game", "Game")], gate);
+        _ = intents.SelectTarget("game");
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => intents.CreateAsync(
+            new MacroCreateRequest("game", "録画中に再生"), new Progress<MacroRunSnapshot>()));
+
+        Assert.Contains("記録中", exception.Message, StringComparison.Ordinal);
+        gate.EndRecording();
+        var terminal = await intents.CreateAsync(
+            new MacroCreateRequest("game", "録画終了後は再生できる"), new Progress<MacroRunSnapshot>());
+        Assert.Equal(MacroRunPhase.Completed, terminal.Phase);
+    }
+
+    [Fact]
     public async Task Macro_sqlite_ports_open_a_fresh_connection_on_each_thread()
     {
         using (var connection = new SqliteConnection(new SqliteConnectionStringBuilder

@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using System.IO;
 using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Persistence;
+using OpenLogicool.Playbooks;
 
 namespace OpenLogicool.Host;
 
@@ -34,6 +35,7 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
     private readonly IProductMacroExecutionEngine engine;
     private readonly Func<IReadOnlyList<MacroTargetOption>> targets;
     private readonly MacroTargetSettingsStore targetSettings;
+    private readonly DemonstrationRecordingGate recordingGate;
     private readonly SemaphoreSlim executionGate = new(1, 1);
     private readonly object stateGate = new();
     private CancellationTokenSource? activeCancellation;
@@ -45,11 +47,13 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
     public HostMacroAutomationIntents(
         string databasePath,
         IProductMacroExecutionEngine engine,
-        Func<IReadOnlyList<MacroTargetOption>>? targets = null)
+        Func<IReadOnlyList<MacroTargetOption>>? targets = null,
+        DemonstrationRecordingGate? recordingGate = null)
     {
         this.databasePath = Path.GetFullPath(databasePath);
         this.engine = engine ?? throw new ArgumentNullException(nameof(engine));
         this.targets = targets ?? ListVisibleTargets;
+        this.recordingGate = recordingGate ?? new DemonstrationRecordingGate();
         targetSettings = MacroTargetSettingsStore.ForDatabase(this.databasePath);
     }
 
@@ -178,6 +182,11 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         await executionGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        if (!recordingGate.TryBeginPlayback(out var recordingRefusal))
+        {
+            executionGate.Release();
+            throw new InvalidOperationException(recordingRefusal);
+        }
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         lock (stateGate)
         {
@@ -223,6 +232,7 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
         finally
         {
             lock (stateGate) activeCancellation = null;
+            recordingGate.EndPlayback();
             executionGate.Release();
         }
     }
