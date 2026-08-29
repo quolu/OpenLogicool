@@ -1439,6 +1439,14 @@ Phase 13 Exit（2026-08-29）: 別runで作成したロビー→MISSIONデイリ
 
 Phase 13 follow-up（2026-08-29）: shop reset後のAI監視run中、Nano actionの物理効果後にACK timeoutし、firmware 1.1.2がCOM8列挙済みのままHelloへ応答しない事象を再現した。1.1.2のsoftware timerはUSB／CDC call内blockでは実行不能だったため、firmware 1.1.3はmain loop全体をAVR hardware watchdogで監視する。Hostは`DispatchFailed`をdynamic tool successとして返さず、同じrunの後続actionと偽Completedを拒否する。verify付きflash後、100 session×2と長時間shop monitored runでtimeout 0。shop routeは19 step・revision 25でCompletedした。証拠は[Nano CDC liveness repair](../evidence/macro-product-flow/nano-cdc-liveness-repair-20260829.md)。同reset分を監視runで購入したため、shop AI 0は次回reset後に実行する。
 
+### Phase 14: Product Completion／操作デモ記録（Active 2026-08-29）
+
+目的: 利用者がGame Operatorからgoalを入力し、自分のmouse／keyboard／G13／G600操作を明示記録してAIの材料にし、既存AI監視修復、AI 0、macro統合、G13／G600割当まで一つのアプリjourneyとして完了できるようにする。
+
+操作デモは座標列macroではなくimmutable `Demonstration Session`として保存する。各操作をcurrent window／frame／transform、before／after WGC scene、10秒Compare、Transition Evidenceへ束縛し、そこから修復可能なLearning Routeを導出する。元記録は変更せず、寄り道・非遷移の採否とAI修復はroute revision側だけへ置く。mouse／keyboard取得はWindows環境別adapter、G13／G600は既存device input observerを使い、fast pathを待たせない。記録と再生は排他とし、対象game foreground外の入力は保存しない。
+
+既存Input StudioのG13／G600配置・編集・保存を維持し、Game Operatorへ記録開始／停止、記録session、記録からmacro作成、AI監視あり／なし、進捗・停止理由を追加する。工程正本はLattice plan `phase14-product-completion`、目的・契約・受入は[Phase 14 campaign plan](phase14-product-completion-campaign-plan.md)を正とする。
+
 ## 9. Blockerを潰すfocused experiment
 
 | ID | 実験 | 成功条件 | 失敗時の分岐 |
