@@ -3,6 +3,7 @@ using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Contracts.Shared;
+using OpenLogicool.Domain;
 using Xunit;
 
 namespace OpenLogicool.Exploration.Tests;
@@ -20,7 +21,7 @@ public sealed class DemonstrationRouteCompilerTests
         var sceneB = Scene("scene-b", label: "btn-to-c");
         var committer = new FakeStructureCommitter();
         var routes = new FakeLearningRouteStore();
-        var compiler = new DemonstrationRouteCompiler(committer, routes, FixedTime(10));
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), committer, routes, FixedTime(10));
 
         var session = Session(
             Operation("op-1", GameInteractionOperations.Click, sceneA, sceneB, GameTransitionJudgement.Moved),
@@ -46,7 +47,7 @@ public sealed class DemonstrationRouteCompilerTests
         var sceneB = Scene("scene-b", label: "btn-to-a");
         var committer = new FakeStructureCommitter();
         var routes = new FakeLearningRouteStore();
-        var compiler = new DemonstrationRouteCompiler(committer, routes, FixedTime(10));
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), committer, routes, FixedTime(10));
 
         var session = Session(
             Operation("op-1", GameInteractionOperations.Click, sceneA, sceneB, GameTransitionJudgement.Moved),
@@ -68,7 +69,7 @@ public sealed class DemonstrationRouteCompilerTests
         var sceneB = Scene("scene-b", label: "btn-to-c");
         var committer = new FakeStructureCommitter();
         var routes = new FakeLearningRouteStore();
-        var compiler = new DemonstrationRouteCompiler(committer, routes, FixedTime(10));
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), committer, routes, FixedTime(10));
 
         var session = Session(
             Operation("op-1", GameInteractionOperations.Click, sceneA, sceneB, GameTransitionJudgement.Moved),
@@ -88,7 +89,7 @@ public sealed class DemonstrationRouteCompilerTests
         var sceneB = Scene("scene-b", label: "btn-to-c");
         var committer = new FakeStructureCommitter();
         var routes = new FakeLearningRouteStore();
-        var compiler = new DemonstrationRouteCompiler(committer, routes, FixedTime(10));
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), committer, routes, FixedTime(10));
         var session = Session(Operation("op-1", GameInteractionOperations.Click, sceneA, sceneB, GameTransitionJudgement.Moved));
 
         var result = compiler.Compile(session);
@@ -112,7 +113,7 @@ public sealed class DemonstrationRouteCompilerTests
         var existing = routes.Append(new LearningRouteDraft(
             ContractSchemaVersions.Revision03, routeId, null, GameId, EnvironmentScope, "structure:seed",
             Goal, ["edge:seed"], LearningRouteAuthor.Ai, null, "seed", LearningRouteStatus.Compiled, FixedTime(1).GetUtcNow()));
-        var compiler = new DemonstrationRouteCompiler(committer, routes, FixedTime(10));
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), committer, routes, FixedTime(10));
         var session = Session(Operation("op-1", GameInteractionOperations.Click, sceneA, sceneB, GameTransitionJudgement.Moved));
 
         var result = compiler.Compile(session);
@@ -133,7 +134,7 @@ public sealed class DemonstrationRouteCompilerTests
         routes.Append(new LearningRouteDraft(
             ContractSchemaVersions.Revision03, routeId, null, GameId, "other-env", "structure:seed",
             Goal, ["edge:seed"], LearningRouteAuthor.Ai, null, "seed", LearningRouteStatus.Compiled, FixedTime(1).GetUtcNow()));
-        var compiler = new DemonstrationRouteCompiler(committer, routes, FixedTime(10));
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), committer, routes, FixedTime(10));
         var session = Session(Operation("op-1", GameInteractionOperations.Click, sceneA, sceneB, GameTransitionJudgement.Moved));
 
         Assert.Throws<InvalidOperationException>(() => compiler.Compile(session));
@@ -144,7 +145,7 @@ public sealed class DemonstrationRouteCompilerTests
     {
         var sceneA = Scene("scene-a", label: "btn-to-b");
         var sceneB = Scene("scene-b", label: "btn-to-c");
-        var compiler = new DemonstrationRouteCompiler(new FakeStructureCommitter(), new FakeLearningRouteStore());
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), new FakeStructureCommitter(), new FakeLearningRouteStore());
         var session = Session(Operation("op-1", GameInteractionOperations.Click, sceneA, sceneB, GameTransitionJudgement.Moved))
             with
         { State = DemonstrationSessionState.Recording };
@@ -161,7 +162,7 @@ public sealed class DemonstrationRouteCompilerTests
             DemonstrationEventKind.Stopped, FixedTime(1).GetUtcNow(), FixedTime(1).GetUtcNow(), null, null,
             new DemonstrationStop(ContractSchemaVersions.Revision03, "利用者停止", FixedTime(1).GetUtcNow()));
         var session = new DemonstrationSessionRecord(draft, DemonstrationSessionState.Stopped, "revision-1", [stop]);
-        var compiler = new DemonstrationRouteCompiler(new FakeStructureCommitter(), new FakeLearningRouteStore());
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), new FakeStructureCommitter(), new FakeLearningRouteStore());
 
         Assert.Throws<InvalidOperationException>(() => compiler.Compile(session));
     }
@@ -170,7 +171,7 @@ public sealed class DemonstrationRouteCompilerTests
     public void Compilation_refuses_when_every_operation_is_excluded()
     {
         var sceneA = Scene("scene-a", label: "btn-to-b");
-        var compiler = new DemonstrationRouteCompiler(new FakeStructureCommitter(), new FakeLearningRouteStore());
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), new FakeStructureCommitter(), new FakeLearningRouteStore());
         var session = Session(Operation("op-1", GameInteractionOperations.Click, sceneA, sceneA, GameTransitionJudgement.Stayed));
 
         Assert.Throws<InvalidOperationException>(() => compiler.Compile(session));
@@ -183,7 +184,7 @@ public sealed class DemonstrationRouteCompilerTests
         var sceneB = Scene("scene-b", label: "btn-to-c");
         var committer = new FakeStructureCommitter();
         var routes = new FakeLearningRouteStore();
-        var compiler = new DemonstrationRouteCompiler(committer, routes, FixedTime(10));
+        var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), committer, routes, FixedTime(10));
         var session = Session(Operation(
             "op-1", GameInteractionOperations.KeyTap, sceneA, sceneB, GameTransitionJudgement.Moved,
             keyTokens: ["Key:Enter"]));
@@ -194,6 +195,44 @@ public sealed class DemonstrationRouteCompilerTests
         Assert.Equal(["Key:Enter"], candidate.KeyTokens);
         Assert.Equal([0d, 0d, 0d, 0d], candidate.Locator.NormalizedBounds);
         Assert.Equal("demonstration-key", candidate.Locator.LocatorType);
+    }
+
+    [Fact]
+    public void Compilation_against_the_real_structure_knowledge_controller_accepts_the_demonstration_evidence()
+    {
+        // FakeStructureCommitterはevidence-known検証を持たない。ここでは実装のGameInteractionStructureLearnerと
+        // StructureKnowledgeControllerを実際に組み立てて通し、demonstration由来のTransitionEvidenceが
+        // 事前登録なしでは拒否される実装契約（evidenceはStructure Event Storeに既知でなければならない）を
+        // DemonstrationRouteCompiler側の事前登録で満たしていることを検証する。
+        var sceneA = Scene("scene-a", label: "btn-to-b");
+        var sceneB = Scene("scene-b", label: "btn-to-c");
+        var structureStore = new FakeStructureStore();
+        var idRegistry = new InMemoryStableStructureIdRegistry();
+        var eventIds = new GuidExplorationIdSource();
+        var knowledge = new StructureKnowledgeController(structureStore, idRegistry, eventIds);
+        var runJournal = new OpenLogicool.Playbooks.RunJournal(new FakeRunJournalStore(), new FakeEngineeringLog());
+        var attemptGate = new OpenLogicool.Playbooks.AttemptDispatchGate(runJournal);
+        var policy = new ExplorationPolicy(
+            ContractSchemaVersions.Revision03, "policy-1", "app:" + GameId, "window:game", EnvironmentScope,
+            "safe-slice", [GameInteractionOperations.Click], [],
+            new ExplorationBudget(ContractSchemaVersions.Revision03, 4, 5_000, 60_000),
+            "consent-1", "back", new ExplorationStopPolicy(ContractSchemaVersions.Revision03, 500),
+            ["budget-exhausted"]);
+        var coordinator = new ExplorationCoordinator(
+            structureStore, runJournal, attemptGate,
+            new ExplorationRunBinding(ContractSchemaVersions.Revision03, "run-1", GameId, EnvironmentScope, "exploration", "exploration-v1", 1),
+            policy, eventIds);
+        var structureLearner = new GameInteractionStructureLearner(
+            structureStore, knowledge, idRegistry, eventIds, coordinator, GameId, EnvironmentScope);
+        var routes = new FakeLearningRouteStore();
+        var compiler = new DemonstrationRouteCompiler(structureStore, structureLearner, routes);
+        var session = Session(Operation("op-1", GameInteractionOperations.Click, sceneA, sceneB, GameTransitionJudgement.Moved));
+
+        var result = compiler.Compile(session);
+
+        Assert.Single(result.Route.EdgeIds);
+        var revision = structureStore.LoadRevision(GameId, EnvironmentScope);
+        Assert.Single(revision.ScreenGraph.Edges);
     }
 
     private static DemonstrationSessionDraft SessionDraft() => new(
@@ -417,5 +456,87 @@ public sealed class DemonstrationRouteCompilerTests
 
         public IReadOnlyList<string> ListRouteIds(string gameId, string environmentScope) =>
             revisionsByRoute.Keys.ToArray();
+    }
+
+    private sealed class FakeStructureStore : IGameStructureStore
+    {
+        private readonly List<StructureEvent> events = [];
+
+        public StructureEvent Append(StructureEventDraft draft, string? expectedParentRevisionId, DateTimeOffset persistedUtc)
+        {
+            var scoped = events.Where(item => item.GameId == draft.GameId && item.EnvironmentScope == draft.EnvironmentScope).ToArray();
+            var parent = scoped.LastOrDefault()?.ResultingStructureRevisionId;
+            if (parent != expectedParentRevisionId)
+            {
+                throw new InvalidOperationException("revision conflict");
+            }
+
+            var sequence = scoped.LongLength + 1;
+            var item = new StructureEvent(
+                draft.SchemaVersion,
+                draft.EventId,
+                draft.GameId,
+                draft.EnvironmentScope,
+                sequence,
+                parent,
+                StructureRevisionIds.Next(parent, draft.EventId, sequence),
+                draft.Kind,
+                draft.Actor,
+                draft.CorrelationId,
+                draft.CausationId,
+                draft.ObservationId,
+                draft.ProposalId,
+                draft.AttemptId,
+                draft.EvidenceIds,
+                draft.PayloadType,
+                draft.PayloadJson,
+                draft.Outcome,
+                draft.OccurredUtc,
+                persistedUtc);
+            events.Add(item);
+            return item;
+        }
+
+        public IReadOnlyList<StructureEvent> ReadEvents(string gameId, string environmentScope) =>
+            events.Where(item => item.GameId == gameId && item.EnvironmentScope == environmentScope).ToArray();
+
+        public IReadOnlyList<string> ListGameIds() => events.Select(item => item.GameId).Distinct().ToArray();
+
+        public GameStructureRevision LoadRevision(string gameId, string environmentScope) =>
+            GameStructureProjector.Replay(gameId, environmentScope, ReadEvents(gameId, environmentScope));
+
+        public StructureKnowledgePackExport Export(string gameId, string environmentScope, DateTimeOffset createdUtc) =>
+            new(
+                ContractSchemaVersions.Revision03,
+                "knowledge:test",
+                gameId,
+                environmentScope,
+                LoadRevision(gameId, environmentScope),
+                ReadEvents(gameId, environmentScope),
+                createdUtc);
+    }
+
+    private sealed class FakeRunJournalStore : OpenLogicool.Contracts.Playbooks.IRunJournalStore
+    {
+        private readonly List<OpenLogicool.Contracts.Playbooks.RunEvent> events = [];
+
+        public void Append(OpenLogicool.Contracts.Playbooks.RunEvent runEvent) => events.Add(runEvent);
+
+        public IReadOnlyList<OpenLogicool.Contracts.Playbooks.RunEvent> ReadRun(string runId) =>
+            events.Where(item => item.RunId == runId).OrderBy(item => item.RunSequence).ToArray();
+
+        public IReadOnlyList<string> ListRunIds() => events.Select(item => item.RunId).Distinct().ToArray();
+
+        public IReadOnlyList<OpenLogicool.Contracts.Playbooks.ExpiredRunPreview> PreviewExpiredRuns(
+            DateTimeOffset asOfUtc, int retentionDays) => [];
+
+        public void DeleteRun(string runId) => events.RemoveAll(item => item.RunId == runId);
+    }
+
+    private sealed class FakeEngineeringLog : OpenLogicool.Contracts.Playbooks.IEngineeringLogSink
+    {
+        public void Record(OpenLogicool.Contracts.Playbooks.EngineeringLogEntry entry)
+        {
+        }
     }
 }

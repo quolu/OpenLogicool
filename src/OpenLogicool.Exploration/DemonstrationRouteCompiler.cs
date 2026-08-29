@@ -1,3 +1,4 @@
+using System.Text.Json;
 using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Playbooks;
@@ -17,10 +18,12 @@ public interface IDemonstrationRouteCompiler
 /// 変更せず、goal単位のrouteへ新しいrevisionだけを追記する。
 /// </summary>
 public sealed class DemonstrationRouteCompiler(
+    IGameStructureStore structures,
     IGameInteractionStructureCommitter committer,
     ILearningRouteStore routes,
     TimeProvider? timeProvider = null) : IDemonstrationRouteCompiler
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
     private readonly TimeProvider time = timeProvider ?? TimeProvider.System;
 
     public DemonstrationRouteCompilationResult Compile(DemonstrationSessionRecord session)
@@ -218,6 +221,13 @@ public sealed class DemonstrationRouteCompiler(
             operation.After.StableMillisecondsObserved,
             Math.Max(operation.After.ElapsedMilliseconds, operation.After.StableMillisecondsObserved));
 
+        // GameInteractionStructureLearner（StructureKnowledgeController）はdelta operationが
+        // 参照するevidenceが既にStructure Event Storeに記録済みであることを要求する。AI探索は
+        // ExplorationCoordinator.RecordOutcomeがdispatch probeの一部としてこれを書くが、
+        // demonstrationは物理入力が既に完了した後の事後導出であり同じprobe機構を持たないため、
+        // Actor=Userの同形eventをここで直接登録して既知evidenceにする。
+        RegisterEvidence(session.GameId, evidence);
+
         return committer.Commit(
             beforeWithCandidate,
             afterScene,
@@ -226,5 +236,83 @@ public sealed class DemonstrationRouteCompiler(
             riskTags: [],
             reversible: false,
             recordedUtc: operation.OccurredUtc);
+    }
+
+    private void RegisterEvidence(string gameId, TransitionEvidence evidence)
+    {
+        // GameStructureProjector.ReplayはOutcomeRecordedの前に、同じAttemptId／CorrelationIdの
+        // DispatchArmedがあることを要求する（AI探索のdispatch-then-outcomeと同じ台帳形）。
+        // demonstrationはNano等の実dispatchを経ないため、ここでActor=Userとして両eventを直接記録する。
+        var correlationId = $"demo-correlation:{evidence.AttemptId}";
+        var armedEventId = $"demo-dispatch-armed:{evidence.EvidenceId}";
+        Append(
+            gameId,
+            evidence.EnvironmentScope,
+            armedEventId,
+            StructureEventKind.DispatchArmed,
+            correlationId,
+            causationId: evidence.AttemptId,
+            observationId: evidence.BeforeObservationId,
+            attemptId: evidence.AttemptId,
+            evidenceIds: [evidence.BeforeObservationId],
+            payloadType: StructureEventPayloadTypes.None,
+            payloadJson: "{}",
+            outcome: null,
+            occurredUtc: evidence.RecordedUtc);
+
+        var outcomeEventId = $"demo-outcome-recorded:{evidence.EvidenceId}";
+        Append(
+            gameId,
+            evidence.EnvironmentScope,
+            outcomeEventId,
+            StructureEventKind.OutcomeRecorded,
+            correlationId,
+            causationId: evidence.AttemptId,
+            observationId: evidence.AfterObservationId,
+            attemptId: evidence.AttemptId,
+            evidenceIds: [evidence.EvidenceId, evidence.BeforeObservationId, evidence.AfterObservationId],
+            payloadType: StructureEventPayloadTypes.TransitionEvidence,
+            payloadJson: JsonSerializer.Serialize(evidence, JsonOptions),
+            outcome: evidence.Outcome,
+            occurredUtc: evidence.RecordedUtc);
+    }
+
+    private void Append(
+        string gameId,
+        string environmentScope,
+        string eventId,
+        StructureEventKind kind,
+        string correlationId,
+        string causationId,
+        string? observationId,
+        string attemptId,
+        IReadOnlyList<string> evidenceIds,
+        string payloadType,
+        string payloadJson,
+        ExplorationOutcomeKind? outcome,
+        DateTimeOffset occurredUtc)
+    {
+        var current = structures.LoadRevision(gameId, environmentScope);
+        var expectedParentRevisionId = current.RevisionId == "structure:root" ? null : current.RevisionId;
+        _ = structures.Append(
+            new StructureEventDraft(
+                ContractSchemaVersions.Revision03,
+                eventId,
+                gameId,
+                environmentScope,
+                kind,
+                StructureEventActor.User,
+                CorrelationId: correlationId,
+                CausationId: causationId,
+                ObservationId: observationId,
+                ProposalId: null,
+                AttemptId: attemptId,
+                EvidenceIds: evidenceIds,
+                PayloadType: payloadType,
+                PayloadJson: payloadJson,
+                Outcome: outcome,
+                OccurredUtc: occurredUtc),
+            expectedParentRevisionId,
+            occurredUtc);
     }
 }
