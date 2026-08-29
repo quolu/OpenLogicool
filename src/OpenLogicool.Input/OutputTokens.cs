@@ -34,6 +34,25 @@ public static class OutputTokens
 
     private static readonly IReadOnlyDictionary<string, (ushort Vk, bool Extended)> KeyNames = BuildKeyNames();
 
+    /// <summary>
+    /// virtual key から key 名を逆引きする（同じ KeyNames 表を使うので対応表を二重に持たない）。
+    /// 表に無い key は false を返し、呼び出し側は "Vk:0xNN" を使う。
+    /// </summary>
+    public static bool TryGetKeyName(ushort virtualKey, bool isExtendedKey, out string name)
+    {
+        foreach (var (keyName, resolved) in KeyNames)
+        {
+            if (resolved.Vk == virtualKey && resolved.Extended == isExtendedKey)
+            {
+                name = keyName;
+                return true;
+            }
+        }
+
+        name = string.Empty;
+        return false;
+    }
+
     public static bool IsSequenceStep(string token) =>
         token.StartsWith(SequenceStepPrefix, StringComparison.Ordinal);
 

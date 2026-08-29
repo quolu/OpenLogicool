@@ -83,10 +83,12 @@ public sealed record DemonstrationOperation(
 /// <summary>
 /// 対象gameがforegroundから外れた区間の境界。
 /// 他appの画面・座標・key文字列を持つfieldは無く、実行fileのpathだけを残す。
+/// pathがnullなのはforeground identityを取得できなかった区間で、
+/// 「識別できなかった」ことをそのまま残す（別の値で埋めない）。
 /// </summary>
 public sealed record DemonstrationFocusChange(
     string SchemaVersion,
-    string ForegroundApplicationPath,
+    string? ForegroundApplicationPath,
     string? ResumedObservationId,
     DateTimeOffset OccurredUtc);
 
@@ -216,13 +218,21 @@ public static class DemonstrationSessionValidator
 
             case DemonstrationEventKind.FocusLost:
                 Require(!paused, "既にfocus喪失中です。");
+                RequireSchema(draft.FocusChange!.SchemaVersion, nameof(draft));
+                // pathはnull可（foreground identity取得不能）。空白文字だけの値は識別できたことにしない。
                 Require(
-                    !string.IsNullOrWhiteSpace(draft.FocusChange!.ForegroundApplicationPath),
-                    "ForegroundApplicationPathが空です。");
+                    draft.FocusChange.ForegroundApplicationPath is null
+                    || draft.FocusChange.ForegroundApplicationPath.Trim().Length > 0,
+                    "ForegroundApplicationPathが空白です。識別不能はnullで残します。");
+                Require(
+                    !string.Equals(
+                        draft.FocusChange.ForegroundApplicationPath,
+                        session.TargetApplicationPath,
+                        StringComparison.OrdinalIgnoreCase),
+                    "対象app自身へのfocus喪失は記録できません。");
                 Require(
                     draft.FocusChange.ResumedObservationId is null,
                     "focus喪失eventにResumedObservationIdは持たせません。");
-                RequireSchema(draft.FocusChange.SchemaVersion, nameof(draft));
                 break;
 
             case DemonstrationEventKind.FocusRegained:

@@ -1,0 +1,13 @@
+{
+  "Probe": "sendinput-accept",
+  "CapturedAtUtc": "2026-08-29T02:15:27.1427343Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "TargetLabel": "t02-env-check",
+  "TargetElevated": false,
+  "ForegroundConfirmed": false,
+  "Sent": [],
+  "Received": [],
+  "AllReceivedInOrder": false,
+  "Verdict": "Unverified: target window could not take foreground; no classification made."
+}

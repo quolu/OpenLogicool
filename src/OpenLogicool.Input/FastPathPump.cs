@@ -28,6 +28,7 @@ public sealed class FastPathPump : IDisposable
     private readonly IReadOnlyDictionary<string, DeviceMappingRuntime> _runtimes;
     private readonly IOutputEmitter _emitter;
     private readonly IMacroInvocationSink? _macroInvocations;
+    private readonly IPhysicalInputObserver? _inputObserver;
     private readonly ConcurrentQueue<(string DeviceInstanceId, MappingProfile Profile)> _profileChangeRequests = new();
     private readonly Thread _worker;
     private readonly AutoResetEvent _controlWake = new(false);
@@ -58,12 +59,14 @@ public sealed class FastPathPump : IDisposable
         IOutputEmitter emitter,
         bool enableTrace = false,
         int traceCapacity = 256,
-        IMacroInvocationSink? macroInvocations = null)
+        IMacroInvocationSink? macroInvocations = null,
+        IPhysicalInputObserver? inputObserver = null)
     {
         _sources = sources;
         _runtimes = runtimesByDeviceInstanceId;
         _emitter = emitter;
         _macroInvocations = macroInvocations;
+        _inputObserver = inputObserver;
         _traceEnabled = enableTrace;
         _traceCapacity = traceCapacity;
         var sourceSignals = sources
@@ -149,6 +152,10 @@ public sealed class FastPathPump : IDisposable
                     throw new FastPathFaultException(
                         $"device instance '{input.DeviceInstanceId}' の Mapping Runtime が構成されていません。");
                 }
+
+                // 操作デモ記録へのfan-out。observerは非blockingで例外を投げない契約なので、
+                // ここでmapping/emitの順序も所要時間も変わらない（§6.1の待たない規律を保つ）。
+                _inputObserver?.OnInput(input);
 
                 var layerId = runtime.CurrentLayerId;
                 var edges = runtime.Process(input);

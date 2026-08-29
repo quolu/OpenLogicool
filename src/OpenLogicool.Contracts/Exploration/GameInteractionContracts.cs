@@ -181,7 +181,7 @@ public interface IGameObservationRuntime
         CancellationToken cancellationToken = default);
 }
 
-public interface IGameInteractionRuntime : IGameObservationRuntime
+public interface IGameInteractionRuntime : Playbooks.IDemonstrationObservationRuntime
 {
 
     ValueTask<GameInteractionDispatchReceipt> HoverAsync(
@@ -203,15 +203,6 @@ public interface IGameInteractionRuntime : IGameObservationRuntime
     ValueTask<GameInteractionDispatchReceipt> DragAsync(
         GameInteractionDragRequest request,
         CancellationToken cancellationToken = default);
-
-    ValueTask<GameInteractionStabilityResult> WaitStableAsync(
-        ObservedScene before,
-        ExplorationWaitCondition condition,
-        CancellationToken cancellationToken = default);
-
-    GameTransitionComparison Compare(
-        ObservedScene before,
-        GameInteractionStabilityResult after);
 
     GameTransitionLearningResult LearnTransition(GameTransitionLearningRequest request);
 }

@@ -24,6 +24,16 @@ public sealed record PhysicalInput(
     double MonotonicMs,
     long ReportSequence);
 
+/// <summary>
+/// fast pathを通過したPhysicalInputの傍受面（操作デモ記録のfan-out先）。
+/// 実装は必ず非blockingで、例外を投げない——fast path workerがここで待つと
+/// Device Input→Mapping Runtime→Input Emitterの経路が止まる。
+/// </summary>
+public interface IPhysicalInputObserver
+{
+    void OnInput(PhysicalInput input);
+}
+
 public interface IDeviceInputSource
 {
     IReadOnlyList<DeviceInstance> EnumerateDevices();

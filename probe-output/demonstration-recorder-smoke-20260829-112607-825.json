@@ -1,0 +1,227 @@
+{
+  "probe": "demonstration-recorder-smoke",
+  "label": "self-window",
+  "capturedAtUtc": "2026-08-29T02:26:07.8253599+00:00",
+  "note": "SendInput\u306F\u3053\u306Eprobe\u306E\u6E2C\u5B9A\u5668\u3067\u3042\u308A\u88FD\u54C1\u7D4C\u8DEF\u3067\u306F\u306A\u3044\u3002\u8A18\u9332\u5668\u306F\u5165\u529B\u3092\u9001\u3089\u306A\u3044\u3002",
+  "clientBoundsOnScreen": {
+    "Left": 128,
+    "Top": 151,
+    "Width": 624,
+    "Height": 441
+  },
+  "keyboardHookCalls": 8,
+  "mouseHookCalls": 8,
+  "observedEdgeCount": 13,
+  "observedEdges": [
+    {
+      "kind": "KeyDown",
+      "source": "Keyboard",
+      "token": "Key:Space",
+      "screenPoint": null,
+      "normalized": null,
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "KeyUp",
+      "source": "Keyboard",
+      "token": "Key:R",
+      "screenPoint": null,
+      "normalized": null,
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "PointerDown",
+      "source": "Mouse",
+      "token": "Mouse:Left",
+      "screenPoint": {
+        "X": 440,
+        "Y": 371
+      },
+      "normalized": [
+        0.5,
+        0.4988662131519274
+      ],
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "PointerUp",
+      "source": "Mouse",
+      "token": "Mouse:Left",
+      "screenPoint": {
+        "X": 440,
+        "Y": 371
+      },
+      "normalized": [
+        0.5,
+        0.4988662131519274
+      ],
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "KeyUp",
+      "source": "Keyboard",
+      "token": "Key:A",
+      "screenPoint": null,
+      "normalized": null,
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "KeyDown",
+      "source": "Keyboard",
+      "token": "Key:U",
+      "screenPoint": null,
+      "normalized": null,
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "KeyUp",
+      "source": "Keyboard",
+      "token": "Key:Space",
+      "screenPoint": null,
+      "normalized": null,
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "KeyUp",
+      "source": "Keyboard",
+      "token": "Key:U",
+      "screenPoint": null,
+      "normalized": null,
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "PointerDown",
+      "source": "Mouse",
+      "token": "Mouse:Left",
+      "screenPoint": {
+        "X": 596,
+        "Y": 481
+      },
+      "normalized": [
+        0.75,
+        0.7482993197278912
+      ],
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "PointerUp",
+      "source": "Mouse",
+      "token": "Mouse:Left",
+      "screenPoint": {
+        "X": 440,
+        "Y": 371
+      },
+      "normalized": [
+        0.5,
+        0.4988662131519274
+      ],
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "KeyDown",
+      "source": "Keyboard",
+      "token": "Key:Esc",
+      "screenPoint": null,
+      "normalized": null,
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "KeyUp",
+      "source": "Keyboard",
+      "token": "Key:Esc",
+      "screenPoint": null,
+      "normalized": null,
+      "WheelVerticalSteps": 0,
+      "WheelHorizontalSteps": 0
+    },
+    {
+      "kind": "Wheel",
+      "source": "Mouse",
+      "token": "Mouse:Wheel",
+      "screenPoint": {
+        "X": 440,
+        "Y": 371
+      },
+      "normalized": [
+        0.5,
+        0.4988662131519274
+      ],
+      "WheelVerticalSteps": 1,
+      "WheelHorizontalSteps": 0
+    }
+  ],
+  "checks": [
+    {
+      "Name": "pointer down \u30922\u56DE\u89B3\u6E2C",
+      "Passed": true,
+      "Detail": "count=2"
+    },
+    {
+      "Name": "pointer up \u30922\u56DE\u89B3\u6E2C",
+      "Passed": true,
+      "Detail": "count=2"
+    },
+    {
+      "Name": "key down \u3092\u89B3\u6E2C",
+      "Passed": true,
+      "Detail": "count=3"
+    },
+    {
+      "Name": "key up \u3092\u89B3\u6E2C",
+      "Passed": true,
+      "Detail": "count=5"
+    },
+    {
+      "Name": "wheel \u3092\u89B3\u6E2C",
+      "Passed": true,
+      "Detail": "count=1"
+    },
+    {
+      "Name": "key token \u304C Key:Esc",
+      "Passed": false,
+      "Detail": "Key:Space"
+    },
+    {
+      "Name": "mouse token \u304C Mouse:Left",
+      "Passed": true,
+      "Detail": "Mouse:Left"
+    },
+    {
+      "Name": "key edge \u306B pointer \u5EA7\u6A19\u304C\u4ED8\u304B\u306A\u3044",
+      "Passed": true,
+      "Detail": "ScreenPoint=null"
+    },
+    {
+      "Name": "wheel \u306E\u6BB5\u6570\u304C 0 \u3067\u306A\u3044",
+      "Passed": true,
+      "Detail": "v=1 h=0"
+    },
+    {
+      "Name": "client frame \u4E2D\u592E\u304C 0.5 \u4ED8\u8FD1\u3078\u6B63\u898F\u5316\u3055\u308C\u308B",
+      "Passed": true,
+      "Detail": "[0.5000, 0.4989]"
+    },
+    {
+      "Name": "client frame \u5916\u306F null\uFF08desktop \u7D76\u5BFE\u5EA7\u6A19\u3092\u4FDD\u5B58\u3057\u306A\u3044\uFF09",
+      "Passed": true,
+      "Detail": "null"
+    },
+    {
+      "Name": "\u89B3\u6E2C\u3057\u305F pointer down \u306F\u3059\u3079\u3066 client frame \u5185\u3067\u6B63\u898F\u5316\u3067\u304D\u308B",
+      "Passed": true,
+      "Detail": "[0.5000, 0.4989] / [0.7500, 0.7483]"
+    }
+  ],
+  "passed": false
+}
