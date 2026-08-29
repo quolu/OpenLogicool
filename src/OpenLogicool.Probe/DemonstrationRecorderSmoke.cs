@@ -173,7 +173,8 @@ internal static class DemonstrationRecorderSmoke
         public IReadOnlyList<DemonstrationInputEdge> Snapshot() => edges.ToArray();
     }
 
-    private sealed class SelfWindow : IDisposable
+    /// <summary>他のprobe（t07 journey smoke）からも使うのでassembly内へ公開する。</summary>
+    internal sealed class SelfWindow : IDisposable
     {
         private readonly IntPtr handle;
         private readonly Thread thread;
