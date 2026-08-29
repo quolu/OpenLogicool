@@ -677,7 +677,8 @@ static int Ui(string[] arguments)
     using var demonstrationRecordingIntents = new HostDemonstrationRecordingIntents(
         databasePath,
         new WindowsDemonstrationLiveSessionFactory(databasePath),
-        demonstrationGate);
+        demonstrationGate,
+        DemonstrationWaitConditions.WithVisionDiscovery);
     using var macroWorker = macroQueue is null
         ? null
         : new MacroAutomationWorker(macroQueue, macroAutomationIntents);

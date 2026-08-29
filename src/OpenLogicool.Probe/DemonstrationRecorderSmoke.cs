@@ -189,7 +189,16 @@ internal static class DemonstrationRecorderSmoke
             this.threadId = threadId;
         }
 
-        public static SelfWindow Create(string title, int left, int top, int width, int height)
+        public static SelfWindow Create(string title, int left, int top, int width, int height) =>
+            Create(title, left, top, width, height, null, null);
+
+        /// <summary>
+        /// clickで表示が変わる窓を作る。labelとlabelAfterClickを与えると左clickで文字が入れ替わる。
+        /// 画面が本当に変わらないと遷移が起きず、記録からrouteを導出できないため、
+        /// 一巡の確認にはこちらを使う。
+        /// </summary>
+        public static SelfWindow Create(
+            string title, int left, int top, int width, int height, string? label, string? labelAfterClick)
         {
             const uint WsOverlappedWindow = 0x00CF0000;
             const uint WsVisible = 0x10000000;
@@ -200,7 +209,47 @@ internal static class DemonstrationRecorderSmoke
             uint createdThreadId = 0;
             using var ready = new ManualResetEventSlim(false);
 
-            WndProcDelegate procedure = DefWindowProc;
+            var clicked = false;
+            WndProcDelegate procedure = label is null
+                ? DefWindowProc
+                : (window, message, wParam, lParam) =>
+                {
+                    const uint WmPaint = 0x000F;
+                    const uint WmLeftButtonDown = 0x0201;
+                    if (message == WmLeftButtonDown)
+                    {
+                        clicked = true;
+                        _ = InvalidateRect(window, IntPtr.Zero, true);
+                        return IntPtr.Zero;
+                    }
+                    if (message != WmPaint)
+                    {
+                        return DefWindowProc(window, message, wParam, lParam);
+                    }
+
+                    var device = BeginPaint(window, out var paint);
+                    try
+                    {
+                        _ = GetClientRect(window, out var client);
+                        var brush = CreateSolidBrush(clicked ? 0x00202020u : 0x00FFFFFFu);
+                        _ = FillRect(device, ref client, brush);
+                        _ = DeleteObject(brush);
+                        var font = CreateFont(
+                            -96, 0, 0, 0, 700, false, false, false, 1, 0, 0, 0, 0, "Segoe UI");
+                        var previousFont = SelectObject(device, font);
+                        _ = SetBkMode(device, 1);
+                        _ = SetTextColor(device, clicked ? 0x00FFFFFFu : 0x00202020u);
+                        var text = clicked ? labelAfterClick! : label;
+                        _ = DrawText(device, text, text.Length, ref client, 0x00000001);
+                        _ = SelectObject(device, previousFont);
+                        _ = DeleteObject(font);
+                    }
+                    finally
+                    {
+                        _ = EndPaint(window, ref paint);
+                    }
+                    return IntPtr.Zero;
+                };
             var thread = new Thread(() =>
             {
                 try
@@ -320,6 +369,59 @@ internal static class DemonstrationRecorderSmoke
             public int Top;
             public int Right;
             public int Bottom;
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool InvalidateRect(IntPtr window, IntPtr rect, [MarshalAs(UnmanagedType.Bool)] bool erase);
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr BeginPaint(IntPtr window, out PaintStruct paint);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool EndPaint(IntPtr window, ref PaintStruct paint);
+
+        [DllImport("user32.dll")]
+        private static extern int FillRect(IntPtr device, ref NativeRect rect, IntPtr brush);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int DrawText(IntPtr device, string text, int length, ref NativeRect rect, uint format);
+
+        [DllImport("gdi32.dll")]
+        private static extern IntPtr CreateSolidBrush(uint color);
+
+        [DllImport("gdi32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool DeleteObject(IntPtr handle);
+
+        [DllImport("gdi32.dll")]
+        private static extern IntPtr SelectObject(IntPtr device, IntPtr handle);
+
+        [DllImport("gdi32.dll")]
+        private static extern int SetBkMode(IntPtr device, int mode);
+
+        [DllImport("gdi32.dll")]
+        private static extern uint SetTextColor(IntPtr device, uint color);
+
+        [DllImport("gdi32.dll", CharSet = CharSet.Unicode)]
+        private static extern IntPtr CreateFont(
+            int height, int width, int escapement, int orientation, int weight,
+            [MarshalAs(UnmanagedType.Bool)] bool italic,
+            [MarshalAs(UnmanagedType.Bool)] bool underline,
+            [MarshalAs(UnmanagedType.Bool)] bool strikeOut,
+            uint charSet, uint outputPrecision, uint clipPrecision, uint quality, uint pitchAndFamily,
+            string faceName);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PaintStruct
+        {
+            public IntPtr Device;
+            [MarshalAs(UnmanagedType.Bool)] public bool Erase;
+            public NativeRect Paint;
+            [MarshalAs(UnmanagedType.Bool)] public bool Restore;
+            [MarshalAs(UnmanagedType.Bool)] public bool IncUpdate;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)] public byte[] Reserved;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -503,5 +605,7 @@ internal static class DemonstrationRecorderSmoke
 
         [DllImport("user32.dll")]
         private static extern int GetSystemMetrics(int index);
+
+
     }
 }

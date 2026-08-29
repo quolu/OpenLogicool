@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using OpenLogicool.Contracts.Devices.Shared;
+using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Desktop;
 using OpenLogicool.Host;
@@ -46,8 +47,13 @@ internal static class DemonstrationJourneySmoke
         DemonstrationRecorderSmoke.SelfWindow window;
         try
         {
+            // clickで別のページへ変わる窓にする。実測（2026-08-30）で分かったこと:
+            // 無地の窓では遷移が起きず、文字1語だけの入れ替えは「OCR表記ゆれ」と判定されて
+            // 遷移に数えられない。要素の顔ぶれごと変わる画面にする。
             window = DemonstrationRecorderSmoke.SelfWindow.Create(
-                "OpenLogicool 操作デモ一巡 self-window", 120, 120, 720, 520);
+                "OpenLogicool 操作デモ一巡 self-window", 120, 120, 720, 520,
+                "START",
+                "MENU" + Environment.NewLine + "ITEM" + Environment.NewLine + "BACK");
         }
         catch (InvalidOperationException error)
         {
@@ -83,7 +89,10 @@ internal static class DemonstrationJourneySmoke
 
             var gate = new DemonstrationRecordingGate();
             using var recording = new HostDemonstrationRecordingIntents(
-                databasePath, new WindowsDemonstrationLiveSessionFactory(databasePath), gate);
+                databasePath,
+                new WindowsDemonstrationLiveSessionFactory(databasePath),
+                gate,
+                DemonstrationWaitConditions.WithVisionDiscovery);
 
             DemonstrationSessionSummary started;
             try
@@ -107,9 +116,19 @@ internal static class DemonstrationJourneySmoke
             }
 
             var stopped = recording.StopAsync().GetAwaiter().GetResult();
-            var macro = stopped.OperationCount > 0
-                ? recording.CreateMacroFromSession(started.SessionId)
-                : null;
+            MacroCatalogItem? macro = null;
+            if (stopped.OperationCount > 0)
+            {
+                try
+                {
+                    macro = recording.CreateMacroFromSession(started.SessionId);
+                }
+                catch (InvalidOperationException error)
+                {
+                    // 遷移しなかった操作しか無いとrouteは作れない。別経路へ逃げず未確認で止める。
+                    return Unverified(outputDirectory, label, "記録した操作からrouteを導出できなかった。", error.Message);
+                }
+            }
 
             string? token = null;
             if (macro is not null)

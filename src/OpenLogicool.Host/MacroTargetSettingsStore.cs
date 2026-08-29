@@ -48,8 +48,21 @@ public sealed class MacroTargetSettingsStore
         ArgumentException.ThrowIfNullOrWhiteSpace(processName);
         var value = new MacroTargetSettings(
             MacroTargetSettings.CurrentSchemaVersion,
-            Path.GetFileNameWithoutExtension(processName.Trim()));
+            NormalizeProcessName(processName));
         File.WriteAllText(path, JsonSerializer.Serialize(value, Json));
         return value;
+    }
+
+    /// <summary>
+    /// exe path を渡されても process 名として扱えるようにする。
+    /// 落とすのは末尾の .exe だけで、process 名に含まれるドット（"Some.Game" 等）は残す。
+    /// 拡張子として一律に切ると、ドットを含む process 名が別名になって対象を見失う。
+    /// </summary>
+    private static string NormalizeProcessName(string processName)
+    {
+        var trimmed = Path.GetFileName(processName.Trim());
+        return trimmed.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            ? trimmed[..^4]
+            : trimmed;
     }
 }

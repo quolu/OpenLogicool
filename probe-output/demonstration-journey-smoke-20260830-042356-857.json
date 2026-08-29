@@ -1,0 +1,88 @@
+{
+  "probe": "demonstration-journey-smoke",
+  "label": "t07-live",
+  "capturedAtUtc": "2026-08-29T19:23:56.8570605+00:00",
+  "note": "\u5165\u529B\u306FNano\u306E\u7269\u7406HID\u51FA\u529B\u3060\u3051\u3002SendInput\u3068Computer Use\u306F\u4F7F\u308F\u306A\u3044\u3002",
+  "databasePath": "C:\\Users\\kite_\\Documents\\Program\\OpenLogicool\\probe-output\\demonstration-journey-20260830-042258-393.db",
+  "verdict": null,
+  "observation": {
+    "TargetProcessName": "OpenLogicool.Probe",
+    "ClientLeft": 128,
+    "ClientTop": 151,
+    "ClientWidth": 704,
+    "ClientHeight": 481,
+    "NanoCursorMatched": true,
+    "RecordedOperationCount": 1,
+    "SessionState": "Stopped",
+    "RouteId": "purpose:7e673cf940df92648c11c8e6515add6fb77d92bc02689d8220bd87f244862ee4",
+    "Goal": "self-window\u3092\u4E00\u5EA6\u30AF\u30EA\u30C3\u30AF\u3059\u308B",
+    "StepCount": 1,
+    "AssignedToken": "Macro:free:cHVycG9zZTo3ZTY3M2NmOTQwZGY5MjY0OGMxMWM4ZTY1MTVhZGQ2ZmI3N2Q5MmJjMDI2ODlkODIyMGJkODdmMjQ0ODYyZWU0:latest",
+    "Reopen": {
+      "Token": "Macro:free:cHVycG9zZTo3ZTY3M2NmOTQwZGY5MjY0OGMxMWM4ZTY1MTVhZGQ2ZmI3N2Q5MmJjMDI2ODlkODIyMGJkODdmMjQ0ODYyZWU0:latest",
+      "BoundControlIds": [
+        "G1",
+        "G9"
+      ],
+      "ProfileIds": [
+        "ws-demonstration-journey-G13",
+        "ws-demonstration-journey-G600"
+      ],
+      "RouteId": "purpose:7e673cf940df92648c11c8e6515add6fb77d92bc02689d8220bd87f244862ee4",
+      "RouteEdgeCount": 1
+    }
+  },
+  "checks": [
+    {
+      "Name": "Nano\u306E\u30AB\u30FC\u30BD\u30EB\u304C\u5BFE\u8C61\u70B9\u3078\u5C4A\u3044\u305F",
+      "Passed": true,
+      "Detail": "(128, 151) \u57FA\u6E96"
+    },
+    {
+      "Name": "\u7269\u7406click\u304C1\u64CD\u4F5C\u3068\u3057\u3066\u8A18\u9332\u3055\u308C\u305F",
+      "Passed": true,
+      "Detail": "count=1"
+    },
+    {
+      "Name": "\u8A18\u9332\u306F\u505C\u6B62\u6E08\u307F\u3067\u9589\u3058\u3066\u3044\u308B",
+      "Passed": true,
+      "Detail": "Stopped"
+    },
+    {
+      "Name": "\u539F\u672C\u304B\u3089route\u304C\u5C0E\u51FA\u3055\u308C\u305F",
+      "Passed": true,
+      "Detail": "route=purpose:7e673cf940df92648c11c8e6515add6fb77d92bc02689d8220bd87f244862ee4 step=1"
+    },
+    {
+      "Name": "\u5272\u5F53token\u304C\u4F5C\u3089\u308C\u305F",
+      "Passed": true,
+      "Detail": "Macro:free:cHVycG9zZTo3ZTY3M2NmOTQwZGY5MjY0OGMxMWM4ZTY1MTVhZGQ2ZmI3N2Q5MmJjMDI2ODlkODIyMGJkODdmMjQ0ODYyZWU0:latest"
+    },
+    {
+      "Name": "\u5225process\u3067\u518Dopen\u3067\u304D\u305F",
+      "Passed": true,
+      "Detail": "OK"
+    },
+    {
+      "Name": "\u518Dopen\u5F8C\u3082\u540C\u3058token\u304C\u4FDD\u5B58\u3055\u308C\u3066\u3044\u308B",
+      "Passed": true,
+      "Detail": "Macro:free:cHVycG9zZTo3ZTY3M2NmOTQwZGY5MjY0OGMxMWM4ZTY1MTVhZGQ2ZmI3N2Q5MmJjMDI2ODlkODIyMGJkODdmMjQ0ODYyZWU0:latest"
+    },
+    {
+      "Name": "G13\u3068G600\u306E2 binding\u304C\u6B8B\u3063\u3066\u3044\u308B",
+      "Passed": true,
+      "Detail": "G1,G9"
+    },
+    {
+      "Name": "device\u7A2E\u5225\u3054\u3068\u306Eprofile\u304C2\u4EF6\u3067\u304D\u3066\u3044\u308B",
+      "Passed": true,
+      "Detail": "ws-demonstration-journey-G13,ws-demonstration-journey-G600"
+    },
+    {
+      "Name": "token\u304C\u30C7\u30E2\u7531\u6765route\u3078\u89E3\u6C7A\u3059\u308B",
+      "Passed": true,
+      "Detail": "route=purpose:7e673cf940df92648c11c8e6515add6fb77d92bc02689d8220bd87f244862ee4 edges=1"
+    }
+  ],
+  "passed": true
+}

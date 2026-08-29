@@ -1,7 +1,7 @@
 # t07-product-journey-acceptance 証跡
 
 工程正本: Lattice plan `phase14-product-completion` / task `t07-product-journey-acceptance`
-担当: koharu（設計・実装） / 記録日: 2026-08-29
+担当: koharu（設計・実装） / 記録日: 2026-08-29（live実測 2026-08-30）
 
 ## 工程指定（正本の逐語）
 
@@ -9,7 +9,7 @@
 
 ## 結論
 
-一巡は3段で構成した。**第1段（fake＋実SQLiteの受入test）と第2段（記録器を製品の合成点へ配線）は成立**。第3段（self-window＋Nano物理入力のlive一巡）は**コードまで用意して未実行**で、実マウスカーソルを数秒奪うためオーナーの合図を待っている（#1108 / #1110）。
+**3段すべて成立した。** fake＋実SQLiteの受入test、記録器の製品への配線、そしてself-window＋**Nanoの物理HID入力**によるlive一巡が、いずれも通っている。live一巡はbellの共有リソース解放（#1116）後に実行し、10 check全てOK。
 
 着手して最初に分かったのは、**記録機能が製品からまったく到達できない状態だった**ことである。t04 は `IDemonstrationLiveSessionFactory` を差し込み点として置いたまま実装が無く、t05 は `GameOperatorWindow` に記録tabを足したが呼び出し元の `InputStudioWindow` が記録intentsを渡していなかった。t08（オーナーがUIから実記録するH工程）はこの配線が無いと成立しないので、t07 で繋いだ。
 
@@ -52,7 +52,7 @@
 
 **途中で直した自分の間違い**: 最初「一致しなければ直近のscope」を期待するtestを書いて落ちた。調べると `MAX(event_sequence)` は同点になり得て順序が決まらない——これはmacro engineから逐語で持ってきた既存挙動で、コードが保証しているのは「既存scopeがあれば新規を作らない」という不変条件だけだった。保証していないことを期待したtestが誤りなので、testを実際の不変条件へ直した（製品の挙動は変えていない）。
 
-## 第3段: self-window＋Nano物理入力（コード完成・未実行）
+## 第3段: self-window＋Nano物理入力（成立）
 
 `src/OpenLogicool.Probe/DemonstrationJourneySmoke.cs`（新規）と probe command `demonstration-journey-smoke`。
 
@@ -74,24 +74,52 @@ dotnet run --project src/OpenLogicool.Probe -- demonstration-journey-smoke --por
 - Foundry Local: `foundrylocald` 稼働中（endpointは製品のresolver任せ）
 - 前面: 保護appが前面を保持している間はlow-level hookが実入力を観測できない（t02実測）
 
-### 未実行の理由
+### live実測（成立）
 
-実行すると**数秒だけNanoが実マウスカーソルを動かす**（SendInputではなく物理HID出力なので、その間オーナーの操作と混ざる）。技術判定は私が下すが、人の手が機械にかかっている時間を奪う操作なので、走らせてよいタイミングだけをオーナーへ打診している（#1108 / #1110）。合図があれば1コマンドで通る。
+採用実測: `probe-output/demonstration-journey-smoke-20260830-042356-857.json`
+
+10 check すべてOK。
+
+| 確認 | 結果 |
+| --- | --- |
+| Nanoのカーソルが対象点へ届いた | OK（client frame 128,151 基準） |
+| 物理clickが1操作として記録された | count=1 |
+| 記録は停止済みで閉じている | Stopped |
+| 原本からrouteが導出された | step=1 |
+| 割当tokenが作られた | `Macro:free:…:latest` |
+| 別processで再openできた | OK |
+| 再open後も同じtokenが保存されている | 一致 |
+| G13とG600の2 bindingが残っている | G1, G9 |
+| device種別ごとのprofileが2件できている | `ws-demonstration-journey-G13` / `-G600` |
+| tokenがデモ由来routeへ解決する | edges=1・route一致 |
+
+入力はNanoの物理HID出力だけで、SendInputとComputer Useは使っていない。
+
+### live実行で見つけて直した欠陥3件
+
+1. **`MacroTargetSettingsStore.Save` がドットを含むprocess名を切っていた**。`Path.GetFileNameWithoutExtension` を通していたため `OpenLogicool.Probe` が `OpenLogicool` になり、対象windowを見失った。落とすのを末尾の `.exe` だけにして、process名に含まれるドットは残すよう直した（`Some.Game` のようなgameでも同じ欠陥が出る）。focused test 6ケース追加。
+2. **記録の安定待ちが既定10秒では成立しなかった**。vision discoveryを通す観測は1回で約10秒かかり（実測: 12.3秒使い切って観測1件だけでTimedOut）、2フレーム目に届かない。観測2回ぶんの余裕を持たせた45秒を `DemonstrationWaitConditions.WithVisionDiscovery` として置き、製品の合成点とprobeの両方で使う。**利用者から見ると、記録した1操作ごとに最大45秒の待ちが入る**。
+3. **probeが別のwindowを撮っても成立に見える経路があった**。製品はprocess名から `MainWindowHandle` を引くので、consoleから起動したprobeではself-windowとは限らない。掴んだwindowがself-windowと違えば未確認で止めるようにした。
+
+### live実行で分かった判定の性質（製品は変えていない）
+
+無地の窓をclickしても遷移は起きず、文字1語だけの入れ替え（`OPEN`→`CLOSED`）は「単なるOCR表記ゆれはページ遷移に使わない」と判定されて遷移に数えられなかった。要素の顔ぶれごと変わる画面（`START` → `MENU`／`ITEM`／`BACK`）にすると `Moved` になった。**これはOCR表記ゆれを遷移と誤認しないための既存の正しい判定**なので製品側は変えず、probeの画面をページ遷移らしく作り直した。
 
 ## 試験内容と試験結果
 
 Windows native（net10.0-windows / .NET SDK 10.0.400）。
 
-focused test 新規10件・全green
+focused test 新規16件・全green
 - `Host.Tests/DemonstrationProductJourneyTests` 1件（一巡受入）
 - `Host.Tests/WindowsDemonstrationLiveSessionTests` 4件（scope解決3・観測adapter 1）
 - `Probe.Tests/DemonstrationJourneySmokeJudgementTests` 5件（完全な一巡が全check通過／何も記録できなかった一巡が静かに通らない／片方のdevice bindingが消えたら落ちる／別routeへ解決したら落ちる／カーソルが届かなかったら落ちる）
+- `Host.Tests/MacroTargetSettingsStoreDotNameTests` 6ケース（ドットを含むprocess名が保存で別名にならず、末尾の `.exe` だけが落ちる）
 
 関連module（最終確認）
 ```
-Host 292 / Desktop 103 / Probe 70 / Playbooks 194 / Input 160
+Host 298 / Desktop 103 / Probe 70 / Playbooks 194 / Input 160
 Profiles 25 / Persistence 55 / Architecture 8 / Exploration 64 / Perception 32
-合計 1,003件 全green・solution build 警告0・エラー0
+合計 1,009件 全green・solution build 警告0・エラー0
 ```
 
 full regression はこの工程では実行していない（t09の範囲）。
@@ -105,7 +133,8 @@ full regression はこの工程では実行していない（t09の範囲）。
 - 記録器が構造上、入力を出せない: **確認済み**（観測面に入力dispatchが無い）
 - 記録と探索が同じdiscovery／同じscopeを使う: **確認済み**（切り出しの共有＋scope解決のfocused test）
 - Computer Use・SendInput・外部AI APIが0: **確認済み**（第1段は全てfake／第2段の経路にNano・SendInputが登場しない／第3段はNano物理出力のみ）
-- Windows self-windowでの実記録とNano非injected入力の一巡: **未確認**（probeは完成。実カーソルを奪うためオーナーの合図待ち）
+- Windows self-windowでの実記録とNano非injected入力の一巡: **確認済み**（10 check全てOK。`probe-output/demonstration-journey-smoke-20260830-042356-857.json`）
+- 実gameでの記録: **未確認**（対象は自分の窓だけ。実gameはt08のオーナー手番）
 - ui processと別のrun processが同時に動く場合の記録・再生排他: **非対応**（gateはin-process。cross-process lockは作らない。別processの再生を止めたい場合は先に停止すること）
 
 ## 変更file
@@ -120,4 +149,7 @@ full regression はこの工程では実行していない（t09の範囲）。
 - `tests/OpenLogicool.Probe.Tests/DemonstrationJourneySmokeJudgementTests.cs`（新規）
 - `evidence/phase14-product-completion/t07-product-journey-acceptance.md`（本書）
 
-commit: `98a05dc`（第1段）／`aa340fa`（第2段）／`b6df3bc`（第3段のコード）
+- `src/OpenLogicool.Host/MacroTargetSettingsStore.cs`（ドットを含むprocess名を切らない）
+- `tests/OpenLogicool.Host.Tests/MacroTargetSettingsStoreDotNameTests.cs`（新規6ケース）
+
+commit: `98a05dc`（第1段）／`aa340fa`（第2段）／`b6df3bc`・`81ccef9`（第3段のコード）／live実測時の修正3件

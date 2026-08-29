@@ -191,3 +191,16 @@ public static class DemonstrationEnvironmentScope
         return first ?? $"{gameId}:{resolution}";
     }
 }
+
+/// <summary>
+/// 操作デモを記録するときの安定待ち条件。
+///
+/// 既定の10秒は探索経路から持ってきた値で、vision discoveryを通す観測1回に約10秒かかる
+/// 本経路では2フレーム目に届かず、必ず打ち切られて遷移が判定できない（実測 2026-08-30:
+/// 観測1回で12.3秒を使い切り、観測が1件しか集まらずTimedOut）。観測2回ぶんに余裕を持たせる。
+/// </summary>
+public static class DemonstrationWaitConditions
+{
+    public static ExplorationWaitCondition WithVisionDiscovery { get; } =
+        new(ContractSchemaVersions.Revision03, 2, 1_000, 45_000);
+}
