@@ -215,6 +215,34 @@ public static class InitialSqliteMigrations
                     PRIMARY KEY (game_id, environment_scope)
                 );
                 """),
+            new SqlMigration(
+                12,
+                """
+                CREATE TABLE demonstration_sessions (
+                    session_id TEXT PRIMARY KEY,
+                    game_id TEXT NOT NULL,
+                    environment_scope TEXT NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    started_utc TEXT NOT NULL,
+                    session_json TEXT NOT NULL
+                );
+                CREATE INDEX ix_demonstration_sessions_game_environment
+                ON demonstration_sessions (game_id, environment_scope, session_id);
+                CREATE TABLE demonstration_events (
+                    session_id TEXT NOT NULL,
+                    event_sequence INTEGER NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    event_id TEXT NOT NULL UNIQUE,
+                    parent_revision_id TEXT NULL,
+                    resulting_revision_id TEXT NOT NULL,
+                    event_kind TEXT NOT NULL,
+                    occurred_utc TEXT NOT NULL,
+                    persisted_utc TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    PRIMARY KEY (session_id, event_sequence),
+                    UNIQUE (session_id, resulting_revision_id)
+                );
+                """),
         };
 }
 

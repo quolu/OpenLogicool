@@ -1,0 +1,137 @@
+# t01-demonstration-contract 証跡
+
+工程正本: Lattice plan `phase14-product-completion` / task `t01-demonstration-contract`
+担当: koharu（設計・実装）
+記録日: 2026-08-29
+
+## 工程指定（正本の逐語）
+
+> Demonstration Sessionの公開contract、validator、append-only store、migration、再openを実装する。goal、game profile、focus区間、有限操作、frame binding、before／after、Compare、evidence、原本revisionを保持する。Learning RouteやUIをこの工程で実装しない。
+
+## 何を作ったか
+
+### 1. 公開contract（`src/OpenLogicool.Contracts/Playbooks/DemonstrationSessionContracts.cs`・新規）
+
+操作デモ原本の型を、既存の基本機能contract（`GameInteractionOperations` / `ObservedScene` / `GameInteractionStabilityResult` / `GameTransitionComparison`）の上に定義した。新しい再生器・新しい観測型は作っていない。
+
+- `DemonstrationSessionDraft` — 記録開始時に一度だけ書く見出し。**goal**、**game profile**（`GameId` / `EnvironmentScope` / `TargetApplicationPath` / `TargetWindowSourceId`）、`RecorderVersion`、`StartedUtc`。
+- `DemonstrationFrameBinding` — **frame binding**。`ObservationId` / `FrameSequence` / `TransformRevision` / `TargetWindowSourceId` と、`NormalizedPoint`（client frameへ正規化した0〜1の2要素）。**desktop絶対座標を持つfieldが存在しない**ので、絶対座標は構造上保存できない。
+- `DemonstrationOperation` — **有限操作**一回。`Operation`（基本10機能の入力5種のいずれか）、`Source`（Mouse / Keyboard / G13 / G600）、`Target`、**Before**（`ObservedScene`）、**After**（`GameInteractionStabilityResult`）、**Compare**（`GameTransitionComparison`）、**evidence**（`TransitionEvidenceId`）、monotonic時刻、primitive別parameter（`KeyTokens` / scroll段数 / drag先 / `DeviceControlId`）。
+- `DemonstrationFocusChange` — **focus区間**の境界。`ForegroundApplicationPath` と復帰時の `ResumedObservationId` だけを持ち、他appの画面・座標・key文字列を入れるfieldが無い。
+- `DemonstrationStop` — 停止と理由。
+- `DemonstrationEvent` / `DemonstrationSessionRecord` — **原本revision**。`ParentRevisionId` → `ResultingRevisionId` のhash鎖と`Sequence`。
+- `DemonstrationRevisionIds` — payload本文を含むSHA-256から `demo-event:` / `demo:` を導出する。
+- `IDemonstrationSessionStore` — `Start` / `Append` / `Load` / `ListSessionIds` だけ。**更新・削除のmethodを公開していない**（原本は修正しない）。
+
+### 2. validator（同fileの `DemonstrationSessionValidator`）
+
+受入規則を1箇所に集約した。storeとGame Operatorが同じ規則を通るよう、Persistenceから参照できるContracts側に置いた（`OpenLogicool.Persistence` は `OpenLogicool.Playbooks` を参照しない依存行列のため）。規則の二重化はしていない。
+
+主な規則:
+
+- schemaは `0.3.0` だけ受理（session・event・入れ子payloadすべて）。
+- 操作は `GameInteractionOperations.InputOperations` のいずれか。
+- `Before.ObservationId` / `Frame.Sequence` / `Frame.TransformRevision` / `Frame.SourceId` が `Target` の束縛と一致すること（click直前だけの捏造beforeを弾く）。
+- pointer座標は2要素・有限・0〜1。key操作は座標を持てない。
+- `Comparison.BeforeObservationId` は操作前観測と一致、`AfterObservationId` は `After.StableScene?.ObservationId` と一致（安定しなかった場合はnull同士で一致）。
+- 対象windowが原本の `TargetWindowSourceId` と一致すること。
+- 入力源と操作の対応: Keyboard / G13 は key操作だけ、Mouse は key操作以外。`DeviceControlId` はG13／G600のときだけ。
+- primitive別parameterの排他（key/scroll/dragが互いのfieldを持たない）。
+- **focus喪失中は操作を追記できない**。focus復帰は対象appへの復帰かつ新しい `ResumedObservationId` を要求する。
+- 停止済み原本へは追記できない。時刻は後戻りしない。payloadはKindとちょうど一つ対応する。
+
+### 3. append-only store と migration
+
+- `src/OpenLogicool.Persistence/SqliteDemonstrationSessionStore.cs`（新規）— `Start`（重複開始を拒否）、`Append`（1 transaction内で見出し読込→既存event読込→validator→sequence・event id・revision id採番→INSERT）、`Load`（見出し＋event列＋状態＋head revision）、`ListSessionIds`。UPDATE / DELETE のSQLを持たない。読み出し時に未対応schemaを黙って読み飛ばさず `InvalidOperationException` にする。
+- `src/OpenLogicool.Persistence/SqliteMigrationRunner.cs` — migration 12 を追加。`demonstration_sessions`（session_id主キー、game/env索引）と `demonstration_events`（`PRIMARY KEY (session_id, event_sequence)`、`event_id` UNIQUE、`UNIQUE (session_id, resulting_revision_id)`）。既存 `structure_events` と同じ制約の形に揃えた。
+
+### 4. この工程で作らなかったもの
+
+Learning Route導出、Windows入力recorder、Host intents、UI。工程指定どおり範囲外。
+
+## 試験内容と試験結果
+
+すべて Windows native（`net10.0-windows`, .NET SDK 10.0.400）で実行した。
+
+### focused test（新規22件）
+
+`tests/OpenLogicool.Playbooks.Tests/DemonstrationSessionValidatorTests.cs`（新規・12 Fact/Theory＝17ケース）
+
+| 試験 | 確認した内容 |
+| --- | --- |
+| `Click_operation_bound_to_its_own_before_observation_is_accepted` | 正常なclick一回が受理される |
+| `Operation_whose_before_observation_differs_from_its_binding_is_rejected` | before観測と束縛のずれを拒否 |
+| `Operation_bound_to_a_stale_frame_of_the_same_observation_is_rejected` | 同一observation内でもframe sequenceのずれを拒否 |
+| `Pointer_coordinates_outside_the_normalized_client_frame_are_rejected`（-0.01 / 1.01 / NaN） | 正規化外・非有限座標を拒否 |
+| `Key_tap_keeps_key_tokens_and_refuses_a_pointer_position` | key操作はtoken必須・pointer座標不可 |
+| `Device_control_id_is_required_for_g13_and_forbidden_for_mouse` | device control idの所属 |
+| `Keyboard_source_cannot_record_a_pointer_primitive` | 入力源と操作の対応 |
+| `Scroll_and_drag_carry_only_their_own_parameters` | scroll 0段拒否・drag＋scroll同居拒否 |
+| `Comparison_must_point_at_the_recorded_before_and_stable_after_observations` | after不一致を拒否、TimedOut時はnull同士で受理 |
+| `Operations_are_refused_while_focus_is_lost_and_resume_needs_a_new_observation` | focus喪失中の操作拒否、復帰は新Observation必須、復帰後は操作可 |
+| `Focus_regained_must_return_to_the_recorded_target_application` | 別appへの復帰を拒否 |
+| `A_stopped_original_refuses_further_appends` | 停止後の追記拒否 |
+| `Events_must_not_go_backwards_in_time_and_carry_exactly_one_payload` | 時刻逆行・payload二重を拒否 |
+| `Unknown_schema_versions_are_refused_for_the_session_and_for_events` | 0.1.0 / 0.2.0 を拒否 |
+| `Operations_outside_the_recorded_target_window_are_refused` | 対象window外を拒否 |
+
+`tests/OpenLogicool.Persistence.Tests/SqliteDemonstrationSessionStoreTests.cs`（新規・5 Fact）
+
+| 試験 | 確認した内容 |
+| --- | --- |
+| `Recorded_original_keeps_its_revision_chain_across_reopen` | click→focus喪失→focus復帰→停止の4件を書き、**connectionを閉じて実file DBを開き直して**、sequence 1..4・parent→resulting鎖の連結・正規化座標・before observation・frame sequence・Compare判定・Compare所要10,059ms・evidence id・復帰observation・停止理由・`ListSessionIds` を復元確認（**再open**） |
+| `The_original_cannot_be_reopened_restarted_or_appended_after_stop` | 同一session idの再Start拒否、停止後追記拒否、event数が1のまま |
+| `Rejected_appends_leave_no_trace_in_the_original` | 拒否された追記の後もevent 1件・head revision不変・状態Recording（部分書込みなし） |
+| `Appending_to_an_unknown_session_fails_instead_of_creating_one` | 未開始sessionへの追記が原本を作らない |
+| `Stored_rows_written_with_an_unsupported_schema_are_refused_on_read` | 保存済み行のschemaを未対応値へ書き換えると読み出しが例外になる（黙って読み飛ばさない） |
+
+実行結果:
+
+```
+dotnet test tests/OpenLogicool.Playbooks.Tests --filter FullyQualifiedName~DemonstrationSessionValidator
+  成功! 失敗: 0、合格: 17、スキップ: 0、合計: 17
+dotnet test tests/OpenLogicool.Persistence.Tests --filter FullyQualifiedName~DemonstrationSession
+  成功! 失敗: 0、合格: 5、スキップ: 0、合計: 5
+```
+
+### 関連test（module単位・最終確認）
+
+migration総数が11→12になったため、既存の `SqliteMigrationRunnerTests` 3件が期待値11で失敗した。工程内の修正として期待値を12へ更新し、`demonstration_sessions` / `demonstration_events` の生成確認2行を追加した（既存DBへの追加適用経路 `Existing_migration_seven_database_receives_document_revision_index` を含む）。
+
+```
+tests/OpenLogicool.Persistence.Tests    成功! 失敗: 0、合格:  55、合計:  55
+tests/OpenLogicool.Playbooks.Tests      成功! 失敗: 0、合格: 181、合計: 181
+tests/OpenLogicool.Architecture.Tests   成功! 失敗: 0、合格:   8、合計:   8
+tests/OpenLogicool.Conformance.Tests    成功! 失敗: 0、合格:  61、合計:  61
+tests/OpenLogicool.Host.Tests           成功! 失敗: 0、合格: 253、合計: 253
+```
+
+Architecture testが green なので、依存行列（Contractsは参照ゼロ／PersistenceはContracts・Domainだけ）は壊れていない。build警告0（`TreatWarningsAsErrors`）。
+
+full regressionはこの工程では実行していない（t09の範囲）。
+
+## 自己監査で直したもの
+
+1. **冗長な制約の削除**: `demonstration_events` に最初 `UNIQUE (session_id, parent_revision_id)` を置いたが、`PRIMARY KEY (session_id, event_sequence)` が同じ分岐をすでに防ぐため冗長だった。既存 `structure_events` と同じ `UNIQUE (session_id, resulting_revision_id)` へ揃え、再走で green を確認した。
+2. **非nullable引数への `is not null` チェックの削除**: `ArgumentNullException.ThrowIfNull` へ置き換え、境界の検査だけを残した。
+
+## 4値（この工程の範囲）
+
+- 公開contractがgoal／game profile／focus区間／有限操作／frame binding／before・after／Compare／evidence／原本revisionを保持する: **確認済み**（型定義＋再openで全項目を復元したstore test）
+- validatorが原本の受入規則を単一箇所で持つ: **確認済み**（Persistenceが同じclassを呼ぶ。規則の実装は1つ）
+- storeがappend-only（更新・削除の公開methodなし、停止後追記不可、拒否時に痕跡なし）: **確認済み**
+- migrationと再open: **確認済み**（実file DBのclose→再open復元、既存DBへの追加適用）
+- desktop絶対座標を保存しない: **確認済み**（保持するfieldが存在しない・正規化外を拒否）
+- focus喪失中のkey文字を保存しない: **確認済み**（focus区間eventにkey文字fieldが無く、喪失中のoperation追記を拒否）
+- 記録・再生の排他、実機入力からの記録: **未確認**（t02の範囲。この工程では実装していない）
+- Learning Routeへの導出: **未確認**（t03の範囲。この工程では実装していない）
+
+## 変更file
+
+- `src/OpenLogicool.Contracts/Playbooks/DemonstrationSessionContracts.cs`（新規）
+- `src/OpenLogicool.Persistence/SqliteDemonstrationSessionStore.cs`（新規）
+- `src/OpenLogicool.Persistence/SqliteMigrationRunner.cs`（migration 12 追加）
+- `tests/OpenLogicool.Playbooks.Tests/DemonstrationSessionValidatorTests.cs`（新規）
+- `tests/OpenLogicool.Persistence.Tests/SqliteDemonstrationSessionStoreTests.cs`（新規）
+- `tests/OpenLogicool.Persistence.Tests/SqliteMigrationRunnerTests.cs`（期待migration数11→12、新table 2件の生成確認を追加）
+- `evidence/phase14-product-completion/t01-demonstration-contract.md`（本書）
