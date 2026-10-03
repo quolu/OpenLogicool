@@ -88,3 +88,5 @@ K-ZNRR6Hでは「2操作とも画面が変わった」と回答されたが、13
 診断Probe`demonstration-timeline-analysis`は原本schema 0.4のPNG・入力・取得時刻を読み、SQLiteの読み取り専用接続から独立DBへsnapshotを取って新しい診断sessionを作る。元のsessionと画像は変更しない。live capture・入力出力を持たず、通常のFoundry Local／OCR／認識compositionと`DemonstrationTimelineAnalyzer`を通す。再解析の成功を新しい実UI受入の代わりにはしない。
 
 再解析は`probe-output/demonstration-timeline-analysis-20261003-140239-312/report.json`で2操作ともMoved。before／afterは37→57と57→78、安定区間は1,444msと1,177ms。22枚の保存画像を解析し、LiveCapture／SendInput／Computer Use／外部AI APIはすべて0。修理前後で元画像と操作時刻を維持したまま、既存判定器で往復が成立した。関連試験はTimeline 7件と、それ以外の記録・安定判定51件の合計58件が通過した。修正版の実UI確認は開発版更新後に実施する。
+
+修理は`a1b7e90`としてmainへpush。K-SFMP7Zで通常終了の回答を受け、Host processの終了を確認してから正規installerで開発版を更新した。Launcherからの通常起動、Input Studioのwindow titleと応答、install済みHost DLLとRelease buildのSHA-256一致、Hostのsource revisionが`a1b7e90`であることを確認した。次は修正版でのNIKKE記録と候補マクロ作成の実UI確認。
