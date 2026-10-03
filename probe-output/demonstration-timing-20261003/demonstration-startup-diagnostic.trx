@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="1d8029eb-593a-49bb-a802-19391ab8073e" name="kite_@FOX 2026-10-03 13:19:42" runUser="FOX\kite_" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-03T13:19:42.7265805+09:00" queuing="2026-10-03T13:19:42.7265809+09:00" start="2026-10-03T13:19:41.0011909+09:00" finish="2026-10-03T13:19:42.7327582+09:00" />
+  <TestSettings name="default" id="67f03e1d-84e9-4a90-b70a-8dd4347d382b">
+    <Deployment runDeploymentRoot="kite__FOX_2026-10-03_13_19_42" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="289e144f-e36f-4dd3-a6f1-5dcc162a9db4" testId="6d2d7698-514f-fb43-f032-652e433809a2" testName="OpenLogicool.Host.Tests.DemonstrationStartupDiagnosticTests.Clicks_during_initial_vision_are_preserved_after_recording_stops" computerName="FOX" duration="00:00:00.5149916" startTime="2026-10-03T13:19:42.6437945+09:00" endTime="2026-10-03T13:19:42.6438097+09:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="289e144f-e36f-4dd3-a6f1-5dcc162a9db4">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Equal() Failure: Values differ&#xD;
+Expected: 2&#xD;
+Actual:   1</Message>
+          <StackTrace>   at OpenLogicool.Host.Tests.DemonstrationStartupDiagnosticTests.Clicks_during_initial_vision_are_preserved_after_recording_stops() in C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Host.Tests\DemonstrationStartupDiagnosticTests.cs:line 35&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="OpenLogicool.Host.Tests.DemonstrationStartupDiagnosticTests.Clicks_during_initial_vision_are_preserved_after_recording_stops" storage="c:\users\kite_\developer\openlogicool\tests\openlogicool.host.tests\bin\debug\net10.0-windows10.0.22621.0\openlogicool.host.tests.dll" id="6d2d7698-514f-fb43-f032-652e433809a2">
+      <Execution id="289e144f-e36f-4dd3-a6f1-5dcc162a9db4" />
+      <TestMethod codeBase="C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Host.Tests\bin\Debug\net10.0-windows10.0.22621.0\OpenLogicool.Host.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="OpenLogicool.Host.Tests.DemonstrationStartupDiagnosticTests" name="Clicks_during_initial_vision_are_preserved_after_recording_stops" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="6d2d7698-514f-fb43-f032-652e433809a2" executionId="289e144f-e36f-4dd3-a6f1-5dcc162a9db4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="一覧に存在しない結果" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="読み込まれたすべての結果" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="1" executed="1" passed="0" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 10.0.12)&#xD;
+[xUnit.net 00:00:00.55]   Discovering: OpenLogicool.Host.Tests&#xD;
+[xUnit.net 00:00:00.59]   Discovered:  OpenLogicool.Host.Tests&#xD;
+[xUnit.net 00:00:00.59]   Starting:    OpenLogicool.Host.Tests&#xD;
+[xUnit.net 00:00:01.14]       Assert.Equal() Failure: Values differ&#xD;
+[xUnit.net 00:00:01.14]       Expected: 2&#xD;
+[xUnit.net 00:00:01.14]       Actual:   1&#xD;
+[xUnit.net 00:00:01.14]       Stack Trace:&#xD;
+[xUnit.net 00:00:01.14]         C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Host.Tests\DemonstrationStartupDiagnosticTests.cs(35,0): at OpenLogicool.Host.Tests.DemonstrationStartupDiagnosticTests.Clicks_during_initial_vision_are_preserved_after_recording_stops()&#xD;
+[xUnit.net 00:00:01.14]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:01.15]   Finished:    OpenLogicool.Host.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="FOX" outcome="Error" timestamp="2026-10-03T13:19:42.6416336+09:00">
+        <Text>[xUnit.net 00:00:01.14]     OpenLogicool.Host.Tests.DemonstrationStartupDiagnosticTests.Clicks_during_initial_vision_are_preserved_after_recording_stops [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>
