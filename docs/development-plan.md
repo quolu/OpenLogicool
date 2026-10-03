@@ -1443,7 +1443,7 @@ Phase 13 follow-up（2026-08-29）: shop reset後のAI監視run中、Nano action
 
 目的: 利用者がGame Operatorからgoalを入力し、自分のmouse／keyboard／G13／G600操作を明示記録してAIの材料にし、既存AI監視修復、AI 0、macro統合、G13／G600割当まで一つのアプリjourneyとして完了できるようにする。
 
-操作デモは座標列macroではなくimmutable `Demonstration Session`として保存する。各操作をcurrent window／frame／transform、before／after WGC scene、10秒Compare、Transition Evidenceへ束縛し、そこから修復可能なLearning Routeを導出する。元記録は変更せず、寄り道・非遷移の採否とAI修復はroute revision側だけへ置く。mouse／keyboard取得はWindows環境別adapter、G13／G600は既存device input observerを使い、fast pathを待たせない。記録と再生は排他とし、対象game foreground外の入力は保存しない。
+操作デモは入力とWGC画面を取得時刻でimmutable原本へ保存し、停止後に保存画像だけを既存の認識・安定判定・Compareへ渡して`Demonstration Session`を導出する。各操作をcurrent window／frame／transform、before／after WGC scene、上限10秒Compare、Transition Evidenceへ束縛する。次の入力・focus喪失・停止で因果区間を閉じ、短い区間・証拠不足はUndeterminedで保持する。候補Learning RouteはMovedを記録順で保持し、訪問済み画面への戻りを一律に寄り道と決めない。非遷移・重複の採否とAI修復はroute revision側だけへ置く。mouse／keyboard取得はWindows環境別adapter、G13／G600は既存device input observerを使い、fast pathを待たせない。記録と再生は排他とし、対象game foreground外の入力は保存しない。
 
 既存Input StudioのG13／G600配置・編集・保存を維持し、Game Operatorへ記録開始／停止、記録session、記録からmacro作成、AI監視あり／なし、進捗・停止理由を追加する。工程正本はLattice plan `phase14-product-completion`、目的・契約・受入は[Phase 14 campaign plan](phase14-product-completion-campaign-plan.md)を正とする。
 

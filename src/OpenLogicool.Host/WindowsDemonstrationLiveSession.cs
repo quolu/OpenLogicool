@@ -94,12 +94,14 @@ public sealed class WindowsDemonstrationLiveSessionFactory(
                 TimeSpan.FromSeconds(10));
             var evidenceDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "OpenLogicool", "demonstration-evidence", DateTime.Now.ToString("yyyyMMdd-HHmmss-fff"));
+                "OpenLogicool", "demonstration-evidence", $"{DateTime.Now:yyyyMMdd-HHmmss-fff}-{Guid.NewGuid():N}");
+            var recordedFrames = new DemonstrationRecordedFrameSource();
+            var evidence = new LocalPngGameFrameEvidenceSink(evidenceDirectory, new WindowsGameFramePngEncoder());
             var observation = new ProductGameObservationRuntime(
-                frameSource,
+                recordedFrames,
                 new LiveObservationSource(new ZeroSeedFrameStateRecognizer()),
                 discovery,
-                new LocalPngGameFrameEvidenceSink(evidenceDirectory, new WindowsGameFramePngEncoder()));
+                evidence);
             var runtime = new WindowsDemonstrationObservationRuntime(
                 observation,
                 new GameInteractionStabilityRuntime(
@@ -111,6 +113,15 @@ public sealed class WindowsDemonstrationLiveSessionFactory(
                 () => WindowsGameTargetLocator.Locate(target.ProcessName).Bounds);
             var targetApplicationPath = ResolveApplicationPath(target);
             var collector = new WindowsDemonstrationInputCollector(targetApplicationPath);
+            var timeline = new DemonstrationTimelineRecording(
+                frameSource, evidence,
+                point => mapper.TryMapScreenToNormalized(point.X, point.Y),
+                async (snapshot, cancellationToken) =>
+                {
+                    await recordedFrames.SelectAsync(snapshot, cancellationToken).ConfigureAwait(false);
+                    var observed = await observation.ObserveAsync(cancellationToken).ConfigureAwait(false);
+                    return await observation.DiscoverTargetsAsync(observed, cancellationToken).ConfigureAwait(false);
+                }, evidenceDirectory);
 
             return new DemonstrationLiveSession(
                 targetApplicationPath,
@@ -119,7 +130,7 @@ public sealed class WindowsDemonstrationLiveSessionFactory(
                 runtime,
                 collector,
                 point => mapper.TryMapScreenToNormalized(point.X, point.Y),
-                new CompositeResource(visionResource, lazyFoundry));
+                new CompositeResource(visionResource, lazyFoundry), timeline);
         }
         catch
         {

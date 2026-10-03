@@ -83,6 +83,7 @@ return command switch
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
     "demonstration-journey-verify" => OpenLogicool.Probe.DemonstrationJourneySmoke.RunVerify(args[1..]),
     "demonstration-foreground-window" => OpenLogicool.Probe.DemonstrationRecorderSmoke.RunForegroundWindow(),
+    "demonstration-timeline-smoke" => OpenLogicool.Probe.DemonstrationTimelineSmoke.Run(args[1..]),
     "demonstration-recorder-smoke" => OpenLogicool.Probe.DemonstrationRecorderSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),

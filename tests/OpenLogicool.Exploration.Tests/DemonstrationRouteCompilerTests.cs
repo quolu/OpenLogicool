@@ -41,7 +41,7 @@ public sealed class DemonstrationRouteCompilerTests
     }
 
     [Fact]
-    public void Returning_to_an_already_visited_state_is_excluded_from_the_route_as_a_detour()
+    public void Returning_to_the_lobby_is_preserved_for_a_round_trip_goal()
     {
         var sceneA = Scene("scene-a", label: "btn-to-b");
         var sceneB = Scene("scene-b", label: "btn-to-a");
@@ -52,13 +52,14 @@ public sealed class DemonstrationRouteCompilerTests
         var session = Session(
             Operation("op-1", GameInteractionOperations.Click, sceneA, sceneB, GameTransitionJudgement.Moved),
             Operation("op-2", GameInteractionOperations.Click, sceneB, sceneA, GameTransitionJudgement.Moved));
+        session = session with { Session = session.Session with { Goal = "アークを開いてロビーへ戻る" } };
 
         var result = compiler.Compile(session);
 
         Assert.Equal(DemonstrationRouteDecisionKind.Accepted, result.Decisions[0].Kind);
-        Assert.Equal(DemonstrationRouteDecisionKind.ExcludedDetour, result.Decisions[1].Kind);
+        Assert.Equal(DemonstrationRouteDecisionKind.Accepted, result.Decisions[1].Kind);
         Assert.NotNull(result.Decisions[1].EdgeId);
-        Assert.Single(result.Route.EdgeIds);
+        Assert.Equal(2, result.Route.EdgeIds.Count);
         Assert.Equal(2, committer.CommitCallCount);
     }
 

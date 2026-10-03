@@ -13,7 +13,7 @@ public interface IDemonstrationRouteCompiler
 
 /// <summary>
 /// 停止済みの操作デモ原本を、既存Game Structure／Transition Evidence／Learning Routeへ導出する。
-/// Moved操作はStructureへcommitし、Stayed／Undetermined／寄り道（既に経由した状態へ戻る）／
+/// Moved操作は記録順で候補routeへ採用する。訪問済み画面への戻りも保持し、Stayed／Undetermined／
 /// 重複（同じ状態遷移の再発生）はroute本体から除外して理由を残す。元sessionと既存route revisionは
 /// 変更せず、goal単位のrouteへ新しいrevisionだけを追記する。
 /// </summary>
@@ -45,10 +45,6 @@ public sealed class DemonstrationRouteCompiler(
 
         var decisions = new List<DemonstrationRouteDecision>();
         var acceptedEdgeIds = new List<string>();
-        var visitedSignatures = new HashSet<string>(StringComparer.Ordinal)
-        {
-            GameSceneSemanticComparer.SignatureId(operations[0].Before),
-        };
         var seenTransitionKeys = new HashSet<string>(StringComparer.Ordinal);
         string? latestStructureRevisionId = null;
 
@@ -101,16 +97,6 @@ public sealed class DemonstrationRouteCompiler(
                     operation.OperationId,
                     DemonstrationRouteDecisionKind.ExcludedDuplicate,
                     "同じ状態遷移が既にrouteにあります（重複）。",
-                    edgeId));
-                continue;
-            }
-
-            if (!visitedSignatures.Add(afterSignature))
-            {
-                decisions.Add(new DemonstrationRouteDecision(
-                    operation.OperationId,
-                    DemonstrationRouteDecisionKind.ExcludedDetour,
-                    "既に経由した状態へ戻る操作のため、routeから除外しました（寄り道）。",
                     edgeId));
                 continue;
             }

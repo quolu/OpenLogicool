@@ -260,7 +260,7 @@ internal static class DemonstrationRecorderSmoke
         /// 一巡の確認にはこちらを使う。
         /// </summary>
         public static SelfWindow Create(
-            string title, int left, int top, int width, int height, string? label, string? labelAfterClick)
+            string title, int left, int top, int width, int height, string? label, string? labelAfterClick, bool toggleOnClick = false)
         {
             const uint WsOverlappedWindow = 0x00CF0000;
             const uint WsVisible = 0x10000000;
@@ -280,7 +280,7 @@ internal static class DemonstrationRecorderSmoke
                     const uint WmLeftButtonDown = 0x0201;
                     if (message == WmLeftButtonDown)
                     {
-                        clicked = true;
+                        clicked = toggleOnClick ? !clicked : true;
                         _ = InvalidateRect(window, IntPtr.Zero, true);
                         return IntPtr.Zero;
                     }

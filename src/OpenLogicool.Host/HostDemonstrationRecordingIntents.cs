@@ -50,7 +50,7 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
         ObjectDisposedException.ThrowIf(disposed, this);
         lock (stateGate)
         {
-            if (recorder is not null)
+            if (liveSession is not null)
             {
                 throw new InvalidOperationException("既に記録中です。");
             }
@@ -74,8 +74,28 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
                     goal,
                     live.TargetApplicationPath,
                     live.TargetWindowSourceId,
-                    "recorder-1.0.0",
+                    live.Timeline is null ? "recorder-1.0.0" : "recorder-2.0.0",
                     time.GetUtcNow());
+                if (live.Timeline is { } timeline)
+                {
+                    if (!gate.TryBeginRecording(out var refusal)) throw new InvalidOperationException(refusal);
+                    try
+                    {
+                        await timeline.StartAsync(draft, cancellationToken).ConfigureAwait(false);
+                        live.Collector.Start(timeline);
+                        lock (stateGate)
+                        {
+                            liveSession = live;
+                            this.connection = connection;
+                        }
+                        return Summarize(new DemonstrationSessionRecord(draft, DemonstrationSessionState.Recording, null, []));
+                    }
+                    catch
+                    {
+                        gate.EndRecording();
+                        throw;
+                    }
+                }
                 var record = await newRecorder.StartAsync(draft, cancellationToken).ConfigureAwait(false);
                 var newPump = new DemonstrationRecordingPump(newRecorder);
                 live.Collector.Start(newPump);
@@ -103,6 +123,29 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
 
     public async Task<DemonstrationSessionSummary> StopAsync(CancellationToken cancellationToken = default)
     {
+        if (liveSession?.Timeline is not null)
+        {
+            var timelineLive = liveSession;
+            var timelineConnection = connection!;
+            try
+            {
+                timelineLive.Collector.Stop();
+                var result = await timelineLive.Timeline.StopAndAnalyzeAsync(
+                    new SqliteDemonstrationSessionStore(timelineConnection), cancellationToken).ConfigureAwait(false);
+                return Summarize(result);
+            }
+            finally
+            {
+                lock (stateGate)
+                {
+                    liveSession = null;
+                    connection = null;
+                }
+                timelineLive.Dispose();
+                timelineConnection.Dispose();
+                gate.EndRecording();
+            }
+        }
         DemonstrationRecorder active;
         SqliteConnection activeConnection;
         DemonstrationLiveSession activeLive;
@@ -144,6 +187,7 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
     {
         lock (stateGate)
         {
+            if (liveSession?.Timeline is { } timeline) return timeline.Status();
             if (recorder is null)
             {
                 return new DemonstrationRecordingStatus(DemonstrationRecorderStatus.Idle, null, 0, 0, 0, 0, 0);
@@ -306,7 +350,9 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
         lock (stateGate)
         {
             pump?.Dispose();
+            var ownsTimeline = liveSession?.Timeline is not null;
             liveSession?.Dispose();
+            if (ownsTimeline) gate.EndRecording();
             connection?.Dispose();
             pump = null;
             liveSession = null;

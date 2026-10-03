@@ -13,8 +13,8 @@ OpenLogicoolを、利用者がGame Operatorだけで目的入力、操作デモ�
 ## 成功条件
 
 1. NIKKEをforegroundにして明示的に記録開始した時だけ、mouse、keyboard、G13、G600の有限操作と時刻を取得する。他appへ切り替わった間は記録を一時停止する。
-2. 各操作はcurrent window／frame／transform、正規化座標またはkey／device control、操作前後のWGC scene、10秒Compare、Moved／Stayed／Undeterminedと関連付けてappend-only保存する。
-3. 操作デモ原本は修正しない。AIはgoalと遷移を照合して採用stepをLearning Routeへ投影し、寄り道や非遷移を原本から削除せずroute側で不採用にする。
+2. 入力とWGC画面は取得時刻で原本へ保存し、記録停止後に既存の認識・安定判定・Compareで解析する。各操作はcurrent window／frame／transform、正規化座標またはkey／device control、操作前後のWGC scene、上限10秒のCompare、Moved／Stayed／Undeterminedへ束縛する。
+3. 操作デモ原本は修正しない。候補routeはMoved操作を記録順で保持する。訪問済み画面への戻りを一律に寄り道と決めず、往復目的の戻りも残す。非遷移と重複の採否理由はroute側へ置き、元記録を削除しない。
 4. 記録から作った候補routeをAI監視ありで再生し、保存action優先、非遷移stepだけAI修復、正常stepと旧revision維持を成立させる。
 5. 別process再起動後に同routeをAI 0で再生し、route revision不変で完了する。
 6. Game Operatorにgoal、記録開始／停止、記録session、記録からmacro作成、AI監視あり／なし再生、進捗、停止理由を利用者語彙で表示する。
@@ -43,6 +43,14 @@ Demonstration Sessionをmacroとして直接再生しない。座標列だけの
 ### 既存10基盤への接続
 
 各デモ操作のbefore／afterはObserve、WaitStable、Compare、LearnTransitionへ渡す。デモ操作はAI proposalではないが、current window／frame／transformとdurable commitを満たしたTransition Evidenceとして保存する。AIでbuttonを探す条件、OCR類似照合、Moved裁定、操作拒否の所有境界は計画§0.3とFoundation Contractを変更しない。
+
+### 取得と解析の順序
+
+- 実記録はAIを開始条件にしない。対象windowの最初のWGC画像と入力受理の開始後に「記録中」を表示する。
+- 記録区間の原本はschema `0.4.0`のsession見出し・入力・frame観測時刻・停止とPNGで保存する。PNGはSHA-256へ束縛する。静止画は同じframe識別子と画像を共有し、各回の観測時刻を別に残す。
+- 停止後は保存済みPNGだけを既存の認識へ渡す。解析結果は従来のschema `0.3.0`のDemonstration Sessionへ投影し、SQLiteへappend-only保存する。過去の操作を後のlive画面で判定しない。
+- 1操作の因果区間は解放から次の押下・ホイール・focus喪失・停止までとし、上限10秒とする。取得時刻で既存WaitStableとCompareを通し、同じ区間の遅い変化も判定へ含める。短い区間・証拠不足はUndeterminedで保持する。
+- 記録中にAI、画像保存、SQLiteをhook／device fast pathで待たせない。停止時は入力取得とframe取得を閉じて原本を保存し、解析進捗を表示する。取得・保存の失敗は明示し、保存済み原本を保持する。
 
 ## F／A／H
 
@@ -84,7 +92,7 @@ Windows環境別mouse／keyboard recorderと、既存G13／G600 edge observerを
 
 ### t03-demonstration-route-compiler
 
-Demonstration Sessionを既存Game Structure／Transition Evidence／Learning Routeへ導出する。Moved操作を候補edge列にし、Stayed／Undetermined、寄り道、重複の採否理由を残す。元sessionと既存routeを変更せず、新route revisionだけを作る。
+Demonstration Sessionを既存Game Structure／Transition Evidence／Learning Routeへ導出する。Moved操作は訪問済み画面への戻りも含めて記録順の候補edge列にし、Stayed／Undeterminedと重複の採否理由を残す。元sessionと既存routeを変更せず、新route revisionだけを作る。
 
 ### t04-recording-host-intents
 

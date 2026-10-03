@@ -228,7 +228,7 @@ internal static class DemonstrationJourneySmoke
             : null;
     }
 
-    private static NanoClickResult NanoClick(string port, DemonstrationRecorderSmoke.SelfWindow.ScreenBounds bounds)
+    internal static NanoClickResult NanoClick(string port, DemonstrationRecorderSmoke.SelfWindow.ScreenBounds bounds)
     {
         var exchange = new ProbeSerialPortFrameExchange(port);
         using var session = new SerialHidResidentOutputSession(
@@ -307,7 +307,7 @@ internal static class DemonstrationJourneySmoke
         return path;
     }
 
-    private sealed record NanoClickResult(bool CursorMatched, int X, int Y);
+    internal sealed record NanoClickResult(bool CursorMatched, int X, int Y);
 }
 
 /// <summary>再open時に別processが読めたもの。</summary>

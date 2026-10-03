@@ -37,7 +37,19 @@ public sealed record DemonstrationRecordingStatus(
     long IgnoredWhilePaused,
     long IgnoredOutsideClientFrame,
     long UnpairedReleases,
-    long DiscardedHeldPresses);
+    long DiscardedHeldPresses,
+    int AnalyzedOperations = 0,
+    int TotalOperations = 0,
+    string? FailureReason = null);
+
+/// <summary>取得時刻で保存した原本を、入力取得の終了後に解析する記録境界。</summary>
+public interface IDemonstrationTimelineRecording : IDemonstrationInputSink, IDisposable
+{
+    Task StartAsync(DemonstrationSessionDraft draft, CancellationToken cancellationToken = default);
+    Task<DemonstrationSessionRecord> StopAndAnalyzeAsync(
+        IDemonstrationSessionStore store, CancellationToken cancellationToken = default);
+    DemonstrationRecordingStatus Status();
+}
 
 /// <summary>
 /// 記録1回分のlive wiring。実device取得・実観測は環境別実装（Windows等）が持ち、
@@ -50,11 +62,13 @@ public sealed record DemonstrationLiveSession(
     IDemonstrationObservationRuntime Runtime,
     IDemonstrationInputCollector Collector,
     Func<DemonstrationScreenPoint, IReadOnlyList<double>?> Normalize,
-    IDisposable? Resource = null) : IDisposable
+    IDisposable? Resource = null,
+    IDemonstrationTimelineRecording? Timeline = null) : IDisposable
 {
     public void Dispose()
     {
         Collector.Dispose();
+        Timeline?.Dispose();
         Resource?.Dispose();
     }
 }

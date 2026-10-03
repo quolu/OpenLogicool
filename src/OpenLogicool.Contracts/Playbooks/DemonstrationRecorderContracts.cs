@@ -10,6 +10,8 @@ public enum DemonstrationRecorderStatus
     Recording,
     Paused,
     Stopped,
+    Analyzing,
+    Fault,
 }
 
 /// <summary>OS層／device層が観測した、意味付け前の生入力edge。</summary>

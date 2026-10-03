@@ -1,0 +1,49 @@
+{
+  "probe": "demonstration-timeline-smoke",
+  "SessionId": "demo:ea4472b8babd47c0b582ccae7d66e6e7",
+  "startMilliseconds": 1036,
+  "operationIntervalMilliseconds": 3200,
+  "beforeAnalysis": {
+    "Status": 1,
+    "SessionId": "demo:ea4472b8babd47c0b582ccae7d66e6e7",
+    "HeldPressCount": 0,
+    "IgnoredWhilePaused": 0,
+    "IgnoredOutsideClientFrame": 0,
+    "UnpairedReleases": 0,
+    "DiscardedHeldPresses": 0,
+    "AnalyzedOperations": 0,
+    "TotalOperations": 2,
+    "FailureReason": null
+  },
+  "stopped": {
+    "SessionId": "demo:ea4472b8babd47c0b582ccae7d66e6e7",
+    "Goal": "\u30DA\u30FC\u30B8\u3092\u958B\u3044\u3066\u958B\u59CB\u753B\u9762\u3078\u623B\u308B",
+    "GameId": "OpenLogicool.Probe",
+    "EnvironmentScope": "OpenLogicool.Probe:720x520",
+    "State": 1,
+    "OperationCount": 2,
+    "StartedUtc": "2026-10-03T04:37:00.5869053+00:00",
+    "StateLabel": "\u8A18\u9332\u6E08\u307F",
+    "DisplayLabel": "\u30DA\u30FC\u30B8\u3092\u958B\u3044\u3066\u958B\u59CB\u753B\u9762\u3078\u623B\u308B\u30002 \u64CD\u4F5C\u3000[\u8A18\u9332\u6E08\u307F]\u30002026/10/03 13:37"
+  },
+  "steps": [
+    {
+      "StepNumber": 1,
+      "OperationLabel": "\u30AF\u30EA\u30C3\u30AF",
+      "TransitionLabel": "\u5224\u5B9A\u3067\u304D\u305A",
+      "DisplayLabel": "1\u3000\u30AF\u30EA\u30C3\u30AF\u3000\u2192\u3000\u5224\u5B9A\u3067\u304D\u305A"
+    },
+    {
+      "StepNumber": 2,
+      "OperationLabel": "\u30AF\u30EA\u30C3\u30AF",
+      "TransitionLabel": "\u5224\u5B9A\u3067\u304D\u305A",
+      "DisplayLabel": "2\u3000\u30AF\u30EA\u30C3\u30AF\u3000\u2192\u3000\u5224\u5B9A\u3067\u304D\u305A"
+    }
+  ],
+  "macro": null,
+  "compilationError": "route\u3078\u63A1\u7528\u3067\u304D\u308B\u64CD\u4F5C\u304C\u3042\u308A\u307E\u305B\u3093\u3067\u3057\u305F\u3002",
+  "SendInput": 0,
+  "ComputerUse": 0,
+  "CloudApi": 0,
+  "passed": false
+}

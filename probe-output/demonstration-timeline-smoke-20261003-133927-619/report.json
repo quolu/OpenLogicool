@@ -1,0 +1,59 @@
+{
+  "probe": "demonstration-timeline-smoke",
+  "SessionId": "demo:8be44148ef0942ae88e1cbdf22e2978f",
+  "startMilliseconds": 450,
+  "operationIntervalMilliseconds": 3200,
+  "beforeAnalysis": {
+    "Status": 1,
+    "SessionId": "demo:8be44148ef0942ae88e1cbdf22e2978f",
+    "HeldPressCount": 0,
+    "IgnoredWhilePaused": 0,
+    "IgnoredOutsideClientFrame": 0,
+    "UnpairedReleases": 0,
+    "DiscardedHeldPresses": 0,
+    "AnalyzedOperations": 0,
+    "TotalOperations": 2,
+    "FailureReason": null
+  },
+  "stopped": {
+    "SessionId": "demo:8be44148ef0942ae88e1cbdf22e2978f",
+    "Goal": "\u30DA\u30FC\u30B8\u3092\u958B\u3044\u3066\u958B\u59CB\u753B\u9762\u3078\u623B\u308B",
+    "GameId": "OpenLogicool.Probe",
+    "EnvironmentScope": "OpenLogicool.Probe:720x520",
+    "State": 1,
+    "OperationCount": 2,
+    "StartedUtc": "2026-10-03T04:39:28.2902497+00:00",
+    "StateLabel": "\u8A18\u9332\u6E08\u307F",
+    "DisplayLabel": "\u30DA\u30FC\u30B8\u3092\u958B\u3044\u3066\u958B\u59CB\u753B\u9762\u3078\u623B\u308B\u30002 \u64CD\u4F5C\u3000[\u8A18\u9332\u6E08\u307F]\u30002026/10/03 13:39"
+  },
+  "steps": [
+    {
+      "StepNumber": 1,
+      "OperationLabel": "\u30AF\u30EA\u30C3\u30AF",
+      "TransitionLabel": "\u753B\u9762\u304C\u5909\u308F\u3063\u305F",
+      "DisplayLabel": "1\u3000\u30AF\u30EA\u30C3\u30AF\u3000\u2192\u3000\u753B\u9762\u304C\u5909\u308F\u3063\u305F"
+    },
+    {
+      "StepNumber": 2,
+      "OperationLabel": "\u30AF\u30EA\u30C3\u30AF",
+      "TransitionLabel": "\u753B\u9762\u304C\u5909\u308F\u3063\u305F",
+      "DisplayLabel": "2\u3000\u30AF\u30EA\u30C3\u30AF\u3000\u2192\u3000\u753B\u9762\u304C\u5909\u308F\u3063\u305F"
+    }
+  ],
+  "macro": {
+    "RouteId": "purpose:ffff1b097de34f3326b67684c2f3281802c85b197180c6445ef7de77d6d6fae4",
+    "VersionId": "route:7f43aed610d70b9ce9ebb68949dd7582c4d5ee40fb319ba4bf3d070c163eb459",
+    "GameId": "OpenLogicool.Probe",
+    "EnvironmentScope": "OpenLogicool.Probe:720x520",
+    "Goal": "\u30DA\u30FC\u30B8\u3092\u958B\u3044\u3066\u958B\u59CB\u753B\u9762\u3078\u623B\u308B",
+    "RevisionNumber": 1,
+    "StepCount": 2,
+    "StatusLabel": "Compiled",
+    "DisplayLabel": "\u30DA\u30FC\u30B8\u3092\u958B\u3044\u3066\u958B\u59CB\u753B\u9762\u3078\u623B\u308B\u30002 step\u3000[\u7248 1 / Compiled]"
+  },
+  "compilationError": null,
+  "SendInput": 0,
+  "ComputerUse": 0,
+  "CloudApi": 0,
+  "passed": true
+}

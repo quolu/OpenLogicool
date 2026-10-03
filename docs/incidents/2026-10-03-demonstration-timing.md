@@ -34,7 +34,7 @@
 
 安定判定runtimeは観測区間の最後まで確認し、遅い画面変化で初期の安定を取り消す契約を持つ。45秒を途中で打ち切って成功にする修理は行わない。AI timeout、InvalidResponse、判定不能をMovedへ置き換えない。
 
-## 修理案（未承認・未実装）
+## 承認された修理範囲
 
 利用者の入力・対象画面の取得を、AI解析と候補route作成から分離する。
 
@@ -48,4 +48,29 @@
 
 初期解析中の2クリック欠落、解析待ち中の複数操作とbefore束縛、前面切替直後の取得抑止をfocused試験で確認する。Windows self-windowと実NIKKEで通常の操作間隔を測り、取得件数・画面束縛・判定結果を別々に照合する。往復が判定不能なら候補マクロの成立とは扱わず、残る原因を報告する。開発版installと同じ実UIでの受入まで実施する。
 
-この案は記録器の責務分離と寄り道除外契約に触れる本体変更であり、提示されたAGENTS.mdの「裁定を仰ぐのは、修理が本体改造級になる場合」に該当する。承認前に製品コードと計画の既存契約は変更しない。
+この本体変更はApproval Box K-N2UDGCで、修理・検証・開発版更新まで承認された。K-3LQUGAで利用者によるOpenLogicoolの通常終了も確認した。
+
+## 実装と検証
+
+- 実記録を`DemonstrationTimelineRecording`へ接続。取得中にAIを呼ばず、入力とWGC画像をschema `0.4.0`の原本へ保存する。入力のdesktop絶対座標と他appのpathは原本へ保存しない。
+- 停止時に入力・frame取得を閉じ、原本の保存を完了してから`DemonstrationTimelineAnalyzer`で解析する。解析画像はSHA-256を検証し、原本のframe／transformへ束縛する。稼働中のゲームから画像を取り直す入口を解析器へ渡さない。
+- 安定判定はAI処理時間でなく原本の観測時刻を使い、既存`GameInteractionStabilityRuntime`と`GameTransitionJudge`を通す。区間は次の入力・focus喪失・停止で閉じ、上限10秒。短い区間や証拠不足はUndeterminedで保存する。
+- 候補マクロはMovedを記録順で採用し、訪問済み画面への戻りも保持する。Stayed／Undeterminedと同じ遷移の重複は理由を残して除外する。
+- UIへ原本保存後の解析状態と進捗を追加し、終了時に判定不能の件数を明示する。取得・保存・画像読戻しの失敗を成功扱いしない。
+
+最初のnative測定では2クリック保存まで成立したが、静止したself-windowのWGCが新frameを出さず、安定判定は2件ともUndeterminedとなった。調査で同じframeの観測時刻が欠けていたことを確認し、画像識別子と各回の観測時刻を分離した。同じPNGは共有し、画面の取得時刻・識別子を捏造しない。このケースのfocused再現も追加した。最初の失敗報告は保持する。
+
+再測定は`probe-output/demonstration-timeline-smoke-20261003-133927-619/report.json`。Windowsの実self-window、WGC、Nano物理HID入力、Foundry Local、実SQLite、Host public intentsで次を確認した。
+
+| 項目 | 根拠の状態 | 実測 |
+| --- | --- | --- |
+| AI待ちを含まない記録開始 | 確認済み | 450ms |
+| 通常の数秒間隔で2操作を保存 | 確認済み | クリック時刻の差3,449.6155ms、保存2操作 |
+| 2操作のbefore／afterと安定判定 | 確認済み | frame 1→2、frame 2→3。安定区間2,105ms／2,099ms、両方Moved |
+| 戻りを含む候補マクロ | 確認済み | 2手順 |
+| SendInput／Computer Use／外部AI API | 確認済み | すべて0 |
+| 新方式のNIKKE実UIと可逆往復 | 未確認 | 開発版更新後の利用者確認で実施 |
+
+関連試験88件はすべて通過した。内訳はHostの操作デモ・安定判定57件、Desktopの記録workspace 3件、候補route 11件、Probeの観測判定9件、architecture 8件。新規試験はAIが停止中の2クリック保存、操作ごとのbefore束縛、遅い画面変化、対象外入力抑止、静止WGCの反復観測、PNG読戻し・改変拒否を含む。Phase最終のfull regressionはこの修理の個別確認では実行しない。
+
+正規入口`install-development-app.ps1`による開発版更新は成功した。通常起動後のNIKKE実UI確認は未確認として保持する。

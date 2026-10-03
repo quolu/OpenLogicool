@@ -90,7 +90,7 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         heading.Children.Add(new TextBlock { Text = "デモから操作を覚えさせる", FontSize = 18, FontWeight = FontWeights.Bold });
         heading.Children.Add(new TextBlock
         {
-            Text = "目的を決めて記録を開始し、実際に操作してください。停止するとそのデモから操作手順（マクロ）を作れます。",
+            Text = "記録中は普段どおり操作してください。記録終了後に保存した画面を解析し、操作手順（マクロ）を作れるか確認します。",
             Foreground = Theme.Muted,
             Margin = new Thickness(0, 4, 0, 14),
             TextWrapping = TextWrapping.Wrap,
@@ -168,13 +168,16 @@ internal sealed class DemonstrationRecordingPanel : UserControl
     private async Task StopAsync()
     {
         stopButton.IsEnabled = false;
-        liveTimer.Stop();
+        liveTimer.Start();
         statusText.Foreground = Theme.Text;
-        statusText.Text = "記録を終了しています — 操作の保存を待っています";
+        statusText.Text = "記録を終了しています — 原本を保存しています";
         try
         {
             var stopped = await workspace.StopAsync();
-            statusText.Text = $"記録を終了しました（利用者が記録を停止しました）。{stopped.OperationCount} 操作を記録しました。";
+            var undetermined = workspace.ListSteps(stopped.SessionId).Count(step => step.TransitionLabel == "判定できず");
+            statusText.Foreground = undetermined > 0 ? Theme.Warn : Theme.Ok;
+            statusText.Text = $"記録を終了しました。{stopped.OperationCount} 操作を保存・解析しました。"
+                + (undetermined > 0 ? $"　画面変化を判定できなかった操作が {undetermined} 件あります。" : "");
         }
         catch (Exception exception)
         {
@@ -198,10 +201,24 @@ internal sealed class DemonstrationRecordingPanel : UserControl
             DemonstrationRecorderStatus.Recording => "記録中",
             DemonstrationRecorderStatus.Paused => "対象アプリから外れたため一時停止中",
             DemonstrationRecorderStatus.Stopped => "停止済み",
+            DemonstrationRecorderStatus.Analyzing => "原本を保存しました — 記録した画面を解析中",
+            DemonstrationRecorderStatus.Fault => "記録に失敗しました",
             _ => "待機中",
         };
         if (recording)
         {
+            if (status.Status == DemonstrationRecorderStatus.Analyzing)
+            {
+                statusText.Foreground = Theme.Text;
+                statusText.Text = $"{label}　{status.AnalyzedOperations} / {status.TotalOperations} 操作";
+                return;
+            }
+            if (status.Status == DemonstrationRecorderStatus.Fault)
+            {
+                statusText.Foreground = Theme.Danger;
+                statusText.Text = $"{label}　{status.FailureReason}";
+                return;
+            }
             statusText.Foreground = status.Status == DemonstrationRecorderStatus.Paused ? Theme.Warn : Theme.Ok;
             statusText.Text = $"{label}　押しっぱなし {status.HeldPressCount} 件";
         }
