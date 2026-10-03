@@ -1,0 +1,37 @@
+{
+  "probe": "demonstration-timeline-analysis",
+  "sourceSessionId": "demo:8c39ba807b834615a7d5031109c13905",
+  "SessionId": "diagnostic:77ad455bd83649abafbf347b058a2747",
+  "analyzedFrames": 22,
+  "operations": [
+    {
+      "OperationId": "diagnostic:77ad455bd83649abafbf347b058a2747:op-1",
+      "OccurredUtc": "2026-10-03T04:52:29.8764365+00:00",
+      "beforeSequence": 37,
+      "afterSequence": 57,
+      "Status": 0,
+      "StableMillisecondsObserved": 1444,
+      "Judgement": 0,
+      "Reasons": [
+        "state\u5019\u88DC\u307E\u305F\u306Factionable structure\u304C\u5909\u5316"
+      ]
+    },
+    {
+      "OperationId": "diagnostic:77ad455bd83649abafbf347b058a2747:op-2",
+      "OccurredUtc": "2026-10-03T04:52:33.3825462+00:00",
+      "beforeSequence": 57,
+      "afterSequence": 78,
+      "Status": 0,
+      "StableMillisecondsObserved": 1177,
+      "Judgement": 0,
+      "Reasons": [
+        "state\u5019\u88DC\u307E\u305F\u306Factionable structure\u304C\u5909\u5316"
+      ]
+    }
+  ],
+  "SendInput": 0,
+  "ComputerUse": 0,
+  "LiveCapture": 0,
+  "CloudApi": 0,
+  "passed": true
+}

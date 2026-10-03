@@ -1,0 +1,38 @@
+{
+  "SessionId": "demo:8c39ba807b834615a7d5031109c13905",
+  "Goal": "アークからロビー",
+  "Operations": [
+    {
+      "OccurredUtc": "2026-10-03T04:52:29.8764365+00:00",
+      "BeforeSequence": 37,
+      "AnalyzedAfterSequences": [
+        47,
+        53,
+        57
+      ],
+      "Judgement": 2,
+      "Reasons": [
+        "stability:TimedOut"
+      ],
+      "StableMillisecondsObserved": 1074,
+      "FailureReason": "意味構造がtimeout内に安定しませんでした。"
+    },
+    {
+      "OccurredUtc": "2026-10-03T04:52:33.3825462+00:00",
+      "BeforeSequence": 57,
+      "AnalyzedAfterSequences": [
+        69,
+        74,
+        78
+      ],
+      "Judgement": 2,
+      "Reasons": [
+        "stability:TimedOut"
+      ],
+      "StableMillisecondsObserved": 1098,
+      "FailureReason": "意味構造がtimeout内に安定しませんでした。"
+    }
+  ],
+  "OwnerUiAnswer": "K-4ZYJWJ:undetermined",
+  "SourceUnmodified": true
+}

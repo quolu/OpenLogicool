@@ -49,7 +49,7 @@ Demonstration Sessionをmacroとして直接再生しない。座標列だけの
 - 実記録はAIを開始条件にしない。対象windowの最初のWGC画像と入力受理の開始後に「記録中」を表示する。
 - 記録区間の原本はschema `0.4.0`のsession見出し・入力・frame観測時刻・停止とPNGで保存する。PNGはSHA-256へ束縛する。静止画は同じframe識別子と画像を共有し、各回の観測時刻を別に残す。
 - 停止後は保存済みPNGだけを既存の認識へ渡す。解析結果は従来のschema `0.3.0`のDemonstration Sessionへ投影し、SQLiteへappend-only保存する。過去の操作を後のlive画面で判定しない。
-- 1操作の因果区間は解放から次の押下・ホイール・focus喪失・停止までとし、上限10秒とする。取得時刻で既存WaitStableとCompareを通し、同じ区間の遅い変化も判定へ含める。短い区間・証拠不足はUndeterminedで保持する。
+- 1操作の因果区間は解放から次の押下・ホイール・focus喪失・停止までとし、上限10秒とする。保存した区間内のframeを間引かず、取得時刻で既存WaitStableとCompareを通し、同じ区間の遅い変化も判定へ含める。短い区間・証拠不足はUndeterminedで保持する。
 - 記録中にAI、画像保存、SQLiteをhook／device fast pathで待たせない。停止時は入力取得とframe取得を閉じて原本を保存し、解析進捗を表示する。取得・保存の失敗は明示し、保存済み原本を保持する。
 
 ## F／A／H

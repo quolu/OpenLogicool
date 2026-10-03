@@ -105,6 +105,24 @@ public sealed class DemonstrationTimelineTests : IDisposable
     }
 
     [Fact]
+    public async Task A_loading_transition_keeps_the_saved_stable_interval_between_sparse_analysis_samples()
+    {
+        // 実記録と同じ取得間隔。1秒間隔への間引きでは安定区間1.44秒が0.74秒になる。
+        var milliseconds = new[] { 1_260, 1_584, 1_926, 2_285, 2_657, 3_028 };
+        var frames = new[] { Frame(1, 0) }.Concat(milliseconds.Select((at, index) =>
+            Frame(index + 2, 0) with { ObservedUtc = Origin.AddMilliseconds(1_010 + at) })).ToArray();
+        var inputs = Inputs(1).Select(item => item with { FrameSequence = 1 }).ToArray();
+        using var connection = Open();
+        var result = await DemonstrationTimelineAnalyzer.AnalyzeAsync(Draft(), frames, inputs, Origin.AddMilliseconds(4_370),
+            new SqliteDemonstrationSessionStore(connection),
+            (frame, _) => ValueTask.FromResult(Scene(frame, frame.Frame.Sequence == 1 ? "ロビー"
+                : frame.Frame.Sequence == 2 ? "読み込み" : "アーク")), _ => { });
+        var operation = Assert.Single(result.Events, item => item.Operation is not null).Operation!;
+        Assert.Equal(GameTransitionJudgement.Moved, operation.Comparison.Judgement);
+        Assert.True(operation.After.StableMillisecondsObserved >= 1_000);
+    }
+
+    [Fact]
     public async Task A_late_divergence_in_the_same_causal_interval_is_not_reported_as_stable()
     {
         var frames = Enumerable.Range(0, 6).Select(index => Frame(index + 1, index)).ToArray();

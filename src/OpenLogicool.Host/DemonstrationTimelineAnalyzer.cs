@@ -85,13 +85,10 @@ public static class DemonstrationTimelineAnalyzer
                 var candidates = frames.Where(item => item.ObservedUtc > input.OccurredUtc
                     && item.ObservedUtc < boundary
                     && item.ObservedUtc <= input.OccurredUtc.AddMilliseconds(10_000)).ToArray();
-                DateTimeOffset? selectedAt = null;
                 foreach (var frame in candidates)
                 {
-                    if (selectedAt is not null && frame != candidates[^1]
-                        && (frame.ObservedUtc - selectedAt.Value).TotalMilliseconds < 1_000) continue;
-                    selectedAt = frame.ObservedUtc;
-                    samples.Add(((long)(selectedAt.Value - input.OccurredUtc).TotalMilliseconds,
+                    // 取得済みの短い安定区間を間引いて失わず、遅い変化も同じ区間で確認する。
+                    samples.Add(((long)(frame.ObservedUtc - input.OccurredUtc).TotalMilliseconds,
                         await SceneAsync(frame.Frame.Sequence)));
                 }
                 runtime.After = await StabilityAsync(before, samples, duration, cancellationToken).ConfigureAwait(false);

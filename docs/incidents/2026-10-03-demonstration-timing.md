@@ -74,3 +74,17 @@
 関連試験88件はすべて通過した。内訳はHostの操作デモ・安定判定57件、Desktopの記録workspace 3件、候補route 11件、Probeの観測判定9件、architecture 8件。新規試験はAIが停止中の2クリック保存、操作ごとのbefore束縛、遅い画面変化、対象外入力抑止、静止WGCの反復観測、PNG読戻し・改変拒否を含む。Phase最終のfull regressionはこの修理の個別確認では実行しない。
 
 正規入口`install-development-app.ps1`による開発版更新は成功した。通常起動後のNIKKE実UI確認は未確認として保持する。
+
+## 新方式のNIKKE実UIで確認した残存欠陥
+
+K-ZNRR6Hでは「2操作とも画面が変わった」と回答されたが、13:52開始の`demo:8c39ba807b834615a7d5031109c13905`は2操作ともUndeterminedだった。K-4ZYJWJで利用者が同じ記録「アークからロビー」を再確認し、実UIも2行とも「判定できず」と回答した。表示と保存内容は一致し、最初の回答をMoved成立の根拠には使わない。
+
+入力原本のクリック時刻は13:52:29.876と13:52:33.383、間隔は約3.51秒。beforeはframe 37（ロビー）と57（アーク）へ別々に束縛され、保存画像には最後のロビーも残っている。入力取得の欠落は解消した。解析結果は最初の操作のafterがframe 47／53／57、次の操作が69／74／78で、どちらも安定待ちTimedOut。
+
+原因は解析器が保存frameを1秒間隔へ間引くこと。最初のafterはframe 49から57まで1.44秒、次のafterは72から78まで1.18秒の画像が残っている。既存の8×8輝度指紋と同じ計算による最終画像との差は、49が4.71875、72が4.640625で、既存の意味安定比較の視覚差条件6未満に入る。しかし49と72を解析対象から捨てるため、最終画面が安定し始めた取得時刻を遅らせていた。指紋差だけでMovedとは裁定せず、既存の認識と安定判定による再解析で確認する。
+
+同じ取得間隔と読み込み→遷移後画面を使うfocused再現は、修理前にMoved期待に対してUndeterminedで失敗した。保存frameの間引きを除去し、既存の1秒・2観測の安定条件、因果区間、遅い変化の検出は維持する。修理後のTimeline試験7件は通過した。
+
+診断Probe`demonstration-timeline-analysis`は原本schema 0.4のPNG・入力・取得時刻を読み、SQLiteの読み取り専用接続から独立DBへsnapshotを取って新しい診断sessionを作る。元のsessionと画像は変更しない。live capture・入力出力を持たず、通常のFoundry Local／OCR／認識compositionと`DemonstrationTimelineAnalyzer`を通す。再解析の成功を新しい実UI受入の代わりにはしない。
+
+再解析は`probe-output/demonstration-timeline-analysis-20261003-140239-312/report.json`で2操作ともMoved。before／afterは37→57と57→78、安定区間は1,444msと1,177ms。22枚の保存画像を解析し、LiveCapture／SendInput／Computer Use／外部AI APIはすべて0。修理前後で元画像と操作時刻を維持したまま、既存判定器で往復が成立した。関連試験はTimeline 7件と、それ以外の記録・安定判定51件の合計58件が通過した。修正版の実UI確認は開発版更新後に実施する。
