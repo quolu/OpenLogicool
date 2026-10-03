@@ -52,6 +52,9 @@ public sealed record DemonstrationInputEdge(
 public interface IDemonstrationInputSink
 {
     void Observe(DemonstrationInputEdge edge);
+
+    /// <summary>前面切替を入力と同じ順序で渡す。対象外・取得不能はnullとし、他appのpathを運ばない。</summary>
+    void ObserveForeground(string? targetApplicationPath, DateTimeOffset occurredUtc);
 }
 
 /// <summary>

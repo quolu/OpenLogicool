@@ -12,7 +12,7 @@ namespace OpenLogicool.Host;
 public sealed class DemonstrationRecordingPump : IDemonstrationInputSink, IDisposable
 {
     private readonly DemonstrationRecorder recorder;
-    private readonly Channel<DemonstrationInputEdge> channel = Channel.CreateUnbounded<DemonstrationInputEdge>(
+    private readonly Channel<RecordingEvent> channel = Channel.CreateUnbounded<RecordingEvent>(
         new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
     private readonly CancellationTokenSource cancellation = new();
     private readonly Task pumpTask;
@@ -27,7 +27,15 @@ public sealed class DemonstrationRecordingPump : IDemonstrationInputSink, IDispo
 
     public void Observe(DemonstrationInputEdge edge)
     {
-        if (!channel.Writer.TryWrite(edge))
+        if (!channel.Writer.TryWrite(new InputEvent(edge)))
+        {
+            DroppedCount++;
+        }
+    }
+
+    public void ObserveForeground(string? targetApplicationPath, DateTimeOffset occurredUtc)
+    {
+        if (!channel.Writer.TryWrite(new ForegroundEvent(targetApplicationPath, occurredUtc)))
         {
             DroppedCount++;
         }
@@ -37,9 +45,18 @@ public sealed class DemonstrationRecordingPump : IDemonstrationInputSink, IDispo
     {
         try
         {
-            await foreach (var edge in channel.Reader.ReadAllAsync(cancellation.Token).ConfigureAwait(false))
+            await foreach (var item in channel.Reader.ReadAllAsync(cancellation.Token).ConfigureAwait(false))
             {
-                await recorder.HandleAsync(edge, cancellation.Token).ConfigureAwait(false);
+                switch (item)
+                {
+                    case InputEvent input:
+                        await recorder.HandleAsync(input.Edge, cancellation.Token).ConfigureAwait(false);
+                        break;
+                    case ForegroundEvent foreground:
+                        await recorder.ObserveForegroundAsync(
+                            foreground.ApplicationPath, foreground.OccurredUtc, cancellation.Token).ConfigureAwait(false);
+                        break;
+                }
             }
         }
         catch (OperationCanceledException)
@@ -68,4 +85,8 @@ public sealed class DemonstrationRecordingPump : IDemonstrationInputSink, IDispo
 
         cancellation.Dispose();
     }
+
+    private abstract record RecordingEvent;
+    private sealed record InputEvent(DemonstrationInputEdge Edge) : RecordingEvent;
+    private sealed record ForegroundEvent(string? ApplicationPath, DateTimeOffset OccurredUtc) : RecordingEvent;
 }

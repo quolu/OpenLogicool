@@ -14,9 +14,19 @@ if (-not $applicationDirectory.StartsWith($artifactPrefix, [StringComparison]::O
 }
 
 if (Test-Path -LiteralPath $applicationDirectory) {
-    Remove-Item -LiteralPath $applicationDirectory -Recurse -Force
+    # 起動用shell等が作業フォルダを保持していても、更新するファイルだけを入れ替える。
+    $applicationPrefix = $applicationDirectory.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+    foreach ($entry in Get-ChildItem -LiteralPath $applicationDirectory -Force) {
+        $entryPath = [System.IO.Path]::GetFullPath($entry.FullName)
+        if (-not $entryPath.StartsWith($applicationPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "更新対象が開発版フォルダの外にあります: $entryPath"
+        }
+        Remove-Item -LiteralPath $entryPath -Recurse -Force
+    }
 }
-New-Item -ItemType Directory -Path $applicationDirectory | Out-Null
+else {
+    New-Item -ItemType Directory -Path $applicationDirectory | Out-Null
+}
 
 $projects = @(
     'src\OpenLogicool.Host\OpenLogicool.Host.csproj',

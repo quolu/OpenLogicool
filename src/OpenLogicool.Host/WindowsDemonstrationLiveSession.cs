@@ -109,10 +109,11 @@ public sealed class WindowsDemonstrationLiveSessionFactory(
             // 座標の正規化は、操作時のwindow位置をその都度読む（記録中に窓が動いても追従する）。
             var mapper = new WindowsGameInteractionCoordinateMapper(
                 () => WindowsGameTargetLocator.Locate(target.ProcessName).Bounds);
-            var collector = new WindowsDemonstrationInputCollector();
+            var targetApplicationPath = ResolveApplicationPath(target);
+            var collector = new WindowsDemonstrationInputCollector(targetApplicationPath);
 
             return new DemonstrationLiveSession(
-                ResolveApplicationPath(target),
+                targetApplicationPath,
                 $"window:demonstration:{target.ProcessId}",
                 environment,
                 runtime,

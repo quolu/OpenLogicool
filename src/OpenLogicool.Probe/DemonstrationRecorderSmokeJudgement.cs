@@ -41,8 +41,8 @@ internal static class DemonstrationRecorderSmokeJudgement
             Check("key down を観測", keyDowns.Length >= 1, $"count={keyDowns.Length}"),
             Check("key up を観測", keyUps.Length >= 1, $"count={keyUps.Length}"),
             Check("wheel を観測", wheels.Length >= 1, $"count={wheels.Length}"),
-            // low-level hookはdesktop全体の入力を拾うので、probeが起こしたedgeが
-            // 先頭とは限らない。観測列の中に在ることで判定する。
+            // 同じ対象窓への実入力が混ざるため、測定器のedgeが先頭とは限らない。
+            // 観測列の中に在ることで判定する。
             Check(
                 "送出した Key:Esc を観測列の中に含む",
                 keyDowns.Any(edge => edge.OutputToken == "Key:Esc")

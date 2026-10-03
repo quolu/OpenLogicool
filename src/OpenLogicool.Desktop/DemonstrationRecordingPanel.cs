@@ -27,7 +27,14 @@ internal sealed class DemonstrationRecordingPanel : UserControl
     };
     private readonly Button startButton = Button("記録開始");
     private readonly Button stopButton = Button("記録終了");
-    private readonly TextBlock statusText = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 8) };
+    private readonly TextBlock statusText = new()
+    {
+        Text = "記録待機中",
+        TextWrapping = TextWrapping.Wrap,
+        FontSize = 16,
+        FontWeight = FontWeights.Bold,
+        Foreground = Theme.Muted,
+    };
     private readonly ListBox sessions = new()
     {
         MinHeight = 150,
@@ -99,7 +106,16 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         recordRow.Children.Add(stopButton);
         Add(root, recordRow, 1);
 
-        Add(root, statusText, 2);
+        Add(root, new Border
+        {
+            Background = Theme.Raised,
+            BorderBrush = Theme.Line2,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(12),
+            Margin = new Thickness(0, 0, 0, 12),
+            Child = statusText,
+        }, 2);
 
         var lists = new Grid();
         lists.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -131,6 +147,8 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         }
 
         startButton.IsEnabled = false;
+        statusText.Foreground = Theme.Text;
+        statusText.Text = "記録を開始しています — ゲーム画面を確認中";
         try
         {
             _ = await workspace.StartAsync(goal.Text);
@@ -141,6 +159,7 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         }
         catch (Exception exception)
         {
+            statusText.Foreground = Theme.Danger;
             statusText.Text = exception.Message;
             startButton.IsEnabled = true;
         }
@@ -149,6 +168,9 @@ internal sealed class DemonstrationRecordingPanel : UserControl
     private async Task StopAsync()
     {
         stopButton.IsEnabled = false;
+        liveTimer.Stop();
+        statusText.Foreground = Theme.Text;
+        statusText.Text = "記録を終了しています — 操作の保存を待っています";
         try
         {
             var stopped = await workspace.StopAsync();
@@ -156,6 +178,7 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         }
         catch (Exception exception)
         {
+            statusText.Foreground = Theme.Danger;
             statusText.Text = exception.Message;
         }
         finally
@@ -179,6 +202,7 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         };
         if (recording)
         {
+            statusText.Foreground = status.Status == DemonstrationRecorderStatus.Paused ? Theme.Warn : Theme.Ok;
             statusText.Text = $"{label}　押しっぱなし {status.HeldPressCount} 件";
         }
     }

@@ -22,8 +22,9 @@ public sealed class WindowsDemonstrationInputCollector : IDemonstrationInputColl
     private const int WhMouseLowLevel = 14;
     private const int HcAction = 0;
     private const uint WmQuit = 0x0012;
+    private const uint EventSystemForeground = 0x0003;
 
-
+    private readonly string targetApplicationPath;
     private readonly TimeProvider timeProvider;
     private readonly object lifecycle = new();
 
@@ -32,6 +33,9 @@ public sealed class WindowsDemonstrationInputCollector : IDemonstrationInputColl
     private IDemonstrationInputSink? sink;
     private IntPtr keyboardHook;
     private IntPtr mouseHook;
+    private IntPtr foregroundHook;
+    private WinEventProc? foregroundProc;
+    private bool? targetIsForeground;
     private LowLevelProc? keyboardProc;
     private LowLevelProc? mouseProc;
     private Exception? startFailure;
@@ -40,8 +44,12 @@ public sealed class WindowsDemonstrationInputCollector : IDemonstrationInputColl
     private ManualResetEventSlim? started;
     private bool disposed;
 
-    public WindowsDemonstrationInputCollector(TimeProvider? timeProvider = null) =>
+    public WindowsDemonstrationInputCollector(string targetApplicationPath, TimeProvider? timeProvider = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetApplicationPath);
+        this.targetApplicationPath = targetApplicationPath;
         this.timeProvider = timeProvider ?? TimeProvider.System;
+    }
 
     /// <summary>hook procedureが呼ばれた回数（設置できたかと配送されているかを分けて見るための観測点）。</summary>
     public long KeyboardHookCalls => Interlocked.Read(ref keyboardHookCalls);
@@ -60,6 +68,7 @@ public sealed class WindowsDemonstrationInputCollector : IDemonstrationInputColl
             }
 
             sink = inputSink;
+            targetIsForeground = null;
             startFailure = null;
             started = new ManualResetEventSlim(false);
             worker = new Thread(HookLoop)
@@ -136,6 +145,17 @@ public sealed class WindowsDemonstrationInputCollector : IDemonstrationInputColl
             {
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "WH_MOUSE_LL を設置できませんでした。");
             }
+
+            foregroundProc = (_, _, _, _, _, _, _) => UpdateForeground();
+            foregroundHook = SetWinEventHook(
+                EventSystemForeground, EventSystemForeground, IntPtr.Zero, foregroundProc, 0, 0, 0);
+            if (foregroundHook == IntPtr.Zero)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "前面アプリの監視を開始できませんでした。");
+            }
+
+            // 開始画面が前面なら、最初の入力が届く前に一時停止を通知する。
+            _ = UpdateForeground();
         }
         catch (Exception exception)
         {
@@ -158,6 +178,12 @@ public sealed class WindowsDemonstrationInputCollector : IDemonstrationInputColl
 
     private void ReleaseHooks()
     {
+        if (foregroundHook != IntPtr.Zero)
+        {
+            _ = UnhookWinEvent(foregroundHook);
+            foregroundHook = IntPtr.Zero;
+        }
+
         if (keyboardHook != IntPtr.Zero)
         {
             _ = UnhookWindowsHookEx(keyboardHook);
@@ -174,7 +200,7 @@ public sealed class WindowsDemonstrationInputCollector : IDemonstrationInputColl
     private IntPtr KeyboardHookProc(int code, IntPtr wParam, IntPtr lParam)
     {
         Interlocked.Increment(ref keyboardHookCalls);
-        if (code == HcAction)
+        if (code == HcAction && UpdateForeground())
         {
             var data = Marshal.PtrToStructure<KeyboardLowLevelHookStruct>(lParam);
             var edge = WindowsDemonstrationInputEdgeFactory.FromKeyboardMessage(
@@ -195,7 +221,7 @@ public sealed class WindowsDemonstrationInputCollector : IDemonstrationInputColl
     private IntPtr MouseHookProc(int code, IntPtr wParam, IntPtr lParam)
     {
         Interlocked.Increment(ref mouseHookCalls);
-        if (code == HcAction)
+        if (code == HcAction && UpdateForeground())
         {
             var data = Marshal.PtrToStructure<MouseLowLevelHookStruct>(lParam);
             var edge = WindowsDemonstrationInputEdgeFactory.FromMouseMessage(
@@ -216,7 +242,29 @@ public sealed class WindowsDemonstrationInputCollector : IDemonstrationInputColl
 
     private void Publish(DemonstrationInputEdge edge) => sink?.Observe(edge);
 
+    private bool UpdateForeground()
+    {
+        var isTarget = string.Equals(
+            ForegroundAppTracker.GetForegroundProcessFullPath(), targetApplicationPath, StringComparison.OrdinalIgnoreCase);
+        if (targetIsForeground != isTarget)
+        {
+            targetIsForeground = isTarget;
+            sink?.ObserveForeground(isTarget ? targetApplicationPath : null, timeProvider.GetUtcNow());
+        }
+        return isTarget;
+    }
+
     private delegate IntPtr LowLevelProc(int code, IntPtr wParam, IntPtr lParam);
+    private delegate void WinEventProc(
+        IntPtr hook, uint eventType, IntPtr window, int objectId, int childId, uint threadId, uint eventTime);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SetWinEventHook(
+        uint eventMin, uint eventMax, IntPtr module, WinEventProc callback, uint processId, uint threadId, uint flags);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UnhookWinEvent(IntPtr hook);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct KeyboardLowLevelHookStruct

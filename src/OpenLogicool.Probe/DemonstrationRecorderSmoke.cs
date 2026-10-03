@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 using System.Text.Json;
 using OpenLogicool.Contracts.Playbooks;
 using OpenLogicool.Host;
@@ -65,7 +66,7 @@ internal static class DemonstrationRecorderSmoke
             clientBounds.Left, clientBounds.Top, clientBounds.Width, clientBounds.Height));
 
         var sink = new CollectingSink();
-        using var collector = new WindowsDemonstrationInputCollector();
+        using var collector = new WindowsDemonstrationInputCollector(Environment.ProcessPath!);
         collector.Start(sink);
 
         // client frameの中央と右下寄りの2点。窓の外の点も1つ送って、正規化がnullになることを見る。
@@ -89,6 +90,33 @@ internal static class DemonstrationRecorderSmoke
         SendInputInstrument.WheelUp();
         Thread.Sleep(200);
 
+        // 別processの測定窓へ切り替えて戻す。隠すだけでは前面processが変わらないOSがある。
+        var start = new ProcessStartInfo("dotnet.exe")
+        {
+            UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardInput = true, RedirectStandardOutput = true,
+        };
+        start.ArgumentList.Add(typeof(DemonstrationRecorderSmoke).Assembly.Location);
+        start.ArgumentList.Add("demonstration-foreground-window");
+        using (var helper = Process.Start(start)
+            ?? throw new InvalidOperationException("別processの測定窓を開始できませんでした。"))
+        {
+            try
+            {
+                var ready = helper.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                if (ready != "ready") throw new InvalidOperationException($"測定窓がreadyを返しませんでした: {ready}");
+                Thread.Sleep(150);
+                WindowsGameWindowActivator.Activate(window.Handle);
+                Thread.Sleep(150);
+            }
+            finally
+            {
+                helper.StandardInput.WriteLine("stop");
+                if (!helper.WaitForExit(5_000)) throw new InvalidOperationException("測定窓が終了しませんでした。");
+            }
+        }
+        Thread.Sleep(150);
+
         var keyboardHookCalls = collector.KeyboardHookCalls;
         var mouseHookCalls = collector.MouseHookCalls;
         collector.Stop();
@@ -100,7 +128,27 @@ internal static class DemonstrationRecorderSmoke
         var checks = DemonstrationRecorderSmokeJudgement.Evaluate(
             new GameCaptureScreenBounds(
                 clientBounds.Left, clientBounds.Top, clientBounds.Width, clientBounds.Height),
-            observed);
+            observed).ToList();
+
+        var focus = sink.ForegroundSnapshot();
+        checks.Add(new CheckResult("前面喪失と復帰を入力なしで通知", focus.Count >= 3
+            && focus[0] == Environment.ProcessPath && focus.Contains(null) && focus[^1] == Environment.ProcessPath,
+            $"通知={focus.Count}、一時停止={focus.Count(item => item is null)}"));
+
+        var excluded = new CollectingSink();
+        using (var excludedCollector = new WindowsDemonstrationInputCollector(Environment.ProcessPath! + ".not-selected"))
+        {
+            excludedCollector.Start(excluded);
+            // 送出先は同じself-window。選択対象と一致しない時の取得抑止だけを測る。
+            SendInputInstrument.TapKey(0x1B);
+            SendInputInstrument.LeftClick();
+            Thread.Sleep(150);
+            excludedCollector.Stop();
+            checks.Add(new CheckResult("対象外のkeyとmouseを取得しない",
+                excludedCollector.KeyboardHookCalls > 0 && excludedCollector.MouseHookCalls > 0
+                    && excluded.Snapshot().Count == 0 && excluded.ForegroundSnapshot().SequenceEqual(new string?[] { null }),
+                $"keyboard hook={excludedCollector.KeyboardHookCalls}、mouse hook={excludedCollector.MouseHookCalls}、取得={excluded.Snapshot().Count}"));
+        }
 
         var passed = checks.All(check => check.Passed);
         var report = new
@@ -112,6 +160,8 @@ internal static class DemonstrationRecorderSmoke
             clientBoundsOnScreen = new { clientBounds.Left, clientBounds.Top, clientBounds.Width, clientBounds.Height },
             keyboardHookCalls,
             mouseHookCalls,
+            foregroundNotifications = focus.Select(item => item is not null),
+            excludedEdgeCount = excluded.Snapshot().Count,
             observedEdgeCount = observed.Count,
             observedEdges = observed.Select(edge => new
             {
@@ -163,14 +213,26 @@ internal static class DemonstrationRecorderSmoke
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
 
+    public static int RunForegroundWindow()
+    {
+        using var window = SelfWindow.Create("OpenLogicool 前面切替測定窓", 780, 120, 320, 240);
+        Console.WriteLine("ready");
+        _ = Console.ReadLine();
+        return 0;
+    }
+
     /// <summary>hook procedureから呼ばれるので、追加するだけで待たない。</summary>
     private sealed class CollectingSink : IDemonstrationInputSink
     {
         private readonly System.Collections.Concurrent.ConcurrentQueue<DemonstrationInputEdge> edges = new();
+        private readonly System.Collections.Concurrent.ConcurrentQueue<string?> foreground = new();
 
         public void Observe(DemonstrationInputEdge edge) => edges.Enqueue(edge);
 
+        public void ObserveForeground(string? targetApplicationPath, DateTimeOffset occurredUtc) => foreground.Enqueue(targetApplicationPath);
+
         public IReadOnlyList<DemonstrationInputEdge> Snapshot() => edges.ToArray();
+        public IReadOnlyList<string?> ForegroundSnapshot() => foreground.ToArray();
     }
 
     /// <summary>他のprobe（t07 journey smoke）からも使うのでassembly内へ公開する。</summary>

@@ -47,6 +47,56 @@ public sealed class HostDemonstrationRecordingIntentsTests : IDisposable
     }
 
     [Fact]
+    public async Task Windows_recording_started_outside_the_target_app_is_paused()
+    {
+        SelectTarget();
+        using var collector = new WindowsDemonstrationInputCollector(@"C:\game\game.exe");
+        var factory = new FakeLiveSessionFactory(collector);
+        using var intents = new HostDemonstrationRecordingIntents(path, factory, new DemonstrationRecordingGate());
+
+        _ = await intents.StartAsync("対象外では記録しない");
+        await Task.Delay(300);
+
+        Assert.Equal(DemonstrationRecorderStatus.Paused, intents.Status().Status);
+    }
+
+    [Fact]
+    public async Task Foreground_changes_discard_held_input_and_resume_with_a_fresh_observation()
+    {
+        SelectTarget();
+        var factory = new FakeLiveSessionFactory();
+        using var intents = new HostDemonstrationRecordingIntents(path, factory, new DemonstrationRecordingGate());
+        var started = await intents.StartAsync("対象へ戻ってから操作する");
+        var collector = factory.Sink!;
+        var at = DateTimeOffset.UtcNow;
+        var down = new DemonstrationInputEdge(
+            ContractSchemaVersions.Revision03, DemonstrationInputSource.Keyboard, DemonstrationInputEdgeKind.KeyDown,
+            "key", "Key:A", 100, at);
+        var up = down with { Kind = DemonstrationInputEdgeKind.KeyUp, MonotonicMs = 130 };
+
+        collector.Observe(down with { OccurredUtc = DateTimeOffset.UtcNow });
+        collector.ObserveForeground(null, DateTimeOffset.UtcNow);
+        collector.Observe(down with { OccurredUtc = DateTimeOffset.UtcNow });
+        collector.Observe(up with { OccurredUtc = DateTimeOffset.UtcNow });
+        collector.ObserveForeground(@"C:\game\game.exe", DateTimeOffset.UtcNow);
+        collector.Observe(up with { OccurredUtc = DateTimeOffset.UtcNow });
+        collector.Observe(down with { OccurredUtc = DateTimeOffset.UtcNow });
+        collector.Observe(up with { OccurredUtc = DateTimeOffset.UtcNow });
+
+        var stopped = await intents.StopAsync();
+        Assert.Equal(1, stopped.OperationCount);
+        Assert.Equal(2, factory.Runtime!.ObservationCount);
+        using var connection = new SqliteConnection($"Data Source={path};Pooling=False");
+        connection.Open();
+        var record = new SqliteDemonstrationSessionStore(connection).Load(started.SessionId)!;
+        Assert.Equal(
+            [DemonstrationEventKind.FocusLost, DemonstrationEventKind.FocusRegained,
+                DemonstrationEventKind.Operation, DemonstrationEventKind.Stopped],
+            record.Events.Select(item => item.Kind));
+        Assert.Null(record.Events[0].FocusChange!.ForegroundApplicationPath);
+    }
+
+    [Fact]
     public async Task Starting_twice_without_stopping_is_refused()
     {
         SelectTarget();
@@ -142,9 +192,10 @@ public sealed class HostDemonstrationRecordingIntentsTests : IDisposable
 
     private void SelectTarget() => MacroTargetSettingsStore.ForDatabase(path).Save("game");
 
-    private sealed class FakeLiveSessionFactory : IDemonstrationLiveSessionFactory
+    private sealed class FakeLiveSessionFactory(IDemonstrationInputCollector? inputCollector = null) : IDemonstrationLiveSessionFactory
     {
         public FakeDemonstrationInputCollector? Sink { get; private set; }
+        public FakeObservationRuntime? Runtime { get; private set; }
 
         public DemonstrationLiveSession Create(string targetProcessName)
         {
@@ -152,12 +203,13 @@ public sealed class HostDemonstrationRecordingIntentsTests : IDisposable
             var sceneA = Scene("scene-a", "btn-to-b");
             var sceneB = Scene("scene-b", "btn-to-c");
             var runtime = new FakeObservationRuntime(sceneA, sceneB);
+            Runtime = runtime;
             return new DemonstrationLiveSession(
                 @"C:\game\game.exe",
                 "window:game",
                 "game:live:test",
                 runtime,
-                Sink,
+                inputCollector ?? Sink,
                 _ => [0.5, 0.5]);
         }
 
@@ -188,6 +240,9 @@ public sealed class HostDemonstrationRecordingIntentsTests : IDisposable
 
         public void Observe(DemonstrationInputEdge edge) => sink?.Observe(edge);
 
+        public void ObserveForeground(string? targetApplicationPath, DateTimeOffset occurredUtc) =>
+            sink?.ObserveForeground(targetApplicationPath, occurredUtc);
+
         public void Dispose()
         {
         }
@@ -195,10 +250,15 @@ public sealed class HostDemonstrationRecordingIntentsTests : IDisposable
 
     private sealed class FakeObservationRuntime(ObservedScene initial, ObservedScene after) : IDemonstrationObservationRuntime
     {
-        public ValueTask<ObservationResult> ObserveAsync(CancellationToken cancellationToken = default) =>
-            ValueTask.FromResult(new ObservationResult(
+        public int ObservationCount { get; private set; }
+
+        public ValueTask<ObservationResult> ObserveAsync(CancellationToken cancellationToken = default)
+        {
+            ObservationCount++;
+            return ValueTask.FromResult(new ObservationResult(
                 ContractSchemaVersions.Revision03, initial.ObservationId, initial.Frame,
                 CaptureAvailability.Available, StateIdentityStatus.Novel, [], "recognizer-1", 0, null));
+        }
 
         public ValueTask<ObservedScene> DiscoverTargetsAsync(
             ObservationResult observation, CancellationToken cancellationToken = default) =>
