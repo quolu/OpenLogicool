@@ -9,6 +9,30 @@ public sealed class CodexAppServerClientTests : IDisposable
     private readonly string root = Path.Combine(Path.GetTempPath(), $"openlogicool-codex-{Guid.NewGuid():N}");
 
     [Fact]
+    public async Task Invalid_response_is_recorded_unchanged_and_stops_before_any_tool_execution()
+    {
+        var workspace = new WindowsGameAgentWorkspaceManager(Path.Combine(root, "user"), Path.Combine(root, "install")).Ensure("nikke");
+        const string invalid = "{\"method\":\"hook/completed\",\"params\":{\"status\":\"completed\"error}}";
+        var transport = new Transport([
+            "{\"id\":1,\"result\":{}}",
+            "{\"id\":2,\"result\":{\"thread\":{\"id\":\"thread-1\"}}}",
+            "{\"id\":3,\"result\":{\"turn\":{\"id\":\"turn-1\"}}}",
+            invalid,
+        ]);
+        var recorded = new List<string>();
+        var tools = new Tools();
+        var client = new CodexAppServerClient(_ => transport, tools, recorded.Add);
+
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() => client.RunAsync(workspace,
+            new GameAgentSessionDocument(GameAgentSessionDocument.CurrentSchemaVersion, null), "アークを開く", ""));
+
+        Assert.IsAssignableFrom<JsonException>(error.InnerException);
+        Assert.Equal(invalid, Assert.Single(recorded));
+        Assert.Empty(tools.Calls);
+        Assert.Equal(4, transport.Writes.Count);
+    }
+
+    [Fact]
     public async Task Starts_subscription_thread_with_workspace_instructions_and_handles_dynamic_tool_call()
     {
         var workspace = new WindowsGameAgentWorkspaceManager(
@@ -80,6 +104,10 @@ public sealed class CodexAppServerClientTests : IDisposable
         Assert.Equal("pwsh.exe", start.FileName);
         Assert.Contains("app-server", start.ArgumentList);
         Assert.Contains("--stdio", start.ArgumentList);
+        Assert.Equal(65001, start.StandardInputEncoding!.CodePage);
+        Assert.Equal(65001, start.StandardOutputEncoding!.CodePage);
+        Assert.Equal(65001, start.StandardErrorEncoding!.CodePage);
+        Assert.Empty(start.StandardInputEncoding.GetPreamble());
     }
 
     private static JsonElement Parse(string json)

@@ -1,0 +1,142 @@
+{
+  "TargetWindow": 461232,
+  "ProcessId": 7892,
+  "Before": {
+    "Window": 1509696,
+    "ProcessId": 37624
+  },
+  "Candidates": [
+    {
+      "Name": "NIKKE - 1 \u500B\u306E\u5B9F\u884C\u4E2D\u30A6\u30A3\u30F3\u30C9\u30A6",
+      "AutomationId": "Appid: C:\\NIKKE\\Launcher\\nikke_launcher.exe",
+      "IsEnabled": true,
+      "IsOffscreen": false,
+      "X": 719,
+      "Y": 1392,
+      "Width": 44,
+      "Height": 48
+    },
+    {
+      "Name": "nikke - 1 \u500B\u306E\u5B9F\u884C\u4E2D\u30A6\u30A3\u30F3\u30C9\u30A6",
+      "AutomationId": "Appid: C:\\NIKKE\\NIKKE\\game\\nikke.exe",
+      "IsEnabled": true,
+      "IsOffscreen": false,
+      "X": 763,
+      "Y": 1392,
+      "Width": 44,
+      "Height": 48
+    }
+  ],
+  "Result": {
+    "Strategy": "TaskbarSemanticButton",
+    "Attempts": 1,
+    "TaskbarButton": "nikke - 1 \u500B\u306E\u5B9F\u884C\u4E2D\u30A6\u30A3\u30F3\u30C9\u30A6",
+    "ScreenPoint": {
+      "X": 785,
+      "Y": 1416
+    },
+    "Receipt": "pointer:741,1414-\u003E783,1416;deltas:17;mouse-left-down-up"
+  },
+  "Error": null,
+  "Samples": [
+    {
+      "Elapsed": 14226,
+      "Foreground": {
+        "Window": 461232,
+        "ProcessId": 7892
+      },
+      "Cursor": {
+        "X": 783,
+        "Y": 1416
+      }
+    },
+    {
+      "Elapsed": 14489,
+      "Foreground": {
+        "Window": 461232,
+        "ProcessId": 7892
+      },
+      "Cursor": {
+        "X": 783,
+        "Y": 1416
+      }
+    },
+    {
+      "Elapsed": 14753,
+      "Foreground": {
+        "Window": 461232,
+        "ProcessId": 7892
+      },
+      "Cursor": {
+        "X": 783,
+        "Y": 1416
+      }
+    },
+    {
+      "Elapsed": 15019,
+      "Foreground": {
+        "Window": 461232,
+        "ProcessId": 7892
+      },
+      "Cursor": {
+        "X": 783,
+        "Y": 1416
+      }
+    },
+    {
+      "Elapsed": 15269,
+      "Foreground": {
+        "Window": 461232,
+        "ProcessId": 7892
+      },
+      "Cursor": {
+        "X": 783,
+        "Y": 1416
+      }
+    },
+    {
+      "Elapsed": 15534,
+      "Foreground": {
+        "Window": 461232,
+        "ProcessId": 7892
+      },
+      "Cursor": {
+        "X": 783,
+        "Y": 1416
+      }
+    },
+    {
+      "Elapsed": 15797,
+      "Foreground": {
+        "Window": 461232,
+        "ProcessId": 7892
+      },
+      "Cursor": {
+        "X": 783,
+        "Y": 1416
+      }
+    },
+    {
+      "Elapsed": 16048,
+      "Foreground": {
+        "Window": 461232,
+        "ProcessId": 7892
+      },
+      "Cursor": {
+        "X": 783,
+        "Y": 1416
+      }
+    },
+    {
+      "Elapsed": 16311,
+      "Foreground": {
+        "Window": 461232,
+        "ProcessId": 7892
+      },
+      "Cursor": {
+        "X": 783,
+        "Y": 1416
+      }
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.IO;
 using System.Windows.Automation;
 using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Input;
@@ -31,21 +32,15 @@ public static class WindowsTaskbarNanoWindowActivator
         var condition = new PropertyCondition(
             AutomationElement.ClassNameProperty,
             "Taskbar.TaskListButtonAutomationPeer");
-        var expectedPrefixes = new[] { target.ProcessName, target.WindowTitle }
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(value => value + " -")
-            .ToArray();
         var candidates = AutomationElement.RootElement
             .FindAll(TreeScope.Descendants, condition)
             .Cast<AutomationElement>()
             .Where(element => element.Current.IsEnabled
                 && !element.Current.IsOffscreen
-                && expectedPrefixes.Any(prefix =>
-                    element.Current.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+                && MatchesExecutable(element.Current.AutomationId, target.ExecutablePath))
             .ToArray();
         if (candidates.Length == 0)
-            throw new InvalidOperationException($"taskbarにtarget '{target.ProcessName}' のbuttonがありません。");
+            throw new InvalidOperationException($"ゲーム本体に対応するタスクバーボタンがありません: {target.ExecutablePath}");
 
         var oracle = new WindowsSerialHidCursorOracle();
         var current = oracle.ReadCurrent();
@@ -71,6 +66,9 @@ public static class WindowsTaskbarNanoWindowActivator
             point,
             receipt);
     }
+
+    internal static bool MatchesExecutable(string automationId, string executablePath) =>
+        string.Equals(automationId, $"Appid: {Path.GetFullPath(executablePath)}", StringComparison.OrdinalIgnoreCase);
 
     public static WindowsNanoWindowActivationResult ActivateByAltTab(
         WindowsGameTarget target,

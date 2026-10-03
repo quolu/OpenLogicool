@@ -1,0 +1,56 @@
+{
+  "SchemaVersion": "1.0.0",
+  "ProductEntry": "Input Studio → マクロ作成",
+  "GameInputRoute": "NanoSerialHid",
+  "ProductUiOperation": "標準Computer Use",
+  "GameUiOperation": "製品runtime",
+  "InstalledBy": "scripts/install-development-app.ps1",
+  "HostProcessId": 48292,
+  "Creation": {
+    "RunId": "run-20261003-102423-739",
+    "Completed": true,
+    "Summary": "ロビーへ戻ったことを確認し、操作を終了しました。",
+    "RouteRevision": 2,
+    "ActionCallCount": 1,
+    "ToolCallCount": 4,
+    "ToolErrors": [],
+    "ObservedGameScreen": "ロビー",
+    "ObservedUiCompletion": true
+  },
+  "AiFreePlayback": [
+    {
+      "Goal": "アークを開いて終了する。課金・消費・募集・戦闘は操作しない。認証画面なら停止する。",
+      "ObservedGameScreen": "アーク",
+      "ObservedUiDetail": "目的を完了しました。",
+      "Transition": "Moved",
+      "AiCallCount": 0,
+      "RouteRevision": 2,
+      "VersionId": "route:5be383d54988d8a14ddef02d21890f23b2d59e3a830b80be5e3ca8fe47cfa7a1",
+      "SeparateHostProcessFromLearning": true
+    },
+    {
+      "Goal": "ロビーへ戻る。課金・消費・募集・戦闘は禁止。",
+      "ObservedGameScreen": "ロビー",
+      "ObservedUiDetail": "目的を完了しました。",
+      "Transition": "Moved",
+      "AiCallCount": 0,
+      "RouteRevision": 2,
+      "VersionId": "route:026d29d5c06d8a21999e9cac2f6a7b3f2c7dbcc5c02d375ccb0b82def0de75f0",
+      "SeparateHostProcessFromLearning": false
+    }
+  ],
+  "Composition": {
+    "Saved": false,
+    "ObservedUiError": "Structure edge列が連続していません。",
+    "ArkArrivalStateId": "state:c615df2c4f4a4b9ab418f9ffc3ae78d7",
+    "ReturnStartStateId": "state:eff05e12ad244c8fb14bdac791d67f9e",
+    "SceneSignatureDifferenceCause": "未解明"
+  },
+  "Tests": {
+    "HostPassed": 313,
+    "DesktopPassed": 104,
+    "Failed": 0
+  },
+  "Phase14Exit": false,
+  "OwnerDemonstrationReplacement": false
+}

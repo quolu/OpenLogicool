@@ -155,7 +155,12 @@ internal sealed class MacroAutomationPanel : UserControl
         finally { running.Dispose(); running = null; SetRunning(false); }
     }
 
-    private IProgress<MacroRunSnapshot> Progress() => new Progress<MacroRunSnapshot>(Render);
+    private IProgress<MacroRunSnapshot> Progress() => new InlineProgress(OnStateChanged);
+
+    private sealed class InlineProgress(Action<MacroRunSnapshot> report) : IProgress<MacroRunSnapshot>
+    {
+        public void Report(MacroRunSnapshot value) => report(value);
+    }
 
     private void Render(MacroRunSnapshot snapshot)
     {

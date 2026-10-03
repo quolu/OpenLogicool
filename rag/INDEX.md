@@ -1,5 +1,7 @@
 # OpenLogicool knowledge index
 
+- [Codex App ServerのGUI起動とUTF-8 stdio](openlogicool/codex-gui-stdio-encoding-2026-10-03.md) — コンソールなしのCP932誤読、BOMなしUTF-8明示、修理前後と導入後GUIの実測。取得日: 2026-10-03、確度: 確認済み（Microsoft一次資料＋Windows native）
+
 - [Foundry Local 0.10.3 vision wire contract](openlogicool/foundry-local-vision-wire-2026-08-24.md) — Responses APIの`message`＋`image_data`＋`media_type`＋SSE契約、誤経路の実測、不明時no-fallback境界。取得日: 2026-08-24、確度: 高（Microsoft公式sample＋Windows実機）
 
 - [STEP 0 Web Reference Policy（2026-08-24）](openlogicool/step0-web-reference-policy-2026-08-24.md) — GameWith利用規約／robotsとMarkdown保存境界、Web仮説をgame内検証へ従属させる契約

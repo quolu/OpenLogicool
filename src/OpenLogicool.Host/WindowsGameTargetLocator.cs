@@ -8,7 +8,8 @@ public sealed record WindowsGameTarget(
     int ProcessId,
     string ProcessName,
     string WindowTitle,
-    GameCaptureScreenBounds Bounds);
+    GameCaptureScreenBounds Bounds,
+    string ExecutablePath);
 
 public static class WindowsGameTargetLocator
 {
@@ -33,7 +34,9 @@ public static class WindowsGameTargetLocator
             selected.Id,
             selected.ProcessName,
             selected.MainWindowTitle,
-            new GameCaptureScreenBounds(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top));
+            new GameCaptureScreenBounds(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top),
+            ForegroundAppTracker.GetProcessFullPath(checked((uint)selected.Id))
+                ?? throw new InvalidOperationException("ゲーム本体のEXEパスを取得できませんでした。"));
     }
 
     [DllImport("user32.dll", SetLastError = true)]

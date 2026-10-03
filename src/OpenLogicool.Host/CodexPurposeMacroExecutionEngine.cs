@@ -133,7 +133,8 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 new CodexProductGameToolRuntime(product.Runtime),
                 recorder);
             var session = workspaceManager.LoadSession(workspace);
-            var codex = new CodexAppServerClient(transportFactory, dynamicTools);
+            var codex = new CodexAppServerClient(transportFactory, dynamicTools,
+                line => File.WriteAllText(Path.Combine(runDirectory, "codex-invalid-response.txt"), line));
             var result = await codex.RunAsync(
                 workspace,
                 session,

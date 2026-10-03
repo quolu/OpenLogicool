@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 
 namespace OpenLogicool.Host;
@@ -38,7 +39,8 @@ public sealed record CodexAppServerRunResult(
 
 public sealed class CodexAppServerClient(
     Func<string, ICodexAppServerTransport> transportFactory,
-    ICodexDynamicToolHandler tools)
+    ICodexDynamicToolHandler tools,
+    Action<string>? recordInvalidResponse = null)
 {
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
@@ -133,7 +135,7 @@ public sealed class CodexAppServerClient(
         {
             var line = await transport.ReadLineAsync(cancellationToken).ConfigureAwait(false)
                 ?? throw new EndOfStreamException("Codex app-serverがturn完了前に終了しました。");
-            using var message = JsonDocument.Parse(line);
+            using var message = ParseResponse(line);
             var root = message.RootElement;
             if (root.TryGetProperty("method", out var methodElement)
                 && methodElement.GetString() == "item/tool/call"
@@ -180,7 +182,7 @@ public sealed class CodexAppServerClient(
         string json,
         CancellationToken cancellationToken) => transport.WriteLineAsync(json, cancellationToken);
 
-    private static async Task<JsonElement> ReadResponseAsync(
+    private async Task<JsonElement> ReadResponseAsync(
         ICodexAppServerTransport transport,
         int expectedId,
         CancellationToken cancellationToken)
@@ -189,13 +191,23 @@ public sealed class CodexAppServerClient(
         {
             var line = await transport.ReadLineAsync(cancellationToken).ConfigureAwait(false)
                 ?? throw new EndOfStreamException("Codex app-server response前にstreamが終了しました。");
-            using var message = JsonDocument.Parse(line);
+            using var message = ParseResponse(line);
             var root = message.RootElement;
             if (!root.TryGetProperty("id", out var id) || !id.TryGetInt32(out var value) || value != expectedId)
                 continue;
             if (root.TryGetProperty("error", out var error))
                 throw new InvalidOperationException($"Codex app-server error: {error.GetProperty("message").GetString()}");
             return root.Clone();
+        }
+    }
+
+    private JsonDocument ParseResponse(string line)
+    {
+        try { return JsonDocument.Parse(line); }
+        catch (JsonException error)
+        {
+            recordInvalidResponse?.Invoke(line);
+            throw new InvalidDataException("Codexの応答を読み取れませんでした。受信内容の記録を確認してください。", error);
         }
     }
 }
@@ -232,6 +244,9 @@ public sealed class WindowsCodexAppServerTransport : ICodexAppServerTransport
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            StandardInputEncoding = new UTF8Encoding(false, true),
+            StandardOutputEncoding = new UTF8Encoding(false, true),
+            StandardErrorEncoding = new UTF8Encoding(false, true),
         };
         foreach (var argument in new[] { "-NoProfile", "-File", wrapper, "app-server", "--stdio" })
             start.ArgumentList.Add(argument);
