@@ -6,7 +6,7 @@
 
 製品UIの実行開始を止めていた前面化とCodex通信を修理し、開発版へ導入した。GUIからNanoのクリックでアーク→ロビー、実画面の遷移、1手順マクロの保存、完了表示まで確認済み。即時失敗を遅延した開始表示が上書きする欠陥も修理した。
 
-別々に学習した「アークを開く」と「ロビーへ戻る」の統合は不成立。同じアークの到着・開始が別state IDとして保存されており、既存の連続edge検証が拒否した。これは今回の開始障害と分けて追跡する。画面IDの統合や連続性検証の緩和はしていない。
+別々に学習した「アークを開く」と「ロビーへ戻る」の統合障害も解決済み。保存観測から画面identityを再利用・訂正する修理を開発版へ導入し、GUIで2手順の統合保存、別process再起動後もAI 0・版1不変のNano往復を確認した。連続性検証は保持している。詳細は[統合障害の記録](2026-10-03-macro-scene-identity.md)。
 
 ## 実測
 
@@ -64,8 +64,8 @@ Game Operatorは通常割当のWindows出力設定と独立してNano sessionを
 
 製品入力の成功と、利用者による記録・全工程の受入は分ける。この実測でPhase 14 Exit、配布完了、利用者デモからの2 stepマクロ成立は宣言しない。
 
-## 次の調査
+## 統合障害の解決
 
-開始障害の原因調査・修理・導入・GUI実測は完了。統合拒否では、アーク到着が`state:c615df2c4f4a4b9ab418f9ffc3ae78d7`、戻る開始が`state:eff05e12ad244c8fb14bdac791d67f9e`。別scene signatureとして保存され、`StructurePlaybookSynthesizer`の連続性検証が拒否した。どの画面情報の違いでsignatureが分かれたかは未解明であり、同一ラベルを理由に結合しない。次の調査対象はscene signatureの比較とstate再利用を所有する学習経路である。
+開始障害の原因調査・修理・導入・GUI実測は完了。統合拒否では、初回のNovelと次回のKnown、state候補とOCR集合の差でsignatureが分かれたことを確認した。同じアークの保存画像の平均輝度差は0.046875だった。画面構造の所有モジュールで保存観測から同一性を解決し、正規mergeを追記してGUI統合を成立させた。原本・旧route・旧eventは不変。詳細と2回のAIなしNano往復は[統合障害の記録](2026-10-03-macro-scene-identity.md)にまとめた。
 
 外部仕様の根拠は[公式App Server仕様](https://learn.chatgpt.com/docs/app-server)と[Microsoftの標準出力encoding仕様](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.processstartinfo.standardoutputencoding?view=net-10.0)。調査知識は[UTF-8のGUI通信検証](../../rag/openlogicool/codex-gui-stdio-encoding-2026-10-03.md)へ保存した。

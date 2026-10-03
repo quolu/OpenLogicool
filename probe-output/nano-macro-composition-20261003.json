@@ -1,0 +1,163 @@
+{
+  "schemaVersion": "1.0.0",
+  "result": "確認済み",
+  "scope": "別々に学習したNIKKE往復マクロの統合とAIなしNano再生",
+  "cause": {
+    "arrivalStateIdentity": "Novel",
+    "departureStateIdentity": "Known",
+    "arkSceneMeanAbsoluteDifference": 0.046875,
+    "lobbySceneMeanAbsoluteDifference": 37.578125,
+    "arrivalStateId": "state:c615df2c4f4a4b9ab418f9ffc3ae78d7",
+    "departureStateId": "state:eff05e12ad244c8fb14bdac791d67f9e"
+  },
+  "composition": {
+    "SchemaVersion": "0.3.0",
+    "RouteId": "macro:composed:cb19d6f39e6944d7b14945f05113c705",
+    "RevisionNumber": 1,
+    "VersionId": "route:e7f2e1eb397114a138a5b055353d2a2e800ffdcd478a67ef93d3608e7457a1b7",
+    "ParentVersionId": null,
+    "GameId": "nikke",
+    "EnvironmentScope": "nikke:live:2774x1221",
+    "StructureRevisionId": "structure:578d33a51bcdc626e34affc1cebc4fd77ce523c1389d5639caf617e01f427617",
+    "Goal": "アークを開いてロビーへ戻る（Nano確認）",
+    "EdgeIds": [
+      "edge:a014bd960d9e4cd78a9785fa61c2fb68",
+      "edge:4f0b25d14f9540fcb9092ac6105ff9c2"
+    ],
+    "Author": 1,
+    "UserInstruction": "複数マクロを選択順に統合",
+    "ChangeReason": "macro 2件を統合",
+    "Status": 1,
+    "CreatedUtc": "2026-10-03T11:28:06.6243024+00:00"
+  },
+  "playbacks": [
+    {
+      "hostPid": 46832,
+      "runId": "exploration:f1a9e81affc24ac09fd05b1d5f7a0042",
+      "evidenceDirectory": "20261003-202901-355",
+      "mode": "AiFree",
+      "completed": true,
+      "aiCalls": 0,
+      "revisionNumber": 1,
+      "transitions": [
+        {
+          "evidenceId": "transition:proposal:observation:window:macro:7892:2:1:route:edge:a014bd960d9e4cd78a9785fa61c2fb68:observation:window:macro:7892:2:1",
+          "beforeObservationId": "observation:window:macro:7892:2:1",
+          "afterObservationId": "observation:window:macro:7892:43:23",
+          "dispatchReceipt": {
+            "SchemaVersion": "0.3.0",
+            "Operation": "click",
+            "Status": 0,
+            "ObservationId": "observation:window:macro:7892:2:1",
+            "TargetWindowSourceId": "window:macro:7892",
+            "Route": "NanoSerialHid",
+            "DispatchCount": 1,
+            "StartedUtc": "2026-10-03T11:29:03.3298637+00:00",
+            "CompletedUtc": "2026-10-03T11:29:03.7234814+00:00",
+            "CandidateId": "route:edge:a014bd960d9e4cd78a9785fa61c2fb68:observation:window:macro:7892:2:1",
+            "TransportReceiptId": "pointer:785,1414->1816,840;deltas:25;mouse-left-down-up",
+            "FailureReason": null
+          },
+          "judgement": "Moved",
+          "outcome": 1,
+          "observationCount": 22
+        },
+        {
+          "evidenceId": "transition:proposal:observation:window:macro:7892:47:25:route:edge:4f0b25d14f9540fcb9092ac6105ff9c2:observation:window:macro:7892:47:25",
+          "beforeObservationId": "observation:window:macro:7892:47:25",
+          "afterObservationId": "observation:window:macro:7892:79:41",
+          "dispatchReceipt": {
+            "SchemaVersion": "0.3.0",
+            "Operation": "click",
+            "Status": 0,
+            "ObservationId": "observation:window:macro:7892:47:25",
+            "TargetWindowSourceId": "window:macro:7892",
+            "Route": "NanoSerialHid",
+            "DispatchCount": 1,
+            "StartedUtc": "2026-10-03T11:29:14.4749968+00:00",
+            "CompletedUtc": "2026-10-03T11:29:14.9459722+00:00",
+            "CandidateId": "route:edge:4f0b25d14f9540fcb9092ac6105ff9c2:observation:window:macro:7892:47:25",
+            "TransportReceiptId": "pointer:1816,840->178,1153;deltas:30;mouse-left-down-up",
+            "FailureReason": null
+          },
+          "judgement": "Moved",
+          "outcome": 1,
+          "observationCount": 16
+        }
+      ]
+    },
+    {
+      "hostPid": 4924,
+      "runId": "exploration:d4b11958e38b48b3b9a12c214c93b4ad",
+      "evidenceDirectory": "20261003-203224-600",
+      "mode": "AiFree",
+      "completed": true,
+      "aiCalls": 0,
+      "revisionNumber": 1,
+      "transitions": [
+        {
+          "evidenceId": "transition:proposal:observation:window:macro:7892:2:1:route:edge:a014bd960d9e4cd78a9785fa61c2fb68:observation:window:macro:7892:2:1",
+          "beforeObservationId": "observation:window:macro:7892:2:1",
+          "afterObservationId": "observation:window:macro:7892:44:22",
+          "dispatchReceipt": {
+            "SchemaVersion": "0.3.0",
+            "Operation": "click",
+            "Status": 0,
+            "ObservationId": "observation:window:macro:7892:2:1",
+            "TargetWindowSourceId": "window:macro:7892",
+            "Route": "NanoSerialHid",
+            "DispatchCount": 1,
+            "StartedUtc": "2026-10-03T11:32:25.9751305+00:00",
+            "CompletedUtc": "2026-10-03T11:32:26.3836224+00:00",
+            "CandidateId": "route:edge:a014bd960d9e4cd78a9785fa61c2fb68:observation:window:macro:7892:2:1",
+            "TransportReceiptId": "pointer:785,1414->1816,840;deltas:26;mouse-left-down-up",
+            "FailureReason": null
+          },
+          "judgement": "Moved",
+          "outcome": 1,
+          "observationCount": 21
+        },
+        {
+          "evidenceId": "transition:proposal:observation:window:macro:7892:48:24:route:edge:4f0b25d14f9540fcb9092ac6105ff9c2:observation:window:macro:7892:48:24",
+          "beforeObservationId": "observation:window:macro:7892:48:24",
+          "afterObservationId": "observation:window:macro:7892:82:41",
+          "dispatchReceipt": {
+            "SchemaVersion": "0.3.0",
+            "Operation": "click",
+            "Status": 0,
+            "ObservationId": "observation:window:macro:7892:48:24",
+            "TargetWindowSourceId": "window:macro:7892",
+            "Route": "NanoSerialHid",
+            "DispatchCount": 1,
+            "StartedUtc": "2026-10-03T11:32:37.1309207+00:00",
+            "CompletedUtc": "2026-10-03T11:32:37.6081426+00:00",
+            "CandidateId": "route:edge:4f0b25d14f9540fcb9092ac6105ff9c2:observation:window:macro:7892:48:24",
+            "TransportReceiptId": "pointer:1816,840->178,1153;deltas:30;mouse-left-down-up",
+            "FailureReason": null
+          },
+          "judgement": "Moved",
+          "outcome": 1,
+          "observationCount": 17
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "originalRouteRevisionsUnchanged": true,
+    "originalStructureEventsUnchanged": true,
+    "demonstrationOriginalsUnchanged": true,
+    "composedRouteRevisionCount": 1,
+    "gameComputerUseInputs": 0,
+    "gameSendInputInputs": 0,
+    "fallbacks": 0,
+    "automaticRetries": 0
+  },
+  "tests": {
+    "Host": 317,
+    "Exploration": 64,
+    "PlaybookComposition": 7,
+    "total": 388
+  },
+  "installEntry": "scripts/install-development-app.ps1",
+  "uiStatus": "目的を完了しました。 step 2 CODEX Moved AI 0回 版 1"
+}

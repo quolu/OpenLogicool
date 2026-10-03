@@ -1,5 +1,10 @@
 using Microsoft.Data.Sqlite;
+using System.Text.Json;
+using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Playbooks;
+using OpenLogicool.Contracts.Shared;
+using OpenLogicool.Domain;
+using OpenLogicool.Exploration;
 using OpenLogicool.Persistence;
 using OpenLogicool.Playbooks;
 
@@ -44,14 +49,43 @@ public sealed class HostMacroCatalog(
         }
         var sources = request.Sources.Select(Resolve).ToArray();
         var structure = structures.LoadRevision(sources[0].GameId, sources[0].EnvironmentScope);
+        var events = structures.ReadEvents(sources[0].GameId, sources[0].EnvironmentScope);
+        var ids = new GuidExplorationIdSource();
+        var now = time.GetUtcNow();
+        var joins = StructureSceneIdentityResolver.PlanRouteJoins(
+            structure, events, sources.SelectMany(source => source.EdgeIds).ToArray(), ids, now);
         var routeId = $"macro:composed:{Guid.NewGuid():N}";
-        var saved = routes.Append(MacroRouteComposer.Compose(
+        // 実際のprojectorで訂正後を検査してから追記する。拒否した合成は構造も変更しない。
+        var preview = joins is null ? structure : PreviewJoins(sources[0].GameId, structure, events, joins);
+        var draft = MacroRouteComposer.Compose(
             routeId,
             request.Goal,
             sources,
-            structure,
-            time.GetUtcNow()));
+            preview,
+            now);
+        if (joins is not null)
+            structure = new StructureKnowledgeController(structures, new InMemoryStableStructureIdRegistry(), ids)
+                .Commit(joins, sources[0].GameId, sources[0].EnvironmentScope);
+        var saved = routes.Append(draft with { StructureRevisionId = structure.RevisionId });
         return Project(saved);
+    }
+
+    private static GameStructureRevision PreviewJoins(
+        string gameId, GameStructureRevision structure, IReadOnlyList<StructureEvent> events,
+        StructureDeltaCommitRequest joins)
+    {
+        var eventId = $"preview:{joins.Proposal.ProposalId}";
+        var sequence = events.Count + 1L;
+        var parent = events.LastOrDefault()?.ResultingStructureRevisionId;
+        var previewEvent = new StructureEvent(
+            ContractSchemaVersions.Revision03, eventId, gameId, structure.EnvironmentScope, sequence, parent,
+            StructureRevisionIds.Next(parent, eventId, sequence), StructureEventKind.MutationApplied,
+            StructureEventActor.Controller, joins.CorrelationId, joins.CausationId, null,
+            joins.Proposal.ProposalId, null, joins.Proposal.EvidenceIds, StructureEventPayloadTypes.MutationBatch,
+            JsonSerializer.Serialize(new StructureMutationBatch(ContractSchemaVersions.Revision03,
+                joins.Operations.Select(operation => operation.Mutation).ToArray())),
+            null, joins.OccurredUtc, joins.PersistedUtc);
+        return GameStructureProjector.Replay(gameId, structure.EnvironmentScope, [.. events, previewEvent]);
     }
 
     private IReadOnlyList<(string GameId, string EnvironmentScope)> Scopes()

@@ -117,7 +117,9 @@ public sealed class GameInteractionStructureLearner(
     {
         var signatureId = GameSceneSemanticComparer.SignatureId(scene);
         var current = store.LoadRevision(gameId, environmentScope);
-        var existing = SelectExistingNode(current.ScreenGraph.Nodes, signatureId);
+        var existing = SelectExistingNode(current.ScreenGraph.Nodes, signatureId)
+            ?? StructureSceneIdentityResolver.FindExistingNode(
+                current, store.ReadEvents(gameId, environmentScope), scene);
         if (existing is not null)
         {
             return existing.StateId;
