@@ -18,6 +18,9 @@ public sealed class DemonstrationRecordingWorkspace(IDemonstrationRecordingInten
 
     public DemonstrationRecordingStatus Status() => intents.Status();
 
+    public Task<DemonstrationSessionSummary> ReanalyzeAsync(string sessionId, CancellationToken cancellationToken = default) =>
+        intents.ReanalyzeAsync(sessionId, cancellationToken);
+
     public IReadOnlyList<DemonstrationSessionSummary> ListSessions() => intents.ListSessions();
 
     public IReadOnlyList<DemonstrationStepSummary> ListSteps(string sessionId) => intents.ListSteps(sessionId);

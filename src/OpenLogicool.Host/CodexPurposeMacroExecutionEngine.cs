@@ -128,7 +128,8 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 environment,
                 request.Goal,
                 structures,
-                routes);
+                routes,
+                initialRoute: request.InitialRoute);
             var dynamicTools = new CodexGameDynamicTools(
                 new CodexProductGameToolRuntime(product.Runtime),
                 recorder);
@@ -139,7 +140,7 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 workspace,
                 session,
                 request.Goal,
-                BuildDeveloperInstructions(target.ProcessName, request.Goal),
+                BuildDeveloperInstructions(target.ProcessName, request.Goal, request.InitialRoute is not null),
                 cancellationToken).ConfigureAwait(false);
             workspaceManager.SaveSession(workspace, result.ThreadId);
             var completed = result.Status == "completed"
@@ -173,7 +174,7 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 recorder.StepNumber,
                 "Codex",
                 "OpenLogicool dynamic tools",
-                completed ? "Completed" : result.Status,
+                completed ? "Completed" : "Stopped",
                 1,
                 recorder.RevisionNumber,
                 detail,
@@ -218,7 +219,15 @@ public sealed class CodexPurposeMacroExecutionEngine(
         return first ?? $"{target.ProcessName}:live:{resolution}";
     }
 
-    private static string BuildDeveloperInstructions(string processName, string goal) => $"""
+    private static string BuildDeveloperInstructions(string processName, string goal, bool replaying) => replaying ? $"""
+        OpenLogicoolが対象ゲームを`{processName}`に固定しています。
+        保存済みマクロ「{goal}」の全手順を順番に再生してください。
+        現在の画面が目的名を満たしていても、保存された往復手順を省略しないでください。
+        observeのSavedActionをuse_saved_actionで実行し、各操作の後にobserveしてください。
+        画面変化が成立しなかった手順だけを現在の画面で修復し、正常な手順と後続手順を保持してください。
+        observeのCanFinishがtrueになり、最後の画面を確認してからfinishで終了してください。
+        保存済み手順を使い切った後に新しい操作を追加しないでください。
+        """ : $"""
         The OpenLogicool application fixed the game profile to `{processName}`.
         The user's only goal is: {goal}
         Use the OpenLogicool dynamic tools until the goal is complete. After every action call observe again.

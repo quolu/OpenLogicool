@@ -8,12 +8,13 @@ public sealed record DemonstrationSessionSummary(
     string EnvironmentScope,
     DemonstrationSessionState State,
     int OperationCount,
-    DateTimeOffset StartedUtc)
+    DateTimeOffset StartedUtc,
+    DateTimeOffset? ReanalyzedUtc = null)
 {
     public string StateLabel => State switch
     {
         DemonstrationSessionState.Recording => "記録中",
-        DemonstrationSessionState.Stopped => "記録済み",
+        DemonstrationSessionState.Stopped => ReanalyzedUtc is null ? "記録済み" : "再解析済み",
         _ => State.ToString(),
     };
 
@@ -89,6 +90,8 @@ public interface IDemonstrationRecordingIntents
     Task<DemonstrationSessionSummary> StartAsync(string goal, CancellationToken cancellationToken = default);
 
     Task<DemonstrationSessionSummary> StopAsync(CancellationToken cancellationToken = default);
+
+    Task<DemonstrationSessionSummary> ReanalyzeAsync(string sessionId, CancellationToken cancellationToken = default);
 
     DemonstrationRecordingStatus Status();
 

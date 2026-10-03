@@ -9,6 +9,24 @@ namespace OpenLogicool.Host.Tests;
 public sealed class CodexGameDynamicToolsTests
 {
     [Fact]
+    public async Task Finish_refuses_an_unconsumed_playback_without_reporting_success()
+    {
+        var route = new Route { CanComplete = false, NextSavedEdge = Edge("saved") };
+        var tools = new CodexGameDynamicTools(new Runtime(), route);
+        var observation = await tools.ExecuteAsync("observe", Args("{}"));
+        Assert.False(Args(observation.Text).GetProperty("CanFinish").GetBoolean());
+        var premature = await tools.ExecuteAsync("finish", Args("{\"summary\":\"already in lobby\",\"facts\":[]}"));
+        Assert.False(premature.Success);
+        Assert.False(tools.IsCompleted);
+        Assert.False(route.Completed);
+        Assert.False(tools.IsReplayableCompletion);
+        route.CanComplete = true;
+        var completed = await tools.ExecuteAsync("finish", Args("{\"summary\":\"round trip complete\",\"facts\":[]}"));
+        Assert.True(completed.Success);
+        Assert.True(tools.IsCompleted);
+    }
+
+    [Fact]
     public async Task Observe_exposes_saved_route_action_and_click_is_bound_to_that_observation()
     {
         var runtime = new Runtime();
@@ -54,22 +72,29 @@ public sealed class CodexGameDynamicToolsTests
         Assert.True(route.Completed);
     }
 
-    [Fact]
-    public async Task Action_error_is_recorded_and_finish_is_not_replayable_without_a_route_commit()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Runtime_or_commit_error_stops_following_input_even_with_an_existing_route(bool runtimeError)
     {
-        var runtime = new Runtime { ThrowOnExecute = true };
-        var tools = new CodexGameDynamicTools(runtime, new Route());
+        var runtime = new Runtime { ThrowOnExecute = runtimeError };
+        var route = new Route { RevisionNumber = 1, ThrowOnRecord = !runtimeError };
+        var tools = new CodexGameDynamicTools(runtime, route);
         _ = await tools.ExecuteAsync("observe", Args("{}"));
 
         var click = await tools.ExecuteAsync("click", Args(
             "{\"observationId\":\"observation-1\",\"label\":\"close\",\"x\":0.9,\"y\":0.1}"));
-        _ = await tools.ExecuteAsync("finish", Args(
-            "{\"summary\":\"lobby\",\"facts\":[\"lobby\"]}"));
-
         Assert.False(click.Success);
+        Assert.True(Args(click.Text).GetProperty("RunMustStop").GetBoolean());
         Assert.Equal(1, tools.ActionCallCount);
         Assert.Single(tools.ToolErrors);
         Assert.Contains("fake commit error", tools.ToolErrors[0], StringComparison.Ordinal);
+        _ = await tools.ExecuteAsync("observe", Args("{}"));
+        var following = await tools.ExecuteAsync("back", Args("{\"observationId\":\"observation-1\"}"));
+        Assert.False(following.Success);
+        Assert.Equal(1, runtime.ExecuteCalls);
+        _ = await tools.ExecuteAsync("finish", Args(
+            "{\"summary\":\"lobby\",\"facts\":[\"lobby\"]}"));
         Assert.True(tools.IsCompleted);
         Assert.False(tools.IsReplayableCompletion);
     }
@@ -137,6 +162,7 @@ public sealed class CodexGameDynamicToolsTests
     {
         public List<CodexGameActionCommand> Commands { get; } = [];
         public bool ThrowOnExecute { get; init; }
+        public int ExecuteCalls { get; private set; }
         public CodexGameActionOutcome? Outcome { get; init; }
         public ValueTask<CodexGameObservation> ObserveAsync(CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new CodexGameObservation(
@@ -149,6 +175,7 @@ public sealed class CodexGameDynamicToolsTests
             bool repairing,
             CancellationToken cancellationToken = default)
         {
+            ExecuteCalls++;
             if (ThrowOnExecute) throw new InvalidOperationException("fake commit error");
             Commands.Add(command);
             return ValueTask.FromResult(Outcome ?? new CodexGameActionOutcome(
@@ -161,15 +188,18 @@ public sealed class CodexGameDynamicToolsTests
 
     private sealed class Route : ICodexRouteRecorder
     {
+        public bool CanComplete { get; set; } = true;
         public StructureScreenEdge? NextSavedEdge { get; set; }
         public int StepNumber { get; private set; }
-        public long RevisionNumber { get; private set; }
+        public long RevisionNumber { get; set; }
+        public bool ThrowOnRecord { get; init; }
         public bool Repairing { get; private set; }
         public bool RecordedSaved { get; private set; }
         public bool RecordedNew { get; private set; }
         public bool Completed { get; private set; }
         public void Record(CodexGameActionOutcome outcome, bool usedSavedEdge)
         {
+            if (ThrowOnRecord) throw new InvalidOperationException("fake commit error");
             RecordedSaved |= usedSavedEdge;
             RecordedNew |= !usedSavedEdge;
             RevisionNumber++;

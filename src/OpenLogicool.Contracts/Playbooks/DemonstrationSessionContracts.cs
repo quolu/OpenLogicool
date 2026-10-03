@@ -44,7 +44,9 @@ public sealed record DemonstrationSessionDraft(
     string TargetApplicationPath,
     string TargetWindowSourceId,
     string RecorderVersion,
-    DateTimeOffset StartedUtc);
+    DateTimeOffset StartedUtc,
+    string? SourceSessionId = null,
+    DateTimeOffset? ReanalyzedUtc = null);
 
 /// <summary>
 /// デモ操作を操作時のObservationとclient frameへ束縛する。

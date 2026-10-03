@@ -100,7 +100,9 @@ public sealed class CodexSuppliedTargetDiscovery(
             [routeTarget.Primitive],
             "codex-supplied",
             routeTarget.TargetSemanticKey ?? routeTarget.AffordanceCandidateId,
-            VisualPatch: frame.Pixels is null ? null : VisualPatchMatcher.Capture(frame, bounds),
+            VisualPatch: frame.Pixels is null || bounds[2] == 0 && bounds[3] == 0
+                ? null
+                : VisualPatchMatcher.Capture(frame, bounds),
             KeyTokens: routeTarget.KeyTokens,
             VerticalScrollSteps: routeTarget.VerticalScrollSteps,
             HorizontalScrollSteps: routeTarget.HorizontalScrollSteps,
@@ -282,17 +284,19 @@ public sealed class CodexLearningRouteRecorder(
     string goal,
     IGameStructureStore structures,
     ILearningRouteStore routes,
-    TimeProvider? timeProvider = null) : ICodexRouteRecorder
+    TimeProvider? timeProvider = null,
+    LearningRouteRevision? initialRoute = null) : ICodexRouteRecorder
 {
-    private readonly string routeId = PurposeLearningRouteIds.Create(gameId, environmentScope, goal);
+    private readonly string routeId = initialRoute?.RouteId ?? PurposeLearningRouteIds.Create(gameId, environmentScope, goal);
     private readonly TimeProvider time = timeProvider ?? TimeProvider.System;
-    private LearningRouteRevision? route = routes.LoadLatest(PurposeLearningRouteIds.Create(gameId, environmentScope, goal));
+    private LearningRouteRevision? route = initialRoute ?? routes.LoadLatest(PurposeLearningRouteIds.Create(gameId, environmentScope, goal));
     private int stepIndex;
     private bool consumedSavedStep;
 
     public int StepNumber => stepIndex;
     public long RevisionNumber => route?.RevisionNumber ?? 0;
     public bool Repairing { get; private set; }
+    public bool CanComplete => initialRoute is null || (!Repairing && stepIndex >= route!.EdgeIds.Count);
     public StructureScreenEdge? NextSavedEdge
     {
         get
@@ -345,6 +349,8 @@ public sealed class CodexLearningRouteRecorder(
 
     public void Complete(IReadOnlyList<string> facts)
     {
+        if (!CanComplete)
+            throw new InvalidOperationException($"保存済みマクロの手順が残っています。次は手順 {stepIndex + 1} です。");
         if (route is null) return;
         var hasUnconsumedTail = stepIndex < route.EdgeIds.Count;
         if (route.Status != LearningRouteStatus.Draft

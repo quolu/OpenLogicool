@@ -8,8 +8,13 @@ namespace OpenLogicool.Host.Tests;
 
 public sealed class CodexProductGameRuntimeTests
 {
-    [Fact]
-    public void Codex_coordinate_route_candidate_carries_same_frame_visual_patch()
+    [Theory]
+    [InlineData(0.499, 0.599, 0.002, 0.002, true)]
+    [InlineData(0.655732, 0.677314, 0, 0, false)]
+    [InlineData(0.074982, 0.940213, 0, 0, false)]
+    [InlineData(1, 1, 0, 0, false)]
+    public void Codex_route_preserves_area_and_recorded_point_geometry(
+        double x, double y, double targetWidth, double targetHeight, bool hasPatch)
     {
         const int width = 100;
         const int height = 100;
@@ -49,10 +54,13 @@ public sealed class CodexProductGameRuntimeTests
             0,
             null);
 
+        double[] bounds = [x, y, targetWidth, targetHeight];
         var candidate = CodexSuppliedTargetDiscovery.CreateRouteCandidate(
-            ScrollEdge(), observation, frame);
+            ScrollEdge() with { TargetNormalizedBounds = bounds }, observation, frame);
 
-        Assert.NotNull(candidate?.VisualPatch);
+        Assert.NotNull(candidate);
+        Assert.Equal(hasPatch, candidate.VisualPatch is not null);
+        Assert.Equal(bounds, candidate.Locator.NormalizedBounds);
         Assert.Equal("codex-supplied", candidate!.SemanticKind);
     }
 

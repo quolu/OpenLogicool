@@ -61,6 +61,8 @@ public sealed class DemonstrationRouteCompilerTests
         Assert.NotNull(result.Decisions[1].EdgeId);
         Assert.Equal(2, result.Route.EdgeIds.Count);
         Assert.Equal(2, committer.CommitCallCount);
+        Assert.Equal(new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000), committer.LastWaitCondition);
+        Assert.Equal(2, session.Events.Count(item => item.Operation is not null));
     }
 
     [Fact]
@@ -390,6 +392,7 @@ public sealed class DemonstrationRouteCompilerTests
         public int CommitCallCount { get; private set; }
 
         public ObservedScene? LastBefore { get; private set; }
+        public ExplorationWaitCondition? LastWaitCondition { get; private set; }
 
         public GameInteractionStructureCommitResult Commit(
             ObservedScene before,
@@ -402,6 +405,7 @@ public sealed class DemonstrationRouteCompilerTests
         {
             CommitCallCount++;
             LastBefore = before;
+            LastWaitCondition = waitCondition;
             revisionCounter++;
             var revision = new GameStructureRevision(
                 ContractSchemaVersions.Revision03,

@@ -62,7 +62,7 @@ public enum GameTransitionJudgement
     Undetermined,
 }
 
-/// <summary>入力対象を操作直前のObservationへ固定する。</summary>
+/// <summary>入力対象を操作直前のObservationへ固定する。boundsは矩形、または幅・高さが両方0の点。</summary>
 public sealed record GameInteractionTargetBinding(
     string SchemaVersion,
     string ObservationId,

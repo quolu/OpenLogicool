@@ -22,6 +22,8 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
     private readonly DemonstrationRecordingGate gate;
     private readonly ExplorationWaitCondition waitCondition;
     private readonly TimeProvider time;
+    private readonly IDemonstrationTimelineReanalysis reanalysis;
+    private DemonstrationRecordingStatus? analysisStatus;
     private readonly object stateGate = new();
     private DemonstrationRecorder? recorder;
     private DemonstrationLiveSession? liveSession;
@@ -33,7 +35,8 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
         IDemonstrationLiveSessionFactory liveSessionFactory,
         DemonstrationRecordingGate recordingGate,
         ExplorationWaitCondition? waitCondition = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        IDemonstrationTimelineReanalysis? reanalysis = null)
     {
         this.databasePath = Path.GetFullPath(databasePath);
         this.liveSessionFactory = liveSessionFactory ?? throw new ArgumentNullException(nameof(liveSessionFactory));
@@ -42,6 +45,7 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
         this.waitCondition = waitCondition
             ?? new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000);
         time = timeProvider ?? TimeProvider.System;
+        this.reanalysis = reanalysis ?? new WindowsDemonstrationTimelineReanalysis(this.databasePath);
     }
 
     public async Task<DemonstrationSessionSummary> StartAsync(string goal, CancellationToken cancellationToken = default)
@@ -50,7 +54,7 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
         ObjectDisposedException.ThrowIf(disposed, this);
         lock (stateGate)
         {
-            if (liveSession is not null)
+            if (liveSession is not null || analysisStatus is not null)
             {
                 throw new InvalidOperationException("既に記録中です。");
             }
@@ -187,6 +191,7 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
     {
         lock (stateGate)
         {
+            if (analysisStatus is not null) return analysisStatus;
             if (liveSession?.Timeline is { } timeline) return timeline.Status();
             if (recorder is null)
             {
@@ -220,7 +225,7 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
             .Select(sessionId => store.Load(sessionId))
             .Where(record => record is not null)
             .Select(record => Summarize(record!))
-            .OrderByDescending(summary => summary.StartedUtc)
+            .OrderByDescending(summary => summary.ReanalyzedUtc ?? summary.StartedUtc)
             .ToArray();
     }
 
@@ -244,6 +249,33 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
                     TransitionLabel(operation.Comparison.Judgement));
             })
             .ToArray();
+    }
+
+    public async Task<DemonstrationSessionSummary> ReanalyzeAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        if (!gate.TryBeginRecording(out var refusal)) throw new InvalidOperationException(refusal);
+        try
+        {
+            using var connection = OpenAndMigrate();
+            var store = new SqliteDemonstrationSessionStore(connection);
+            var source = store.Load(sessionId) ?? throw new InvalidOperationException("選択したデモがありません。");
+            if (source.Session.SourceSessionId is { } originalId)
+                source = store.Load(originalId) ?? throw new InvalidOperationException("再解析元のデモがありません。");
+            lock (stateGate) analysisStatus = new(DemonstrationRecorderStatus.Analyzing, source.Session.SessionId,
+                0, 0, 0, 0, 0, 0, source.Events.Count(item => item.Operation is not null));
+            var result = await reanalysis.AnalyzeAsync(source, store, count =>
+            {
+                lock (stateGate) analysisStatus = analysisStatus! with { AnalyzedOperations = count };
+            }, cancellationToken).ConfigureAwait(false);
+            return Summarize(result);
+        }
+        finally
+        {
+            lock (stateGate) analysisStatus = null;
+            gate.EndRecording();
+        }
     }
 
     private static string OperationLabel(string operation) => operation switch
@@ -383,7 +415,8 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
         record.Session.EnvironmentScope,
         record.State,
         record.Events.Count(item => item.Kind == DemonstrationEventKind.Operation),
-        record.Session.StartedUtc);
+        record.Session.StartedUtc,
+        record.Session.ReanalyzedUtc);
 
     private sealed class NoopEngineeringLog : IEngineeringLogSink
     {

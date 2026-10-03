@@ -23,6 +23,8 @@ public sealed class DemonstrationRouteCompiler(
     ILearningRouteStore routes,
     TimeProvider? timeProvider = null) : IDemonstrationRouteCompiler
 {
+    public static ExplorationWaitCondition ReplayWaitCondition { get; } = new(
+        ContractSchemaVersions.Revision03, 2, 1_000, 10_000);
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
     private readonly TimeProvider time = timeProvider ?? TimeProvider.System;
 
@@ -199,13 +201,8 @@ public sealed class DemonstrationRouteCompiler(
             Comparison: operation.Comparison,
             ObservationSequenceIds: operation.After.Observations.Select(scene => scene.ObservationId).ToArray());
 
-        // 記録時のwait条件そのものは原本に残らないため、実測済みの安定観測から
-        // 再生時の待機条件を復元する（timeoutは観測にかかった実測msをそのまま使う）。
-        var waitCondition = new ExplorationWaitCondition(
-            ContractSchemaVersions.Revision03,
-            Math.Max(operation.After.StableFramesObserved, 1),
-            operation.After.StableMillisecondsObserved,
-            Math.Max(operation.After.ElapsedMilliseconds, operation.After.StableMillisecondsObserved));
+        // 原本の操作間隔・観測回数は証拠として保持し、再生は既存基盤の10秒Compareを使う。
+        var waitCondition = ReplayWaitCondition;
 
         // GameInteractionStructureLearner（StructureKnowledgeController）はdelta operationが
         // 参照するevidenceが既にStructure Event Storeに記録済みであることを要求する。AI探索は

@@ -9,6 +9,45 @@ namespace OpenLogicool.Host.Tests;
 public sealed class CodexLearningRouteRecorderTests
 {
     [Fact]
+    public void Explicit_playback_keeps_the_selected_route_and_cannot_finish_before_the_round_trip()
+    {
+        var selected = Route(["e1", "e2"], LearningRouteStatus.Compiled) with { RouteId = "macro:composed:round-trip" };
+        var routes = new Routes(selected);
+        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes,
+            new FixedTimeProvider(), initialRoute: selected);
+        Assert.Equal("e1", recorder.NextSavedEdge!.EdgeId);
+        Assert.False(recorder.CanComplete);
+        Assert.Throws<InvalidOperationException>(() => recorder.Complete(["already at destination"]));
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e1"), true);
+        Assert.False(recorder.CanComplete);
+        Assert.Throws<InvalidOperationException>(() => recorder.Complete(["destination reached"]));
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e2"), true);
+        Assert.True(recorder.CanComplete);
+        recorder.Complete(["round trip complete"]);
+        Assert.Equal(selected, Assert.Single(routes.History));
+    }
+
+    [Fact]
+    public void Explicit_playback_repairs_only_the_failed_step_in_the_selected_route_and_keeps_the_suffix()
+    {
+        var selected = Route(["e1", "e2", "e3"], LearningRouteStatus.Compiled) with { RouteId = "macro:composed:repair" };
+        var routes = new Routes(selected);
+        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes,
+            new FixedTimeProvider(), initialRoute: selected);
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e1"), true);
+        recorder.Record(Outcome(GameTransitionJudgement.Stayed, "e2"), true);
+        Assert.Throws<InvalidOperationException>(() => recorder.Complete(["destination visible"]));
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e4"), false);
+        Assert.Equal(selected.RouteId, routes.History[^1].RouteId);
+        Assert.Equal(["e1", "e4", "e3"], routes.History[^1].EdgeIds);
+        Assert.False(recorder.CanComplete);
+        Assert.Equal("e3", recorder.NextSavedEdge!.EdgeId);
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e3"), true);
+        recorder.Complete(["all steps complete"]);
+        Assert.Equal(["e1", "e4", "e3"], routes.History[^1].EdgeIds);
+        Assert.Equal(selected, routes.History[0]);
+    }
+    [Fact]
     public void Saved_step_advances_and_failed_step_only_is_replaced_by_codex_edge()
     {
         var initial = Route(["e1", "e2"], LearningRouteStatus.Compiled);
@@ -116,7 +155,7 @@ public sealed class CodexLearningRouteRecorderTests
                 ContractSchemaVersions.Revision03,
                 "graph",
                 [],
-                [Edge("e1"), Edge("e2"), Edge("e3")],
+                [Edge("e1"), Edge("e2"), Edge("e3"), Edge("e4")],
                 [],
                 "env"),
             [],

@@ -148,6 +148,8 @@ public sealed class GameOperatorMacroUiTests
 
     private sealed class RecordingIntents : IDemonstrationRecordingIntents
     {
+        public Task<DemonstrationSessionSummary> ReanalyzeAsync(string sessionId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
         public Task<DemonstrationSessionSummary> StartAsync(string goal, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task<DemonstrationSessionSummary> StopAsync(CancellationToken cancellationToken = default) =>

@@ -12,20 +12,21 @@ public sealed class WindowsFoundryLocalRuntimeResolver
 
     public FoundryLocalRuntime Resolve()
     {
-        var status = Run(10_000, "status", "-o", "json");
         var models = Run(10_000, "model", "list", "--loaded", "-o", "json");
+        var status = Run(10_000, "status", "-o", "json");
         return Parse(status, models);
     }
 
     public FoundryLocalRuntime ResolvePreferredVisionModel()
     {
-        var status = Run(10_000, "status", "-o", "json");
         var models = Run(10_000, "model", "list", "--loaded", "-o", "json");
         if (!HasLoadedMultimodalModel(models))
         {
             LoadModel(PreferredVisionModelAlias);
             models = Run(10_000, "model", "list", "--loaded", "-o", "json");
         }
+        // model操作がサービスを起動するため、実効状態とendpointはその後に取得する。
+        var status = Run(10_000, "status", "-o", "json");
         return Parse(status, models);
     }
 

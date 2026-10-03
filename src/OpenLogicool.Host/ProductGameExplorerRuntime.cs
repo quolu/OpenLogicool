@@ -138,7 +138,10 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
     private int? ActiveVerticalScrollSteps => routeTarget?.VerticalScrollSteps ?? interactionVerticalScrollSteps;
     private int? ActiveHorizontalScrollSteps => routeTarget?.HorizontalScrollSteps ?? interactionHorizontalScrollSteps;
     private IReadOnlyList<double>? ActiveDragDestination => routeTarget?.DragDestinationNormalized ?? interactionDragDestination;
-    private ExplorationWaitCondition ActiveWaitCondition => routeTarget?.WaitCondition ?? interactionWaitCondition;
+    private ExplorationWaitCondition ActiveWaitCondition =>
+        routeTarget?.TargetSemanticKey?.StartsWith("demonstration|", StringComparison.Ordinal) == true
+            ? DemonstrationRouteCompiler.ReplayWaitCondition
+            : routeTarget?.WaitCondition ?? interactionWaitCondition;
 
     public ProductGameExplorerRuntime(
         string gameId,

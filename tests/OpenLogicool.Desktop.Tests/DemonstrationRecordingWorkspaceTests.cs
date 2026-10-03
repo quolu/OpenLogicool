@@ -41,6 +41,8 @@ public sealed class DemonstrationRecordingWorkspaceTests
 
     private sealed class FakeIntents : IDemonstrationRecordingIntents
     {
+        public Task<DemonstrationSessionSummary> ReanalyzeAsync(string sessionId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Sessions[0]);
         public string? StartedGoal { get; private set; }
         public IReadOnlyList<DemonstrationSessionSummary> Sessions { get; } =
         [

@@ -254,6 +254,37 @@ public sealed class ExplorationCoordinatorTests
         AssertTargetRejected(outsideWindow, "proposal-outside-window");
     }
 
+    [Theory]
+    [InlineData(0.655732, 0.677314, 0, 0, true)]
+    [InlineData(0.074982, 0.940213, 0, 0, true)]
+    [InlineData(1, 1, 0, 0, true)]
+    [InlineData(0.5, 0.5, 0, 0.1, false)]
+    [InlineData(0.5, 0.5, 0.1, 0, false)]
+    [InlineData(-0.1, 0.5, 0, 0, false)]
+    [InlineData(1.1, 0.5, 0, 0, false)]
+    [InlineData(double.NaN, 0.5, 0, 0, false)]
+    public void Recorded_points_are_admitted_without_accepting_lines_or_outside_targets(
+        double x, double y, double width, double height, bool allowed)
+    {
+        var fixture = Fixture();
+        var scene = Scene("observation-before", 1, "state-a");
+        var candidate = scene.Affordances[0];
+        scene = scene with { Affordances = [candidate with
+        {
+            Locator = candidate.Locator with { NormalizedBounds = [x, y, width, height] },
+        }] };
+        if (!double.IsFinite(x))
+        {
+            Assert.Throws<ArgumentException>(() => fixture.Coordinator.CommitObservation(scene, Time(1)));
+            Assert.Empty(fixture.AttemptGate.Attempts);
+            return;
+        }
+        fixture.Coordinator.CommitObservation(scene, Time(1));
+        var decision = fixture.Coordinator.Propose(Admission(fixture, scene, "proposal-point"), Time(2));
+        Assert.Equal(allowed, decision.DispatchAllowed);
+        Assert.Equal(allowed ? ExplorationStopReason.None : ExplorationStopReason.TargetNotCurrent, decision.Reason);
+    }
+
     [Fact]
     public void Supplied_context_cannot_replace_the_committed_candidate_locator()
     {

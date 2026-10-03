@@ -44,6 +44,7 @@ public interface ICodexRouteRecorder
     int StepNumber { get; }
     long RevisionNumber { get; }
     bool Repairing { get; }
+    bool CanComplete { get; }
     void Record(CodexGameActionOutcome outcome, bool usedSavedEdge);
     void Complete(IReadOnlyList<string> facts);
 }
@@ -62,7 +63,7 @@ public sealed class CodexGameDynamicTools(
     public bool IsCompleted { get; private set; }
     public int ActionCallCount { get; private set; }
     public IReadOnlyList<string> ToolErrors => toolErrors;
-    public bool IsReplayableCompletion => !terminalActionFailure
+    public bool IsReplayableCompletion => !terminalActionFailure && route.CanComplete
         && (ActionCallCount == 0 || route.RevisionNumber > 0);
 
     public IReadOnlyList<CodexDynamicToolDefinition> Definitions { get; } =
@@ -105,7 +106,11 @@ public sealed class CodexGameDynamicTools(
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             toolErrors.Add($"{tool}: {exception}");
-            return new CodexDynamicToolOutput(false, JsonSerializer.Serialize(new { error = exception.Message }, Json));
+            return new CodexDynamicToolOutput(false, JsonSerializer.Serialize(new
+            {
+                error = exception.Message,
+                RunMustStop = terminalActionFailure,
+            }, Json));
         }
     }
 
@@ -127,6 +132,7 @@ public sealed class CodexGameDynamicTools(
             KnownActions = observation.Actions,
             RouteRevision = route.RevisionNumber,
             route.Repairing,
+            CanFinish = route.CanComplete,
         }, Json);
         return new CodexDynamicToolOutput(true, text, observation.ImageDataUrl);
     }
@@ -200,6 +206,8 @@ public sealed class CodexGameDynamicTools(
 
     private CodexDynamicToolOutput Finish(JsonElement arguments)
     {
+        if (!route.CanComplete)
+            throw new InvalidOperationException($"保存済みマクロの手順が残っています。次は手順 {route.StepNumber + 1} です。");
         var summary = RequiredText(arguments, "summary");
         var facts = arguments.GetProperty("facts").EnumerateArray()
             .Select(value => value.GetString()?.Trim())
@@ -225,8 +233,18 @@ public sealed class CodexGameDynamicTools(
             throw new InvalidOperationException(
                 "直前actionがterminal failureのため、このrunでは新しいactionを実行できません。");
         }
-        var outcome = await runtime.ExecuteAsync(command, route.Repairing, cancellationToken).ConfigureAwait(false);
-        route.Record(outcome, usedSaved);
+        CodexGameActionOutcome outcome;
+        try
+        {
+            outcome = await runtime.ExecuteAsync(command, route.Repairing, cancellationToken).ConfigureAwait(false);
+            route.Record(outcome, usedSaved);
+        }
+        catch
+        {
+            terminalActionFailure = true;
+            currentObservationId = null;
+            throw;
+        }
         currentObservationId = null;
         if (IsTerminalActionFailure(outcome.Status))
         {

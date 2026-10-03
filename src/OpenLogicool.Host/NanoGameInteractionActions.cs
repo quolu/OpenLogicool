@@ -185,8 +185,7 @@ public sealed class NanoGameInteractionActions(
             current);
         if (target.NormalizedBounds.Count != 4
             || target.NormalizedBounds.Any(value => !double.IsFinite(value) || value is < 0 or > 1)
-            || target.NormalizedBounds[2] <= 0
-            || target.NormalizedBounds[3] <= 0
+            || (target.NormalizedBounds[2] == 0) != (target.NormalizedBounds[3] == 0)
             || target.NormalizedBounds[0] + target.NormalizedBounds[2] > 1
             || target.NormalizedBounds[1] + target.NormalizedBounds[3] > 1
             || string.IsNullOrWhiteSpace(target.CandidateId)

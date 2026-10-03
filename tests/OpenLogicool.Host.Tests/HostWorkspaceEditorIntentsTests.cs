@@ -162,27 +162,29 @@ public sealed class HostWorkspaceEditorIntentsTests : IDisposable
         Assert.Equal("ws-nikke", reloaded.Document.WorkspaceId);
     }
 
-    [Fact]
-    public void App_that_reuses_default_profiles_is_forked_before_editing()
+    [Theory]
+    [InlineData("default", "ws-nikke")]
+    [InlineData("ws-nikke", "ws-nikke-application")]
+    public void App_that_reuses_default_profiles_is_forked_before_editing(string commonWorkspaceId, string applicationWorkspaceId)
     {
         var commonLcd = new WorkspaceG13LcdSetting(
             WorkspaceG13LcdContentKind.Text,
             Convert.ToBase64String(new byte[960]),
             null,
             "COMMON");
-        var defaultDraft = WorkspaceDocumentEditor.CreateDraft("default") with { G13Lcd = commonLcd };
+        var defaultDraft = WorkspaceDocumentEditor.CreateDraft(commonWorkspaceId) with { G13Lcd = commonLcd };
         defaultDraft = WorkspaceDocumentEditor.AddAction(defaultDraft, "dodge", "回避", ["Key:Space"]);
         _intents.Save(defaultDraft, "*");
 
         var associations = new SqliteAppAssociationStore(_connection);
         associations.Upsert(new AppProfileAssociation(
-            ContractSchemaVersions.Revision01, @"c:\nikke\nikke\game\nikke.exe", "G13", "default-G13"));
+            ContractSchemaVersions.Revision01, @"c:\nikke\nikke\game\nikke.exe", "G13", $"{commonWorkspaceId}-G13"));
         associations.Upsert(new AppProfileAssociation(
-            ContractSchemaVersions.Revision01, @"c:\nikke\nikke\game\nikke.exe", "G600", "default-G600"));
+            ContractSchemaVersions.Revision01, @"c:\nikke\nikke\game\nikke.exe", "G600", $"{commonWorkspaceId}-G600"));
 
         var inherited = _intents.LoadDocument(@"c:\nikke\nikke\game\nikke.exe");
 
-        Assert.Equal("ws-nikke", inherited.Document.WorkspaceId);
+        Assert.Equal(applicationWorkspaceId, inherited.Document.WorkspaceId);
         Assert.Null(inherited.RevisionNumber);
         Assert.Equal(commonLcd, inherited.Document.G13Lcd);
         Assert.Single(inherited.Document.Actions);
@@ -192,9 +194,9 @@ public sealed class HostWorkspaceEditorIntentsTests : IDisposable
 
         var reloadedGame = _intents.LoadDocument(@"c:\nikke\nikke\game\nikke.exe");
         var reloadedDefault = _intents.LoadDocument("*");
-        Assert.Equal("ws-nikke", reloadedGame.Document.WorkspaceId);
+        Assert.Equal(applicationWorkspaceId, reloadedGame.Document.WorkspaceId);
         Assert.Equal(gameLcd, reloadedGame.Document.G13Lcd);
-        Assert.Equal("default", reloadedDefault.Document.WorkspaceId);
+        Assert.Equal(commonWorkspaceId, reloadedDefault.Document.WorkspaceId);
         Assert.Equal(commonLcd, reloadedDefault.Document.G13Lcd);
     }
 }

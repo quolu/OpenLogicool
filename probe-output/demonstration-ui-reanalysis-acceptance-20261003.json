@@ -1,0 +1,166 @@
+{
+  "Schema": "openlogicool.demonstration-ui-reanalysis-acceptance.v1",
+  "SourceSessionId": "demo:8c39ba807b834615a7d5031109c13905",
+  "DerivedSessionId": "demo-analysis:37c36d7d50584255b4a58999e6b64a35",
+  "OriginalOperations": [
+    {
+      "Judgement": 2,
+      "BeforeFrame": 37,
+      "AfterFrame": 57,
+      "StableFrames": 2,
+      "StableMilliseconds": 1074,
+      "ElapsedMilliseconds": 3359
+    },
+    {
+      "Judgement": 2,
+      "BeforeFrame": 57,
+      "AfterFrame": 78,
+      "StableFrames": 2,
+      "StableMilliseconds": 1098,
+      "ElapsedMilliseconds": 3689
+    }
+  ],
+  "ReanalyzedOperations": [
+    {
+      "Judgement": 0,
+      "BeforeFrame": 37,
+      "AfterFrame": 57,
+      "StableFrames": 5,
+      "StableMilliseconds": 1444,
+      "ElapsedMilliseconds": 3359
+    },
+    {
+      "Judgement": 0,
+      "BeforeFrame": 57,
+      "AfterFrame": 78,
+      "StableFrames": 4,
+      "StableMilliseconds": 1177,
+      "ElapsedMilliseconds": 3689
+    }
+  ],
+  "Macro": {
+    "RouteId": "purpose:9af3bc6d77a74cd0cf5a361978da54ead8cec0ba37451e4cada404b1827590af",
+    "VersionId": "route:8779eda87d9c824515b61b8888cd28cdf09dd643644d6e0ed8e3f12b30d2117b",
+    "RevisionNumber": 1,
+    "StepCount": 2,
+    "UnchangedAfterBothModes": true
+  },
+  "AiMonitored": {
+    "Run": "run-20261003-122739-887",
+    "HostPid": 54440,
+    "Completed": true,
+    "ActionCallCount": 2,
+    "ToolErrors": [],
+    "UiStatus": "step 2 / Completed / AI 1回 / 版1",
+    "Transitions": [
+      {
+        "RecordedUtc": "2026-10-03T12:29:07.206763+00:00",
+        "CandidateId": "codex-route:edge:8c18e6e3109a4e63ab42c30ce6030740:observation:window:codex:7892:4:2",
+        "Route": "NanoSerialHid",
+        "DispatchCount": 1,
+        "Judgement": 0,
+        "TransportReceiptId": "pointer:785,1414->1810,827;deltas:26;mouse-left-down-up"
+      },
+      {
+        "RecordedUtc": "2026-10-03T12:29:28.7083055+00:00",
+        "CandidateId": "codex-route:edge:279aaba8f11748658e3905f2e66d9fb4:observation:window:codex:7892:52:26",
+        "Route": "NanoSerialHid",
+        "DispatchCount": 1,
+        "Judgement": 0,
+        "TransportReceiptId": "pointer:1810,827->203,1148;deltas:30;mouse-left-down-up"
+      }
+    ]
+  },
+  "AiFree": {
+    "EvidenceDirectory": "20261003-214033-586",
+    "HostPid": 55972,
+    "PreviousHostPid": 51796,
+    "UiStatus": "目的を完了しました。 / step 2 / Moved / AI 0回 / 版1",
+    "FinalScreen": "ロビー",
+    "Transitions": [
+      {
+        "RecordedUtc": "2026-10-03T12:40:45.5274229+00:00",
+        "CandidateId": "route:edge:8c18e6e3109a4e63ab42c30ce6030740:observation:window:macro:7892:2:1",
+        "Route": "NanoSerialHid",
+        "DispatchCount": 1,
+        "Judgement": 0,
+        "TransportReceiptId": "pointer:785,1414->1810,827;deltas:26;mouse-left-down-up"
+      },
+      {
+        "RecordedUtc": "2026-10-03T12:40:56.6311541+00:00",
+        "CandidateId": "route:edge:279aaba8f11748658e3905f2e66d9fb4:observation:window:macro:7892:48:24",
+        "Route": "NanoSerialHid",
+        "DispatchCount": 1,
+        "Judgement": 0,
+        "TransportReceiptId": "pointer:1810,827->203,1148;deltas:30;mouse-left-down-up"
+      }
+    ]
+  },
+  "Assignment": {
+    "WorkspaceId": "ws-nikke-application",
+    "RevisionNumber": 1,
+    "ExistingKeyActionsRetained": true,
+    "CommonWorkspaceUnchanged": true,
+    "UiReopenedInHostPid": 55972,
+    "Bindings": [
+      {
+        "ActionId": "action",
+        "DeviceKind": "G600",
+        "ControlId": "G11",
+        "LayerId": "base"
+      },
+      {
+        "ActionId": "action-2",
+        "DeviceKind": "G13",
+        "ControlId": "G12",
+        "LayerId": "base"
+      },
+      {
+        "ActionId": "macro",
+        "DeviceKind": "G13",
+        "ControlId": "G1",
+        "LayerId": "base"
+      },
+      {
+        "ActionId": "macro",
+        "DeviceKind": "G600",
+        "ControlId": "G9",
+        "LayerId": "base"
+      }
+    ],
+    "MacroMode": "AI監視なし",
+    "PhysicalMacroButtonPress": "未確認"
+  },
+  "Preservation": {
+    "OriginalFiles": 49,
+    "AllSha256Match": true,
+    "Rows": {
+      "demonstration_sessions": {
+        "OriginalRowCount": 4,
+        "AllRetained": true
+      },
+      "demonstration_events": {
+        "OriginalRowCount": 22,
+        "AllRetained": true
+      },
+      "learning_route_revisions": {
+        "OriginalRowCount": 5,
+        "AllRetained": true
+      }
+    }
+  },
+  "RelatedTests": {
+    "Host": 336,
+    "Desktop": 104,
+    "Exploration": 72,
+    "DemonstrationPersistence": 5,
+    "DemonstrationRecorderAndValidator": 27,
+    "Total": 544
+  },
+  "Unverified": [
+    "実ゲームの失敗stepだけをAIで修復する動作",
+    "利用者が全画面を操作したH工程の一巡",
+    "G13・G600の新規マクロ割当を物理押下で起動する動作",
+    "Phase 14最終監査・Exit・配布完成"
+  ]
+}

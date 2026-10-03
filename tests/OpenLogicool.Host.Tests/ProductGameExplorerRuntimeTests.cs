@@ -13,6 +13,27 @@ namespace OpenLogicool.Host.Tests;
 public sealed class ProductGameExplorerRuntimeTests
 {
     [Fact]
+    public async Task Existing_demonstration_route_uses_ten_second_compare_without_modifying_saved_evidence()
+    {
+        var before = Scene("before-1", 1, "部隊", 0.1);
+        var after = Scene("after-1", 2, "設定", 0.7);
+        var waiter = new StabilityWaiter(after);
+        var runtime = Runtime(new ObservationRuntime([before]), waiter, new Coordinator(), new Device(),
+            new Learner(), new StructureCommitter(), gamePolicyAllowsExplore: true);
+        var recorded = new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 5, 1444, 3359);
+        var edge = RouteEdge("recorded-edge") with
+        {
+            TargetSemanticKey = "demonstration|(unlabelled)|2|2",
+            WaitCondition = recorded,
+        };
+        runtime.SetRouteTarget(edge, repairing: false);
+        var result = await runtime.ExecuteNextAsync();
+        Assert.Equal(GameTransitionJudgement.Moved, result.Comparison!.Judgement);
+        Assert.Equal(new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000), waiter.LastCondition);
+        Assert.Equal(recorded, edge.WaitCondition);
+    }
+
+    [Fact]
     public async Task One_step_runs_all_foundation_layers_and_learns_once()
     {
         var before = Scene("before-1", 1, "部隊", 0.1);
@@ -394,6 +415,7 @@ public sealed class ProductGameExplorerRuntimeTests
     private sealed class StabilityWaiter(ObservedScene after) : IGameInteractionStabilityWaiter
     {
         public int Calls { get; private set; }
+        public ExplorationWaitCondition? LastCondition { get; private set; }
 
         public ValueTask<GameInteractionStabilityResult> WaitStableAsync(
             ObservedScene before,
@@ -401,6 +423,7 @@ public sealed class ProductGameExplorerRuntimeTests
             CancellationToken cancellationToken = default)
         {
             Calls++;
+            LastCondition = condition;
             return ValueTask.FromResult(new GameInteractionStabilityResult(
                 ContractSchemaVersions.Revision03,
                 GameInteractionStabilityStatus.Stable,

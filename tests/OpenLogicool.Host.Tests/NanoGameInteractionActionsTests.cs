@@ -57,11 +57,38 @@ public sealed class NanoGameInteractionActionsTests
     {
         var device = new RecordingDevice();
         var actions = new NanoGameInteractionActions(device, new Mapper());
-        var stale = Target() with { FrameSequence = 6 };
+        var stale = Target() with { FrameSequence = 6, NormalizedBounds = [0.655732, 0.677314, 0, 0] };
 
         Assert.Throws<InvalidOperationException>(() => actions.Click(stale, Observation()));
 
         Assert.Empty(device.Calls);
+    }
+
+    [Theory]
+    [InlineData(0.655732, 0.677314, 0, 0, true)]
+    [InlineData(0.074982, 0.940213, 0, 0, true)]
+    [InlineData(1, 1, 0, 0, true)]
+    [InlineData(0.5, 0.5, 0, 0.1, false)]
+    [InlineData(0.5, 0.5, 0.1, 0, false)]
+    [InlineData(-0.1, 0.5, 0, 0, false)]
+    [InlineData(1.1, 0.5, 0, 0, false)]
+    [InlineData(double.NaN, 0.5, 0, 0, false)]
+    public void Recorded_point_dispatches_once_at_its_original_position(
+        double x, double y, double width, double height, bool valid)
+    {
+        var device = new RecordingDevice();
+        var mapper = new WindowsGameInteractionCoordinateMapper(() => new(100, 200, 1000, 1000));
+        var actions = new NanoGameInteractionActions(device, mapper);
+        var target = Target() with { NormalizedBounds = [x, y, width, height] };
+        if (!valid)
+        {
+            Assert.Throws<ArgumentException>(() => actions.Click(target, Observation()));
+            Assert.Empty(device.Calls);
+            return;
+        }
+        Assert.Equal(GameInteractionDispatchStatus.Dispatched, actions.Click(target, Observation()).Status);
+        Assert.Equal(["click"], device.Calls);
+        Assert.Equal(new SerialHidCursorPoint(100 + (int)Math.Round(x * 1000), 200 + (int)Math.Round(y * 1000)), device.ClickTarget);
     }
 
     [Fact]

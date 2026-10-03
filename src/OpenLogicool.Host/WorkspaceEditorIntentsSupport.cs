@@ -188,8 +188,15 @@ internal static class WorkspaceEditorIntentsSupport
     /// <summary>共通設定を内容ごと継承し、特定アプリ専用の未保存workspaceへ分岐する。</summary>
     public static WorkspaceDocument ForkForApplication(
         WorkspaceDocument source,
-        string applicationFullPath) =>
-        source with { WorkspaceId = ProposeWorkspaceId(applicationFullPath) };
+        string applicationFullPath)
+    {
+        var proposedId = ProposeWorkspaceId(applicationFullPath);
+        // 共通設定の保存名がアプリ名由来でも、編集先は別のworkspaceにする。
+        var applicationId = proposedId == source.WorkspaceId
+            ? $"{proposedId}-application"
+            : proposedId;
+        return source with { WorkspaceId = applicationId };
+    }
 
     /// <summary>逆引き不能な app のための新規 WorkspaceId 提案（rail の選択名から作る最小規則）。</summary>
     public static string ProposeWorkspaceId(string applicationFullPath)

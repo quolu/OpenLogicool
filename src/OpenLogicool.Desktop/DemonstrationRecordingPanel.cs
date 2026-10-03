@@ -52,6 +52,7 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         BorderBrush = Theme.Line,
     };
     private readonly Button createMacroButton = Button("このデモからマクロを作る");
+    private readonly Button reanalyzeButton = Button("保存した記録を解析し直す");
     private readonly DispatcherTimer liveTimer;
     private bool recording;
 
@@ -69,6 +70,8 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         sessions.SelectionChanged += (_, _) => RefreshSteps();
         createMacroButton.Click += (_, _) => CreateMacro();
         createMacroButton.IsEnabled = false;
+        reanalyzeButton.Click += async (_, _) => await ReanalyzeAsync();
+        reanalyzeButton.IsEnabled = false;
 
         liveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         liveTimer.Tick += (_, _) => RefreshStatus();
@@ -133,6 +136,8 @@ internal sealed class DemonstrationRecordingPanel : UserControl
 
         var footer = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 0) };
         footer.Children.Add(createMacroButton);
+        reanalyzeButton.Margin = new Thickness(8, 0, 0, 0);
+        footer.Children.Add(reanalyzeButton);
         Add(root, footer, 4);
 
         return new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
@@ -153,6 +158,7 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         {
             _ = await workspace.StartAsync(goal.Text);
             recording = true;
+            sessions.IsEnabled = createMacroButton.IsEnabled = reanalyzeButton.IsEnabled = false;
             stopButton.IsEnabled = true;
             liveTimer.Start();
             RefreshStatus();
@@ -188,7 +194,7 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         {
             recording = false;
             liveTimer.Stop();
-            startButton.IsEnabled = true;
+            startButton.IsEnabled = sessions.IsEnabled = true;
             RefreshSessions();
         }
     }
@@ -224,13 +230,13 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         }
     }
 
-    private void RefreshSessions()
+    private void RefreshSessions(string? selectedId = null)
     {
         var items = workspace.ListSessions();
         sessions.ItemsSource = items;
         if (items.Count > 0)
         {
-            sessions.SelectedIndex = 0;
+            sessions.SelectedItem = items.FirstOrDefault(item => item.SessionId == selectedId) ?? items[0];
         }
     }
 
@@ -240,11 +246,13 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         {
             steps.ItemsSource = workspace.ListSteps(selected.SessionId);
             createMacroButton.IsEnabled = selected.State == DemonstrationSessionState.Stopped;
+            reanalyzeButton.IsEnabled = createMacroButton.IsEnabled;
         }
         else
         {
             steps.ItemsSource = null;
             createMacroButton.IsEnabled = false;
+            reanalyzeButton.IsEnabled = false;
         }
     }
 
@@ -265,6 +273,35 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         catch (Exception exception)
         {
             statusText.Text = exception.Message;
+        }
+    }
+
+    private async Task ReanalyzeAsync()
+    {
+        if (sessions.SelectedItem is not DemonstrationSessionSummary selected) return;
+        recording = true;
+        startButton.IsEnabled = sessions.IsEnabled = createMacroButton.IsEnabled = reanalyzeButton.IsEnabled = false;
+        statusText.Foreground = Theme.Text;
+        statusText.Text = "保存した記録を解析中 — 元の記録は保持します";
+        liveTimer.Start();
+        try
+        {
+            var result = await workspace.ReanalyzeAsync(selected.SessionId);
+            RefreshSessions(result.SessionId);
+            statusText.Foreground = Theme.Ok;
+            statusText.Text = $"再解析を終了しました。{result.OperationCount} 操作の新しい解析結果を保存しました。元の記録は保持しています。";
+        }
+        catch (Exception exception)
+        {
+            statusText.Foreground = Theme.Danger;
+            statusText.Text = exception.Message;
+        }
+        finally
+        {
+            recording = false;
+            liveTimer.Stop();
+            startButton.IsEnabled = sessions.IsEnabled = true;
+            RefreshSteps();
         }
     }
 
