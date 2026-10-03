@@ -8,11 +8,11 @@ internal static class ResidentInputSourceSelection
 {
     public static IReadOnlyList<FastPathSource> Select(
         IReadOnlyList<ResidentInputSourceCandidate> candidates,
-        IEnumerable<string> configuredDeviceKinds)
+        IEnumerable<string> observedDeviceKinds)
     {
-        var configured = configuredDeviceKinds.ToHashSet(StringComparer.Ordinal);
+        var observed = observedDeviceKinds.ToHashSet(StringComparer.Ordinal);
         return candidates
-            .Where(candidate => configured.Contains(candidate.DeviceKind))
+            .Where(candidate => observed.Contains(candidate.DeviceKind))
             .Select(candidate => candidate.Source)
             .ToArray();
     }

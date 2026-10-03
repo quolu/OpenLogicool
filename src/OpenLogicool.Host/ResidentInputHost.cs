@@ -24,7 +24,7 @@ public sealed record ResidentHostStatus(
 /// Input Studio の resident 実行体（計画 §6.2 の初期 process model）。
 /// SQLite から mapping profile を復元し、実機 G13/G600 を列挙して fast path
 /// （Device Input → Mapping Runtime → resident output session）を起動する。
-/// UI・AI・capture は含まない。profile が無い device 種別は配線しない（黙って既定値を作らない）。
+/// UI・AI・capture は含まない。profile が無い実機は押下だけを観測し、送出profileを作らない。
 /// G600 が配線されるとき、fast path の外で route 別の legacy 抑止を apply し、停止時に restore する。
 /// </summary>
 public sealed class ResidentInputHost : IDisposable
@@ -37,6 +37,7 @@ public sealed class ResidentInputHost : IDisposable
     private readonly Func<G13LcdRuntime> _g13LcdRuntimeFactory;
     private readonly IMacroInvocationSink? _macroInvocations;
     private volatile bool _g600OnboardSuppressed;
+    private bool _g600Managed;
     private SqliteConnection? _connection;
     private G13RawInputSource? _g13Source;
     private G600RawInputSource? _g600Source;
@@ -142,6 +143,7 @@ public sealed class ResidentInputHost : IDisposable
         _g600Source = new G600RawInputSource();
         var g13Devices = _g13Source.EnumerateDevices();
         var g600Devices = _g600Source.EnumerateDevices();
+        _g600Managed = resolver.DefaultByKind.ContainsKey("G600") && g600Devices.Count > 0;
 
         resolver.DefaultByKind.TryGetValue("G13", out var initialG13Document);
         if (g13Devices.Count > 0)
@@ -154,7 +156,7 @@ public sealed class ResidentInputHost : IDisposable
 
         // onboard 書込み中は本体がハードウェアとして送るため、常駐側の G600 送出を抑止し
         // （空 profile を配線）、残置（leftover）の apply も行わない（焼いた内容を上書きしない）。
-        var leftoverApply = _g600OnboardSuppressed ? null : ApplyLeftoverIfManaged(resolver, g600Devices.Count);
+        var leftoverApply = _g600OnboardSuppressed ? null : ApplyLeftoverIfManaged(_g600Managed);
         if (_g600OnboardSuppressed)
         {
             Console.WriteLine("g600 onboard: 本体書込み中のため G600 の送出を抑止（残置の適用もしない）");
@@ -164,6 +166,7 @@ public sealed class ResidentInputHost : IDisposable
         var instancesByKind = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         foreach (var (kind, devices) in new[] { ("G13", g13Devices), ("G600", g600Devices) })
         {
+            instancesByKind[kind] = devices.Select(device => device.DeviceInstanceId).ToArray();
             if (!resolver.DefaultByKind.TryGetValue(kind, out var document))
             {
                 continue;
@@ -176,8 +179,6 @@ public sealed class ResidentInputHost : IDisposable
             {
                 runtimes[device.DeviceInstanceId] = new DeviceMappingRuntime(device.DeviceInstanceId, profile);
             }
-
-            instancesByKind[kind] = devices.Select(device => device.DeviceInstanceId).ToArray();
         }
 
         _outputSession.Start();
@@ -271,7 +272,9 @@ public sealed class ResidentInputHost : IDisposable
         {
             var data = _appFirstData!;
             var seenVersion = data.Version;
-            var activeProfileIdByKind = instancesByKind.Keys.ToDictionary(
+            var activeProfileIdByKind = instancesByKind.Keys
+                .Where(data.Resolver.DefaultByKind.ContainsKey)
+                .ToDictionary(
                 kind => kind,
                 kind => data.Resolver.DefaultByKind[kind].ProfileId,
                 StringComparer.Ordinal);
@@ -287,6 +290,12 @@ public sealed class ResidentInputHost : IDisposable
                     // 保存で差し替わった: 次の判断を強制し、最新の resolver／profile で引き直す
                     data = current;
                     seenVersion = current.Version;
+                    // 初回保存で増えた種別も次の前面切替から対象にする。
+                    // 保存したprofile自体はHostResidentApplyIntentが既に適用を依頼している。
+                    foreach (var kind in instancesByKind.Keys.Where(data.Resolver.DefaultByKind.ContainsKey))
+                    {
+                        activeProfileIdByKind.TryAdd(kind, data.Resolver.DefaultByKind[kind].ProfileId);
+                    }
                     first = true;
                 }
 
@@ -489,14 +498,27 @@ public sealed class ResidentInputHost : IDisposable
         _g13LcdRuntime.RequestFrame(G13LcdDisplayFrameSelector.Select(setting).Span);
     }
 
-    private G600LeftoverResult? ApplyLeftoverIfManaged(AppProfileResolver resolver, int g600DeviceCount)
+    /// <summary>未設定で起動したG600を初回保存で管理へ移す。device writeはfast pathの外で行う。</summary>
+    public void PrepareProfileApplication(IReadOnlyList<MappingProfileDocument> documents)
+    {
+        if (_g600Managed || _g600OnboardSuppressed ||
+            !documents.Any(document => document.DeviceKind == "G600") ||
+            _instancesByKind is null || _instancesByKind["G600"].Count == 0)
+        {
+            return;
+        }
+
+        ApplyLeftoverIfManaged(managed: true);
+        _g600Managed = true;
+    }
+
+    private G600LeftoverResult? ApplyLeftoverIfManaged(bool managed)
     {
         if (_leftover is null)
         {
             return null;
         }
 
-        var managed = resolver.DefaultByKind.ContainsKey("G600") && g600DeviceCount > 0;
         var result = _leftover.Apply(managed, G600LeftoverHostSupport.SuppressionModeFor(_outputSession!.Route));
         Console.WriteLine(G600LeftoverHostSupport.Describe(result));
         if (result.IsHardFailure)

@@ -1,0 +1,78 @@
+{
+  "SchemaVersion": "0.1.0",
+  "WorkspaceId": "ws-nikke",
+  "ProfileRevision": "rev-ws-nikke",
+  "MappingRevision": "map-1",
+  "Actions": [
+    {
+      "ActionId": "action",
+      "Name": "A",
+      "Outputs": [
+        "Key:A"
+      ]
+    },
+    {
+      "ActionId": "action-2",
+      "Name": "Space",
+      "Outputs": [
+        "Key:Space"
+      ]
+    }
+  ],
+  "Devices": [
+    {
+      "DeviceKind": "G13",
+      "DefaultLayerId": "base",
+      "LayerIds": [
+        "base",
+        "m2",
+        "m3"
+      ],
+      "LatchSelectors": [
+        {
+          "ControlId": "M1",
+          "LayerId": "base"
+        },
+        {
+          "ControlId": "M2",
+          "LayerId": "m2"
+        },
+        {
+          "ControlId": "M3",
+          "LayerId": "m3"
+        }
+      ],
+      "HoldSelectors": []
+    },
+    {
+      "DeviceKind": "G600",
+      "DefaultLayerId": "base",
+      "LayerIds": [
+        "base",
+        "shift"
+      ],
+      "LatchSelectors": [],
+      "HoldSelectors": [
+        {
+          "ControlId": "G6",
+          "LayerId": "shift"
+        }
+      ]
+    }
+  ],
+  "Bindings": [
+    {
+      "ActionId": "action",
+      "DeviceKind": "G600",
+      "ControlId": "G11",
+      "LayerId": "base"
+    },
+    {
+      "ActionId": "action-2",
+      "DeviceKind": "G13",
+      "ControlId": "G12",
+      "LayerId": "base"
+    }
+  ],
+  "G13Lcd": null
+}

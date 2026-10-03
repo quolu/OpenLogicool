@@ -25,7 +25,8 @@ public sealed record FastPathSource(
 public sealed class FastPathPump : IDisposable
 {
     private readonly IReadOnlyList<FastPathSource> _sources;
-    private readonly IReadOnlyDictionary<string, DeviceMappingRuntime> _runtimes;
+    private readonly Dictionary<string, DeviceMappingRuntime> _runtimes;
+    private readonly HashSet<string> _knownDeviceInstanceIds;
     private readonly IOutputEmitter _emitter;
     private readonly IMacroInvocationSink? _macroInvocations;
     private readonly IPhysicalInputObserver? _inputObserver;
@@ -63,7 +64,13 @@ public sealed class FastPathPump : IDisposable
         IPhysicalInputObserver? inputObserver = null)
     {
         _sources = sources;
-        _runtimes = runtimesByDeviceInstanceId;
+        _runtimes = new Dictionary<string, DeviceMappingRuntime>(runtimesByDeviceInstanceId, StringComparer.Ordinal);
+        // 接続と割当は別の状態。起動時の列挙で入力元を確定し、未設定の実機も観測する。
+        _knownDeviceInstanceIds = sources
+            .SelectMany(entry => entry.Source.EnumerateDevices())
+            .Select(device => device.DeviceInstanceId)
+            .Concat(_runtimes.Keys)
+            .ToHashSet(StringComparer.Ordinal);
         _emitter = emitter;
         _macroInvocations = macroInvocations;
         _inputObserver = inputObserver;
@@ -124,13 +131,21 @@ public sealed class FastPathPump : IDisposable
         var processed = 0;
         while (_profileChangeRequests.TryDequeue(out var request))
         {
-            if (!_runtimes.TryGetValue(request.DeviceInstanceId, out var runtime))
+            if (!_knownDeviceInstanceIds.Contains(request.DeviceInstanceId))
             {
                 throw new FastPathFaultException(
                     $"profile 変更対象の device instance '{request.DeviceInstanceId}' の Mapping Runtime が構成されていません。");
             }
 
-            runtime.ApplyProfile(request.Profile);
+            if (_runtimes.TryGetValue(request.DeviceInstanceId, out var runtime))
+            {
+                runtime.ApplyProfile(request.Profile);
+            }
+            else
+            {
+                // 初回保存で実際のprofileを受け取った時だけ送出を開始する。仮profileは作らない。
+                _runtimes.Add(request.DeviceInstanceId, new DeviceMappingRuntime(request.DeviceInstanceId, request.Profile));
+            }
         }
 
         foreach (var entry in _sources)
@@ -147,18 +162,19 @@ public sealed class FastPathPump : IDisposable
 
             while (entry.Source.TryPull(out var input))
             {
-                if (!_runtimes.TryGetValue(input.DeviceInstanceId, out var runtime))
+                if (!_knownDeviceInstanceIds.Contains(input.DeviceInstanceId))
                 {
                     throw new FastPathFaultException(
-                        $"device instance '{input.DeviceInstanceId}' の Mapping Runtime が構成されていません。");
+                        $"device instance '{input.DeviceInstanceId}' は入力元として列挙されていません。");
                 }
 
                 // 操作デモ記録へのfan-out。observerは非blockingで例外を投げない契約なので、
                 // ここでmapping/emitの順序も所要時間も変わらない（§6.1の待たない規律を保つ）。
                 _inputObserver?.OnInput(input);
 
-                var layerId = runtime.CurrentLayerId;
-                var edges = runtime.Process(input);
+                var hasProfile = _runtimes.TryGetValue(input.DeviceInstanceId, out var runtime);
+                var layerId = hasProfile ? runtime!.CurrentLayerId : string.Empty;
+                var edges = hasProfile ? runtime!.Process(input) : [];
                 var emitted = Dispatch(edges);
                 RecordTrace(input, layerId, edges, emitted, MonotonicMilliseconds());
                 processed++;
@@ -224,7 +240,7 @@ public sealed class FastPathPump : IDisposable
     /// <summary>
     /// device の切断・再接続を処理する（DEV-008: 切断は新規 down を止めて所有 output を release、
     /// 再接続は新規 down の受理を再開する）。runtime 未構成の device の change は所有 output が
-    /// 存在しないため対象外（その device の input は既存の未知 device fault で検出される）。
+    /// 存在しないため対象外。入力元として列挙済みなら、未設定でも観測は継続する。
     /// </summary>
     private void ProcessDeviceChange(DeviceChange change)
     {

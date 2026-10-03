@@ -184,7 +184,7 @@ static int G600Backup()
 
     // backup 対象は vendor-defined TLC（feature report を宣言している面）だけ
     var device = DeviceList.Local.GetHidDevices(LogitechVendorId, G600ProductId)
-        .FirstOrDefault(d => TryGet(d.GetMaxFeatureReportLength) is > 0);
+        .FirstOrDefault(d => TryGet(d.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
 
     if (device is null)
         return Fail("G600 vendor-defined collection (feature reports) not found");
@@ -407,7 +407,7 @@ static int G600ApplyVerify(string[] arguments)
 
     // precondition: F3/F4/F5 が backup 一致（clean 状態）かを確認。合致しなければ何も書かない。
     var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
     if (device is null || !device.TryOpen(out var preStream))
         return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection could not be opened."), 2);
 
@@ -510,7 +510,7 @@ static int G600SlotCycle(string[] arguments)
     byte[] baselineF0;
     {
         var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
         if (device is null || !device.TryOpen(out var stream))
             return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection could not be opened."), 2);
         using (stream)
@@ -547,7 +547,7 @@ static int G600SlotCycle(string[] arguments)
         var payload = G600SlotProbe.BuildSlotSwitch(slot);
 
         var writeDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
         if (writeDevice is null || !writeDevice.TryOpen(out var writeStream))
             return EmitWriteResult(NewWriteResult(probe, $"{phase}-open", $"could not open G600 for {phase} write.", steps: steps,
                 deviceState: phase == "return" ? "slot switched but return write could not start; re-run with --target to restore." : null), 2);
@@ -558,7 +558,7 @@ static int G600SlotCycle(string[] arguments)
         }
 
         var verifyDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
         if (verifyDevice is null || !verifyDevice.TryOpen(out var verifyStream))
             return EmitWriteResult(NewWriteResult(probe, $"{phase}-verify-open", $"{phase} write sent but could not reopen for verify.", steps: steps), 2);
         byte[] afterF0;
@@ -636,7 +636,7 @@ static int G600G9Remap(string[] arguments)
     var modified = G600RemapProbe.BuildG9Remap(snapshot.Reports[0xF3], usage);
 
     var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
     if (device is null || !device.TryOpen(out var preStream))
         return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection could not be opened."), 2);
     using (preStream)
@@ -702,7 +702,7 @@ static int G600SideRemapRoundtrip(string[] arguments)
     var modified = OpenLogicool.Devices.G600.G600SideRemap.Build(backupF3);
 
     var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
     if (device is null || !device.TryOpen(out var preStream))
         return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection could not be opened."), 2);
     using (preStream)
@@ -786,7 +786,7 @@ static int G600F3CompensatedRestore(string[] arguments)
     compensated[153] = 0x00;
 
     var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
     if (device is null)
         return EmitWriteResult(NewWriteResult(probe, "device-open", "G600 vendor-defined collection was not found."), 2);
 
@@ -1035,7 +1035,7 @@ static bool TryOpenWriteSession(
     }
 
     var device = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+        .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
     if (device is null)
     {
         failure = NewWriteResult(WriteProbeName(command.Kind), "device-open", "G600 vendor-defined collection was not found.");
@@ -1104,7 +1104,7 @@ static (bool Matched, string? OpenError) WriteFeatureWithRetry(
     for (var attempt = 1; attempt <= maxAttempts && !matched; attempt++)
     {
         var writeDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
         if (writeDevice is null || !writeDevice.TryOpen(out var writeStream))
             return (false, $"could not open G600 for write (report 0x{reportId:X2}, {stepPrefix} attempt {attempt}).");
         using (writeStream)
@@ -1114,7 +1114,7 @@ static (bool Matched, string? OpenError) WriteFeatureWithRetry(
         }
 
         var verifyDevice = DeviceList.Local.GetHidDevices(LogitechVendorId, 0xC24A)
-            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is > 0);
+            .FirstOrDefault(candidate => TryGet(candidate.GetMaxFeatureReportLength) is >= OpenLogicool.Devices.G600.G600SideRemap.ReportLength);
         if (verifyDevice is null || !verifyDevice.TryOpen(out var verifyStream))
             return (false, $"write sent but could not reopen for verify (report 0x{reportId:X2}, {stepPrefix} attempt {attempt}).");
         byte[] lastRead;

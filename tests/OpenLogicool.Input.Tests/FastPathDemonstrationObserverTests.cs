@@ -12,6 +12,68 @@ namespace OpenLogicool.Input.Tests;
 public sealed class FastPathDemonstrationObserverTests
 {
     [Fact]
+    public void 保存済み割当がなくても両デバイスの押下を観測でき出力はしない()
+    {
+        var inputs = new[]
+        {
+            Edge("g13", "G1", PhysicalInputEdge.Down, 1),
+            Edge("g13", "G1", PhysicalInputEdge.Up, 2),
+            Edge("g600", "G9", PhysicalInputEdge.Down, 3),
+            Edge("g600", "G9", PhysicalInputEdge.Up, 4),
+        };
+        var source = new FakeDeviceInputSource([Device("g13"), Device("g600")], inputs);
+        var emitter = new RecordingEmitter();
+        var observer = new RecordingInputObserver();
+        using var pump = new FastPathPump(
+            [new FastPathSource(source)],
+            new Dictionary<string, DeviceMappingRuntime>(),
+            emitter,
+            enableTrace: true,
+            inputObserver: observer);
+
+        Assert.Equal(4, pump.RunOnce());
+        Assert.Equal(inputs, observer.Observed);
+        Assert.Empty(emitter.Emitted);
+        var trace = pump.DrainTrace();
+        Assert.Equal(inputs.Select(input => (input.DeviceInstanceId, input.ControlId, input.Edge)),
+            trace.Select(entry => (entry.DeviceInstanceId, entry.ControlId, entry.Edge)));
+        Assert.All(trace, entry =>
+        {
+            Assert.Empty(entry.OutputTokens);
+            Assert.False(entry.Emitted);
+        });
+    }
+
+    [Fact]
+    public void 初回保存後は再起動なしで送出を開始し割当用の押下には後から出力しない()
+    {
+        var source = new FakeDeviceInputSource(
+            [Device("g600")], [Edge("g600", "G9", PhysicalInputEdge.Down, 1)]);
+        var emitter = new RecordingEmitter();
+        using var pump = new FastPathPump(
+            [new FastPathSource(source)],
+            new Dictionary<string, DeviceMappingRuntime>(),
+            emitter,
+            enableTrace: true);
+
+        pump.RunOnce();
+        Assert.Empty(emitter.Emitted);
+        pump.RequestProfileChange("g600", new MappingProfile(
+            "profile-r1", "map-r1", "base", ["base"],
+            new Dictionary<string, string>(), new Dictionary<string, string>(),
+            [new MappingBinding("G9", "base", ["Key:A"])]));
+        source.EnqueueInput(Edge("g600", "G9", PhysicalInputEdge.Up, 2));
+        source.EnqueueInput(Edge("g600", "G9", PhysicalInputEdge.Down, 3));
+        source.EnqueueInput(Edge("g600", "G9", PhysicalInputEdge.Up, 4));
+        pump.RunOnce();
+
+        Assert.Equal(
+            [new MappedOutputEdge("Key:A", PhysicalInputEdge.Down), new MappedOutputEdge("Key:A", PhysicalInputEdge.Up)],
+            emitter.Emitted);
+        Assert.Equal([false, false, true, true], pump.DrainTrace().Select(entry => entry.Emitted));
+    }
+
+    [Fact]
     public void Every_input_reaches_the_observer_in_order_without_changing_what_is_emitted()
     {
         var source = new FakeDeviceInputSource(

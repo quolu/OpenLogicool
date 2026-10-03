@@ -8,7 +8,7 @@ namespace OpenLogicool.Host.Tests;
 public sealed class ResidentInputSourceSelectionTests
 {
     [Fact]
-    public void Profileがあるdevice種別のsourceだけをfast_pathへ配線する()
+    public void 観測対象のdevice種別のsourceをfast_pathへ配線する()
     {
         var g13 = new FakeSource();
         var g600 = new FakeSource();
@@ -24,7 +24,7 @@ public sealed class ResidentInputSourceSelectionTests
     }
 
     [Fact]
-    public void 両deviceにprofileがあれば両sourceを配線する()
+    public void 両deviceを観測する場合は両sourceを配線する()
     {
         var selected = ResidentInputSourceSelection.Select(
         [

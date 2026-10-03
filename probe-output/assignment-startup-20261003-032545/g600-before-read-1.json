@@ -1,0 +1,39 @@
+{
+  "Probe": "g600-backup",
+  "CapturedAtUtc": "2026-10-03T03:29:00.3072773Z",
+  "Machine": "FOX",
+  "DevicePath": "\\\\?\\hid#hid_device_system_vhf#a\u00262f3de182\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+  "FirmwareRelease": "0000",
+  "Reports": [
+    {
+      "ReportId": "0x01",
+      "LengthBytes": 51,
+      "DataHex": "010100F8240100F0CC010028A00000020000003582000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "ReportId": "0x02",
+      "LengthBytes": 51,
+      "Error": "IOException: GetFeature failed."
+    },
+    {
+      "ReportId": "0x03",
+      "LengthBytes": 51,
+      "Error": "IOException: GetFeature failed."
+    },
+    {
+      "ReportId": "0x04",
+      "LengthBytes": 51,
+      "Error": "IOException: GetFeature failed."
+    },
+    {
+      "ReportId": "0x05",
+      "LengthBytes": 51,
+      "Error": "IOException: GetFeature failed."
+    },
+    {
+      "ReportId": "0x06",
+      "LengthBytes": 51,
+      "Error": "IOException: GetFeature failed."
+    }
+  ]
+}

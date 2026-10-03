@@ -9,7 +9,8 @@ namespace OpenLogicool.Host;
 /// <summary>
 /// <see cref="IResidentApplyIntent"/> の実装（<c>ui --resident</c> 同居時だけ Desktop へ渡す・t09 第4段残作業④）。
 /// 保存直後に compile し、常駐中の対象 device instance へ <see cref="FastPathPump.RequestProfileChange"/> で
-/// 即時反映する（新規 down から有効・device write はしない＝MAP-010）。
+/// 即時反映する（新規 down から有効）。未設定G600の初回管理開始だけ残置を先に適用する。
+/// 以降のprofile変更・前面切替ではdevice writeを行わない（MAP-010）。
 /// </summary>
 public sealed class HostResidentApplyIntent(
     ResidentInputHost host,
@@ -18,6 +19,7 @@ public sealed class HostResidentApplyIntent(
     public void ApplyIfResident(WorkspaceDocument document)
     {
         var compilation = WorkspaceCompiler.Compile(document);
+        host.PrepareProfileApplication(compilation.Profiles);
         foreach (var profileDocument in compilation.Profiles)
         {
             if (!deviceInstanceIdsByKind.TryGetValue(profileDocument.DeviceKind, out var instanceIds))
@@ -53,8 +55,9 @@ public sealed class HostResidentApplyIntent(
             string? displayLine = null;
             if (isDown)
             {
-                var outputsLabel = entry.OutputTokens.Count == 0 ? "（割当なし）" : string.Join(" ", entry.OutputTokens);
-                displayLine = $"{kindLabel} の {entry.ControlId} を押した → {outputsLabel} を送りました";
+                displayLine = entry.OutputTokens.Count == 0
+                    ? $"{kindLabel} の {entry.ControlId} を押した（割当なし）"
+                    : $"{kindLabel} の {entry.ControlId} を押した → {string.Join(" ", entry.OutputTokens)} を送りました";
             }
 
             events.Add(new ResidentTraceEvent(kindLabel, entry.ControlId, isDown, entry.InputMonotonicMs, displayLine));
