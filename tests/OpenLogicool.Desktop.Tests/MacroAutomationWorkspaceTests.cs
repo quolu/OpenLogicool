@@ -22,6 +22,17 @@ public sealed class MacroAutomationWorkspaceTests
     }
 
     [Fact]
+    public async Task Playback_forwards_both_selected_range_boundaries()
+    {
+        var intents = new FakeIntents();
+        var workspace = new MacroAutomationWorkspace(intents);
+        await workspace.PlayAsync(intents.Targets[0], intents.Macros[0], MacroPlaybackMode.AiFree,
+            new Progress<MacroRunSnapshot>(), startStepIndex: 1, endStepIndexExclusive: 2);
+        Assert.Equal(1, intents.Played!.StartStepIndex);
+        Assert.Equal(2, intents.Played.EndStepIndexExclusive);
+    }
+
+    [Fact]
     public void Composition_preserves_the_selected_order_and_exact_source_versions()
     {
         var intents = new FakeIntents();

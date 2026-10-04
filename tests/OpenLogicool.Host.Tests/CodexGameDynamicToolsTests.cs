@@ -126,9 +126,25 @@ public sealed class CodexGameDynamicToolsTests
         Assert.Contains("RunMustStop", failed.Text, StringComparison.Ordinal);
         Assert.False(following.Success);
         Assert.Single(runtime.Commands);
-        Assert.Equal(2, tools.ActionCallCount);
+        Assert.Equal(1, tools.ActionCallCount);
         Assert.False(tools.IsReplayableCompletion);
         Assert.Contains(tools.ToolErrors, error => error.Contains("Nano ACK timeout", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Finished_range_rejects_additional_input_before_calling_the_runtime()
+    {
+        var runtime = new Runtime();
+        var route = new Route { SavedPlaybackFinished = true };
+        var tools = new CodexGameDynamicTools(runtime, route);
+        _ = await tools.ExecuteAsync("observe", Args("{}"));
+        var output = await tools.ExecuteAsync("back", Args("{\"observationId\":\"observation-1\"}"));
+        Assert.False(output.Success);
+        Assert.Contains("指定した手順範囲", Args(output.Text).GetProperty("error").GetString());
+        Assert.Empty(runtime.Commands);
+        Assert.Equal(0, tools.ActionCallCount);
+        var finished = await tools.ExecuteAsync("finish", Args("{\"summary\":\"範囲完了\",\"facts\":[]}"));
+        Assert.True(finished.Success);
     }
 
     private static JsonElement Args(string json)
@@ -189,6 +205,7 @@ public sealed class CodexGameDynamicToolsTests
     private sealed class Route : ICodexRouteRecorder
     {
         public bool CanComplete { get; set; } = true;
+        public bool SavedPlaybackFinished { get; set; }
         public StructureScreenEdge? NextSavedEdge { get; set; }
         public int StepNumber { get; private set; }
         public long RevisionNumber { get; set; }

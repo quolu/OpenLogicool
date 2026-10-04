@@ -286,7 +286,7 @@ public sealed class SerialHidProtocolSession
 
         throw new SerialHidSessionFaultException(
             SerialHidSessionFaultKind.Unavailable,
-            $"Serial HID sessionは既発fault（{_terminalFault.Kind}）後のため再利用できません。再接続が必要です。",
+            $"Serial HID sessionは既発fault（{_terminalFault.Kind}）後のため再利用できません。再接続が必要です。最初のエラー: {_terminalFault.Message}",
             _terminalFault.Sequence,
             innerException: _terminalFault);
     }

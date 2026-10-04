@@ -337,7 +337,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
         routeTargetIsRepairing = repairing;
         if (observation is IProductGameRouteControl routeControl)
         {
-            routeControl.SetRouteTarget(edge);
+            routeControl.SetRouteTarget(edge, repairing);
         }
     }
 

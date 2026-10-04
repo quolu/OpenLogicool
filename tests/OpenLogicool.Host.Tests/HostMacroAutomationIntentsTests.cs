@@ -44,6 +44,21 @@ public sealed class HostMacroAutomationIntentsTests : IDisposable
     }
 
     [Fact]
+    public async Task Playback_range_is_validated_before_the_engine_and_forwarded_exactly()
+    {
+        SeedRoute();
+        var engine = new RecordingEngine();
+        using var intents = new HostMacroAutomationIntents(path, engine, () => [new MacroTargetOption("game", "Game")]);
+        _ = intents.SelectTarget("game");
+        var macro = Assert.Single(intents.ListMacros());
+        var request = new MacroPlaybackRequest("game", new(macro.RouteId, macro.VersionId, MacroPlaybackMode.AiFree), 0, 1);
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => intents.PlayAsync(request with { EndStepIndexExclusive = 0 }, new Progress<MacroRunSnapshot>()));
+        Assert.Empty(engine.Requests);
+        _ = await intents.PlayAsync(request, new Progress<MacroRunSnapshot>());
+        Assert.Equal(1, Assert.Single(engine.Requests).EndStepIndexExclusive);
+    }
+
+    [Fact]
     public async Task Selected_game_profile_persists_and_rejects_request_side_target_override()
     {
         var available = new Func<IReadOnlyList<MacroTargetOption>>(() =>
@@ -168,7 +183,56 @@ public sealed class HostMacroAutomationIntentsTests : IDisposable
         Assert.Equal(saved.EdgeIds, restored.EdgeIds);
     }
 
-    private void SeedRoute()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Ui_and_physical_recorded_playback_publish_the_same_pending_confirmation(bool physical)
+    {
+        SeedRoute(recorded: true);
+        var engine = new ConfirmingEngine();
+        using var intents = new HostMacroAutomationIntents(path, engine, () => [new MacroTargetOption("game", "Game")]);
+        intents.SelectTarget("game");
+        var macro = Assert.Single(intents.ListMacros()); Assert.True(macro.RequiresStepConfirmation);
+        var published = new TaskCompletionSource<MacroRunSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+        intents.StateChanged += state => { if (state.Phase == MacroRunPhase.AwaitingConfirmation) published.TrySetResult(state); };
+        var reference = new MacroVersionReference(macro.RouteId, macro.VersionId, MacroPlaybackMode.AiMonitored);
+        var running = physical ? intents.RunQueuedAsync(reference, new Progress<MacroRunSnapshot>(), CancellationToken.None)
+            : intents.PlayAsync(new("game", reference), new Progress<MacroRunSnapshot>());
+        var pending = await published.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.False(running.IsCompleted); Assert.False(pending.CanStart);
+        Assert.Equal(pending.PendingConfirmation, intents.CurrentRun().PendingConfirmation);
+        intents.ConfirmStep(pending.PendingConfirmation!.ConfirmationId, MacroStepDecision.Accept);
+        Assert.Equal(MacroRunPhase.Completed, (await running).Phase);
+        Assert.Equal(MacroStepDecision.Accept, engine.Decision);
+        Assert.Throws<InvalidOperationException>(() => intents.ConfirmStep(pending.PendingConfirmation.ConfirmationId, MacroStepDecision.Accept));
+    }
+
+    [Fact]
+    public async Task Host_stop_cancels_a_pending_confirmation_and_clears_it()
+    {
+        SeedRoute(recorded: true);
+        using var intents = new HostMacroAutomationIntents(path, new ConfirmingEngine(), () => [new MacroTargetOption("game", "Game")]);
+        intents.SelectTarget("game"); var macro = Assert.Single(intents.ListMacros());
+        var published = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        intents.StateChanged += state => { if (state.Phase == MacroRunPhase.AwaitingConfirmation) published.TrySetResult(); };
+        var running = intents.PlayAsync(new("game", new(macro.RouteId, macro.VersionId, MacroPlaybackMode.AiFree)), new Progress<MacroRunSnapshot>());
+        await published.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        intents.Stop(); Assert.Equal(MacroRunPhase.Stopped, (await running).Phase);
+        Assert.Null(intents.CurrentRun().PendingConfirmation);
+    }
+
+    private sealed class ConfirmingEngine : IProductMacroExecutionEngine
+    {
+        public MacroStepDecision? Decision { get; private set; }
+        public async Task<MacroRunSnapshot> ExecuteAsync(ProductMacroExecutionRequest request,
+            IProgress<MacroRunSnapshot> progress, CancellationToken cancellationToken)
+        {
+            Decision = await request.StepConfirmation!.RequestAsync(new("confirmation:one", 1, "クリック", "Moved", null, null, "違いあり"), cancellationToken);
+            return Snapshot(request.Goal);
+        }
+    }
+
+    private void SeedRoute(bool recorded = false)
     {
         using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
         {
@@ -190,7 +254,9 @@ public sealed class HostMacroAutomationIntentsTests : IDisposable
             null,
             "seed",
             LearningRouteStatus.Compiled,
-            DateTimeOffset.UnixEpoch));
+            DateTimeOffset.UnixEpoch,
+            recorded ? [new DemonstrationRouteStep("demo", "op1", "click", [0.2, 0.3], null, null, null,
+                null, "edge:1", OpenLogicool.Contracts.Exploration.GameTransitionJudgement.Moved, "記録済み")] : null));
     }
 
     private sealed class RecordingEngine : IProductMacroExecutionEngine

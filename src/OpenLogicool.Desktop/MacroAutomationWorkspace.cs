@@ -32,13 +32,14 @@ public sealed class MacroAutomationWorkspace(IMacroAutomationIntents intents)
         MacroPlaybackMode mode,
         IProgress<MacroRunSnapshot> progress,
         CancellationToken cancellationToken = default,
-        int startStepIndex = 0)
+        int startStepIndex = 0,
+        int? endStepIndexExclusive = null)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(macro);
         return intents.PlayAsync(new MacroPlaybackRequest(
             target.ProcessName,
-            new MacroVersionReference(macro.RouteId, macro.VersionId, mode), startStepIndex), progress, cancellationToken);
+            new MacroVersionReference(macro.RouteId, macro.VersionId, mode), startStepIndex, endStepIndexExclusive), progress, cancellationToken);
     }
 
     public MacroCatalogItem Compose(string goal, IReadOnlyList<MacroCatalogItem> sources)
@@ -56,4 +57,7 @@ public sealed class MacroAutomationWorkspace(IMacroAutomationIntents intents)
     }
 
     public MacroRunSnapshot Stop() => intents.Stop();
+
+    public void ConfirmStep(string confirmationId, MacroStepDecision decision) =>
+        intents.ConfirmStep(confirmationId, decision);
 }

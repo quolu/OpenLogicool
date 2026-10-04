@@ -107,12 +107,13 @@ public sealed class HostMacroCatalog(
         route.Goal,
         route.RevisionNumber,
         route.StepCount,
-        route.PendingStepCount > 0 ? $"確認待ち {route.PendingStepCount}件" : route.Status switch
+        route.RecordedSteps is not null ? "手順ごとに確認"
+            : route.PendingStepCount > 0 ? $"確認待ち {route.PendingStepCount}件" : route.Status switch
         {
             LearningRouteStatus.Draft => "下書き",
             LearningRouteStatus.Compiled => "実行可能",
             LearningRouteStatus.Verified => "確認済み",
             LearningRouteStatus.Retired => "非対応",
             _ => throw new ArgumentOutOfRangeException(),
-        });
+        }, route.RecordedSteps is not null);
 }

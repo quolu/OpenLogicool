@@ -17,7 +17,8 @@ public sealed class CodexLearningRouteRecorderTests
                 Recorded("op3", "e2", GameTransitionJudgement.Moved)],
         };
         var routes = new Routes(selected);
-        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes, initialRoute: selected);
+        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes, initialRoute: selected,
+            recordedResults: new ResultVerifier(RecordedMacroResultStatus.Matched));
         recorder.Record(Outcome(GameTransitionJudgement.Moved, "e1"), true);
         Assert.Throws<DemonstrationStepReviewRequiredException>(() => recorder.NextSavedEdge);
         Assert.False(recorder.CanComplete);
@@ -33,7 +34,8 @@ public sealed class CodexLearningRouteRecorderTests
             RecordedSteps = [Recorded("op1", null, GameTransitionJudgement.Stayed)],
         };
         var routes = new Routes(selected);
-        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes, initialRoute: selected);
+        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes, initialRoute: selected,
+            recordedResults: new ResultVerifier(RecordedMacroResultStatus.Matched));
         Assert.StartsWith("demo-replay:", recorder.NextSavedEdge!.EdgeId);
         recorder.Record(Outcome(GameTransitionJudgement.Stayed, "") with { CommittedEdgeId = null }, true);
         Assert.True(recorder.CanComplete);
@@ -138,6 +140,49 @@ public sealed class CodexLearningRouteRecorderTests
         Assert.Contains("tail 2件", routes.History[^1].ChangeReason, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Different_result_keeps_the_cursor_and_repairs_only_the_current_recorded_step()
+    {
+        var selected = Route(["e1", "e2"], LearningRouteStatus.Compiled) with
+        { RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved), Recorded("op2", "e2", GameTransitionJudgement.Moved)] };
+        var routes = new Routes(selected);
+        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes, initialRoute: selected,
+            recordedResults: new ResultVerifier(RecordedMacroResultStatus.Different, RecordedMacroResultStatus.Matched));
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e1"), true);
+        Assert.True(recorder.Repairing);
+        Assert.Equal(0, recorder.StepNumber);
+        Assert.False(recorder.CanComplete);
+        Assert.Single(routes.History);
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e4"), false);
+        Assert.Equal(1, recorder.StepNumber);
+        Assert.Equal("e4", routes.History[^1].RecordedSteps![0].EdgeId);
+        Assert.Equal(selected.RecordedSteps[1], routes.History[^1].RecordedSteps![1]);
+        Assert.Equal(selected, routes.History[0]);
+    }
+
+    [Fact]
+    public void Prefix_completion_preserves_the_full_selected_route_and_rejects_additional_actions()
+    {
+        var selected = Route(["e1", "e2"], LearningRouteStatus.Compiled);
+        var routes = new Routes(selected);
+        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes,
+            initialRoute: selected, endStepIndexExclusive: 1);
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e1"), true);
+        Assert.True(recorder.CanComplete);
+        Assert.True(recorder.SavedPlaybackFinished);
+        Assert.Null(recorder.NextSavedEdge);
+        recorder.Complete(["最初の手順完了"]);
+        Assert.Equal(selected, Assert.Single(routes.History));
+        Assert.Throws<InvalidOperationException>(() => recorder.Record(Outcome(GameTransitionJudgement.Moved, "e2"), true));
+    }
+
+    private sealed class ResultVerifier(params RecordedMacroResultStatus[] statuses) : IRecordedMacroResultVerifier
+    {
+        private readonly Queue<RecordedMacroResultStatus> remaining = new(statuses);
+        public RecordedMacroResultVerification Verify(DemonstrationRouteStep step, int number, ObservedScene? actual) =>
+            new(number, remaining.Count > 1 ? remaining.Dequeue() : remaining.Peek(), "recorded", actual?.ObservationId, "照合");
+    }
+
     private static CodexGameActionOutcome Outcome(GameTransitionJudgement judgement, string edgeId) =>
         new("Learned", judgement, edgeId, judgement.ToString());
 
@@ -223,7 +268,7 @@ public sealed class CodexLearningRouteRecorderTests
                 draft.UserInstruction,
                 draft.ChangeReason,
                 draft.Status,
-                draft.CreatedUtc);
+                draft.CreatedUtc, draft.RecordedSteps);
             History.Add(revision);
             return revision;
         }

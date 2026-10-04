@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.IO;
+using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Exploration;
 
 namespace OpenLogicool.Host;
@@ -27,7 +29,8 @@ public sealed record CodexGameActionOutcome(
     string Status,
     GameTransitionJudgement? Judgement,
     string? CommittedEdgeId,
-    string Detail);
+    string Detail,
+    ObservedScene? AfterScene = null);
 
 public interface ICodexGameToolRuntime
 {
@@ -45,6 +48,8 @@ public interface ICodexRouteRecorder
     long RevisionNumber { get; }
     bool Repairing { get; }
     bool CanComplete { get; }
+    bool SavedPlaybackFinished => false;
+    RecordedMacroResultVerification? LastVerification => null;
     void Record(CodexGameActionOutcome outcome, bool usedSavedEdge);
     void Complete(IReadOnlyList<string> facts);
 }
@@ -134,6 +139,7 @@ public sealed class CodexGameDynamicTools(
             KnownActions = observation.Actions,
             RouteRevision = route.RevisionNumber,
             route.Repairing,
+            RecordedResult = route.LastVerification,
             CanFinish = route.CanComplete,
         }, Json);
         return new CodexDynamicToolOutput(true, text, observation.ImageDataUrl);
@@ -229,17 +235,19 @@ public sealed class CodexGameDynamicTools(
         bool usedSaved,
         CancellationToken cancellationToken)
     {
-        ActionCallCount++;
+        if (route.SavedPlaybackFinished)
+            throw new InvalidOperationException("指定した手順範囲の再生は終了しています。追加の操作は送出しません。");
         if (terminalActionFailure)
         {
             throw new InvalidOperationException(
                 "直前actionがterminal failureのため、このrunでは新しいactionを実行できません。");
         }
         CodexGameActionOutcome outcome;
+        ActionCallCount++;
         try
         {
             outcome = await runtime.ExecuteAsync(command, route.Repairing, cancellationToken).ConfigureAwait(false);
-            route.Record(outcome, usedSaved);
+            if (!IsTerminalActionFailure(outcome.Status)) route.Record(outcome, usedSaved);
         }
         catch
         {
@@ -263,6 +271,8 @@ public sealed class CodexGameDynamicTools(
                 RunMustStop = true,
             }, Json));
         }
+        var referenceImage = route.LastVerification is { Status: RecordedMacroResultStatus.Different, ExpectedImagePath: { } path }
+            ? "data:image/png;base64," + Convert.ToBase64String(await File.ReadAllBytesAsync(path, cancellationToken)) : null;
         return new CodexDynamicToolOutput(true, JsonSerializer.Serialize(new
         {
             outcome.Status,
@@ -271,8 +281,10 @@ public sealed class CodexGameDynamicTools(
             outcome.Detail,
             RouteRevision = route.RevisionNumber,
             route.Repairing,
+            RecordedResult = route.LastVerification,
+            ReferenceImage = referenceImage is null ? null : "この手順で録画した結果の画像です。次のobserve画像は現在の実画面です。",
             ObservationRequired = true,
-        }, Json));
+        }, Json), referenceImage);
     }
 
     private static bool IsTerminalActionFailure(string status) => status is

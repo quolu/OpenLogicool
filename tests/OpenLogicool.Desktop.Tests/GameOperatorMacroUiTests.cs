@@ -170,6 +170,70 @@ public sealed class GameOperatorMacroUiTests
         if (failure is not null) throw failure;
     }
 
+    [Fact]
+    public void Another_goal_completion_does_not_move_the_selected_macro_resume_position()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var intents = new MacroIntents { Macros = [new("daily", "v1", "game", "env", "日課", 1, 51, "保存済み")] };
+                var window = new GameOperatorWindow(new WebIntent(), macroAutomationIntents: intents, openMacroTab: true);
+                var tabs = Assert.IsType<TabControl>(window.Content);
+                var panel = (DependencyObject)Assert.IsType<TabItem>(tabs.SelectedItem).Content;
+                var controls = Descendants(panel).ToArray();
+                controls.OfType<ListBox>().First().SelectedIndex = 0;
+                var start = controls.OfType<TextBox>().First(box => box.Width == 65);
+                intents.Publish(new(MacroRunPhase.Completed, "ロビーへ戻る", "game", 1, "", "", "", 0, 1, "完了", true, false));
+                Assert.Equal("1", start.Text);
+                intents.Publish(new(MacroRunPhase.Faulted, "日課", "game", 1, "", "", "", 0, 1, "前面切替失敗", true, false));
+                Assert.Equal("2", start.Text);
+                intents.Publish(new(MacroRunPhase.Completed, "日課", "game", 2, "", "", "", 0, 1, "範囲完了", true, false));
+                Assert.Equal("3", start.Text);
+                window.Close();
+            }
+            catch (Exception error) { failure = error; }
+        });
+        thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join();
+        if (failure is not null) throw failure;
+    }
+
+    [Fact]
+    public void Recorded_macro_opens_a_pending_confirmation_after_the_tab_is_loaded()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var review = new MacroStepConfirmationRequest("confirmation:pending", 3, "クリック", "Moved", null, null, "違いあり");
+                var intents = new MacroIntents
+                {
+                    Macros = [new("daily", "v1", "game", "env", "日課", 1, 51, "保存済み", true)],
+                    Current = new(MacroRunPhase.AwaitingConfirmation, "日課", "game", 2, "保存済み", "クリック", "Moved", 0, 1,
+                        "確認待ち", false, true, PendingConfirmation: review),
+                };
+                var window = new GameOperatorWindow(new WebIntent(), macroAutomationIntents: intents, openMacroTab: true);
+                window.Show();
+                Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.Background, new Action(() => { }));
+                var dialog = Assert.Single(window.OwnedWindows.OfType<MacroStepConfirmationDialog>());
+                Assert.Equal(review.ConfirmationId, dialog.ConfirmationId);
+                var panel = (DependencyObject)Assert.IsType<TabItem>(((TabControl)window.Content).SelectedItem).Content;
+                Assert.False(Descendants(panel).OfType<Button>().Single(button => Equals(button.Content, "再生")).IsEnabled);
+                intents.Publish(intents.Current!);
+                Assert.Single(window.OwnedWindows.OfType<MacroStepConfirmationDialog>());
+                Descendants(dialog).OfType<Button>().Single(button => Equals(button.Content, "違う・ここで補正"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Assert.Equal((review.ConfirmationId, MacroStepDecision.Correct), intents.Confirmed);
+                window.Close();
+            }
+            catch (Exception error) { failure = error; }
+        });
+        thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join();
+        if (failure is not null) throw failure;
+    }
+
     private sealed class RecordingIntents : IDemonstrationRecordingIntents
     {
         public bool PendingCandidate { get; init; }
@@ -192,11 +256,17 @@ public sealed class GameOperatorMacroUiTests
     private sealed class MacroIntents : IMacroAutomationIntents
     {
         public bool ImmediateFailure { get; init; }
-        public event Action<MacroRunSnapshot>? StateChanged { add { } remove { } }
+        public MacroRunSnapshot? Current { get; init; }
+        public (string, MacroStepDecision)? Confirmed { get; private set; }
+        public MacroRunSnapshot? CurrentRun() => Current;
+        public void ConfirmStep(string id, MacroStepDecision decision) => Confirmed = (id, decision);
+        public event Action<MacroRunSnapshot>? StateChanged;
+        public void Publish(MacroRunSnapshot snapshot) => StateChanged?.Invoke(snapshot);
+        public IReadOnlyList<MacroCatalogItem> Macros { get; init; } = [];
         public IReadOnlyList<MacroTargetOption> ListTargets() => [new("game", "Game")];
         public MacroTargetOption? CurrentTarget() => new("game", "Game");
         public MacroTargetOption SelectTarget(string processName) => new(processName, "Game");
-        public IReadOnlyList<MacroCatalogItem> ListMacros() => [];
+        public IReadOnlyList<MacroCatalogItem> ListMacros() => Macros;
         public MacroCatalogItem Compose(MacroCompositionRequest request) => throw new NotSupportedException();
         public Task<MacroRunSnapshot> CreateAsync(MacroCreateRequest request, IProgress<MacroRunSnapshot> progress, CancellationToken cancellationToken = default)
         {

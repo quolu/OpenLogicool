@@ -223,6 +223,9 @@ public sealed class SerialHidEmitterTests
         Assert.Equal((byte)SerialHidMessageKind.SetState, fault.OffendingKind);
         Assert.Equal(0, emitter.Revision);
         Assert.Equal(2, exchange.Requests.Count);
+        var later = Assert.Throws<SerialHidSessionFaultException>(() => emitter.Emit([Down("Mouse:Left")]));
+        Assert.Contains(fault.Message, later.Message);
+        Assert.Equal(2, exchange.Requests.Count);
     }
 
     [Fact]

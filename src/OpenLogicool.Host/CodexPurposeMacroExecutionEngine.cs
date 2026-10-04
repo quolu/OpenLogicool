@@ -32,7 +32,8 @@ public sealed class CodexPurposeMacroExecutionEngine(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (request.PlaybackMode == MacroPlaybackMode.AiFree)
+        // 録画は全手順をユーザー確認で再生する。AIに日課の状態差の解消を任せない。
+        if (request.PlaybackMode == MacroPlaybackMode.AiFree || request.InitialRoute?.RecordedSteps is not null)
             return await aiFreeEngine.ExecuteAsync(request, progress, cancellationToken).ConfigureAwait(false);
 
         var target = WindowsGameTargetLocator.Locate(request.TargetProcessName);
@@ -129,7 +130,9 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 request.Goal,
                 structures,
                 routes,
-                initialRoute: request.InitialRoute, startStepIndex: request.StartStepIndex);
+                initialRoute: request.InitialRoute, startStepIndex: request.StartStepIndex,
+                endStepIndexExclusive: request.EndStepIndexExclusive,
+                recordedResults: connections.RecordedResults(Path.Combine(runDirectory, "evidence")));
             var dynamicTools = new CodexGameDynamicTools(
                 new CodexProductGameToolRuntime(product.Runtime),
                 recorder);
@@ -140,7 +143,8 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 workspace,
                 session,
                 request.Goal,
-                BuildDeveloperInstructions(target.ProcessName, request.Goal, request.InitialRoute is not null),
+                BuildDeveloperInstructions(target.ProcessName, request.Goal, request.InitialRoute is not null,
+                    request.StartStepIndex, request.EndStepIndexExclusive ?? request.InitialRoute?.StepCount),
                 cancellationToken).ConfigureAwait(false);
             workspaceManager.SaveSession(workspace, result.ThreadId);
             var completed = result.Status == "completed"
@@ -153,6 +157,8 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 : string.IsNullOrWhiteSpace(result.FinalText)
                     ? $"Codex turnは{result.Status}で終了し、finishされませんでした。"
                     : result.FinalText;
+            if (completed && request.InitialRoute is { } selected && recorder.StepNumber < selected.StepCount)
+                detail = $"手順 {request.StartStepIndex + 1}〜{recorder.StepNumber} の再生が完了しました。次は手順 {recorder.StepNumber + 1} です。";
             File.WriteAllText(Path.Combine(runDirectory, "result.json"), JsonSerializer.Serialize(new
             {
                 SchemaVersion = "1.0.0",
@@ -219,12 +225,15 @@ public sealed class CodexPurposeMacroExecutionEngine(
         return first ?? $"{target.ProcessName}:live:{resolution}";
     }
 
-    private static string BuildDeveloperInstructions(string processName, string goal, bool replaying) => replaying ? $"""
+    private static string BuildDeveloperInstructions(string processName, string goal, bool replaying, int start, int? end) => replaying ? $"""
         OpenLogicoolが対象ゲームを`{processName}`に固定しています。
-        保存済みマクロ「{goal}」の全手順を順番に再生してください。
+        保存済みマクロ「{goal}」の手順 {start + 1}〜{end} を順番に再生してください。
         現在の画面が目的名を満たしていても、保存された往復手順を省略しないでください。
         observeのSavedActionをuse_saved_actionで実行し、各操作の後にobserveしてください。
         画面変化が成立しなかった手順だけを現在の画面で修復し、正常な手順と後続手順を保持してください。
+        RecordedResultがDifferentの場合も同じ手順の修復です。Movedだけで成功としないでください。
+        修復時の参考画像は録画した結果、observeの画像は現在の画面です。参考画像とExpectedTextsを使い、この手順の意図した結果へ到達してください。
+        指定範囲の完了をマクロ全体や日課全体の完了として報告しないでください。
         observeのCanFinishがtrueになり、最後の画面を確認してからfinishで終了してください。
         保存済み手順を使い切った後に新しい操作を追加しないでください。
         """ : $"""

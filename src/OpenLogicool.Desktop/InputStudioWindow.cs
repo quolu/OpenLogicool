@@ -308,8 +308,12 @@ public sealed class InputStudioWindow : Window
             _traceTimer.Start();
         }
 
+        if (_macroAutomationIntents is not null)
+            _macroAutomationIntents.StateChanged += OnMacroStateChanged;
         Closed += (_, _) =>
         {
+            if (_macroAutomationIntents is not null)
+                _macroAutomationIntents.StateChanged -= OnMacroStateChanged;
             _traceTimer?.Stop();
             _diagnosticsWindow?.Close();
             _gameOperatorWindow?.Close();
@@ -669,6 +673,24 @@ public sealed class InputStudioWindow : Window
             if (openMacroTab) _gameOperatorWindow.SelectMacroTab();
             _gameOperatorWindow.Activate();
         }
+    }
+
+    private void OnMacroStateChanged(MacroRunSnapshot snapshot)
+    {
+        if (snapshot.Phase != MacroRunPhase.AwaitingConfirmation) return;
+        _ = Dispatcher.BeginInvoke(() =>
+        {
+            if (_macroAutomationIntents?.CurrentRun()?.PendingConfirmation?.ConfirmationId
+                != snapshot.PendingConfirmation?.ConfirmationId) return;
+            if (_gameOperatorWindow is null || !_gameOperatorWindow.IsVisible)
+                OpenGameOperator(openMacroTab: true);
+            else
+            {
+                if (_gameOperatorWindow.WindowState == WindowState.Minimized)
+                    _gameOperatorWindow.WindowState = WindowState.Normal;
+                _gameOperatorWindow.SelectMacroTab();
+            }
+        });
     }
 
     private void WireEvents()

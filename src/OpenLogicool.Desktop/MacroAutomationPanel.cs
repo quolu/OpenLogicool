@@ -26,11 +26,14 @@ internal sealed class MacroAutomationPanel : UserControl
     private readonly Button stop = Button("停止");
     private readonly TextBox startStep = new() { Text = "1", Width = 65, Padding = new Thickness(5),
         Background = Theme.Raised, Foreground = Theme.Text };
+    private readonly TextBox endStep = new() { Width = 65, Padding = new Thickness(5),
+        Background = Theme.Raised, Foreground = Theme.Text, ToolTip = "空欄なら最後の手順まで再生します。" };
     private readonly TextBlock targetHeading = new() { FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Theme.Text };
     private CancellationTokenSource? running;
     private List<MacroCatalogItem> compositionItems = [];
     private bool refreshingTargets;
     private string? selectedRouteId;
+    private MacroStepConfirmationDialog? confirmationDialog;
 
     public MacroAutomationPanel(IMacroAutomationIntents intents)
     {
@@ -49,13 +52,32 @@ internal sealed class MacroAutomationPanel : UserControl
         catalog.SelectionChanged += (_, _) =>
         {
             if (catalog.SelectedItem is not MacroCatalogItem selected) return;
-            if (selectedRouteId != selected.RouteId) startStep.Text = "1";
+            if (selectedRouteId != selected.RouteId)
+            {
+                startStep.Text = "1"; endStep.Text = "";
+                mode.ItemsSource = selected.RequiresStepConfirmation
+                    ? [new ModeChoice("1手順ずつ確認（録画）", MacroPlaybackMode.AiFree)]
+                    : new[] { new ModeChoice("AI監視あり（問題stepを修復）", MacroPlaybackMode.AiMonitored),
+                        new ModeChoice("AI監視なし（保存済み操作のみ）", MacroPlaybackMode.AiFree) };
+                mode.SelectedIndex = 0;
+            }
             selectedRouteId = selected.RouteId;
         };
         stop.Click += (_, _) => Stop();
         targets.SelectionChanged += (_, _) => PersistTargetSelection();
         intents.StateChanged += OnStateChanged;
-        Unloaded += (_, _) => intents.StateChanged -= OnStateChanged;
+        Loaded += (_, _) =>
+        {
+            intents.StateChanged -= OnStateChanged; intents.StateChanged += OnStateChanged;
+            if (intents.CurrentRun() is { } current) Render(current);
+        };
+        Unloaded += (_, _) =>
+        {
+            intents.StateChanged -= OnStateChanged;
+            if (confirmationDialog is null) return;
+            confirmationDialog.Dismiss(); confirmationDialog = null;
+            workspace.Stop();
+        };
         stop.IsEnabled = false;
         Content = Build();
         Refresh();
@@ -72,7 +94,7 @@ internal sealed class MacroAutomationPanel : UserControl
         heading.Children.Add(targetHeading);
         heading.Children.Add(new TextBlock
         {
-            Text = "AIに目的を伝えて操作を覚えさせ、保存済みマクロを監視あり／なしで再生します。",
+            Text = "録画マクロは1手順ずつ結果を確認します。OKを押してから次を実行します。",
             Foreground = Theme.Muted,
             Margin = new Thickness(0, 4, 0, 14),
         });
@@ -99,6 +121,8 @@ internal sealed class MacroAutomationPanel : UserControl
         playbackActions.Children.Add(mode);
         playbackActions.Children.Add(new TextBlock { Text = "開始する手順（停止後はここから再開）", Margin = new Thickness(0, 8, 0, 4) });
         playbackActions.Children.Add(startStep);
+        playbackActions.Children.Add(new TextBlock { Text = "終了する手順（空欄は最後まで）", Margin = new Thickness(0, 8, 0, 4) });
+        playbackActions.Children.Add(endStep);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
         buttons.Children.Add(play);
         stop.Margin = new Thickness(8, 0, 0, 0);
@@ -153,7 +177,14 @@ internal sealed class MacroAutomationPanel : UserControl
         var selectedMode = ((ModeChoice)mode.SelectedItem).Value;
         if (!int.TryParse(startStep.Text, out var firstStep) || firstStep < 1 || firstStep > macro.StepCount)
         { status.Text = $"開始する手順は1〜{macro.StepCount}を指定してください。"; return; }
-        await RunAsync(token => workspace.PlayAsync(target, macro, selectedMode, Progress(), token, firstStep - 1));
+        int? lastStep = null;
+        if (!string.IsNullOrWhiteSpace(endStep.Text))
+        {
+            if (!int.TryParse(endStep.Text, out var value) || value < firstStep || value > macro.StepCount)
+            { status.Text = $"終了する手順は{firstStep}〜{macro.StepCount}を指定してください。"; return; }
+            lastStep = value;
+        }
+        await RunAsync(token => workspace.PlayAsync(target, macro, selectedMode, Progress(), token, firstStep - 1, lastStep));
         Refresh(macro.RouteId);
     }
 
@@ -177,11 +208,34 @@ internal sealed class MacroAutomationPanel : UserControl
 
     private void Render(MacroRunSnapshot snapshot)
     {
-        if (snapshot.Phase == MacroRunPhase.Stopped) startStep.Text = (snapshot.StepNumber + 1).ToString();
+        SetRunning(snapshot.CanStop);
+        if (snapshot.Phase != MacroRunPhase.AwaitingConfirmation)
+        {
+            confirmationDialog?.Dismiss(); confirmationDialog = null;
+        }
+        if (catalog.SelectedItem is MacroCatalogItem selected && snapshot.Goal == selected.Goal
+            && (snapshot.Phase is MacroRunPhase.Stopped or MacroRunPhase.Faulted
+                || snapshot.Phase == MacroRunPhase.Completed && snapshot.StepNumber < selected.StepCount))
+            startStep.Text = (snapshot.StepNumber + 1).ToString();
         var information = snapshot.Information is { Count: > 0 }
             ? "\n取得情報\n" + string.Join("\n", snapshot.Information.Select(value => $"・{value}"))
             : string.Empty;
         status.Text = $"{snapshot.Detail}\nstep {snapshot.StepNumber}　{snapshot.ActionLabel}　{snapshot.TransitionLabel}　AI {snapshot.AiCallCount}回　版 {snapshot.RouteRevision}{information}";
+        if (IsLoaded && snapshot.PendingConfirmation is { } review
+            && snapshot.Phase == MacroRunPhase.AwaitingConfirmation
+            && confirmationDialog?.ConfirmationId != review.ConfirmationId)
+        {
+            confirmationDialog?.Dismiss();
+            var dialog = new MacroStepConfirmationDialog(review) { Owner = Window.GetWindow(this) };
+            confirmationDialog = dialog;
+            dialog.Decided += decision =>
+            {
+                confirmationDialog = null;
+                try { workspace.ConfirmStep(review.ConfirmationId, decision); }
+                catch (Exception error) { status.Text = error.Message; }
+            };
+            dialog.Show(); dialog.Activate();
+        }
     }
 
     private void OnStateChanged(MacroRunSnapshot snapshot)
@@ -202,6 +256,10 @@ internal sealed class MacroAutomationPanel : UserControl
         play.IsEnabled = !value;
         stop.IsEnabled = value;
         startStep.IsEnabled = !value;
+        endStep.IsEnabled = !value;
+        mode.IsEnabled = !value;
+        catalog.IsEnabled = !value;
+        targets.IsEnabled = !value;
     }
 
     private void AddComposition()

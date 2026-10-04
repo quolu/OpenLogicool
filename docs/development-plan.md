@@ -1448,6 +1448,8 @@ Phase 13 follow-up（2026-08-29）: shop reset後のAI監視run中、Nano action
 
 既存Input StudioのG13／G600配置・編集・保存を維持し、Game Operatorへ記録開始／停止、記録session、記録からmacro作成、AI監視あり／なし、進捗・停止理由を追加する。工程正本はLattice plan `phase14-product-completion`、目的・契約・受入は[Phase 14 campaign plan](phase14-product-completion-campaign-plan.md)を正とする。
 
+録画由来マクロでは、指定した開始〜終了手順だけを有限再生し、終了で後続入力を送出しない。一操作ごとに10秒Compareの実観測を保存し、現在の結果画像と原本のComparison.AfterObservationIdが指す操作後画像を並べる。一致・不一致にかかわらず全手順で利用者のOKを待ち、OKを受けた後だけ次へ進む。文字配置・画像特徴の自動照合は参考表示に限定し、済んだ日課と操作失敗を自動分類せず、録画結果への到達をAIに強制しない。OKは当該実行の利用者確認として別に保存し、Moved・画像一致・日課全体の達成へ読み替えない。違う場合はその手順で停止し、既存の個別補正・開始手順指定へ戻す。現在の結果画像が取得できない時は明示停止する。UIからの再生と物理ボタン起動は同じ確認を通る。原本、正常手順、後続、旧版は保持し、範囲完了でrouteを切り詰めない。これは録画再生だけの追加契約であり、§6・§10の探索由来routeのMoved／非遷移契約と入力前拒否境界は維持する。
+
 ## 9. Blockerを潰すfocused experiment
 
 | ID | 実験 | 成功条件 | 失敗時の分岐 |

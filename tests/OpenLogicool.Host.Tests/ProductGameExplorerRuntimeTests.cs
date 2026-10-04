@@ -410,7 +410,7 @@ public sealed class ProductGameExplorerRuntimeTests
             return ValueTask.FromResult(comparison && ComparisonScene is not null ? ComparisonScene : current!);
         }
 
-        public void SetRouteTarget(StructureScreenEdge? edge) { }
+        public void SetRouteTarget(StructureScreenEdge? edge, bool repairing = false) { }
         public void BeginComparison() { comparison = true; PhaseCalls.Add("begin-comparison"); }
         public void EndComparison() { comparison = false; PhaseCalls.Add("end-comparison"); }
     }

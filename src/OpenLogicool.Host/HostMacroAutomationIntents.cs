@@ -11,7 +11,9 @@ public sealed record ProductMacroExecutionRequest(
     string Goal,
     MacroPlaybackMode PlaybackMode,
     LearningRouteRevision? InitialRoute,
-    int StartStepIndex = 0);
+    int StartStepIndex = 0,
+    int? EndStepIndexExclusive = null,
+    IMacroStepConfirmation? StepConfirmation = null);
 
 public interface IProductMacroExecutionEngine
 {
@@ -40,6 +42,7 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
     private readonly SemaphoreSlim executionGate = new(1, 1);
     private readonly object stateGate = new();
     private CancellationTokenSource? activeCancellation;
+    private MacroStepConfirmationChannel? activeConfirmation;
     private MacroRunSnapshot current = Idle("待機中です。");
     private bool disposed;
 
@@ -139,12 +142,14 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
         var route = Resolve(request.Macro);
         if (request.StartStepIndex < 0 || request.StartStepIndex >= route.StepCount)
             throw new ArgumentOutOfRangeException(nameof(request), "開始する手順がマクロの範囲外です。");
+        if (request.EndStepIndexExclusive is { } end && (end <= request.StartStepIndex || end > route.StepCount))
+            throw new ArgumentOutOfRangeException(nameof(request), "終了する手順は開始する手順以上で、マクロの範囲内を指定してください。");
         if (!string.Equals(route.GameId, target.ProcessName, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("選択したアプリとマクロの対象gameが一致しません。");
         }
         return await ExecuteAsync(new ProductMacroExecutionRequest(
-            target.ProcessName, route.Goal, request.Macro.PlaybackMode, route, request.StartStepIndex),
+            target.ProcessName, route.Goal, request.Macro.PlaybackMode, route, request.StartStepIndex, request.EndStepIndexExclusive),
             progress, cancellationToken).ConfigureAwait(false);
     }
 
@@ -171,12 +176,22 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
                 Detail = "停止を要求しました。",
                 CanStart = true,
                 CanStop = false,
+                PendingConfirmation = null,
             };
             current = stopped;
         }
         StateChanged?.Invoke(stopped);
         return stopped;
     }
+
+    public void ConfirmStep(string confirmationId, MacroStepDecision decision)
+    {
+        lock (stateGate)
+            (activeConfirmation ?? throw new InvalidOperationException("確認待ちの再生がありません。"))
+                .Confirm(confirmationId, decision);
+    }
+
+    public MacroRunSnapshot CurrentRun() { lock (stateGate) return current; }
 
     private async Task<MacroRunSnapshot> ExecuteAsync(
         ProductMacroExecutionRequest request,
@@ -207,6 +222,23 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
             StateChanged?.Invoke(snapshot);
             progress.Report(snapshot);
         });
+        var confirmation = request.InitialRoute?.RecordedSteps is null ? null
+            : new MacroStepConfirmationChannel(review =>
+            {
+                MacroRunSnapshot waiting;
+                lock (stateGate) waiting = current with
+                {
+                    Phase = MacroRunPhase.AwaitingConfirmation,
+                    StepNumber = review.StepNumber - 1,
+                    ActionLabel = review.ActionLabel,
+                    TransitionLabel = review.TransitionLabel,
+                    Detail = $"手順 {review.StepNumber} を操作しました。結果の確認を待っています。",
+                    CanStart = false, CanStop = true, PendingConfirmation = review,
+                };
+                tracked.Report(waiting);
+            });
+        lock (stateGate) activeConfirmation = confirmation;
+        request = request with { StepConfirmation = confirmation };
         try
         {
             var terminal = await engine.ExecuteAsync(request, tracked, linked.Token).ConfigureAwait(false);
@@ -218,7 +250,7 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
         {
             lock (stateGate)
             {
-                current = current with { Phase = MacroRunPhase.Stopped, Detail = "停止しました。", CanStart = true, CanStop = false };
+                current = current with { Phase = MacroRunPhase.Stopped, Detail = "停止しました。", CanStart = true, CanStop = false, PendingConfirmation = null };
             }
             StateChanged?.Invoke(current);
             return current;
@@ -227,14 +259,14 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
         {
             lock (stateGate)
             {
-                current = current with { Phase = MacroRunPhase.Faulted, Detail = error.Message, CanStart = true, CanStop = false };
+                current = current with { Phase = MacroRunPhase.Faulted, Detail = error.Message, CanStart = true, CanStop = false, PendingConfirmation = null };
             }
             StateChanged?.Invoke(current);
             throw;
         }
         finally
         {
-            lock (stateGate) activeCancellation = null;
+            lock (stateGate) { activeCancellation = null; activeConfirmation = null; }
             recordingGate.EndPlayback();
             executionGate.Release();
         }

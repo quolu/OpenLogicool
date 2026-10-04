@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using System.IO;
+using System.Text.Json;
 using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Playbooks;
@@ -14,6 +15,21 @@ namespace OpenLogicool.Host;
 internal sealed class MacroSqliteConnectionFactory(string databasePath)
 {
     private readonly string databasePath = Path.GetFullPath(databasePath);
+
+    public IRecordedMacroResultVerifier RecordedResults(string evidenceDirectory)
+    {
+        var sequence = 0;
+        return new RecordedMacroResultVerifier(sessionId =>
+        {
+            using var db = Open();
+            return new SqliteDemonstrationSessionStore(db).Load(sessionId);
+        }, result =>
+        {
+            Directory.CreateDirectory(evidenceDirectory);
+            File.WriteAllText(Path.Combine(evidenceDirectory, $"recorded-result-{++sequence:0000}.json"),
+                JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+        });
+    }
 
     public SqliteConnection Open()
     {

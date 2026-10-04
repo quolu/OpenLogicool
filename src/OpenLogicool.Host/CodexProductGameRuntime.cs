@@ -70,7 +70,7 @@ public sealed class CodexSuppliedTargetDiscovery(
         return scene;
     }
 
-    public void SetRouteTarget(StructureScreenEdge? edge) => routeTarget = edge;
+    public void SetRouteTarget(StructureScreenEdge? edge, bool repairing = false) => routeTarget = edge;
     public void BeginComparison() => comparisonOnly = true;
     public void EndComparison() => comparisonOnly = false;
 
@@ -152,7 +152,8 @@ public sealed class CodexProductGameToolRuntime(ProductGameExplorerRuntime produ
             result.Status.ToString(),
             result.Comparison?.Judgement,
             result.CommittedEdgeId,
-            result.Detail);
+            result.Detail,
+            result.Stability?.StableScene ?? result.Stability?.Observations.LastOrDefault());
     }
 
     private static StructureScreenEdge DraftEdge(CodexGameActionCommand command)
@@ -286,29 +287,48 @@ public sealed class CodexLearningRouteRecorder(
     ILearningRouteStore routes,
     TimeProvider? timeProvider = null,
     LearningRouteRevision? initialRoute = null,
-    int startStepIndex = 0) : ICodexRouteRecorder
+    int startStepIndex = 0,
+    int? endStepIndexExclusive = null,
+    IRecordedMacroResultVerifier? recordedResults = null) : ICodexRouteRecorder
 {
     private readonly string routeId = initialRoute?.RouteId ?? PurposeLearningRouteIds.Create(gameId, environmentScope, goal);
     private readonly TimeProvider time = timeProvider ?? TimeProvider.System;
     private LearningRouteRevision? route = initialRoute ?? routes.LoadLatest(PurposeLearningRouteIds.Create(gameId, environmentScope, goal));
     private int stepIndex = startStepIndex;
+    private readonly int firstStepIndex = startStepIndex;
     private bool consumedSavedStep;
+    private readonly int? end = endStepIndexExclusive ?? initialRoute?.StepCount;
 
     public int StepNumber => stepIndex;
     public long RevisionNumber => route?.RevisionNumber ?? 0;
     public bool Repairing { get; private set; }
-    public bool CanComplete => initialRoute is null && route?.RecordedSteps is null
-        || !Repairing && route is not null && stepIndex >= route.StepCount;
+    public RecordedMacroResultVerification? LastVerification { get; private set; }
+    public bool SavedPlaybackFinished => initialRoute is not null && !Repairing && stepIndex >= (end ?? initialRoute.StepCount);
+    public bool CanComplete => end is not null ? !Repairing && stepIndex >= end
+        : initialRoute is null && route?.RecordedSteps is null
+            || !Repairing && route is not null && stepIndex >= route.StepCount;
     public StructureScreenEdge? NextSavedEdge
     {
         get
         {
+            if (end is { } limit && (limit <= firstStepIndex || route is null || limit > route.StepCount))
+                throw new ArgumentOutOfRangeException(nameof(endStepIndexExclusive));
+            if (end is { } ending && stepIndex >= ending) return null;
             return RecordedRoutePlayback.NextEdge(route, stepIndex, structures.LoadRevision(gameId, environmentScope));
         }
     }
 
     public void Record(CodexGameActionOutcome outcome, bool usedSavedEdge)
     {
+        if (SavedPlaybackFinished) throw new InvalidOperationException("指定した手順範囲の再生は終了しています。");
+        LastVerification = RecordedRoutePlayback.VerifyResult(recordedResults, route, stepIndex, outcome.AfterScene);
+        if (LastVerification is { Status: RecordedMacroResultStatus.Unavailable })
+            throw new InvalidOperationException(LastVerification.Detail);
+        if (LastVerification is { Status: RecordedMacroResultStatus.Different })
+        {
+            Repairing = true;
+            return;
+        }
         if (outcome.Judgement != RecordedRoutePlayback.Expected(route, stepIndex))
         {
             if (route?.RecordedSteps is { } savedSteps && stepIndex < savedSteps.Count
@@ -357,6 +377,7 @@ public sealed class CodexLearningRouteRecorder(
     {
         if (!CanComplete)
             throw new InvalidOperationException($"保存済みマクロの手順が残っています。次は手順 {stepIndex + 1} です。");
+        if (initialRoute is not null) return;
         if (route is null) return;
         var hasUnconsumedTail = stepIndex < route.StepCount;
         if (route.Status != LearningRouteStatus.Draft

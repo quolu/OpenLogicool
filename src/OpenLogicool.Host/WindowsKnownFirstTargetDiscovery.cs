@@ -206,9 +206,10 @@ public sealed class WindowsKnownFirstTargetDiscovery(
         return scene.Affordances.FirstOrDefault(candidate => usable.Contains(candidate.CandidateId));
     }
 
-    public void SetRouteTarget(StructureScreenEdge? edge)
+    public void SetRouteTarget(StructureScreenEdge? edge, bool repairing = false)
     {
         routeTarget = edge;
+        if (repairing) forceAiRepair = true;
         if (aiDiscovery is IProductGameOperationControl operationControl)
             operationControl.SetInteractionOperation(edge?.Primitive ?? operation);
     }

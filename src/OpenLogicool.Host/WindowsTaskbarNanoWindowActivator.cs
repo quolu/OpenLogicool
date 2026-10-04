@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Text.Json;
 using System.Windows.Automation;
 using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Input;
@@ -16,15 +17,44 @@ public sealed record WindowsNanoWindowActivationResult(
 /// <summary>Windows taskbar／Alt+Tabによる前面化だけを所有するNano OS adapter。</summary>
 public static class WindowsTaskbarNanoWindowActivator
 {
+    private static void Trace(string phase, WindowsGameTarget target, SerialHidCursorPoint? point = null, string? receipt = null)
+    {
+        var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "OpenLogicool", "diagnostics");
+        Directory.CreateDirectory(directory);
+        File.AppendAllText(Path.Combine(directory, "nano-window-activation.jsonl"), JsonSerializer.Serialize(new
+        {
+            Utc = DateTimeOffset.UtcNow, Phase = phase, TargetWindow = (long)target.Window,
+            ForegroundWindow = (long)GetForegroundWindow(), TargetMinimized = IsIconic(target.Window),
+            Point = point, Receipt = receipt,
+        }) + Environment.NewLine);
+    }
     public static WindowsNanoWindowActivationResult EnsureForeground(
         WindowsGameTarget target,
         SerialHidProtocolSession session,
-        SerialHidEmitter emitter) =>
-        GetForegroundWindow() == target.Window
-            ? new WindowsNanoWindowActivationResult("AlreadyForeground", 0, null, null, null)
-            : ActivateFromTaskbar(target, session, emitter);
+        SerialHidEmitter emitter) => ActivateFromTaskbar(target, session, emitter);
 
     public static WindowsNanoWindowActivationResult ActivateFromTaskbar(
+        WindowsGameTarget target,
+        SerialHidProtocolSession session,
+        SerialHidEmitter emitter)
+        => EnsureForeground(() => GetForegroundWindow() == target.Window,
+            () => PrepareTaskbarActivation(target, session, emitter));
+
+    internal static WindowsNanoWindowActivationResult EnsureForeground(
+        Func<bool> isForeground,
+        Func<Func<WindowsNanoWindowActivationResult>> prepareActivation)
+    {
+        if (isForeground()) return AlreadyForeground();
+        var activate = prepareActivation();
+        // タスクバー探索中に確認窓が閉じ、ゲームへ戻ることがある。前面のボタンは最小化を起こす。
+        return isForeground() ? AlreadyForeground() : activate();
+    }
+
+    private static WindowsNanoWindowActivationResult AlreadyForeground() =>
+        new("AlreadyForeground", 0, null, null, null);
+
+    private static Func<WindowsNanoWindowActivationResult> PrepareTaskbarActivation(
         WindowsGameTarget target,
         SerialHidProtocolSession session,
         SerialHidEmitter emitter)
@@ -55,16 +85,17 @@ public static class WindowsTaskbarNanoWindowActivator
         var point = new SerialHidCursorPoint(
             checked((int)Math.Round(selectedBounds.Left + selectedBounds.Width / 2)),
             checked((int)Math.Round(selectedBounds.Top + selectedBounds.Height / 2)));
-        var receipt = new SerialHidNanoGameInputDevice(session, emitter, oracle).Click(point);
-        Thread.Sleep(250);
-        if (GetForegroundWindow() != target.Window)
-            throw new InvalidOperationException("taskbar buttonをNano clickしてもtarget windowがforegroundになりませんでした。");
-        return new WindowsNanoWindowActivationResult(
-            "TaskbarSemanticButton",
-            1,
-            selected.Current.Name,
-            point,
-            receipt);
+        var buttonName = selected.Current.Name;
+        return () =>
+        {
+            Trace("before-taskbar-click", target, point);
+            var receipt = new SerialHidNanoGameInputDevice(session, emitter, oracle).Click(point);
+            Thread.Sleep(250);
+            Trace("after-taskbar-click", target, point, receipt);
+            if (GetForegroundWindow() != target.Window)
+                throw new InvalidOperationException("taskbar buttonをNano clickしてもtarget windowがforegroundになりませんでした。");
+            return new WindowsNanoWindowActivationResult("TaskbarSemanticButton", 1, buttonName, point, receipt);
+        };
     }
 
     internal static bool MatchesExecutable(string automationId, string executablePath) =>
@@ -97,4 +128,8 @@ public static class WindowsTaskbarNanoWindowActivator
 
     [DllImport("user32.dll")]
     private static extern nint GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsIconic(nint window);
 }

@@ -25,7 +25,7 @@ public interface IProductGameRediscoveryTrigger
 
 public interface IProductGameRouteControl
 {
-    void SetRouteTarget(StructureScreenEdge? edge);
+    void SetRouteTarget(StructureScreenEdge? edge, bool repairing = false);
     void BeginComparison();
     void EndComparison();
 }
@@ -124,11 +124,11 @@ public sealed class ProductGameObservationRuntime(
         }
     }
 
-    public void SetRouteTarget(StructureScreenEdge? edge)
+    public void SetRouteTarget(StructureScreenEdge? edge, bool repairing = false)
     {
         if (targetDiscovery is IProductGameRouteControl routeControl)
         {
-            routeControl.SetRouteTarget(edge);
+            routeControl.SetRouteTarget(edge, repairing);
         }
     }
 

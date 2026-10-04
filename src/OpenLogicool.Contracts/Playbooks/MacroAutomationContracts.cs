@@ -15,7 +15,8 @@ public sealed record MacroCatalogItem(
     string Goal,
     long RevisionNumber,
     int StepCount,
-    string StatusLabel)
+    string StatusLabel,
+    bool RequiresStepConfirmation = false)
 {
     public string DisplayLabel => $"{Goal}　{StepCount} step　[版 {RevisionNumber} / {StatusLabel}]";
 }
@@ -33,6 +34,24 @@ public enum MacroRunPhase
     Completed,
     Stopped,
     Faulted,
+    AwaitingConfirmation,
+}
+
+public enum MacroStepDecision { Accept, Correct, Stop }
+
+public sealed record MacroStepConfirmationRequest(
+    string ConfirmationId,
+    int StepNumber,
+    string ActionLabel,
+    string TransitionLabel,
+    string? RecordedImagePath,
+    string? ActualImagePath,
+    string ComparisonDetail);
+
+public interface IMacroStepConfirmation
+{
+    ValueTask<MacroStepDecision> RequestAsync(
+        MacroStepConfirmationRequest request, CancellationToken cancellationToken);
 }
 
 public sealed record MacroRunSnapshot(
@@ -48,7 +67,8 @@ public sealed record MacroRunSnapshot(
     string Detail,
     bool CanStart,
     bool CanStop,
-    IReadOnlyList<string>? Information = null);
+    IReadOnlyList<string>? Information = null,
+    MacroStepConfirmationRequest? PendingConfirmation = null);
 
 public sealed record MacroCreateRequest(
     string TargetProcessName,
@@ -57,7 +77,8 @@ public sealed record MacroCreateRequest(
 public sealed record MacroPlaybackRequest(
     string TargetProcessName,
     MacroVersionReference Macro,
-    int StartStepIndex = 0);
+    int StartStepIndex = 0,
+    int? EndStepIndexExclusive = null);
 
 public interface IMacroAutomationIntents
 {
@@ -84,4 +105,9 @@ public interface IMacroAutomationIntents
         CancellationToken cancellationToken = default);
 
     MacroRunSnapshot Stop();
+
+    MacroRunSnapshot? CurrentRun() => null;
+
+    void ConfirmStep(string confirmationId, MacroStepDecision decision) =>
+        throw new NotSupportedException("この再生境界は手順ごとの確認に対応していません。");
 }

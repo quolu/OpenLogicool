@@ -54,7 +54,8 @@ public sealed class PurposeDirectedExplorationRuntimeTests
         var steps = new Steps([Moved("e3")]);
         var routes = new Routes(initial);
         var runtime = new PurposeDirectedExplorationRuntime("game", "env", initial.Goal,
-            steps, new Structures(), routes, new Completion(false), initialRoute: initial, startStepIndex: 1);
+            steps, new Structures(), routes, new Completion(false), initialRoute: initial, startStepIndex: 1,
+            recordedResults: new ResultVerifier(RecordedMacroResultStatus.Matched));
         Assert.Equal(PurposeDirectedStepStatus.Completed, (await runtime.ExecuteNextAsync()).Status);
         Assert.Equal("e3", Assert.Single(steps.Hints)!.EdgeId);
         Assert.Equal(initial, Assert.Single(routes.History));
@@ -277,7 +278,154 @@ public sealed class PurposeDirectedExplorationRuntimeTests
         IPurposeGoalCompletionEvaluator completion,
         MacroPlaybackMode playbackMode = MacroPlaybackMode.AiMonitored) =>
         new("game", "env", "ランキングを開く", steps, new Structures(), routes, completion,
-            new FixedTimeProvider(DateTimeOffset.UnixEpoch), playbackMode);
+            new FixedTimeProvider(DateTimeOffset.UnixEpoch), playbackMode,
+            recordedResults: new ResultVerifier(RecordedMacroResultStatus.Matched));
+
+    [Fact]
+    public async Task Moved_to_a_different_recorded_result_stops_without_dispatching_the_suffix()
+    {
+        var initial = Route(["e1", "e3"]) with
+        { RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved), Recorded("op2", "e3", GameTransitionJudgement.Moved)] };
+        var steps = new Steps([Moved("e1")]);
+        var routes = new Routes(initial);
+        var runtime = new PurposeDirectedExplorationRuntime("game", "env", initial.Goal,
+            steps, new Structures(), routes, new Completion(false), playbackMode: MacroPlaybackMode.AiFree,
+            initialRoute: initial, recordedResults: new ResultVerifier(RecordedMacroResultStatus.Different));
+        var result = await runtime.ExecuteNextAsync();
+        Assert.Equal(PurposeDirectedStepStatus.Stopped, result.Status);
+        Assert.Equal(GameTransitionJudgement.Moved, result.Step.Comparison!.Judgement);
+        Assert.Equal(0, result.StepIndex);
+        Assert.Single(steps.Hints);
+        Assert.Equal(initial, Assert.Single(routes.History));
+    }
+
+    [Fact]
+    public async Task Different_result_repairs_only_that_step_after_the_recorded_result_matches()
+    {
+        var initial = Route(["e1", "e3"]) with
+        { RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved), Recorded("op2", "e3", GameTransitionJudgement.Moved)] };
+        var steps = new Steps([Moved("e1"), Moved("e2")]);
+        var routes = new Routes(initial);
+        var runtime = new PurposeDirectedExplorationRuntime("game", "env", initial.Goal,
+            steps, new Structures(), routes, new Completion(false), initialRoute: initial,
+            recordedResults: new ResultVerifier(RecordedMacroResultStatus.Different, RecordedMacroResultStatus.Matched));
+        Assert.Equal(PurposeDirectedStepStatus.LearningContinues, (await runtime.ExecuteNextAsync()).Status);
+        var repaired = (await runtime.ExecuteNextAsync()).Route!;
+        Assert.Equal([false, true], steps.RepairFlags);
+        Assert.Equal("e2", repaired.RecordedSteps![0].EdgeId);
+        Assert.Equal(initial.RecordedSteps[1], repaired.RecordedSteps[1]);
+        Assert.Equal(initial, routes.History[0]);
+    }
+
+    [Fact]
+    public async Task Selected_prefix_completes_at_its_end_without_extra_input_or_truncating_the_route()
+    {
+        var initial = Route(["e1", "e3"]);
+        var steps = new Steps([Moved("e1")]);
+        var routes = new Routes(initial);
+        var runtime = new PurposeDirectedExplorationRuntime("game", "env", initial.Goal,
+            steps, new Structures(), routes, new Completion(false), initialRoute: initial, endStepIndexExclusive: 1);
+        var result = await runtime.ExecuteNextAsync();
+        Assert.Equal(PurposeDirectedStepStatus.Completed, result.Status);
+        Assert.Contains("1〜1", result.Detail);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => runtime.ExecuteNextAsync().AsTask());
+        Assert.Single(steps.Hints);
+        Assert.Equal(initial, Assert.Single(routes.History));
+    }
+
+    [Fact]
+    public async Task Every_recorded_step_waits_for_its_own_confirmation_even_when_the_images_match()
+    {
+        var initial = Route(["e1", "e3"]) with
+        { RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved), Recorded("op2", "e3", GameTransitionJudgement.Moved)] };
+        var steps = new Steps([Moved("e1"), Moved("e3")]);
+        var routes = new Routes(initial);
+        var requests = new List<MacroStepConfirmationRequest>();
+        var confirmations = new List<MacroStepDecision>();
+        var channel = new MacroStepConfirmationChannel(requests.Add);
+        var runtime = new PurposeDirectedExplorationRuntime("game", "env", initial.Goal,
+            steps, new Structures(), routes, new Completion(false), initialRoute: initial,
+            recordedResults: new ResultVerifier(RecordedMacroResultStatus.Matched, RecordedMacroResultStatus.Different),
+            stepConfirmation: channel, recordConfirmation: (_, choice) => confirmations.Add(choice));
+        var first = runtime.ExecuteNextAsync().AsTask();
+        Assert.False(first.IsCompleted);
+        Assert.Single(steps.Hints); Assert.Equal(0, runtime.StepIndex);
+        var firstId = Assert.Single(requests).ConfirmationId;
+        channel.Confirm(firstId, MacroStepDecision.Accept);
+        Assert.Equal(PurposeDirectedStepStatus.Advanced, (await first).Status);
+        var second = runtime.ExecuteNextAsync().AsTask();
+        Assert.False(second.IsCompleted); Assert.Equal(2, requests.Count);
+        Assert.Throws<InvalidOperationException>(() => channel.Confirm(firstId, MacroStepDecision.Accept));
+        Assert.False(second.IsCompleted);
+        channel.Confirm(requests[1].ConfirmationId, MacroStepDecision.Correct);
+        var stopped = await second;
+        Assert.Equal(PurposeDirectedStepStatus.Stopped, stopped.Status);
+        Assert.Equal(1, runtime.StepIndex); Assert.Equal(2, steps.Hints.Count);
+        Assert.Equal([MacroStepDecision.Accept, MacroStepDecision.Correct], confirmations);
+        Assert.Equal(initial, Assert.Single(routes.History));
+    }
+
+    [Fact]
+    public async Task User_acceptance_advances_an_unjudged_recorded_step_without_changing_its_recorded_result()
+    {
+        var initial = Route([]) with { RecordedSteps = [Recorded("op1", null, null)] };
+        var observed = Stayed("e1");
+        var routes = new Routes(initial);
+        MacroStepConfirmationRequest? request = null;
+        var channel = new MacroStepConfirmationChannel(value => request = value);
+        var runtime = new PurposeDirectedExplorationRuntime("game", "env", initial.Goal,
+            new Steps([observed]), new Structures(), routes, new Completion(false), initialRoute: initial,
+            recordedResults: new ResultVerifier(RecordedMacroResultStatus.Different), stepConfirmation: channel);
+        var running = runtime.ExecuteNextAsync().AsTask();
+        Assert.False(running.IsCompleted);
+        channel.Confirm(request!.ConfirmationId, MacroStepDecision.Accept);
+        var result = await running;
+        Assert.Equal(PurposeDirectedStepStatus.Completed, result.Status);
+        Assert.Equal(GameTransitionJudgement.Stayed, result.Step.Comparison!.Judgement);
+        Assert.Null(result.Route!.RecordedSteps![0].ExpectedJudgement);
+        Assert.Equal(initial, Assert.Single(routes.History));
+    }
+
+    [Fact]
+    public async Task Cancellation_during_confirmation_releases_the_wait_without_advancing_or_repairing()
+    {
+        var initial = Route(["e1"]) with { RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved)] };
+        var routes = new Routes(initial);
+        MacroStepConfirmationRequest? request = null;
+        var channel = new MacroStepConfirmationChannel(value => request = value);
+        var runtime = new PurposeDirectedExplorationRuntime("game", "env", initial.Goal,
+            new Steps([Moved("e1")]), new Structures(), routes, new Completion(false), initialRoute: initial,
+            recordedResults: new ResultVerifier(RecordedMacroResultStatus.Matched), stepConfirmation: channel);
+        using var cancellation = new CancellationTokenSource();
+        var running = runtime.ExecuteNextAsync(cancellation.Token).AsTask();
+        Assert.NotNull(request); cancellation.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => running);
+        Assert.Equal(0, runtime.StepIndex); Assert.Equal(initial, Assert.Single(routes.History));
+        Assert.Throws<InvalidOperationException>(() => channel.Confirm(request!.ConfirmationId, MacroStepDecision.Accept));
+    }
+
+    [Fact]
+    public async Task Missing_result_image_stops_before_requesting_user_acceptance()
+    {
+        var initial = Route(["e1"]) with { RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved)] };
+        var result = Moved("e1");
+        var missing = result.Stability!.StableScene! with
+        { Frame = result.Stability.StableScene!.Frame with { Artifact = null } };
+        result = result with { Stability = result.Stability with { StableScene = missing, Observations = [missing] } };
+        var requested = false;
+        var runtime = new PurposeDirectedExplorationRuntime("game", "env", initial.Goal,
+            new Steps([result]), new Structures(), new Routes(initial), new Completion(false), initialRoute: initial,
+            stepConfirmation: new MacroStepConfirmationChannel(_ => requested = true));
+        Assert.Equal(PurposeDirectedStepStatus.Stopped, (await runtime.ExecuteNextAsync()).Status);
+        Assert.False(requested); Assert.Equal(0, runtime.StepIndex);
+    }
+
+    private sealed class ResultVerifier(params RecordedMacroResultStatus[] statuses) : IRecordedMacroResultVerifier
+    {
+        private readonly Queue<RecordedMacroResultStatus> remaining = new(statuses);
+        public RecordedMacroResultVerification Verify(DemonstrationRouteStep step, int number, ObservedScene? actual) =>
+            new(number, remaining.Count > 1 ? remaining.Dequeue() : remaining.Peek(), "recorded", actual?.ObservationId, "照合");
+    }
 
     private static ProductGameExplorerStepResult Moved(string evidence) => Step(
         evidence, GameTransitionJudgement.Moved, ExplorationOutcomeKind.Destination);
@@ -313,7 +461,8 @@ public sealed class PurposeDirectedExplorationRuntimeTests
     private static ObservedScene Scene(string id) => new(
         ContractSchemaVersions.Revision03, $"scene:{id}", id,
         new CapturedFrameReference(ContractSchemaVersions.Revision03, "window", CaptureBackend.WindowsGraphicsCapture,
-            1, 1, DateTimeOffset.UnixEpoch, 1, 0, 0), CaptureAvailability.Available,
+            1, 1, DateTimeOffset.UnixEpoch, 1, 0, 0,
+            new CapturedFrameArtifact($"image:{id}", "image/png", "fixture", 1, 1, "test.png")), CaptureAvailability.Available,
         StateIdentityStatus.Known, "state", [],
         [new AffordanceCandidate(ContractSchemaVersions.Revision03, "candidate", id, 1, 1, "window",
             new AffordanceLocator(ContractSchemaVersions.Revision03, "text", [0.1, 0.1, 0.1, 0.1], "locator"),

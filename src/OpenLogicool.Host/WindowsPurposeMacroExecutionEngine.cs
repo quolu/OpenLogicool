@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using System.IO;
+using System.Text.Json;
 using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Playbooks;
@@ -31,6 +32,9 @@ public sealed class WindowsPurposeMacroExecutionEngine(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var userConfirms = request.InitialRoute?.RecordedSteps is not null;
+        if (userConfirms && request.StepConfirmation is null)
+            throw new InvalidOperationException("録画マクロの手順確認が構成されていません。");
         var target = WindowsGameTargetLocator.Locate(request.TargetProcessName);
         if (request.InitialRoute is not null
             && !string.Equals(request.InitialRoute.GameId, target.ProcessName, StringComparison.OrdinalIgnoreCase))
@@ -108,8 +112,8 @@ public sealed class WindowsPurposeMacroExecutionEngine(
                 includeVisualTargets: true,
                 interactionWaitCondition: new ExplorationWaitCondition(
                     ContractSchemaVersions.Revision03, 2, 1_000, 10_000),
-                allowAiDiscovery: request.PlaybackMode != MacroPlaybackMode.AiFree,
-                learnNonMovedRouteOutcomes: request.PlaybackMode != MacroPlaybackMode.AiFree,
+                allowAiDiscovery: !userConfirms && request.PlaybackMode != MacroPlaybackMode.AiFree,
+                learnNonMovedRouteOutcomes: userConfirms || request.PlaybackMode != MacroPlaybackMode.AiFree,
                 controlDiscoveryProvider: lazyFoundry,
                 controlDiscoveryResource: null,
                 comparisonNormalizer: new WindowsInformationScrollComparisonNormalizer());
@@ -122,11 +126,20 @@ public sealed class WindowsPurposeMacroExecutionEngine(
                 routes,
                 new SemanticTextGoalCompletionEvaluator(),
                 playbackMode: request.PlaybackMode,
-                initialRoute: request.InitialRoute, startStepIndex: request.StartStepIndex);
+                initialRoute: request.InitialRoute, startStepIndex: request.StartStepIndex,
+                endStepIndexExclusive: request.EndStepIndexExclusive,
+                recordedResults: connections.RecordedResults(frameDirectory),
+                stepConfirmation: request.StepConfirmation,
+                recordConfirmation: (review, decision) => File.WriteAllText(
+                    Path.Combine(frameDirectory, $"step-confirmation-{review.StepNumber:0000}.json"),
+                    JsonSerializer.Serialize(new { Request = review, Decision = decision, ConfirmedUtc = DateTimeOffset.UtcNow },
+                        new JsonSerializerOptions { WriteIndented = true })));
 
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                // 確認画面から戻る各手順で、Nanoの入力先をゲームへ戻す。
+                if (userConfirms) _ = WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
                 var aiBefore = product.AiCallCount;
                 var step = await purpose.ExecuteNextAsync(cancellationToken).ConfigureAwait(false);
                 var aiUsed = product.AiCallCount > aiBefore;
@@ -152,7 +165,11 @@ public sealed class WindowsPurposeMacroExecutionEngine(
                     terminal,
                     !terminal);
                 progress.Report(snapshot);
-                if (terminal) return snapshot;
+                if (terminal)
+                {
+                    File.WriteAllText(Path.Combine(frameDirectory, "result.json"), JsonSerializer.Serialize(snapshot));
+                    return snapshot;
+                }
             }
         }
         finally

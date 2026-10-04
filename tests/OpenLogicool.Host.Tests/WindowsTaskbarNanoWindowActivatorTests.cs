@@ -5,6 +5,27 @@ namespace OpenLogicool.Host.Tests;
 public sealed class WindowsTaskbarNanoWindowActivatorTests
 {
     [Fact]
+    public void Closing_confirmation_during_taskbar_lookup_does_not_minimize_the_game()
+    {
+        var foreground = false;
+        var clicks = 0;
+        var result = WindowsTaskbarNanoWindowActivator.EnsureForeground(() => foreground, () =>
+        {
+            // 探索開始時は確認窓が前面。探索が終わる前に閉じてゲームが前面へ復帰する。
+            foreground = true;
+            return () =>
+            {
+                clicks++;
+                foreground = false;
+                throw new InvalidOperationException("前面のゲームをタスクバーボタンで最小化しました。");
+            };
+        });
+        Assert.Equal("AlreadyForeground", result.Strategy);
+        Assert.Equal(0, clicks);
+        Assert.True(foreground);
+    }
+
+    [Fact]
     public void Same_title_launcher_is_excluded_even_when_it_is_closer_to_the_cursor()
     {
         // 実機で取得した同名ボタン。以前は距離によってランチャーが選ばれた。

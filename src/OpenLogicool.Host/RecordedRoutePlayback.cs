@@ -1,5 +1,6 @@
 using OpenLogicool.Contracts.Exploration;
 using OpenLogicool.Contracts.Playbooks;
+using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Shared;
 using OpenLogicool.Exploration;
 
@@ -15,11 +16,21 @@ public sealed class DemonstrationStepReviewRequiredException(int stepNumber)
 /// <summary>記録順と期待結果を再生へ渡す。利用者の指定を構造の観測済み事実へ昇格させない。</summary>
 public static class RecordedRoutePlayback
 {
-    public static StructureScreenEdge? NextEdge(LearningRouteRevision? route, int index, GameStructureRevision structure)
+    public static RecordedMacroResultVerification? VerifyResult(IRecordedMacroResultVerifier? verifier,
+        LearningRouteRevision? route, int index, ObservedScene? actual)
+    {
+        if (route?.RecordedSteps is not { } steps || index >= steps.Count) return null;
+        return verifier?.Verify(steps[index], index + 1, actual)
+            ?? new RecordedMacroResultVerification(index + 1, RecordedMacroResultStatus.Unavailable,
+                null, actual?.ObservationId, $"手順 {index + 1} の録画結果の照合が構成されていません。");
+    }
+    public static StructureScreenEdge? NextEdge(LearningRouteRevision? route, int index, GameStructureRevision structure,
+        bool userConfirmsEachStep = false)
     {
         if (route is null || index >= route.StepCount) return null;
         var step = route.RecordedSteps?[index];
-        if (step is { ExpectedJudgement: null }) throw new DemonstrationStepReviewRequiredException(index + 1);
+        if (step is { ExpectedJudgement: null } && !userConfirmsEachStep)
+            throw new DemonstrationStepReviewRequiredException(index + 1);
         var edgeId = step?.EdgeId ?? (step is null ? route.EdgeIds[index] : null);
         if (edgeId is not null) return structure.ScreenGraph.Edges.Single(edge => edge.EdgeId == edgeId && !edge.Retired);
         // 構造へ保存しない入力指定。実行時の新しいframeへ束縛し、実観測で初めて遷移を学習する。
