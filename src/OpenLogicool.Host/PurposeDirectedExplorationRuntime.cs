@@ -104,7 +104,8 @@ public sealed class PurposeDirectedExplorationRuntime
         IPurposeGoalCompletionEvaluator completion,
         TimeProvider? timeProvider = null,
         MacroPlaybackMode playbackMode = MacroPlaybackMode.AiMonitored,
-        LearningRouteRevision? initialRoute = null)
+        LearningRouteRevision? initialRoute = null,
+        int startStepIndex = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gameId);
         ArgumentException.ThrowIfNullOrWhiteSpace(environmentScope);
@@ -120,6 +121,9 @@ public sealed class PurposeDirectedExplorationRuntime
         this.playbackMode = playbackMode;
         routeId = initialRoute?.RouteId ?? PurposeLearningRouteIds.Create(gameId, environmentScope, goal);
         route = initialRoute ?? routes.LoadLatest(routeId);
+        if (startStepIndex < 0 || startStepIndex > 0 && (route is null || startStepIndex >= route.StepCount))
+            throw new ArgumentOutOfRangeException(nameof(startStepIndex));
+        stepIndex = startStepIndex;
         if (route is not null && (route.GameId != gameId || route.EnvironmentScope != environmentScope || route.Goal != goal))
             throw new InvalidOperationException("目的routeのscopeまたはgoalが一致しません。");
     }
@@ -129,17 +133,27 @@ public sealed class PurposeDirectedExplorationRuntime
 
     public async ValueTask<PurposeDirectedStepResult> ExecuteNextAsync(CancellationToken cancellationToken = default)
     {
-        var saved = route is not null && stepIndex < route.EdgeIds.Count;
+        var saved = route is not null && stepIndex < route.StepCount;
         var beforeRevision = structures.LoadRevision(gameId, environmentScope);
-        var routeEdge = saved
-            ? beforeRevision.ScreenGraph.Edges.Single(edge => edge.EdgeId == route!.EdgeIds[stepIndex] && !edge.Retired)
-            : null;
+        StructureScreenEdge? routeEdge;
+        try { routeEdge = RecordedRoutePlayback.NextEdge(route, stepIndex, beforeRevision); }
+        catch (DemonstrationStepReviewRequiredException exception)
+        {
+            return new(PurposeDirectedStepStatus.Stopped, stepIndex,
+                new ProductGameExplorerStepResult(ProductGameExplorerStepStatus.Paused, null, null, null,
+                    null, null, null, beforeRevision.RevisionId, exception.Message), route, saved, exception.Message);
+        }
+        var expected = RecordedRoutePlayback.Expected(route, stepIndex);
         steps.SetRouteTarget(routeEdge, repairing);
         var step = await steps.ExecuteNextAsync(cancellationToken).ConfigureAwait(false);
         if (step.Status != ProductGameExplorerStepStatus.Learned || step.Comparison is null)
             return new(PurposeDirectedStepStatus.Stopped, stepIndex, step, route, saved, step.Detail);
-        if (step.Comparison.Judgement != GameTransitionJudgement.Moved)
+        if (step.Comparison.Judgement != expected)
         {
+            if (route?.RecordedSteps is { } recordedSteps && saved
+                && (recordedSteps[stepIndex].EdgeId is null || expected == GameTransitionJudgement.Stayed))
+                return new(PurposeDirectedStepStatus.Stopped, stepIndex, step, route, saved,
+                    $"手順 {stepIndex + 1} の結果が期待と一致しません。記録画面でこの手順だけを修復してください。旧版は保持しています。");
             if (playbackMode == MacroPlaybackMode.AiFree)
             {
                 return new(PurposeDirectedStepStatus.Stopped, stepIndex, step, route, saved,
@@ -153,7 +167,8 @@ public sealed class PurposeDirectedExplorationRuntime
         var after = step.Stability?.StableScene ?? step.Stability?.Observations.LastOrDefault()
             ?? throw new InvalidOperationException("Moved stepにafter Observationがありません。");
         var goalSatisfied = !saved && completion.IsSatisfied(goal, after, step.Target!);
-        if (!saved || repairing)
+        if (!saved || repairing || route?.RecordedSteps is { } recorded && saved
+            && recorded[stepIndex].EdgeId is null && expected == GameTransitionJudgement.Moved)
         {
             _ = step.Learning?.Evidence?.EvidenceId
                 ?? throw new InvalidOperationException("Moved stepにTransition Evidenceがありません。");
@@ -162,19 +177,22 @@ public sealed class PurposeDirectedExplorationRuntime
             var current = structures.LoadRevision(gameId, environmentScope);
             var learnedEdge = current.ScreenGraph.Edges.Single(edge => edge.EdgeId == committedEdgeId);
             var edgeIds = route?.EdgeIds.ToList() ?? [];
-            if (repairing && stepIndex < edgeIds.Count) edgeIds[stepIndex] = learnedEdge.EdgeId;
+            var recordedSteps = RecordedRoutePlayback.RepairSteps(route, stepIndex, learnedEdge.EdgeId);
+            if (recordedSteps is not null) edgeIds = recordedSteps.Where(item => item.EdgeId is not null).Select(item => item.EdgeId!).ToList();
+            else if (repairing && stepIndex < edgeIds.Count) edgeIds[stepIndex] = learnedEdge.EdgeId;
             else edgeIds.Add(learnedEdge.EdgeId);
             route = routes.Append(new LearningRouteDraft(
                 ContractSchemaVersions.Revision03, routeId, route?.VersionId, gameId, environmentScope,
                 current.RevisionId, goal, edgeIds, LearningRouteAuthor.Ai, null,
                 repairing ? $"step {stepIndex + 1}だけを再探索結果へ差替え" : $"step {stepIndex + 1}を逐次追記",
                 goalSatisfied ? LearningRouteStatus.Compiled : route?.Status ?? LearningRouteStatus.Draft,
-                time.GetUtcNow()));
+                time.GetUtcNow(), recordedSteps));
         }
         repairing = false;
         stepIndex++;
         var completed = goalSatisfied
-            || saved && stepIndex == route!.EdgeIds.Count && route.Status != LearningRouteStatus.Draft;
+            || saved && stepIndex == route!.StepCount && route.PendingStepCount == 0
+                && (route.RecordedSteps is not null || route.Status != LearningRouteStatus.Draft);
         return new(completed ? PurposeDirectedStepStatus.Completed : PurposeDirectedStepStatus.Advanced,
             stepIndex, step, route, saved, completed ? "目的を完了しました。" : "Movedを保存して次stepへ進みます。");
     }

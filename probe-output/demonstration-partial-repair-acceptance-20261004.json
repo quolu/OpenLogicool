@@ -1,0 +1,40 @@
+{
+  "schema": "openlogicool.demonstration-partial-repair-acceptance.v1",
+  "recorded_at": "2026-10-04",
+  "source_session_id": "demo:734539a78392431fb1f7648d110230e6",
+  "route_id": "purpose:ae30d666b130363f7fac0bba80ba8e74da9c004a7c781c1d42cd408898e6dca0",
+  "version_id": "route:038d4d6fded2c2d5e945a13d37859596841829914682042a23f0b1b29c68fb97",
+  "revision": 1,
+  "operation_count": 51,
+  "learned_operation_count": 4,
+  "pending_operation_count": 47,
+  "order_and_input_parameters_match_source": true,
+  "source_raw_files_unchanged": 298,
+  "old_sessions_events_route_versions_and_workspace_versions_unchanged": true,
+  "native_tests": {
+    "projects": 22,
+    "passed": 1423,
+    "failed": 0
+  },
+  "development_install": "confirmed",
+  "ui_candidate_creation": "confirmed",
+  "ui_image_review": "confirmed",
+  "daily_completion": "unverified",
+  "full_owner_ui_journey": "unverified",
+  "new_macro_physical_trigger": "unverified",
+  "game_input_during_this_acceptance": 0,
+  "ui_single_step_expectation_save": "confirmed",
+  "reviewed_by": "Codex via product UI",
+  "source_recorded_outcome_unchanged": "Undetermined",
+  "observed_structure_edge_not_fabricated": true,
+  "current_revision": 2,
+  "current_version_id": "route:4cf275948d828d4d09b0a2d70cbe8c7236dff53f55c2229194bb786db68bb292",
+  "current_pending_operation_count": 46,
+  "unchanged_other_steps": 50,
+  "old_candidate_revision_unchanged": true,
+  "additional_focused_ui_tests": {
+    "passed": 6,
+    "new_test_count": 1,
+    "failed": 0
+  }
+}

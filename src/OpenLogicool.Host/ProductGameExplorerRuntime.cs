@@ -608,6 +608,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             if (learned.Evidence is not null)
             {
                 if (currentRouteTarget is not null
+                    && !currentRouteTarget.EdgeId.StartsWith("demo-replay:", StringComparison.Ordinal)
                     && !currentRouteTargetIsRepairing
                     && (comparison.Judgement == GameTransitionJudgement.Moved || !learnNonMovedRouteOutcomes))
                 {

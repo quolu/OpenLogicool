@@ -10,7 +10,8 @@ public sealed record ProductMacroExecutionRequest(
     string TargetProcessName,
     string Goal,
     MacroPlaybackMode PlaybackMode,
-    LearningRouteRevision? InitialRoute);
+    LearningRouteRevision? InitialRoute,
+    int StartStepIndex = 0);
 
 public interface IProductMacroExecutionEngine
 {
@@ -136,12 +137,14 @@ public sealed class HostMacroAutomationIntents : IMacroAutomationIntents, IMacro
         ArgumentNullException.ThrowIfNull(request);
         var target = RequireTarget(request.TargetProcessName);
         var route = Resolve(request.Macro);
+        if (request.StartStepIndex < 0 || request.StartStepIndex >= route.StepCount)
+            throw new ArgumentOutOfRangeException(nameof(request), "開始する手順がマクロの範囲外です。");
         if (!string.Equals(route.GameId, target.ProcessName, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("選択したアプリとマクロの対象gameが一致しません。");
         }
         return await ExecuteAsync(new ProductMacroExecutionRequest(
-            target.ProcessName, route.Goal, request.Macro.PlaybackMode, route),
+            target.ProcessName, route.Goal, request.Macro.PlaybackMode, route, request.StartStepIndex),
             progress, cancellationToken).ConfigureAwait(false);
     }
 

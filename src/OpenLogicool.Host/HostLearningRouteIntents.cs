@@ -70,6 +70,8 @@ public sealed class HostLearningRouteIntents : ILearningRouteIntents
             ? $"learning:{Guid.NewGuid():N}"
             : request.RouteId;
         var latest = routes.LoadLatest(routeId);
+        if (latest?.RecordedSteps is not null)
+            throw new InvalidOperationException("記録から作った候補は、記録画面で該当する手順を確認・修復してください。全手順を保持しています。");
         if (!string.Equals(request.ParentVersionId, latest?.VersionId, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("学習ルートの保存版が更新されました。画面を読み直してください。");
@@ -106,7 +108,7 @@ public sealed class HostLearningRouteIntents : ILearningRouteIntents
             prospective.UserInstruction,
             prospective.ChangeReason,
             prospective.Status,
-            prospective.CreatedUtc));
+            prospective.CreatedUtc, prospective.RecordedSteps));
         macroStates.Remove(saved.RouteId);
         return Project(request.GameId, structure, saved, "新しい保存版を作成しました。");
     }
@@ -152,7 +154,7 @@ public sealed class HostLearningRouteIntents : ILearningRouteIntents
             prospective.UserInstruction,
             prospective.ChangeReason,
             prospective.Status,
-            prospective.CreatedUtc));
+            prospective.CreatedUtc, prospective.RecordedSteps));
         macroStates.Remove(routeId);
         return Project(gameId, structure, restored, $"保存版 {previous.RevisionNumber} の内容へ戻しました。");
     }
@@ -200,8 +202,12 @@ public sealed class HostLearningRouteIntents : ILearningRouteIntents
                 edge.RiskTags.Count == 0 ? "なし" : string.Join(", ", edge.RiskTags)))
             .ToArray();
         var byId = edgeItems.ToDictionary(edge => edge.EdgeId, StringComparer.Ordinal);
-        var steps = route?.EdgeIds.Select((edgeId, index) =>
-            new LearningRouteStepItem(index + 1, byId[edgeId])).ToArray() ?? [];
+        var steps = route?.RecordedSteps is { } recorded
+            ? recorded.Select((step, index) => new LearningRouteStepItem(index + 1,
+                step.EdgeId is not null ? byId[step.EdgeId] : new LearningRouteEdgeItem(
+                    $"demonstration:{index + 1}", "記録の操作前", "記録の操作後", step.Operation,
+                    "記録位置", step.ReviewReason, step.ExpectedJudgement is null ? "確認待ち" : "利用者指定", "未評価"))).ToArray()
+            : route?.EdgeIds.Select((edgeId, index) => new LearningRouteStepItem(index + 1, byId[edgeId])).ToArray() ?? [];
         var historyCount = route is null ? 0 : routes.ReadRevisions(route.RouteId).Count;
         return new LearningRouteScreenSnapshot(
             gameId,

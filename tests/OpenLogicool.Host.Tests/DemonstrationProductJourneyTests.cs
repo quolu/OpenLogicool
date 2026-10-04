@@ -121,6 +121,62 @@ public sealed class DemonstrationProductJourneyTests : IDisposable
 
     private const string WorkspaceId = "ws-journey";
 
+    [Fact]
+    public async Task Partial_candidate_keeps_every_step_and_repairs_one_step_in_a_new_revision_after_reopen()
+    {
+        var gate = new DemonstrationRecordingGate();
+        MacroTargetSettingsStore.ForDatabase(path).Save("game");
+        var factory = new FakeLiveSessionFactory();
+        using var recording = new HostDemonstrationRecordingIntents(path, factory, gate);
+        var seed = await recording.StartAsync("一手の再記録");
+        Click(factory);
+        await recording.StopAsync();
+        string originalJson;
+        using (var connection = Open())
+        {
+            var store = new SqliteDemonstrationSessionStore(connection);
+            var source = store.Load(seed.SessionId)!;
+            var operation = source.Events.Single(item => item.Operation is not null).Operation!;
+            var frame = operation.Before.Frame with { Artifact = new CapturedFrameArtifact("image", "image/png", "hash", 1, 1, path) };
+            operation = operation with { Before = operation.Before with { Frame = frame },
+                After = operation.After with { Observations = [operation.After.StableScene! with { Frame = frame }],
+                    StableScene = operation.After.StableScene! with { Frame = frame } } };
+            var draft = source.Session with { SessionId = "demo:partial", Goal = "日課をこなすぞ" };
+            store.Start(draft);
+            for (var index = 0; index < 50; index++)
+            {
+                var item = operation with { OperationId = $"operation:{index}", TransitionEvidenceId = $"evidence:{index}" };
+                if (index == 24) item = item with { Comparison = item.Comparison with { Judgement = GameTransitionJudgement.Undetermined } };
+                store.Append(new DemonstrationEventDraft(draft.SchemaVersion, draft.SessionId,
+                    DemonstrationEventKind.Operation, item.OccurredUtc, Operation: item));
+            }
+            store.Append(new DemonstrationEventDraft(draft.SchemaVersion, draft.SessionId,
+                DemonstrationEventKind.Stopped, source.Events[^1].OccurredUtc, Stop: source.Events[^1].Stop));
+            originalJson = System.Text.Json.JsonSerializer.Serialize(store.Load(draft.SessionId));
+        }
+        var macro = recording.CreateMacroFromSession("demo:partial");
+        Assert.Equal(50, macro.StepCount);
+        var candidate = recording.LoadCandidate("demo:partial")!;
+        Assert.Equal("確認待ち", candidate.Steps[24].StatusLabel);
+        Assert.Equal(50, candidate.Steps.Count);
+        var reviewed = recording.ReviewStep("demo:partial", macro.VersionId, 25, GameTransitionJudgement.Stayed, "この操作は画面を変えない");
+        Assert.Equal(2, reviewed.Macro.RevisionNumber);
+        Assert.Throws<InvalidOperationException>(() => recording.ReviewStep("demo:partial", macro.VersionId, 25, GameTransitionJudgement.Moved, "古い画面"));
+        var repaired = recording.ReplaceStep("demo:partial", reviewed.Macro.VersionId, 25, seed.SessionId);
+        Assert.Equal(3, repaired.Macro.RevisionNumber);
+        using var reopened = Open();
+        var history = new SqliteLearningRouteStore(reopened).ReadRevisions(macro.RouteId);
+        Assert.Equal(3, history.Count);
+        Assert.Equal(1, history[0].PendingStepCount);
+        Assert.Equal(0, history[2].PendingStepCount);
+        for (var index = 0; index < 50; index++)
+            if (index != 24) Assert.Equal(System.Text.Json.JsonSerializer.Serialize(history[0].RecordedSteps![index]),
+                System.Text.Json.JsonSerializer.Serialize(history[2].RecordedSteps![index]));
+        Assert.Equal(seed.SessionId, history[2].RecordedSteps![24].SessionId);
+        Assert.Equal(originalJson, System.Text.Json.JsonSerializer.Serialize(new SqliteDemonstrationSessionStore(reopened).Load("demo:partial")));
+        Assert.Equal(50, recording.LoadCandidate("demo:partial")!.Steps.Count);
+    }
+
     private string Assign(MacroCatalogItem macro)
     {
         using var connection = Open();

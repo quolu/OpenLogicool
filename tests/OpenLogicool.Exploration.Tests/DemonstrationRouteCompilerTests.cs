@@ -15,7 +15,7 @@ public sealed class DemonstrationRouteCompilerTests
     private const string Goal = "アークを開く";
 
     [Fact]
-    public void Moved_operations_become_route_edges_while_stayed_and_undetermined_are_excluded_without_committing()
+    public void All_operations_remain_in_order_and_only_moved_operations_commit_edges()
     {
         var sceneA = Scene("scene-a", label: "btn-to-b");
         var sceneB = Scene("scene-b", label: "btn-to-c");
@@ -32,9 +32,11 @@ public sealed class DemonstrationRouteCompilerTests
 
         Assert.Equal(3, result.Decisions.Count);
         Assert.Equal(DemonstrationRouteDecisionKind.Accepted, result.Decisions[0].Kind);
-        Assert.Equal(DemonstrationRouteDecisionKind.ExcludedStayed, result.Decisions[1].Kind);
-        Assert.Equal(DemonstrationRouteDecisionKind.ExcludedUndetermined, result.Decisions[2].Kind);
+        Assert.Equal(DemonstrationRouteDecisionKind.PendingReview, result.Decisions[1].Kind);
+        Assert.Equal(DemonstrationRouteDecisionKind.PendingReview, result.Decisions[2].Kind);
         Assert.Single(result.Route.EdgeIds);
+        Assert.Equal(["op-1", "op-2", "op-3"], result.Route.RecordedSteps!.Select(step => step.OperationId));
+        Assert.Equal(2, result.Route.PendingStepCount);
         Assert.Equal(1, committer.CommitCallCount);
         Assert.Equal(GameId, result.Route.GameId);
         Assert.Equal(Goal, result.Route.Goal);
@@ -66,7 +68,7 @@ public sealed class DemonstrationRouteCompilerTests
     }
 
     [Fact]
-    public void Repeating_the_same_transition_is_excluded_from_the_route_as_a_duplicate()
+    public void Repeating_the_same_transition_remains_as_two_separate_steps()
     {
         var sceneA = Scene("scene-a", label: "btn-to-b");
         var sceneB = Scene("scene-b", label: "btn-to-c");
@@ -81,8 +83,9 @@ public sealed class DemonstrationRouteCompilerTests
         var result = compiler.Compile(session);
 
         Assert.Equal(DemonstrationRouteDecisionKind.Accepted, result.Decisions[0].Kind);
-        Assert.Equal(DemonstrationRouteDecisionKind.ExcludedDuplicate, result.Decisions[1].Kind);
-        Assert.Single(result.Route.EdgeIds);
+        Assert.Equal(DemonstrationRouteDecisionKind.Accepted, result.Decisions[1].Kind);
+        Assert.Equal(2, result.Route.StepCount);
+        Assert.Equal(2, result.Route.EdgeIds.Count);
     }
 
     [Fact]
@@ -171,13 +174,17 @@ public sealed class DemonstrationRouteCompilerTests
     }
 
     [Fact]
-    public void Compilation_refuses_when_every_operation_is_excluded()
+    public void Compilation_preserves_a_candidate_even_when_no_transition_is_known()
     {
         var sceneA = Scene("scene-a", label: "btn-to-b");
         var compiler = new DemonstrationRouteCompiler(new FakeStructureStore(), new FakeStructureCommitter(), new FakeLearningRouteStore());
         var session = Session(Operation("op-1", GameInteractionOperations.Click, sceneA, sceneA, GameTransitionJudgement.Stayed));
 
-        Assert.Throws<InvalidOperationException>(() => compiler.Compile(session));
+        var result = compiler.Compile(session);
+        Assert.Empty(result.Route.EdgeIds);
+        Assert.Equal(1, result.Route.StepCount);
+        Assert.Equal(1, result.Route.PendingStepCount);
+        Assert.Equal(LearningRouteStatus.Draft, result.Route.Status);
     }
 
     [Fact]
@@ -448,7 +455,7 @@ public sealed class DemonstrationRouteCompilerTests
                 draft.UserInstruction,
                 draft.ChangeReason,
                 draft.Status,
-                draft.CreatedUtc);
+                draft.CreatedUtc, draft.RecordedSteps);
             revisions.Add(revision);
             return revision;
         }

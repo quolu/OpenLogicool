@@ -1,4 +1,5 @@
 using OpenLogicool.Contracts.Playbooks;
+using OpenLogicool.Contracts.Exploration;
 
 namespace OpenLogicool.Desktop;
 
@@ -26,4 +27,12 @@ public sealed class DemonstrationRecordingWorkspace(IDemonstrationRecordingInten
     public IReadOnlyList<DemonstrationStepSummary> ListSteps(string sessionId) => intents.ListSteps(sessionId);
 
     public MacroCatalogItem CreateMacroFromSession(string sessionId) => intents.CreateMacroFromSession(sessionId);
+
+    public DemonstrationCandidate? LoadCandidate(string sessionId) => intents.LoadCandidate(sessionId);
+
+    public DemonstrationCandidate ReviewStep(string sessionId, string versionId, int stepNumber,
+        GameTransitionJudgement expected, string reason) => intents.ReviewStep(sessionId, versionId, stepNumber, expected, reason);
+
+    public DemonstrationCandidate ReplaceStep(string sessionId, string versionId, int stepNumber, string replacementSessionId) =>
+        intents.ReplaceStep(sessionId, versionId, stepNumber, replacementSessionId);
 }

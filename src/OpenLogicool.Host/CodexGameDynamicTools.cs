@@ -91,6 +91,7 @@ public sealed class CodexGameDynamicTools(
     {
         try
         {
+            if (tool is "use_saved_action" or "click" or "scroll" or "back") _ = route.NextSavedEdge;
             return tool switch
             {
                 "observe" => await ObserveAsync(cancellationToken).ConfigureAwait(false),
@@ -105,6 +106,7 @@ public sealed class CodexGameDynamicTools(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            if (exception is DemonstrationStepReviewRequiredException) terminalActionFailure = true;
             toolErrors.Add($"{tool}: {exception}");
             return new CodexDynamicToolOutput(false, JsonSerializer.Serialize(new
             {

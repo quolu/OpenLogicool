@@ -14,7 +14,7 @@ OpenLogicoolを、利用者がGame Operatorだけで目的入力、操作デモ�
 
 1. NIKKEをforegroundにして明示的に記録開始した時だけ、mouse、keyboard、G13、G600の有限操作と時刻を取得する。他appへ切り替わった間は記録を一時停止する。
 2. 入力とWGC画面は取得時刻で原本へ保存し、記録停止後に既存の認識・安定判定・Compareで解析する。各操作はcurrent window／frame／transform、正規化座標またはkey／device control、操作前後のWGC scene、上限10秒のCompare、Moved／Stayed／Undeterminedへ束縛する。
-3. 操作デモ原本は修正しない。候補routeはMoved操作を記録順で保持する。訪問済み画面への戻りを一律に寄り道と決めず、往復目的の戻りも残す。非遷移と重複の採否理由はroute側へ置き、元記録を削除しない。
+3. 操作デモ原本は修正しない。候補routeは全操作を記録順で保持し、Stayed／Undeterminedと重複を自動除外しない。Movedだけを構造edgeへ学習し、他は確認待ちとして理由を表示する。画像から期待結果を指定するか、一手だけを再記録して新版へ差し替え、正常な手順・原本・旧版を保持する。確認待ちを飛ばして完了扱いにせず、修復後は停止した手順から再開できる。
 4. 記録から作った候補routeをAI監視ありで再生し、保存action優先、非遷移stepだけAI修復、正常stepと旧revision維持を成立させる。
 5. 別process再起動後に同routeをAI 0で再生し、route revision不変で完了する。
 6. Game Operatorにgoal、記録開始／停止、記録session、記録からmacro作成、AI監視あり／なし再生、進捗、停止理由を利用者語彙で表示する。
@@ -27,7 +27,7 @@ OpenLogicoolを、利用者がGame Operatorだけで目的入力、操作デモ�
 ### 三層を分離する
 
 - `Demonstration Session`: 利用者のgoal、対象game、開始・停止、focus区間、操作、before／after、evidenceを持つimmutable原本。
-- `Learning Route`: Demonstration Sessionから導出する修復可能なedge列。修復は新revisionだけを作る。
+- `Learning Route`: Demonstration Sessionから導出する全操作の候補手順列と観測済みedge列。修復は新revisionだけを作る。
 - `Product Macro`: routeの再生mode、統合、G13／G600割当を所有する既存製品面。
 
 Demonstration Sessionをmacroとして直接再生しない。座標列だけのblind replayを作らない。
@@ -92,7 +92,7 @@ Windows環境別mouse／keyboard recorderと、既存G13／G600 edge observerを
 
 ### t03-demonstration-route-compiler
 
-Demonstration Sessionを既存Game Structure／Transition Evidence／Learning Routeへ導出する。Moved操作は訪問済み画面への戻りも含めて記録順の候補edge列にし、Stayed／Undeterminedと重複の採否理由を残す。元sessionと既存routeを変更せず、新route revisionだけを作る。
+Demonstration Sessionを既存Game Structure／Transition Evidence／Learning Routeへ導出する。全操作を記録順の候補手順列にし、Movedの構造edgeと、他の確認待ち手順を区別する。画像確認の期待結果は観測済み事実へ昇格させず、毎回の10秒Compareで照合する。元sessionと既存routeを変更せず、新route revisionだけを作る。
 
 ### t04-recording-host-intents
 

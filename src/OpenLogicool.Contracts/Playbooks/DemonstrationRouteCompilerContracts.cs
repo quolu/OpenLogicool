@@ -11,6 +11,7 @@ public enum DemonstrationRouteDecisionKind
     ExcludedUndetermined,
     ExcludedDuplicate,
     ExcludedDetour,
+    PendingReview,
 }
 
 /// <summary>

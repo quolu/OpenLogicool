@@ -56,7 +56,8 @@ public sealed record MacroCreateRequest(
 
 public sealed record MacroPlaybackRequest(
     string TargetProcessName,
-    MacroVersionReference Macro);
+    MacroVersionReference Macro,
+    int StartStepIndex = 0);
 
 public interface IMacroAutomationIntents
 {

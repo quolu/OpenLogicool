@@ -10,6 +10,30 @@ namespace OpenLogicool.Desktop.Tests;
 public sealed class GameOperatorMacroUiTests
 {
     [Fact]
+    public void Existing_partial_candidate_opens_macro_tab_without_recreating_or_losing_its_steps()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var window = new GameOperatorWindow(new WebIntent(), macroAutomationIntents: new MacroIntents(),
+                    demonstrationRecordingIntents: new RecordingIntents { PendingCandidate = true });
+                var tabs = Assert.IsType<TabControl>(window.Content);
+                var recording = (TabItem)tabs.Items[1];
+                tabs.SelectedItem = recording;
+                var button = Descendants((DependencyObject)recording.Content).OfType<Button>()
+                    .Single(item => Equals(item.Content, "この候補をマクロ画面で開く"));
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Assert.Equal("マクロ", Assert.IsType<TabItem>(tabs.SelectedItem).Header);
+                window.Close();
+            }
+            catch (Exception error) { failure = error; }
+        });
+        thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join();
+        if (failure is not null) throw failure;
+    }
+    [Fact]
     public void Immediate_start_failure_remains_visible_after_queued_progress_is_processed()
     {
         Exception? failure = null;
@@ -148,6 +172,10 @@ public sealed class GameOperatorMacroUiTests
 
     private sealed class RecordingIntents : IDemonstrationRecordingIntents
     {
+        public bool PendingCandidate { get; init; }
+        public DemonstrationCandidate? LoadCandidate(string sessionId) => PendingCandidate
+            ? new(new MacroCatalogItem("route", "version", "game", "env", "日課", 2, 51, "確認待ち 46件"),
+                [new DemonstrationCandidateStep(1, "クリック", "確認待ち", "未判定", null, null)]) : null;
         public Task<DemonstrationSessionSummary> ReanalyzeAsync(string sessionId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task<DemonstrationSessionSummary> StartAsync(string goal, CancellationToken cancellationToken = default) =>
@@ -155,7 +183,8 @@ public sealed class GameOperatorMacroUiTests
         public Task<DemonstrationSessionSummary> StopAsync(CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public DemonstrationRecordingStatus Status() => new(DemonstrationRecorderStatus.Idle, null, 0, 0, 0, 0, 0);
-        public IReadOnlyList<DemonstrationSessionSummary> ListSessions() => [];
+        public IReadOnlyList<DemonstrationSessionSummary> ListSessions() => PendingCandidate
+            ? [new("demo", "日課", "game", "env", DemonstrationSessionState.Stopped, 51, DateTimeOffset.UnixEpoch)] : [];
         public IReadOnlyList<DemonstrationStepSummary> ListSteps(string sessionId) => [];
         public MacroCatalogItem CreateMacroFromSession(string sessionId) => throw new NotSupportedException();
     }

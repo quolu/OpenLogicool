@@ -285,37 +285,40 @@ public sealed class CodexLearningRouteRecorder(
     IGameStructureStore structures,
     ILearningRouteStore routes,
     TimeProvider? timeProvider = null,
-    LearningRouteRevision? initialRoute = null) : ICodexRouteRecorder
+    LearningRouteRevision? initialRoute = null,
+    int startStepIndex = 0) : ICodexRouteRecorder
 {
     private readonly string routeId = initialRoute?.RouteId ?? PurposeLearningRouteIds.Create(gameId, environmentScope, goal);
     private readonly TimeProvider time = timeProvider ?? TimeProvider.System;
     private LearningRouteRevision? route = initialRoute ?? routes.LoadLatest(PurposeLearningRouteIds.Create(gameId, environmentScope, goal));
-    private int stepIndex;
+    private int stepIndex = startStepIndex;
     private bool consumedSavedStep;
 
     public int StepNumber => stepIndex;
     public long RevisionNumber => route?.RevisionNumber ?? 0;
     public bool Repairing { get; private set; }
-    public bool CanComplete => initialRoute is null || (!Repairing && stepIndex >= route!.EdgeIds.Count);
+    public bool CanComplete => initialRoute is null && route?.RecordedSteps is null
+        || !Repairing && route is not null && stepIndex >= route.StepCount;
     public StructureScreenEdge? NextSavedEdge
     {
         get
         {
-            if (route is null || stepIndex >= route.EdgeIds.Count) return null;
-            var id = route.EdgeIds[stepIndex];
-            return structures.LoadRevision(gameId, environmentScope).ScreenGraph.Edges
-                .Single(edge => edge.EdgeId == id && !edge.Retired);
+            return RecordedRoutePlayback.NextEdge(route, stepIndex, structures.LoadRevision(gameId, environmentScope));
         }
     }
 
     public void Record(CodexGameActionOutcome outcome, bool usedSavedEdge)
     {
-        if (outcome.Judgement != GameTransitionJudgement.Moved)
+        if (outcome.Judgement != RecordedRoutePlayback.Expected(route, stepIndex))
         {
+            if (route?.RecordedSteps is { } savedSteps && stepIndex < savedSteps.Count
+                && (savedSteps[stepIndex].EdgeId is null || savedSteps[stepIndex].ExpectedJudgement == GameTransitionJudgement.Stayed))
+                throw new InvalidOperationException($"手順 {stepIndex + 1} の結果が期待と一致しません。記録画面でこの手順だけを修復してください。旧版は保持しています。");
             Repairing = true;
             return;
         }
-        if (usedSavedEdge)
+        if (usedSavedEdge && (route?.RecordedSteps is null || route.RecordedSteps[stepIndex].EdgeId is not null
+            || outcome.Judgement == GameTransitionJudgement.Stayed))
         {
             consumedSavedStep = true;
             stepIndex++;
@@ -325,7 +328,9 @@ public sealed class CodexLearningRouteRecorder(
         var committedEdgeId = outcome.CommittedEdgeId
             ?? throw new InvalidOperationException("Moved Codex actionにcommit済みedgeがありません。");
         var edgeIds = route?.EdgeIds.ToList() ?? [];
-        if (Repairing && stepIndex < edgeIds.Count) edgeIds[stepIndex] = committedEdgeId;
+        var recordedSteps = RecordedRoutePlayback.RepairSteps(route, stepIndex, committedEdgeId);
+        if (recordedSteps is not null) edgeIds = recordedSteps.Where(item => item.EdgeId is not null).Select(item => item.EdgeId!).ToList();
+        else if (Repairing && stepIndex < edgeIds.Count) edgeIds[stepIndex] = committedEdgeId;
         else if (stepIndex == edgeIds.Count) edgeIds.Add(committedEdgeId);
         else throw new InvalidOperationException("Codex route step indexがedge列と一致しません。");
         var current = structures.LoadRevision(gameId, environmentScope);
@@ -341,8 +346,9 @@ public sealed class CodexLearningRouteRecorder(
             LearningRouteAuthor.Ai,
             null,
             Repairing ? $"step {stepIndex + 1}だけをCodex修復" : $"step {stepIndex + 1}をCodex逐次追記",
-            LearningRouteStatus.Draft,
-            time.GetUtcNow()));
+            recordedSteps is not null && recordedSteps.All(item => item.ExpectedJudgement is not null)
+                ? LearningRouteStatus.Compiled : LearningRouteStatus.Draft,
+            time.GetUtcNow(), recordedSteps));
         stepIndex++;
         Repairing = false;
     }
@@ -352,7 +358,7 @@ public sealed class CodexLearningRouteRecorder(
         if (!CanComplete)
             throw new InvalidOperationException($"保存済みマクロの手順が残っています。次は手順 {stepIndex + 1} です。");
         if (route is null) return;
-        var hasUnconsumedTail = stepIndex < route.EdgeIds.Count;
+        var hasUnconsumedTail = stepIndex < route.StepCount;
         if (route.Status != LearningRouteStatus.Draft
             && !(consumedSavedStep && hasUnconsumedTail)) return;
         var current = structures.LoadRevision(gameId, environmentScope);
@@ -375,6 +381,6 @@ public sealed class CodexLearningRouteRecorder(
                 ? $"Codexがgoal完了を確認し非遷移tail {removedTail}件を除去（facts {facts.Count}件）"
                 : $"Codexがgoal完了を確認（facts {facts.Count}件）",
             LearningRouteStatus.Compiled,
-            time.GetUtcNow()));
+            time.GetUtcNow(), route.RecordedSteps));
     }
 }

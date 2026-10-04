@@ -9,6 +9,41 @@ namespace OpenLogicool.Host.Tests;
 public sealed class CodexLearningRouteRecorderTests
 {
     [Fact]
+    public void Pending_recorded_step_cannot_be_skipped_or_reported_as_complete()
+    {
+        var selected = Route(["e1", "e2"], LearningRouteStatus.Draft) with
+        {
+            RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved), Recorded("op2", null, null),
+                Recorded("op3", "e2", GameTransitionJudgement.Moved)],
+        };
+        var routes = new Routes(selected);
+        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes, initialRoute: selected);
+        recorder.Record(Outcome(GameTransitionJudgement.Moved, "e1"), true);
+        Assert.Throws<DemonstrationStepReviewRequiredException>(() => recorder.NextSavedEdge);
+        Assert.False(recorder.CanComplete);
+        Assert.Throws<InvalidOperationException>(() => recorder.Complete(["visible goal"]));
+        Assert.Equal(selected, Assert.Single(routes.History));
+    }
+
+    [Fact]
+    public void Confirmed_no_change_step_is_consumed_without_fabricating_a_moved_edge()
+    {
+        var selected = Route([], LearningRouteStatus.Compiled) with
+        {
+            RecordedSteps = [Recorded("op1", null, GameTransitionJudgement.Stayed)],
+        };
+        var routes = new Routes(selected);
+        var recorder = new CodexLearningRouteRecorder("game", "env", "goal", new Structures(), routes, initialRoute: selected);
+        Assert.StartsWith("demo-replay:", recorder.NextSavedEdge!.EdgeId);
+        recorder.Record(Outcome(GameTransitionJudgement.Stayed, "") with { CommittedEdgeId = null }, true);
+        Assert.True(recorder.CanComplete);
+        recorder.Complete(["unchanged"]);
+        Assert.Equal(selected, Assert.Single(routes.History));
+    }
+
+    private static DemonstrationRouteStep Recorded(string id, string? edge, GameTransitionJudgement? expected) =>
+        new("demo", id, GameInteractionOperations.Click, [0.2, 0.3], null, null, null, null, edge, expected, "test", "demo");
+    [Fact]
     public void Explicit_playback_keeps_the_selected_route_and_cannot_finish_before_the_round_trip()
     {
         var selected = Route(["e1", "e2"], LearningRouteStatus.Compiled) with { RouteId = "macro:composed:round-trip" };

@@ -31,13 +31,14 @@ public sealed class MacroAutomationWorkspace(IMacroAutomationIntents intents)
         MacroCatalogItem macro,
         MacroPlaybackMode mode,
         IProgress<MacroRunSnapshot> progress,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int startStepIndex = 0)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(macro);
         return intents.PlayAsync(new MacroPlaybackRequest(
             target.ProcessName,
-            new MacroVersionReference(macro.RouteId, macro.VersionId, mode)), progress, cancellationToken);
+            new MacroVersionReference(macro.RouteId, macro.VersionId, mode), startStepIndex), progress, cancellationToken);
     }
 
     public MacroCatalogItem Compose(string goal, IReadOnlyList<MacroCatalogItem> sources)

@@ -319,6 +319,14 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
         var session = sessionStore.Load(sessionId)
             ?? throw new InvalidOperationException($"操作デモ原本 '{sessionId}' がありません。");
 
+        var compiler = CreateCompiler(connection, session);
+
+        var result = compiler.Compile(session);
+        return ProjectMacro(result.Route);
+    }
+
+    private DemonstrationRouteCompiler CreateCompiler(SqliteConnection connection, DemonstrationSessionRecord session)
+    {
         var structures = new SqliteGameStructureStore(connection);
         var routes = new SqliteLearningRouteStore(connection);
         var idRegistry = new InMemoryStableStructureIdRegistry();
@@ -356,20 +364,107 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
             eventIds);
         var structureLearner = new GameInteractionStructureLearner(
             structures, knowledge, idRegistry, eventIds, coordinator, session.Session.GameId, session.Session.EnvironmentScope);
-        var compiler = new DemonstrationRouteCompiler(structures, structureLearner, routes, time);
+        return new DemonstrationRouteCompiler(structures, structureLearner, routes, time);
 
-        var result = compiler.Compile(session);
-        var revision = result.Route;
-        return new MacroCatalogItem(
-            revision.RouteId,
-            revision.VersionId,
-            revision.GameId,
-            revision.EnvironmentScope,
-            revision.Goal,
-            revision.RevisionNumber,
-            revision.EdgeIds.Count,
-            revision.Status.ToString());
     }
+
+    public DemonstrationCandidate? LoadCandidate(string sessionId)
+    {
+        using var connection = OpenAndMigrate();
+        var session = new SqliteDemonstrationSessionStore(connection).Load(sessionId)
+            ?? throw new InvalidOperationException("操作デモ原本がありません。");
+        var route = new SqliteLearningRouteStore(connection).LoadLatest(DemonstrationGoalRouteIds.Create(
+            session.Session.GameId, session.Session.EnvironmentScope, session.Session.Goal));
+        return route?.RecordedSteps is not { Count: > 0 } steps || steps[0].OriginalSessionId != sessionId
+            ? null : ProjectCandidate(connection, route);
+    }
+
+    public DemonstrationCandidate ReviewStep(string sessionId, string versionId, int stepNumber,
+        GameTransitionJudgement expected, string reason)
+    {
+        if (expected is not (GameTransitionJudgement.Moved or GameTransitionJudgement.Stayed))
+            throw new ArgumentException("期待結果は画面変化あり／なしを指定してください。", nameof(expected));
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        using var connection = OpenAndMigrate();
+        var route = LoadEditableCandidate(connection, sessionId, versionId, stepNumber);
+        var detail = ProjectCandidate(connection, route).Steps[stepNumber - 1];
+        if (!File.Exists(detail.BeforeImagePath) || !File.Exists(detail.AfterImagePath))
+            throw new InvalidOperationException("前後画像が揃っていません。この一手だけを再記録してください。");
+        var steps = route.RecordedSteps!.ToArray();
+        steps[stepNumber - 1] = steps[stepNumber - 1] with
+        {
+            ExpectedJudgement = expected,
+            EdgeId = expected == GameTransitionJudgement.Moved ? steps[stepNumber - 1].EdgeId : null,
+            ReviewReason = $"利用者の画像確認: {reason.Trim()}",
+        };
+        return SaveCandidate(connection, route, steps, $"手順 {stepNumber} の期待結果だけを利用者が指定");
+    }
+
+    public DemonstrationCandidate ReplaceStep(string sessionId, string versionId, int stepNumber, string replacementSessionId)
+    {
+        using var connection = OpenAndMigrate();
+        var route = LoadEditableCandidate(connection, sessionId, versionId, stepNumber);
+        var replacement = new SqliteDemonstrationSessionStore(connection).Load(replacementSessionId)
+            ?? throw new InvalidOperationException("差し替える記録がありません。");
+        if (replacement.Session.GameId != route.GameId || replacement.Session.EnvironmentScope != route.EnvironmentScope)
+            throw new InvalidOperationException("差し替える記録のゲームまたは画面サイズが一致しません。");
+        var steps = route.RecordedSteps!.ToArray();
+        steps[stepNumber - 1] = CreateCompiler(connection, replacement).CompileStep(replacement) with
+        {
+            OriginalSessionId = steps[stepNumber - 1].OriginalSessionId,
+        };
+        return SaveCandidate(connection, route, steps, $"手順 {stepNumber} だけを再記録で差し替え");
+    }
+
+    private static LearningRouteRevision LoadEditableCandidate(SqliteConnection connection, string sessionId,
+        string versionId, int stepNumber)
+    {
+        var session = new SqliteDemonstrationSessionStore(connection).Load(sessionId)
+            ?? throw new InvalidOperationException("操作デモ原本がありません。");
+        var route = new SqliteLearningRouteStore(connection).LoadLatest(DemonstrationGoalRouteIds.Create(
+            session.Session.GameId, session.Session.EnvironmentScope, session.Session.Goal))
+            ?? throw new InvalidOperationException("先にこのデモから候補を作成してください。");
+        if (route.VersionId != versionId)
+            throw new InvalidOperationException("保存版が更新されています。操作一覧を読み直してください。");
+        if (route.RecordedSteps is null || stepNumber < 1 || stepNumber > route.RecordedSteps.Count)
+            throw new ArgumentOutOfRangeException(nameof(stepNumber));
+        if (route.RecordedSteps[0].OriginalSessionId != sessionId)
+            throw new InvalidOperationException("この候補は別の記録から作成されています。対象の記録を選び直してください。");
+        return route;
+    }
+
+    private DemonstrationCandidate SaveCandidate(SqliteConnection connection, LearningRouteRevision route,
+        IReadOnlyList<DemonstrationRouteStep> steps, string reason)
+    {
+        var structure = new SqliteGameStructureStore(connection).LoadRevision(route.GameId, route.EnvironmentScope);
+        var saved = new SqliteLearningRouteStore(connection).Append(new LearningRouteDraft(route.SchemaVersion,
+            route.RouteId, route.VersionId, route.GameId, route.EnvironmentScope, structure.RevisionId, route.Goal,
+            steps.Where(step => step.EdgeId is not null).Select(step => step.EdgeId!).ToArray(),
+            LearningRouteAuthor.User, route.UserInstruction, reason,
+            steps.Any(step => step.ExpectedJudgement is null) ? LearningRouteStatus.Draft : LearningRouteStatus.Compiled,
+            time.GetUtcNow(), steps));
+        return ProjectCandidate(connection, saved);
+    }
+
+    private static DemonstrationCandidate ProjectCandidate(SqliteConnection connection, LearningRouteRevision route)
+    {
+        var store = new SqliteDemonstrationSessionStore(connection);
+        var sources = route.RecordedSteps!.Select(step => step.SessionId).Distinct().ToDictionary(id => id,
+            id => store.Load(id) ?? throw new InvalidOperationException("手順の原本がありません。"));
+        var steps = route.RecordedSteps!.Select((step, index) =>
+        {
+            var operation = sources[step.SessionId].Events.Single(item => item.Operation?.OperationId == step.OperationId).Operation!;
+            var after = operation.After.StableScene ?? operation.After.Observations.LastOrDefault();
+            return new DemonstrationCandidateStep(index + 1, OperationLabel(step.Operation),
+                step.ExpectedJudgement is null ? "確認待ち" : step.EdgeId is null ? "利用者が期待結果を指定" : "画面変化を確認",
+                step.ReviewReason, operation.Before.Frame.Artifact?.LocalPath, after?.Frame.Artifact?.LocalPath);
+        }).ToArray();
+        return new DemonstrationCandidate(ProjectMacro(route), steps);
+    }
+
+    private static MacroCatalogItem ProjectMacro(LearningRouteRevision route) => new(route.RouteId, route.VersionId,
+        route.GameId, route.EnvironmentScope, route.Goal, route.RevisionNumber, route.StepCount,
+        route.PendingStepCount > 0 ? $"確認待ち {route.PendingStepCount}件" : "再生候補");
 
     public void Dispose()
     {

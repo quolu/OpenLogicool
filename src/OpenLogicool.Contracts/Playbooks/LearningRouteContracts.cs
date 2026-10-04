@@ -35,7 +35,8 @@ public sealed record LearningRouteDraft(
     string? UserInstruction,
     string ChangeReason,
     LearningRouteStatus Status,
-    DateTimeOffset CreatedUtc);
+    DateTimeOffset CreatedUtc,
+    IReadOnlyList<DemonstrationRouteStep>? RecordedSteps = null);
 
 public sealed record LearningRouteRevision(
     string SchemaVersion,
@@ -52,7 +53,27 @@ public sealed record LearningRouteRevision(
     string? UserInstruction,
     string ChangeReason,
     LearningRouteStatus Status,
-    DateTimeOffset CreatedUtc);
+    DateTimeOffset CreatedUtc,
+    IReadOnlyList<DemonstrationRouteStep>? RecordedSteps = null)
+{
+    public int StepCount => RecordedSteps?.Count ?? EdgeIds.Count;
+    public int PendingStepCount => RecordedSteps?.Count(step => step.ExpectedJudgement is null) ?? 0;
+}
+
+/// <summary>原本の順序と有限入力を保持する候補。利用者の期待結果と観測済みedgeは別に保存する。</summary>
+public sealed record DemonstrationRouteStep(
+    string SessionId,
+    string OperationId,
+    string Operation,
+    IReadOnlyList<double>? NormalizedPoint,
+    IReadOnlyList<string>? KeyTokens,
+    int? VerticalScrollSteps,
+    int? HorizontalScrollSteps,
+    IReadOnlyList<double>? DragDestinationNormalized,
+    string? EdgeId,
+    OpenLogicool.Contracts.Exploration.GameTransitionJudgement? ExpectedJudgement,
+    string ReviewReason,
+    string? OriginalSessionId = null);
 
 public static class LearningRouteVersionIds
 {

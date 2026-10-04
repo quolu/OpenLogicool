@@ -13,6 +13,70 @@ namespace OpenLogicool.Host.Tests;
 public sealed class PurposeDirectedExplorationRuntimeTests
 {
     [Fact]
+    public async Task Recorded_route_stops_at_pending_step_without_skipping_the_suffix_or_dispatching_it()
+    {
+        var initial = Route(["e1", "e3"]) with
+        {
+            RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved),
+                Recorded("op2", null, null), Recorded("op3", "e3", GameTransitionJudgement.Moved)],
+        };
+        var routes = new Routes(initial);
+        var steps = new Steps([Moved("e1")]);
+        var runtime = Runtime(steps, routes, new Completion(false));
+        Assert.Equal(PurposeDirectedStepStatus.Advanced, (await runtime.ExecuteNextAsync()).Status);
+        var stopped = await runtime.ExecuteNextAsync();
+        Assert.Equal(PurposeDirectedStepStatus.Stopped, stopped.Status);
+        Assert.Contains("手順 2", stopped.Detail);
+        Assert.Single(steps.Hints);
+        Assert.Equal(initial, Assert.Single(routes.History));
+    }
+
+    [Fact]
+    public async Task User_confirmed_no_change_step_advances_only_when_live_compare_is_stayed()
+    {
+        var initial = Route([]) with { RecordedSteps = [Recorded("op1", null, GameTransitionJudgement.Stayed)] };
+        var routes = new Routes(initial);
+        var runtime = Runtime(new Steps([Stayed("unchanged")]), routes, new Completion(false));
+        Assert.Equal(PurposeDirectedStepStatus.Completed, (await runtime.ExecuteNextAsync()).Status);
+        Assert.Single(routes.History);
+        var mismatch = Runtime(new Steps([Moved("e1")]), new Routes(initial), new Completion(false));
+        Assert.Equal(PurposeDirectedStepStatus.Stopped, (await mismatch.ExecuteNextAsync()).Status);
+    }
+
+    private static DemonstrationRouteStep Recorded(string id, string? edge, GameTransitionJudgement? expected) =>
+        new("demo", id, GameInteractionOperations.Click, [0.2, 0.3], null, null, null, null, edge, expected, "test", "demo");
+
+    [Fact]
+    public async Task Resume_from_repaired_step_does_not_dispatch_the_already_completed_prefix()
+    {
+        var initial = Route(["e1", "e3"]) with
+        { RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved), Recorded("op2", "e3", GameTransitionJudgement.Moved)] };
+        var steps = new Steps([Moved("e3")]);
+        var routes = new Routes(initial);
+        var runtime = new PurposeDirectedExplorationRuntime("game", "env", initial.Goal,
+            steps, new Structures(), routes, new Completion(false), initialRoute: initial, startStepIndex: 1);
+        Assert.Equal(PurposeDirectedStepStatus.Completed, (await runtime.ExecuteNextAsync()).Status);
+        Assert.Equal("e3", Assert.Single(steps.Hints)!.EdgeId);
+        Assert.Equal(initial, Assert.Single(routes.History));
+    }
+
+    [Fact]
+    public async Task Known_recorded_step_can_be_ai_repaired_while_the_pending_suffix_and_source_references_stay_intact()
+    {
+        var initial = Route(["e1", "e3"]) with
+        { RecordedSteps = [Recorded("op1", "e1", GameTransitionJudgement.Moved), Recorded("op2", null, null), Recorded("op3", "e3", GameTransitionJudgement.Moved)] };
+        var routes = new Routes(initial);
+        var runtime = Runtime(new Steps([Stayed("failed"), Moved("e2")]), routes, new Completion(false));
+        Assert.Equal(PurposeDirectedStepStatus.LearningContinues, (await runtime.ExecuteNextAsync()).Status);
+        var repaired = (await runtime.ExecuteNextAsync()).Route!;
+        Assert.Equal("e2", repaired.RecordedSteps![0].EdgeId);
+        Assert.Equal(initial.RecordedSteps[1], repaired.RecordedSteps[1]);
+        Assert.Equal(initial.RecordedSteps[2], repaired.RecordedSteps[2]);
+        Assert.Equal(3, repaired.StepCount);
+        Assert.Equal(initial, routes.History[0]);
+    }
+
+    [Fact]
     public void Goal_completion_ignores_ocr_text_that_normalizes_to_empty()
     {
         var scene = Scene("after");
@@ -293,7 +357,7 @@ public sealed class PurposeDirectedExplorationRuntimeTests
             var revision = new LearningRouteRevision(draft.SchemaVersion, draft.RouteId, History.Count + 1,
                 $"route:v{History.Count + 1}", draft.ParentVersionId, draft.GameId, draft.EnvironmentScope,
                 draft.StructureRevisionId, draft.Goal, draft.EdgeIds, draft.Author, draft.UserInstruction,
-                draft.ChangeReason, draft.Status, draft.CreatedUtc);
+                draft.ChangeReason, draft.Status, draft.CreatedUtc, draft.RecordedSteps);
             History.Add(revision); Appended.Add(revision); return revision;
         }
         public IReadOnlyList<LearningRouteRevision> ReadRevisions(string routeId) => History;

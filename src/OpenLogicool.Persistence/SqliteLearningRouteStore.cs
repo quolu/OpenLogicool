@@ -50,7 +50,8 @@ public sealed class SqliteLearningRouteStore(SqliteConnection connection) : ILea
             draft.UserInstruction,
             draft.ChangeReason,
             draft.Status,
-            draft.CreatedUtc.ToUniversalTime());
+            draft.CreatedUtc.ToUniversalTime(),
+            draft.RecordedSteps?.ToArray());
 
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
@@ -157,7 +158,7 @@ public sealed class SqliteLearningRouteStore(SqliteConnection connection) : ILea
             || string.IsNullOrWhiteSpace(draft.StructureRevisionId)
             || string.IsNullOrWhiteSpace(draft.Goal)
             || draft.EdgeIds is null
-            || draft.EdgeIds.Count == 0
+            || (draft.EdgeIds.Count == 0 && draft.RecordedSteps is not { Count: > 0 })
             || draft.EdgeIds.Any(string.IsNullOrWhiteSpace)
             || string.IsNullOrWhiteSpace(draft.ChangeReason)
             || !Enum.IsDefined(draft.Author)
@@ -165,5 +166,12 @@ public sealed class SqliteLearningRouteStore(SqliteConnection connection) : ILea
         {
             throw new ArgumentException("LearningRouteDraftの必須fieldまたはschemaが不正です。", nameof(draft));
         }
+        if (draft.RecordedSteps is { } steps
+            && (steps.Any(step => string.IsNullOrWhiteSpace(step.SessionId)
+                || string.IsNullOrWhiteSpace(step.OperationId)
+                || !OpenLogicool.Contracts.Exploration.GameInteractionOperations.InputOperations.Contains(step.Operation)
+                || step.ExpectedJudgement == OpenLogicool.Contracts.Exploration.GameTransitionJudgement.Undetermined)
+                || !draft.EdgeIds.SequenceEqual(steps.Where(step => step.EdgeId is not null).Select(step => step.EdgeId!))))
+            throw new ArgumentException("記録手順と観測済みedge列が一致しません。", nameof(draft));
     }
 }

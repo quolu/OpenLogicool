@@ -106,8 +106,8 @@ public sealed class HostMacroCatalog(
         route.EnvironmentScope,
         route.Goal,
         route.RevisionNumber,
-        route.EdgeIds.Count,
-        route.Status switch
+        route.StepCount,
+        route.PendingStepCount > 0 ? $"確認待ち {route.PendingStepCount}件" : route.Status switch
         {
             LearningRouteStatus.Draft => "下書き",
             LearningRouteStatus.Compiled => "実行可能",

@@ -122,7 +122,7 @@ public sealed class WindowsPurposeMacroExecutionEngine(
                 routes,
                 new SemanticTextGoalCompletionEvaluator(),
                 playbackMode: request.PlaybackMode,
-                initialRoute: request.InitialRoute);
+                initialRoute: request.InitialRoute, startStepIndex: request.StartStepIndex);
 
             while (true)
             {

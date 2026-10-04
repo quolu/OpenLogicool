@@ -129,7 +129,7 @@ public sealed class CodexPurposeMacroExecutionEngine(
                 request.Goal,
                 structures,
                 routes,
-                initialRoute: request.InitialRoute);
+                initialRoute: request.InitialRoute, startStepIndex: request.StartStepIndex);
             var dynamicTools = new CodexGameDynamicTools(
                 new CodexProductGameToolRuntime(product.Runtime),
                 recorder);

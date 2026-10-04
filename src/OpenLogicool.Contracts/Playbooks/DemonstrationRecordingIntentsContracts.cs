@@ -1,4 +1,15 @@
+using OpenLogicool.Contracts.Exploration;
+
 namespace OpenLogicool.Contracts.Playbooks;
+
+public sealed record DemonstrationCandidateStep(int StepNumber, string OperationLabel,
+    string StatusLabel, string Reason, string? BeforeImagePath, string? AfterImagePath)
+{
+    public string DisplayLabel => $"{StepNumber}　{OperationLabel}　[{StatusLabel}]";
+}
+
+public sealed record DemonstrationCandidate(MacroCatalogItem Macro,
+    IReadOnlyList<DemonstrationCandidateStep> Steps);
 
 /// <summary>録画済み、または録画中の操作デモ原本1件の要約。</summary>
 public sealed record DemonstrationSessionSummary(
@@ -100,4 +111,14 @@ public interface IDemonstrationRecordingIntents
     IReadOnlyList<DemonstrationStepSummary> ListSteps(string sessionId);
 
     MacroCatalogItem CreateMacroFromSession(string sessionId);
+
+    DemonstrationCandidate? LoadCandidate(string sessionId) =>
+        throw new NotSupportedException("この記録境界は候補の個別確認に対応していません。");
+
+    DemonstrationCandidate ReviewStep(string sessionId, string versionId, int stepNumber,
+        GameTransitionJudgement expected, string reason) =>
+        throw new NotSupportedException("この記録境界は候補の個別確認に対応していません。");
+
+    DemonstrationCandidate ReplaceStep(string sessionId, string versionId, int stepNumber, string replacementSessionId) =>
+        throw new NotSupportedException("この記録境界は手順の個別再記録に対応していません。");
 }

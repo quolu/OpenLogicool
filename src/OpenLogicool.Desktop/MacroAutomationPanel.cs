@@ -24,10 +24,13 @@ internal sealed class MacroAutomationPanel : UserControl
     private readonly Button create = Button("AIに作ってもらう");
     private readonly Button play = Button("再生");
     private readonly Button stop = Button("停止");
+    private readonly TextBox startStep = new() { Text = "1", Width = 65, Padding = new Thickness(5),
+        Background = Theme.Raised, Foreground = Theme.Text };
     private readonly TextBlock targetHeading = new() { FontSize = 18, FontWeight = FontWeights.Bold, Foreground = Theme.Text };
     private CancellationTokenSource? running;
     private List<MacroCatalogItem> compositionItems = [];
     private bool refreshingTargets;
+    private string? selectedRouteId;
 
     public MacroAutomationPanel(IMacroAutomationIntents intents)
     {
@@ -43,6 +46,12 @@ internal sealed class MacroAutomationPanel : UserControl
         mode.SelectedIndex = 0;
         create.Click += async (_, _) => await CreateAsync();
         play.Click += async (_, _) => await PlayAsync();
+        catalog.SelectionChanged += (_, _) =>
+        {
+            if (catalog.SelectedItem is not MacroCatalogItem selected) return;
+            if (selectedRouteId != selected.RouteId) startStep.Text = "1";
+            selectedRouteId = selected.RouteId;
+        };
         stop.Click += (_, _) => Stop();
         targets.SelectionChanged += (_, _) => PersistTargetSelection();
         intents.StateChanged += OnStateChanged;
@@ -88,6 +97,8 @@ internal sealed class MacroAutomationPanel : UserControl
         var playbackActions = new StackPanel { Margin = new Thickness(12, 0, 0, 0) };
         playbackActions.Children.Add(new TextBlock { Text = "再生モード", FontWeight = FontWeights.SemiBold });
         playbackActions.Children.Add(mode);
+        playbackActions.Children.Add(new TextBlock { Text = "開始する手順（停止後はここから再開）", Margin = new Thickness(0, 8, 0, 4) });
+        playbackActions.Children.Add(startStep);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
         buttons.Children.Add(play);
         stop.Margin = new Thickness(8, 0, 0, 0);
@@ -140,7 +151,9 @@ internal sealed class MacroAutomationPanel : UserControl
         if (targets.SelectedItem is not MacroTargetOption target) { status.Text = "操作するアプリを選んでください。"; return; }
         if (catalog.SelectedItem is not MacroCatalogItem macro) { status.Text = "再生するマクロを選んでください。"; return; }
         var selectedMode = ((ModeChoice)mode.SelectedItem).Value;
-        await RunAsync(token => workspace.PlayAsync(target, macro, selectedMode, Progress(), token));
+        if (!int.TryParse(startStep.Text, out var firstStep) || firstStep < 1 || firstStep > macro.StepCount)
+        { status.Text = $"開始する手順は1〜{macro.StepCount}を指定してください。"; return; }
+        await RunAsync(token => workspace.PlayAsync(target, macro, selectedMode, Progress(), token, firstStep - 1));
         Refresh(macro.RouteId);
     }
 
@@ -164,6 +177,7 @@ internal sealed class MacroAutomationPanel : UserControl
 
     private void Render(MacroRunSnapshot snapshot)
     {
+        if (snapshot.Phase == MacroRunPhase.Stopped) startStep.Text = (snapshot.StepNumber + 1).ToString();
         var information = snapshot.Information is { Count: > 0 }
             ? "\n取得情報\n" + string.Join("\n", snapshot.Information.Select(value => $"・{value}"))
             : string.Empty;
@@ -187,6 +201,7 @@ internal sealed class MacroAutomationPanel : UserControl
         create.IsEnabled = !value;
         play.IsEnabled = !value;
         stop.IsEnabled = value;
+        startStep.IsEnabled = !value;
     }
 
     private void AddComposition()

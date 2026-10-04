@@ -23,6 +23,8 @@ public static class MacroRouteComposer
             throw new ArgumentException("合成には2件以上のmacro versionが必要です。", nameof(sources));
         }
         var first = sources[0];
+        if (sources.Any(source => source.RecordedSteps?.Any(step => step.ExpectedJudgement is null || step.EdgeId is null) == true))
+            throw new InvalidOperationException("記録候補に未学習の手順があります。先に個別確認・再生を完了してください。全手順を保持しています。");
         if (sources.Any(source => source.Status is LearningRouteStatus.Draft or LearningRouteStatus.Retired))
         {
             throw new InvalidOperationException("合成できるのはCompiledまたはVerifiedのmacro versionだけです。");
