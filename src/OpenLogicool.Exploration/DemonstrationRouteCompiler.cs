@@ -57,7 +57,9 @@ public sealed class DemonstrationRouteCompiler(
             {
                 var reason = operation.Comparison.Judgement == GameTransitionJudgement.Stayed
                     ? "画面変化なし。意図した結果か確認してください。"
-                    : "操作後の画面を判定できませんでした。画像確認またはこの手順の再記録が必要です。";
+                    : operation.After.FailureReason is { } failure
+                        ? $"{failure} 画像確認またはこの手順の再記録が必要です。"
+                        : "操作前後の画面変化を判定できませんでした。画像確認またはこの手順の再記録が必要です。";
                 recordedSteps.Add(ToStep(session.Session.SessionId, operation, null, null, reason));
                 decisions.Add(new DemonstrationRouteDecision(operation.OperationId,
                     DemonstrationRouteDecisionKind.PendingReview, reason, null));

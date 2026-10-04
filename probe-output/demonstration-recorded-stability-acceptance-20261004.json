@@ -1,0 +1,219 @@
+{
+  "schema": "openlogicool.demonstration-recorded-stability-acceptance.v1",
+  "recorded_at": "2026-10-04",
+  "source_session_id": "demo:734539a78392431fb1f7648d110230e6",
+  "analysis_session_id": "demo-analysis:4abde5292f2147bcab1b6fb4e58de8f2",
+  "route_id": "purpose:ae30d666b130363f7fac0bba80ba8e74da9c004a7c781c1d42cd408898e6dca0",
+  "revision": 3,
+  "version_id": "route:12e69667a07a8493cd0eac3a5f58b43c87b8ad4c48ab9c68c6105b46a01a4e7e",
+  "operation_count": 51,
+  "source_judgements": {
+    "Undetermined": 47,
+    "Moved": 4
+  },
+  "reanalysis_judgements": {
+    "Moved": 36,
+    "Stayed": 4,
+    "Undetermined": 11
+  },
+  "pending_step_count": 15,
+  "pending_steps": [
+    {
+      "step": 13,
+      "judgement": "Stayed",
+      "stability_status": 0,
+      "observations": 3,
+      "stable_frames": 3,
+      "reason": null,
+      "comparison_reasons": [
+        "state候補とactionable structureが同一"
+      ]
+    },
+    {
+      "step": 14,
+      "judgement": "Stayed",
+      "stability_status": 0,
+      "observations": 2,
+      "stable_frames": 2,
+      "reason": null,
+      "comparison_reasons": [
+        "state候補とactionable structureが同一"
+      ]
+    },
+    {
+      "step": 18,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 3,
+      "stable_frames": 1,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 21,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 2,
+      "stable_frames": 1,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 23,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 1,
+      "stable_frames": 1,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 26,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 3,
+      "stable_frames": 1,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 27,
+      "judgement": "Stayed",
+      "stability_status": 0,
+      "observations": 5,
+      "stable_frames": 3,
+      "reason": null,
+      "comparison_reasons": [
+        "state候補とactionable structureが同一"
+      ]
+    },
+    {
+      "step": 28,
+      "judgement": "Stayed",
+      "stability_status": 0,
+      "observations": 5,
+      "stable_frames": 3,
+      "reason": null,
+      "comparison_reasons": [
+        "state候補とactionable structureが同一"
+      ]
+    },
+    {
+      "step": 32,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 2,
+      "stable_frames": 1,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 38,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 2,
+      "stable_frames": 1,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 40,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 7,
+      "stable_frames": 1,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 41,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 6,
+      "stable_frames": 0,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 44,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 3,
+      "stable_frames": 1,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 46,
+      "judgement": "Undetermined",
+      "stability_status": 1,
+      "observations": 4,
+      "stable_frames": 0,
+      "reason": "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。",
+      "comparison_reasons": [
+        "stability:TimedOut"
+      ]
+    },
+    {
+      "step": 47,
+      "judgement": "Undetermined",
+      "stability_status": 0,
+      "observations": 6,
+      "stable_frames": 5,
+      "reason": null,
+      "comparison_reasons": [
+        "semantic evidence is empty"
+      ]
+    }
+  ],
+  "learned_edge_count": 36,
+  "order_and_input_parameters_match_source": true,
+  "original_files_unchanged": 298,
+  "preserved_existing_rows": {
+    "demonstration_sessions": 6,
+    "demonstration_events": 83,
+    "learning_route_revisions": 8,
+    "workspace_revisions": 4,
+    "mapping_profiles": 4,
+    "app_profile_associations": 4
+  },
+  "reanalysis_stopped": true,
+  "native_tests": {
+    "projects": 22,
+    "passed": 1427,
+    "failed": 0
+  },
+  "additional_route_compiler_focused_tests": {
+    "passed": 11,
+    "failed": 0
+  },
+  "development_install": "confirmed",
+  "ui_reanalysis": "confirmed",
+  "ui_candidate_creation": "confirmed",
+  "ui_specific_failure_reason_and_images": "confirmed",
+  "ui_macro_revision_and_step_count": "confirmed",
+  "game_input_during_this_acceptance": 0,
+  "live_game_capture_during_reanalysis": 0,
+  "daily_completion": "unverified",
+  "remaining_step_repair": "unverified",
+  "full_owner_ui_journey": "unverified",
+  "lattice_note_digest": "9e8fc8b174d41a82b4b6f3933023a53bab606cf984c226b57ba5152691cd4b0a"
+}

@@ -58,7 +58,7 @@ UnverifiedをSupportedとして表示しない。実験失敗を別方式へ黙�
 6. 操作前拒否を所有できるのは、対象window、current frame／transform、Nano接続と有限入力、durable commit、利用者が明示したGame Policyだけである。OCR文字、AI推測、固定risk語、未確認label、一手承認、復帰edge、反復回数は通常操作を拒否できない。
 7. safe-sliceで使った購入、戦闘、開始等の制限はその実験policyだけに属する。コア製品の既定へ一般化しない。明示Game Policyで禁止tagを与えた場合だけ、そのtagを持つ操作を拒否できる。
 8. 過去のObservation、Attempt、evidence、journalは履歴として保持する。失効した裁定を現行runtimeの権限、合否、操作拒否へ再利用しない。
-9. 操作デモ候補は全操作を記録順で保持し、非遷移・未判定・重複を自動除外しない。未判定は候補編集の確認待ちとして画像確認または一手の再記録で新版へ修復する。利用者が指定した期待結果と実観測の遷移を区別し、再生は10秒Compareで毎回照合する。確認待ちを飛ばして完了扱いにせず、修復後は利用者が選んだ手順から再開する。この確認待ちは候補編集の状態であり、OCR・AI labelによる入力admission gateにはしない。
+9. 操作デモ候補は全操作を記録順で保持し、非遷移・未判定・重複を自動除外しない。未判定は候補編集の確認待ちとして画像確認または一手の再記録で新版へ修復する。保存画像の解析は各入力の因果区間を最初から比較し、末尾の連続2観測の意味安定を使う。live再生の待機時間を保存画像へ適用しない。利用者が指定した期待結果と実観測の遷移を区別し、再生は10秒Compareで毎回照合する。確認待ちを飛ばして完了扱いにせず、修復後は利用者が選んだ手順から再開する。この確認待ちは候補編集の状態であり、OCR・AI labelによる入力admission gateにはしない。
 
 実装状態（2026-08-26）: `PurposeDirectedExplorationRuntime`がgoal単位の決定的Learning Routeを所有し、10基盤の一手runtimeだけを逐次合成する。NIKKE実windowで「アークを開く」を空routeからAI 1で発見・Nano click・10秒Compare・button／座標／destination／edge／route保存まで完了し、別process再起動後は保存routeをAI 0で再現した。判定は[目的指向の逐次探索 Exit](purpose-directed-exploration-exit-assessment.md)。
 

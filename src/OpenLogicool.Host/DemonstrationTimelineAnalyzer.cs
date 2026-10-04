@@ -107,17 +107,44 @@ public static class DemonstrationTimelineAnalyzer
             ? new DemonstrationScreenPoint((int)Math.Round(point[0] * 1_000_000), (int)Math.Round(point[1] * 1_000_000)) : null,
         input.WheelVerticalSteps, input.WheelHorizontalSteps);
 
-    private static async ValueTask<GameInteractionStabilityResult> StabilityAsync(
+    private static ValueTask<GameInteractionStabilityResult> StabilityAsync(
         ObservedScene before, IReadOnlyList<(long At, ObservedScene Scene)> samples, long duration, CancellationToken cancellationToken)
     {
         if (duration == 0 || samples.Count == 0)
-            return new(ContractSchemaVersions.Revision03, GameInteractionStabilityStatus.TimedOut, [], null, 0, 0, duration,
-                "次の入力または停止までの区間に、操作後の画面が保存されていません。");
-        var replay = new RecordedSceneRuntime(samples, duration);
-        // AIの処理時間でなく、原本の取得時刻を使って既存の安定判定を通す。
-        return await new GameInteractionStabilityRuntime(replay, replay, TimeSpan.FromMilliseconds(100))
-            .WaitStableAsync(before, new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, (int)duration),
-                cancellationToken).ConfigureAwait(false);
+            return ValueTask.FromResult(new GameInteractionStabilityResult(ContractSchemaVersions.Revision03,
+                GameInteractionStabilityStatus.TimedOut, [], null, 0, 0, duration,
+                "次の入力または停止までの区間に、操作後の画面が保存されていません。"));
+
+        // 録画の区間は次の入力で閉じている。live再生の待機時間を足さず、保存した全観測を比較する。
+        // 末尾の連続2観測が同じ意味構造なら採用する。取得していない時間を安定時間へ加えない。
+        var condition = new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 0, (int)duration);
+        var window = new GameSceneStabilityWindow(condition);
+        ObservedScene? stable = null;
+        long lastObservedAt = 0;
+        foreach (var (at, scene) in samples)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (scene.Frame.SourceId != before.Frame.SourceId || scene.Frame.Backend != before.Frame.Backend
+                || scene.Frame.TransformRevision != before.Frame.TransformRevision)
+                return ValueTask.FromResult(new GameInteractionStabilityResult(ContractSchemaVersions.Revision03,
+                    GameInteractionStabilityStatus.Fault, samples.Select(item => item.Scene).ToArray(), null,
+                    0, 0, duration, "capture binding changed"));
+            lastObservedAt = at;
+            if (scene.CaptureAvailability != CaptureAvailability.Available
+                || !GameSceneSemanticComparer.Signature(scene).HasEvidence)
+            {
+                window = new GameSceneStabilityWindow(condition);
+                stable = null;
+                continue;
+            }
+            if (stable is not null && !GameSceneSemanticComparer.StableEquivalent(stable, scene)) stable = null;
+            if (window.Observe(scene, at)) stable = scene;
+        }
+        return ValueTask.FromResult(new GameInteractionStabilityResult(ContractSchemaVersions.Revision03,
+            stable is null ? GameInteractionStabilityStatus.TimedOut : GameInteractionStabilityStatus.Stable,
+            samples.Select(item => item.Scene).ToArray(), stable, window.StableFramesObserved,
+            window.StableMillisecondsObserved(lastObservedAt), duration,
+            stable is null ? "次の入力または停止までに、同じ意味構造の操作後画面を連続2回確認できませんでした。" : null));
     }
 
     private sealed class PreparedRuntime(ObservedScene scene) : IDemonstrationObservationRuntime
@@ -133,25 +160,6 @@ public static class DemonstrationTimelineAnalyzer
             ValueTask.FromResult(After);
         public GameTransitionComparison Compare(ObservedScene before, GameInteractionStabilityResult after) =>
             new GameTransitionJudge().Compare(before, after);
-    }
-
-    private sealed class RecordedSceneRuntime(IReadOnlyList<(long At, ObservedScene Scene)> samples, long duration)
-        : IGameObservationRuntime, IGameInteractionClock
-    {
-        private ObservedScene current = samples[0].Scene;
-        public long ElapsedMilliseconds { get; private set; }
-        public ValueTask DelayAsync(TimeSpan delay, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var next = samples.FirstOrDefault(item => item.At >= ElapsedMilliseconds + (long)delay.TotalMilliseconds);
-            if (next.Scene is null) ElapsedMilliseconds = duration;
-            else { ElapsedMilliseconds = next.At; current = next.Scene; }
-            return ValueTask.CompletedTask;
-        }
-        public ValueTask<ObservationResult> ObserveAsync(CancellationToken cancellationToken = default) =>
-            ValueTask.FromResult(Observation(current));
-        public ValueTask<ObservedScene> DiscoverTargetsAsync(ObservationResult observation, CancellationToken cancellationToken = default) =>
-            ValueTask.FromResult(current);
     }
 
     private static ObservationResult Observation(ObservedScene scene) => new(

@@ -135,6 +135,61 @@ public sealed class DemonstrationTimelineTests : IDisposable
     }
 
     [Fact]
+    public async Task Normal_speed_clicks_use_the_whole_saved_interval_without_a_live_settling_delay()
+    {
+        var frames = new[] { Frame(1, 0), Frame(2, 0) with { ObservedUtc = Origin.AddMilliseconds(250) },
+            Frame(3, 0) with { ObservedUtc = Origin.AddMilliseconds(500) },
+            Frame(4, 0) with { ObservedUtc = Origin.AddMilliseconds(800) },
+            Frame(5, 0) with { ObservedUtc = Origin.AddMilliseconds(1_050) } };
+        var inputs = Inputs(0, 1).Select((item, index) => item with
+        {
+            OccurredUtc = Origin.AddMilliseconds(index < 2 ? 50 + index * 10 : 650 + (index - 2) * 10),
+            FrameSequence = index < 2 ? 1 : 3,
+        }).ToArray();
+        using var connection = Open();
+        var result = await DemonstrationTimelineAnalyzer.AnalyzeAsync(Draft(), frames, inputs,
+            Origin.AddMilliseconds(1_200), new SqliteDemonstrationSessionStore(connection),
+            (frame, _) => ValueTask.FromResult(Scene(frame, frame.Frame.Sequence == 1 ? "ロビー"
+                : frame.Frame.Sequence <= 3 ? "アーク" : "ロビー")), _ => { });
+        var operations = result.Events.Where(item => item.Operation is not null).Select(item => item.Operation!).ToArray();
+        Assert.Equal(2, operations.Length);
+        Assert.All(operations, operation => Assert.Equal(GameTransitionJudgement.Moved, operation.Comparison.Judgement));
+        Assert.Equal(new long[] { 2, 3 }, operations[0].After.Observations.Select(scene => scene.Frame.Sequence));
+        Assert.Equal(new long[] { 4, 5 }, operations[1].After.Observations.Select(scene => scene.Frame.Sequence));
+        Assert.All(operations, operation => Assert.Equal(250, operation.After.StableMillisecondsObserved));
+    }
+
+    [Fact]
+    public async Task One_after_image_does_not_invent_a_second_observation_or_a_stability_duration()
+    {
+        var frames = new[] { Frame(1, 0), Frame(2, 0) with { ObservedUtc = Origin.AddMilliseconds(250) } };
+        using var connection = Open();
+        var result = await DemonstrationTimelineAnalyzer.AnalyzeAsync(Draft(), frames, Inputs(0),
+            Origin.AddMilliseconds(600), new SqliteDemonstrationSessionStore(connection),
+            (frame, _) => ValueTask.FromResult(Scene(frame, frame.Frame.Sequence == 1 ? "ロビー" : "アーク")), _ => { });
+        var operation = Assert.Single(result.Events, item => item.Operation is not null).Operation!;
+        Assert.Equal(GameTransitionJudgement.Undetermined, operation.Comparison.Judgement);
+        Assert.Single(operation.After.Observations);
+        Assert.Equal(1, operation.After.StableFramesObserved);
+        Assert.Equal(0, operation.After.StableMillisecondsObserved);
+    }
+
+    [Fact]
+    public async Task Missing_semantic_evidence_at_the_end_invalidates_an_earlier_stable_screen()
+    {
+        var frames = Enumerable.Range(0, 4).Select(index => Frame(index + 1, index)).ToArray();
+        using var connection = Open();
+        var result = await DemonstrationTimelineAnalyzer.AnalyzeAsync(Draft(), frames, Inputs(0), Origin.AddSeconds(4),
+            new SqliteDemonstrationSessionStore(connection), (frame, _) => ValueTask.FromResult(
+                frame.Frame.Sequence == 4 ? Scene(frame, "アーク") with { Affordances = [] }
+                : Scene(frame, frame.Frame.Sequence == 1 ? "ロビー" : "アーク")), _ => { });
+        var operation = Assert.Single(result.Events, item => item.Operation is not null).Operation!;
+        Assert.Equal(GameTransitionJudgement.Undetermined, operation.Comparison.Judgement);
+        Assert.Null(operation.After.StableScene);
+        Assert.Equal(0, operation.After.StableFramesObserved);
+    }
+
+    [Fact]
     public async Task Losing_foreground_discards_a_held_press_and_other_app_input_is_not_saved()
     {
         var clock = new FixedTime(Origin);
