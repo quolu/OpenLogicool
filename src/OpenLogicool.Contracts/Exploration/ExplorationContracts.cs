@@ -58,7 +58,7 @@ public sealed record TransitionEvidence(
     string SchemaVersion,
     string EvidenceId,
     string BeforeObservationId,
-    string AfterObservationId,
+    string? AfterObservationId,
     string AttemptId,
     string AffordanceCandidateId,
     string Primitive,

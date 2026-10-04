@@ -251,7 +251,7 @@ public sealed class ExplorationCoordinator
             "{\"reported\":true}",
             report.RecordedUtc,
             attemptGate.CommitReported);
-        AppendRun(
+        if (report.AfterScene is not null) AppendRun(
             RunEventPayloadTypes.Observation,
             RunEventActorType.System,
             probe.CorrelationId,
@@ -271,7 +271,7 @@ public sealed class ExplorationCoordinator
                     RunEventPayloadTypes.Confirmation,
                     RunEventActorType.System,
                     probe.CorrelationId,
-                    report.AfterScene.ObservationId,
+                    report.AfterScene!.ObservationId,
                     report.AfterScene.ObservationId,
                     null,
                     probe.AttemptId,
@@ -284,7 +284,7 @@ public sealed class ExplorationCoordinator
                     RunEventPayloadTypes.Rejection,
                     RunEventActorType.System,
                     probe.CorrelationId,
-                    report.AfterScene.ObservationId,
+                    report.AfterScene!.ObservationId,
                     report.AfterScene.ObservationId,
                     null,
                     probe.AttemptId,
@@ -297,7 +297,7 @@ public sealed class ExplorationCoordinator
                 break;
         }
 
-        AppendStructure(
+        if (report.AfterScene is not null) AppendStructure(
             StructureEventKind.ObservationRecorded,
             StructureEventActor.Controller,
             probe.CorrelationId,
@@ -315,7 +315,7 @@ public sealed class ExplorationCoordinator
             ContractSchemaVersions.Revision03,
             report.TransitionEvidenceId,
             probe.Admission.Proposal.SourceObservationId,
-            report.AfterScene.ObservationId,
+            report.AfterScene?.ObservationId,
             probe.AttemptId,
             probe.Admission.Proposal.AffordanceCandidateId,
             probe.Admission.Proposal.Primitive,
@@ -333,10 +333,12 @@ public sealed class ExplorationCoordinator
             StructureEventActor.Controller,
             probe.CorrelationId,
             probe.AttemptId,
-            report.AfterScene.ObservationId,
+            report.AfterScene?.ObservationId,
             probe.Admission.Proposal.ProposalId,
             probe.AttemptId,
-            [evidence.EvidenceId, evidence.BeforeObservationId, evidence.AfterObservationId],
+            evidence.AfterObservationId is null
+                ? [evidence.EvidenceId, evidence.BeforeObservationId]
+                : [evidence.EvidenceId, evidence.BeforeObservationId, evidence.AfterObservationId],
             StructureEventPayloadTypes.TransitionEvidence,
             JsonSerializer.Serialize(evidence, Json),
             report.Outcome,
@@ -516,6 +518,16 @@ public sealed class ExplorationCoordinator
 
     private void ValidateOutcome(ActiveProbe probe, ExplorationOutcomeReport report)
     {
+        if (report.AfterScene is null)
+        {
+            if (report.SchemaVersion != ContractSchemaVersions.Revision03
+                || report.Outcome != ExplorationOutcomeKind.OutcomeUnknown
+                || !probe.Admission.Proposal.AllowedOutcomes.Contains(report.Outcome)
+                || report.Comparison is not { Judgement: GameTransitionJudgement.Undetermined, AfterObservationId: null }
+                || report.ObservationSequenceIds is not { Count: 0 })
+                throw new InvalidOperationException("操作後の観測がない結果は、根拠付きの未判定だけを保存できます。");
+            return;
+        }
         var requiresStableAvailableObservation = report.Outcome is
             ExplorationOutcomeKind.Destination
             or ExplorationOutcomeKind.Novel
@@ -524,7 +536,7 @@ public sealed class ExplorationCoordinator
         if (!string.Equals(report.SchemaVersion, ContractSchemaVersions.Revision03, StringComparison.Ordinal)
             || !probe.Admission.Proposal.AllowedOutcomes.Contains(report.Outcome)
             || !string.Equals(report.AfterScene.Frame.SourceId, policy.TargetWindowSourceId, StringComparison.Ordinal)
-            || (report.Outcome == ExplorationOutcomeKind.NoChange
+            || (report.Outcome is ExplorationOutcomeKind.NoChange or ExplorationOutcomeKind.OutcomeUnknown
                 ? report.AfterScene.Frame.Sequence < probe.Admission.Context.CurrentScene.Frame.Sequence
                 : report.AfterScene.Frame.Sequence <= probe.Admission.Context.CurrentScene.Frame.Sequence)
             || requiresStableAvailableObservation

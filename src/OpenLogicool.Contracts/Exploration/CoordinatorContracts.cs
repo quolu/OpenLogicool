@@ -73,7 +73,7 @@ public sealed record ExplorationProposalAdmission(
 public sealed record ExplorationOutcomeReport(
     string SchemaVersion,
     string ProposalId,
-    ObservedScene AfterScene,
+    ObservedScene? AfterScene,
     ExplorationOutcomeKind Outcome,
     int StableFramesObserved,
     long StableMillisecondsObserved,

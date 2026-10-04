@@ -423,6 +423,55 @@ public sealed class ExplorationCoordinatorTests
     }
 
     [Fact]
+    public void Missing_after_observation_preserves_the_failure_without_inventing_a_scene()
+    {
+        var fixture = Fixture();
+        var before = Scene("observation-before", 1, "state-a");
+        fixture.Coordinator.CommitObservation(before, Time(1));
+        _ = fixture.Coordinator.Propose(Admission(fixture, before, "proposal-missing"), Time(2));
+        fixture.Coordinator.Dispatch("proposal-missing", () => { }, Time(3));
+        var attemptId = fixture.Coordinator.GetActiveAttemptId("proposal-missing");
+        var request = new GameTransitionLearningRequest(
+            ContractSchemaVersions.Revision03, "proposal-missing", before,
+            new GameInteractionDispatchReceipt(ContractSchemaVersions.Revision03, "click",
+                GameInteractionDispatchStatus.Dispatched, before.ObservationId, before.Frame.SourceId,
+                "NanoSerialHid", 1, Time(3), Time(3), before.Affordances[0].CandidateId, "nano-1", null),
+            new GameInteractionStabilityResult(ContractSchemaVersions.Revision03,
+                GameInteractionStabilityStatus.Fault, [], null, 0, 0, 1000, "画像解析の実エラー"),
+            new GameTransitionComparison(ContractSchemaVersions.Revision03, before.ObservationId,
+                null, GameTransitionJudgement.Undetermined, [], ["画像解析の実エラー"]),
+            attemptId, "transition-missing", "env-1", 1000, 2000, Time(5));
+
+        var result = new GameTransitionLearningController(
+            new ExplorationCoordinatorOutcomeRecorder(fixture.Coordinator)).Learn(request);
+
+        Assert.Equal(ExplorationOutcomeKind.OutcomeUnknown, result.Evidence!.Outcome);
+        Assert.Null(result.Evidence.AfterObservationId);
+        Assert.Empty(result.Evidence.ObservationSequenceIds!);
+        Assert.Contains("画像解析の実エラー", result.Evidence.Comparison!.Reasons);
+        Assert.Equal(AttemptState.OutcomeUnknown, Recover(fixture).Attempts.Single().State);
+        Assert.Single(fixture.RunStore.Events, item => item.PayloadType == RunEventPayloadTypes.Observation);
+    }
+
+    [Fact]
+    public void Undetermined_accepts_reobservation_of_the_same_static_wgc_frame()
+    {
+        var fixture = Fixture();
+        var before = Scene("observation-before", 1, "state-a");
+        fixture.Coordinator.CommitObservation(before, Time(1));
+        _ = fixture.Coordinator.Propose(Admission(fixture, before, "proposal-static"), Time(2));
+        fixture.Coordinator.Dispatch("proposal-static", () => { }, Time(3));
+        var after = Scene("observation-after", 1, "state-a");
+
+        var evidence = fixture.Coordinator.RecordOutcome(
+            Outcome("proposal-static", after, ExplorationOutcomeKind.OutcomeUnknown) with
+            { StableFramesObserved = 0, StableMillisecondsObserved = 0 });
+
+        Assert.Equal(ExplorationOutcomeKind.OutcomeUnknown, evidence.Outcome);
+        Assert.Equal(after.ObservationId, evidence.AfterObservationId);
+    }
+
+    [Fact]
     public void Insufficient_stability_stops_without_false_confirmation()
     {
         var fixture = Fixture();

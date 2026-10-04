@@ -205,7 +205,7 @@ public sealed class GameTransitionLearningControllerTests
                 ContractSchemaVersions.Revision03,
                 report.TransitionEvidenceId,
                 "before-1",
-                report.AfterScene.ObservationId,
+                report.AfterScene?.ObservationId,
                 "attempt-1",
                 "candidate-1",
                 GameInteractionOperations.Click,

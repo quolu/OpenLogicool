@@ -159,6 +159,9 @@ public sealed class ProductGameExplorerRuntimeTests
         Assert.Equal(GameTransitionJudgement.Undetermined, result.Comparison!.Judgement);
         Assert.NotNull(result.Learning?.Evidence);
         Assert.Equal(ExplorationOutcomeKind.OutcomeUnknown, result.Learning!.Evidence!.Outcome);
+        Assert.Null(result.Learning.Evidence.AfterObservationId);
+        Assert.Empty(result.Stability!.Observations);
+        Assert.Contains("no after observation", result.Detail);
     }
 
     [Fact]
@@ -536,12 +539,12 @@ public sealed class ProductGameExplorerRuntimeTests
         public GameTransitionLearningResult Learn(GameTransitionLearningRequest request)
         {
             Request = request;
-            var after = request.Stability.StableScene ?? request.Stability.Observations[^1];
+            var after = request.Stability.StableScene ?? request.Stability.Observations.LastOrDefault();
             var evidence = new TransitionEvidence(
                 ContractSchemaVersions.Revision03,
                 request.TransitionEvidenceId,
                 request.Before.ObservationId,
-                after.ObservationId,
+                after?.ObservationId,
                 request.AttemptId,
                 request.Dispatch.CandidateId!,
                 request.Dispatch.Operation,

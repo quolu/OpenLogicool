@@ -36,10 +36,8 @@ public sealed class GameTransitionLearningController(IExplorationOutcomeRecorder
                 null,
                 request.Dispatch.FailureReason ?? "Nano dispatch failed");
         }
-        var after = request.Stability.StableScene
-            ?? request.Stability.Observations.LastOrDefault()
-            ?? throw new InvalidOperationException("Transition Evidenceにはafter Observationが必要です。");
-        var outcome = Outcome(request.Comparison.Judgement, after.StateIdentity);
+        var after = request.Stability.StableScene ?? request.Stability.Observations.LastOrDefault();
+        var outcome = Outcome(request.Comparison.Judgement, after?.StateIdentity ?? StateIdentityStatus.InsufficientEvidence);
         var report = new ExplorationOutcomeReport(
             ContractSchemaVersions.Revision03,
             request.ProposalId,

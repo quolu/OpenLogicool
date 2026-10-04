@@ -175,6 +175,7 @@ public sealed class StructureVerificationController(
         IReadOnlyDictionary<string, ObservedScene> observations)
     {
         if (!string.Equals(evidence.EnvironmentScope, revision.EnvironmentScope, StringComparison.Ordinal)
+            || evidence.AfterObservationId is null
             || !observations.TryGetValue(evidence.BeforeObservationId, out var before)
             || !observations.TryGetValue(evidence.AfterObservationId, out var after))
         {

@@ -553,23 +553,18 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
             }
             if (waited.Observations.Count == 0)
             {
-                stopReasonLabel = "after Observationを取得できずOutcomeUnknown";
+                stopReasonLabel = $"操作後の画面を取得・解析できませんでした。{waited.FailureReason}";
                 var unknownComparison = comparison with
                 {
-                    AfterObservationId = comparisonBefore.ObservationId,
+                    AfterObservationId = null,
                     Judgement = GameTransitionJudgement.Undetermined,
-                };
-                var unknownStability = waited with
-                {
-                    Observations = [comparisonBefore],
-                    StableScene = null,
                 };
                 var unknownLearning = LearnTransition(new GameTransitionLearningRequest(
                     ContractSchemaVersions.Revision03,
                     proposal.ProposalId,
                     structureBefore,
                     dispatch!,
-                    unknownStability,
+                    waited,
                     unknownComparison,
                     attemptId,
                     $"transition:{proposal.ProposalId}",
@@ -583,7 +578,7 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                     before,
                     target,
                     dispatch,
-                    unknownStability,
+                    waited,
                     unknownComparison,
                     unknownLearning,
                     coordinator.CurrentStructureRevisionId,
@@ -604,6 +599,13 @@ public sealed class ProductGameExplorerRuntime : IHostExplorerRuntimeControl, IG
                 checked((long)after.Frame.MonotonicMs),
                 time.GetUtcNow(),
                 policy.PolicyRevisionId));
+            if (waited.Status is GameInteractionStabilityStatus.Fault or GameInteractionStabilityStatus.Unavailable)
+            {
+                stopReasonLabel = $"操作後の画面を取得・解析できませんでした。{waited.FailureReason}";
+                return new ProductGameExplorerStepResult(ProductGameExplorerStepStatus.ObservationUndetermined,
+                    before, target, dispatch, waited, comparison, learned,
+                    coordinator.CurrentStructureRevisionId, stopReasonLabel);
+            }
             string? committedEdgeId = null;
             if (learned.Evidence is not null)
             {

@@ -1,0 +1,41 @@
+{
+  "schema": "openlogicool.macro-observation-failure.v1",
+  "run_id": "exploration:2fc247c8aca84d7990dc58ec65ba8f73",
+  "saved_macro_revision": 4,
+  "recorded_steps": 51,
+  "confirmed_replay_steps": 2,
+  "failed_step": 3,
+  "last_run_event": {
+    "sequence": 18,
+    "type": "dispatch"
+  },
+  "original_observation_failure": "未保存・未確認",
+  "tests": {
+    "projects": 22,
+    "passed": 1435,
+    "failed": 0
+  },
+  "reproductions": {
+    "missing_after_scene": "修理前失敗・修理後OutcomeUnknown保存、AfterObservationId=null",
+    "static_frame_unknown": "修理前契約エラー・修理後未判定保存",
+    "saved_image_freshness_1001": "修理前束縛エラー・修理後取得状態と鮮度保持"
+  },
+  "preserved": {
+    "raw_files_sha256": 298,
+    "sessions": 8,
+    "demonstration_events": 193,
+    "route_revisions": 10,
+    "workspaces": 4,
+    "mapping_profiles": 4,
+    "app_associations": 4
+  },
+  "development_install": {
+    "entrypoint": "scripts/install-development-app.ps1",
+    "restarted_host_pid": 36592,
+    "assembly_hashes_match": true,
+    "macro_catalog_revision_4_visible": true
+  },
+  "new_game_input_count": 0,
+  "daily_replay_completed": false,
+  "phase_exit_declared": false
+}

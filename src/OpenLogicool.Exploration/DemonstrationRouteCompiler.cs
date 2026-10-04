@@ -253,7 +253,7 @@ public sealed class DemonstrationRouteCompiler(
             causationId: evidence.AttemptId,
             observationId: evidence.AfterObservationId,
             attemptId: evidence.AttemptId,
-            evidenceIds: [evidence.EvidenceId, evidence.BeforeObservationId, evidence.AfterObservationId],
+            evidenceIds: [evidence.EvidenceId, evidence.BeforeObservationId, evidence.AfterObservationId!],
             payloadType: StructureEventPayloadTypes.TransitionEvidence,
             payloadJson: JsonSerializer.Serialize(evidence, JsonOptions),
             outcome: evidence.Outcome,

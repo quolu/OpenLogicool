@@ -11,6 +11,22 @@ namespace OpenLogicool.Host.Tests;
 public sealed class WindowsKnownFirstTargetDiscoveryTests
 {
     [Fact]
+    public async Task Comparison_preserves_capture_binding_and_the_original_frame_freshness()
+    {
+        var ai = new AiDiscovery();
+        var discovery = Discovery(new ProfileStore(Profile()), ai, allowAiDiscovery: false);
+        var frame = Frame() with { FreshnessMs = 1001 };
+        var observation = Observation(frame);
+        discovery.BeginComparison();
+
+        var scene = await discovery.DiscoverAsync(observation, frame);
+
+        Assert.Equal(observation.CaptureAvailability, scene.CaptureAvailability);
+        Assert.Equal(1001, scene.Frame.FreshnessMs);
+        Assert.Equal(0, ai.CallCount);
+    }
+
+    [Fact]
     public async Task Saved_action_is_returned_without_ai_discovery()
     {
         var ai = new AiDiscovery();

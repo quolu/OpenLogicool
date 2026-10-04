@@ -243,7 +243,8 @@ public sealed class GameTransitionJudge
         ArgumentNullException.ThrowIfNull(after);
         if (after.Status != GameInteractionStabilityStatus.Stable || after.StableScene is null)
         {
-            return Undetermined(before, after.StableScene, $"stability:{after.Status}");
+            return Undetermined(before, after.StableScene ?? after.Observations.LastOrDefault(),
+                $"stability:{after.Status}: {after.FailureReason}");
         }
         return CompareScenes(before, after.StableScene);
     }

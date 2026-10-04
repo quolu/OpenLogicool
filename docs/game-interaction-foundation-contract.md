@@ -42,6 +42,8 @@ Game Operatorの探索、構造学習、教師付きmacro、将来の自律実�
 
 録画のCompareは、閉じた因果区間の操作前と末尾の実観測を`GameTransitionJudge.CompareRecorded`へ渡す。操作後の意味安定と操作前後の変化は独立した結果として保持し、意味安定不足のstatusだけでは前後比較を未判定にしない。文字認識の根拠が欠けても、取得済みの前後画像特徴を比較できる。比較に使ったObservation IDを保存し、画像欠落や取得境界の不一致は比較不能として明示する。live再生のCompareは意味安定と10秒観測を必要とする。
 
+操作後の観測が得られない結果は、`AfterObservationId=null`、空の観測列、実際の取得・解析エラーを持つ`OutcomeUnknown`として保存する。操作前の画像を操作後へ複製しない。静止WGCの同一frame再観測による未判定も保存し、frame sequenceの増加を成功の代わりに使わない。取得状態は入力Observationの束縛を維持し、画像の鮮度は元の値と入力前の鮮度条件で扱う。
+
 保存routeのedgeにsemantic key、primitive、normalized boundsがあれば、current window／frame／transformへ直接再束縛してOCR state identityより先に実行する。正常`Moved`再生は同じStructure edgeを使い、新edgeを再commitしない。非遷移後だけ当該stepをAI repairへ移し、修復成功時だけ新版edgeへ差し替える。
 
 Foundry Localのgoal指定responseはgoalとの類似／包含を満たす1件だけを受け、同一frame OCRへの束縛は完全一致でなく一意な類似候補を使う。page索引は1件以上の類似OCR anchorを保存でき、2件固定をdurable commit gateにしない。0件は既存visual evidence経路だけを使う。

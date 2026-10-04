@@ -67,6 +67,7 @@ public sealed class WindowsKnownFirstTargetDiscovery(
         {
             ObservationId = scene.ObservationId,
             Frame = observation.Frame,
+            CaptureAvailability = observation.CaptureAvailability,
             Affordances = scene.Affordances.Select(candidate => candidate with
             {
                 ObservationId = observation.ObservationId,
