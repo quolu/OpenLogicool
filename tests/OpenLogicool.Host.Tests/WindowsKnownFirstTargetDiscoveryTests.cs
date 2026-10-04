@@ -69,6 +69,26 @@ public sealed class WindowsKnownFirstTargetDiscoveryTests
     }
 
     [Fact]
+    public async Task User_confirmed_non_transition_does_not_put_the_next_recorded_step_into_ai_repair()
+    {
+        var ai = new AiDiscovery();
+        var discovery = Discovery(new ProfileStore(null), ai, allowAiDiscovery: false);
+        var frame = Frame();
+        discovery.SetRouteTarget(RouteEdge("ショップ", [0.37, 0.69, 0, 0]));
+        var before = await discovery.DiscoverAsync(Observation(frame), frame);
+        discovery.MarkTransitionUnconfirmed(before, Assert.Single(before.Affordances));
+
+        // 前の観測が未判定でも、ユーザーがOKした後は次の保存操作を使う。
+        discovery.SetRouteTarget(RouteEdge("アイテム", [0.10, 0.59, 0, 0]));
+        var next = await discovery.DiscoverAsync(Observation(frame), frame);
+
+        var target = Assert.Single(next.Affordances, candidate =>
+            candidate.AllowedPrimitives.Contains(GameInteractionOperations.Click, StringComparer.Ordinal));
+        Assert.Equal([0.10, 0.59, 0, 0], target.Locator.NormalizedBounds);
+        Assert.Equal(0, ai.CallCount);
+    }
+
+    [Fact]
     public async Task Saved_action_with_unconfirmed_transition_uses_ai_on_next_observation()
     {
         var ai = new AiDiscovery();

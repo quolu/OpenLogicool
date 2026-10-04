@@ -91,7 +91,8 @@ public static class WindowsProductGameExplorerComposition
         var frameSource = new WindowsWgcGameFrameSource(
             window,
             explorationPolicy.TargetWindowSourceId,
-            TimeSpan.FromSeconds(10));
+            TimeSpan.FromSeconds(10),
+            explorationPolicy.StopPolicy.MaximumFrameFreshnessMilliseconds);
         var (targetDiscovery, visionResource) = CreateTargetDiscovery(
             gameId,
             explorationPolicy.EnvironmentScope,

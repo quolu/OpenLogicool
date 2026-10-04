@@ -9,31 +9,43 @@ public sealed class WindowsWgcGameFrameSource : IProductGameFrameSource, IDispos
     private const int MaximumDrainFrames = 2;
     private readonly IDetailedFrameSource source;
     private readonly TimeSpan timeout;
+    private readonly long maximumFrameFreshnessMilliseconds;
+    private readonly TimeProvider time;
     private CapturedFrame? lastFrame;
+    private long lastFrameReceivedAt;
 
     public WindowsWgcGameFrameSource(
         nint window,
         string sourceId,
-        TimeSpan timeout)
+        TimeSpan timeout,
+        long maximumFrameFreshnessMilliseconds = 1_000)
     {
         if (timeout <= TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(timeout));
         }
+        ArgumentOutOfRangeException.ThrowIfNegative(maximumFrameFreshnessMilliseconds);
         source = WgcFrameSource.CreateForWindow(window, sourceId, includeCursor: false);
         this.timeout = timeout;
+        this.maximumFrameFreshnessMilliseconds = maximumFrameFreshnessMilliseconds;
+        time = TimeProvider.System;
     }
 
     internal WindowsWgcGameFrameSource(
         IDetailedFrameSource source,
-        TimeSpan timeout)
+        TimeSpan timeout,
+        long maximumFrameFreshnessMilliseconds = 1_000,
+        TimeProvider? timeProvider = null)
     {
         this.source = source ?? throw new ArgumentNullException(nameof(source));
         if (timeout <= TimeSpan.Zero)
         {
             throw new ArgumentOutOfRangeException(nameof(timeout));
         }
+        ArgumentOutOfRangeException.ThrowIfNegative(maximumFrameFreshnessMilliseconds);
         this.timeout = timeout;
+        this.maximumFrameFreshnessMilliseconds = maximumFrameFreshnessMilliseconds;
+        time = timeProvider ?? TimeProvider.System;
     }
 
     public async ValueTask<CapturedFrame> CaptureAsync(
@@ -52,10 +64,19 @@ public sealed class WindowsWgcGameFrameSource : IProductGameFrameSource, IDispos
             }
             if (latest is not null)
             {
-                lastFrame = latest;
-                return latest;
+                if (!ReferenceEquals(latest, lastFrame))
+                {
+                    lastFrame = latest;
+                    lastFrameReceivedAt = time.GetTimestamp();
+                }
+                // 確認待ちのqueueと静止画cacheも、受信後の経過時間を含めた同じ期限で扱う。
+                var freshness = latest.FreshnessMs
+                    + (long)time.GetElapsedTime(lastFrameReceivedAt).TotalMilliseconds;
+                if (freshness <= maximumFrameFreshnessMilliseconds)
+                    return latest with { FreshnessMs = freshness };
+                lastUnavailable = $"画像が{freshness}ms前のため、{maximumFrameFreshnessMilliseconds}ms以内の新しい画像を待っています。";
             }
-            lastUnavailable = unavailable;
+            else lastUnavailable = unavailable;
             await Task.Delay(16, cancellationToken).ConfigureAwait(false);
         }
         throw new TimeoutException(

@@ -7,6 +7,74 @@ namespace OpenLogicool.Host.Tests;
 public sealed class WindowsWgcGameFrameSourceTests
 {
     [Fact]
+    public async Task Capture_waits_for_a_current_frame_after_a_confirmation_pause()
+    {
+        var source = new QueueDetailedFrameSource([
+            CaptureRead.Available(Frame(sequence: 1, freshnessMs: 4_913)),
+            CaptureRead.Unavailable("confirmation backlog drained"),
+            CaptureRead.Available(Frame(sequence: 2, freshnessMs: 7)),
+            CaptureRead.Unavailable("current queue drained"),
+        ]);
+        using var runtime = new WindowsWgcGameFrameSource(source, TimeSpan.FromSeconds(1), timeProvider: new ManualTimestampProvider());
+
+        var current = await runtime.CaptureAsync();
+
+        Assert.Equal(2, current.Sequence);
+        Assert.Equal(7, current.FreshnessMs);
+    }
+
+    [Fact]
+    public async Task Confirmation_wait_also_expires_a_cached_frame_with_no_new_wgc_arrival()
+    {
+        var clock = new ManualTimestampProvider();
+        var source = new QueueDetailedFrameSource([
+            CaptureRead.Available(Frame(sequence: 1, freshnessMs: 4)),
+            CaptureRead.Unavailable("initial queue drained"),
+            CaptureRead.Unavailable("no new frame yet"),
+            CaptureRead.Available(Frame(sequence: 2, freshnessMs: 6)),
+            CaptureRead.Unavailable("current queue drained"),
+        ]);
+        using var runtime = new WindowsWgcGameFrameSource(source, TimeSpan.FromSeconds(1), timeProvider: clock);
+
+        Assert.Equal(1, (await runtime.CaptureAsync()).Sequence);
+        clock.Advance(5_000);
+        var current = await runtime.CaptureAsync();
+
+        Assert.Equal(2, current.Sequence);
+        Assert.Equal(6, current.FreshnessMs);
+    }
+
+    [Fact]
+    public async Task Expired_cache_without_a_current_frame_times_out_instead_of_becoming_fresh()
+    {
+        var clock = new ManualTimestampProvider();
+        var source = new StaticDetailedFrameSource(Frame(sequence: 1, freshnessMs: 4));
+        using var runtime = new WindowsWgcGameFrameSource(source, TimeSpan.FromMilliseconds(40), timeProvider: clock);
+        Assert.Equal(1, (await runtime.CaptureAsync()).Sequence);
+        clock.Advance(5_000);
+
+        var error = await Assert.ThrowsAsync<TimeoutException>(async () => await runtime.CaptureAsync());
+
+        Assert.Contains("5004ms", error.Message);
+        Assert.Contains("1000ms", error.Message);
+    }
+
+    [Fact]
+    public async Task Capture_uses_the_same_freshness_limit_as_the_exploration_policy()
+    {
+        var source = new QueueDetailedFrameSource([
+            CaptureRead.Available(Frame(sequence: 1, freshnessMs: 700)),
+            CaptureRead.Unavailable("old queue drained"),
+            CaptureRead.Available(Frame(sequence: 2, freshnessMs: 200)),
+            CaptureRead.Unavailable("current queue drained"),
+        ]);
+        using var runtime = new WindowsWgcGameFrameSource(source, TimeSpan.FromSeconds(1),
+            maximumFrameFreshnessMilliseconds: 500, timeProvider: new ManualTimestampProvider());
+
+        Assert.Equal(2, (await runtime.CaptureAsync()).Sequence);
+    }
+
+    [Fact]
     public void Drain_returns_the_newest_frame_instead_of_the_oldest_backlog_entry()
     {
         var source = new QueueFrameSource([
@@ -131,6 +199,26 @@ public sealed class WindowsWgcGameFrameSourceTests
         public int Remaining => queue.Count;
 
         public FrameReadResult Pull() => queue.Dequeue();
+    }
+
+    private sealed class ManualTimestampProvider : TimeProvider
+    {
+        private long timestamp;
+        public override long TimestampFrequency => 1_000;
+        public override long GetTimestamp() => timestamp;
+        public void Advance(long milliseconds) => timestamp += milliseconds;
+    }
+
+    private sealed class StaticDetailedFrameSource(CapturedFrame first) : IDetailedFrameSource
+    {
+        private bool supplied;
+        public FrameReadResult Pull() => PullDetailed().Result;
+        public CaptureRead PullDetailed()
+        {
+            if (supplied) return CaptureRead.Unavailable("static");
+            supplied = true;
+            return CaptureRead.Available(first);
+        }
     }
 
     private sealed class QueueDetailedFrameSource(IEnumerable<CaptureRead> results) : IDetailedFrameSource

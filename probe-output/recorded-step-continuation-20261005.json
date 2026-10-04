@@ -1,0 +1,124 @@
+{
+  "schemaVersion": "1.0.0",
+  "scope": "録画の確認後に次の操作と確認窓へ進めなくなる欠陥の修理",
+  "firstRun": {
+    "runId": "exploration:58d60bfebb0f4a6fabf41c5e34efb623",
+    "result": {
+      "Phase": 5,
+      "Goal": "日課をこなすぞ",
+      "TargetProcessName": "nikke",
+      "StepNumber": 8,
+      "ActionSourceLabel": "保存済み",
+      "ActionLabel": "(unlabelled)",
+      "TransitionLabel": "未判定",
+      "AiCallCount": 0,
+      "RouteRevision": 4,
+      "Detail": "frame freshness budgetを超えています。再観測してください。",
+      "CanStart": true,
+      "CanStop": false,
+      "Information": null,
+      "PendingConfirmation": null
+    },
+    "confirmedSteps": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "rejectedStep": 9,
+    "rejectedFrameFreshnessMs": 4913
+  },
+  "captureRepairLiveRun": {
+    "runId": "exploration:135841f0150c46219aa4a39d07832dc0",
+    "result": {
+      "Phase": 5,
+      "Goal": "日課をこなすぞ",
+      "TargetProcessName": "nikke",
+      "StepNumber": 9,
+      "ActionSourceLabel": "保存済み",
+      "ActionLabel": "未調査の許可候補がありません",
+      "TransitionLabel": "未判定",
+      "AiCallCount": 0,
+      "RouteRevision": 4,
+      "Detail": "未調査の許可候補がありません",
+      "CanStart": true,
+      "CanStop": false,
+      "Information": null,
+      "PendingConfirmation": null
+    },
+    "step9Confirmation": {
+      "Request": {
+        "ConfirmationId": "step-confirmation:8b010b97501848429e6cfbda304810f2",
+        "StepNumber": 9,
+        "ActionLabel": "クリック",
+        "TransitionLabel": "Undetermined",
+        "RecordedImagePath": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\demonstration-evidence\\20261003-222152-318-afb9e2a43d9d43f3a028bfa470a1a5ce\\analysis\\d8810463e49845e282fd1e84803e6562\\game-frame-window_demonstration_7892-00000146-0ef6bafb6598.png",
+        "ActualImagePath": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\macro-evidence\\20261004-235736-119\\game-frame-window_macro_58460-00000028-f64dc6a0c94d.png",
+        "ComparisonDetail": "録画の文字配置・画像特徴と違いがあります。"
+      },
+      "Decision": 0,
+      "ConfirmedUtc": "2026-10-04T14:58:00.4356941+00:00"
+    },
+    "nextObservationFreshnessMs": 0,
+    "nextStepRefusal": "AI無効なのに未判定から修復状態へ移行して候補が消えた"
+  },
+  "repairs": [
+    "WGC取得は古いqueueとcacheの画像を操作へ渡さず、同じpolicyの期限内の画像を待つ。cacheは受信後の経過時間も加算する。",
+    "AI無効の実行では非遷移の観測からAI修復状態へ移さず、ユーザーがOKした次の保存操作を使う。"
+  ],
+  "tests": {
+    "focusedPassed": 23,
+    "relatedHostPassed": 371,
+    "failed": 0,
+    "skipped": 0,
+    "beforeRepairRegressions": [
+      "Capture_waits_for_a_current_frame_after_a_confirmation_pause: stale sequence 1が返り期待sequence 2と不一致",
+      "User_confirmed_non_transition_does_not_put_the_next_recorded_step_into_ai_repair: 次のクリック候補0"
+    ]
+  },
+  "preservation": {
+    "rawFileCount": 298,
+    "rawChanged": [],
+    "dailyVersions": [
+      [
+        1,
+        "route:038d4d6fded2c2d5e945a13d37859596841829914682042a23f0b1b29c68fb97"
+      ],
+      [
+        2,
+        "route:4cf275948d828d4d09b0a2d70cbe8c7236dff53f55c2229194bb786db68bb292"
+      ],
+      [
+        3,
+        "route:12e69667a07a8493cd0eac3a5f58b43c87b8ad4c48ab9c68c6105b46a01a4e7e"
+      ],
+      [
+        4,
+        "route:96b8b833ee2de629e112c26f01bfdf2e2eba522fb2875aa0a2ed109f28632901"
+      ]
+    ],
+    "demonstrationSessions": 8,
+    "demonstrationEvents": 193
+  },
+  "installation": {
+    "method": "scripts/install-development-app.ps1",
+    "hostSha256": "8edf27210a4b2f855cb8cb6e16574cd2ce7354efd37e6b1dc5022f6dcb17f775",
+    "matchesReleaseBuild": true,
+    "normalLauncherStarted": true
+  },
+  "finalLiveCheck": {
+    "status": "未確認",
+    "reason": "Computer Useのwindow stateがforeground window did not report a process idで再接続後も失敗",
+    "requiredOwnerAction": "NIKKEをロビーへ戻し、日課をこなすぞを開始9・終了10で再生。手順9でOKして手順10の確認窓が出るかを確認する。"
+  },
+  "claims": {
+    "sourceRepaired": true,
+    "developmentInstalled": true,
+    "finalStep9To10LiveAccepted": false,
+    "wholeDailyCompleted": false
+  }
+}

@@ -146,6 +146,8 @@ public sealed class WindowsKnownFirstTargetDiscovery(
 
     public void MarkTransitionUnconfirmed(ObservedScene before, AffordanceCandidate target)
     {
+        // AI無効の録画再生は、ユーザーのOK後に次の保存操作を使う。AI修復状態へ移さない。
+        if (!allowAiDiscovery) return;
         forceAiRepair = true;
         if (selectedSavedKey is not null)
         {
