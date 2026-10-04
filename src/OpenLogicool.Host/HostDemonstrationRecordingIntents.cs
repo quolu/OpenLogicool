@@ -78,7 +78,7 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
                     goal,
                     live.TargetApplicationPath,
                     live.TargetWindowSourceId,
-                    live.Timeline is null ? "recorder-1.0.0" : "recorder-2.0.0",
+                    live.Timeline is null ? "recorder-1.0.0" : "recorder-2.1.0",
                     time.GetUtcNow());
                 if (live.Timeline is { } timeline)
                 {
@@ -456,7 +456,9 @@ public sealed class HostDemonstrationRecordingIntents : IDemonstrationRecordingI
             var operation = sources[step.SessionId].Events.Single(item => item.Operation?.OperationId == step.OperationId).Operation!;
             var after = operation.After.StableScene ?? operation.After.Observations.LastOrDefault();
             return new DemonstrationCandidateStep(index + 1, OperationLabel(step.Operation),
-                step.ExpectedJudgement is null ? "確認待ち" : step.EdgeId is null ? "利用者が期待結果を指定" : "画面変化を確認",
+                step.ExpectedJudgement is null ? "確認待ち" : step.EdgeId is not null ? "画面変化を確認"
+                    : step.ExpectedJudgement == GameTransitionJudgement.Stayed && operation.Comparison.Judgement == GameTransitionJudgement.Stayed
+                        ? "記録で変化なしを確認" : "利用者が期待結果を指定",
                 step.ReviewReason, operation.Before.Frame.Artifact?.LocalPath, after?.Frame.Artifact?.LocalPath);
         }).ToArray();
         return new DemonstrationCandidate(ProjectMacro(route), steps);

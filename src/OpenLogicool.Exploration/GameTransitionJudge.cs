@@ -51,7 +51,10 @@ public static class GameSceneSemanticComparer
     {
         ArgumentNullException.ThrowIfNull(left);
         ArgumentNullException.ThrowIfNull(right);
-        if (StableEquivalent(Signature(left), Signature(right))) return true;
+        var leftSignature = Signature(left);
+        var rightSignature = Signature(right);
+        if (leftSignature.HasEvidence && rightSignature.HasEvidence
+            && StableEquivalent(leftSignature, rightSignature)) return true;
         return left.SceneVisualPatch is not null
             && right.SceneVisualPatch is not null
             && VisualPatchSignatureComparer.MeanAbsoluteDifference(left.SceneVisualPatch, right.SceneVisualPatch) < 6;
@@ -220,6 +223,18 @@ public sealed class GameSceneStabilityWindow(ExplorationWaitCondition condition)
 
 public sealed class GameTransitionJudge
 {
+    /// <summary>録画の閉じた操作区間を比較する。操作後の静止と、操作前後の変化を混同しない。</summary>
+    public GameTransitionComparison CompareRecorded(ObservedScene before, GameInteractionStabilityResult after)
+    {
+        ArgumentNullException.ThrowIfNull(before);
+        ArgumentNullException.ThrowIfNull(after);
+        var last = after.Observations.LastOrDefault();
+        if (after.Status is GameInteractionStabilityStatus.Fault or GameInteractionStabilityStatus.Unavailable
+            || last is null || last.CaptureAvailability != CaptureAvailability.Available)
+            return Undetermined(before, last, "操作後の記録画像を比較できません。");
+        return CompareScenes(before, last);
+    }
+
     public GameTransitionComparison Compare(
         ObservedScene before,
         GameInteractionStabilityResult after)
@@ -230,7 +245,13 @@ public sealed class GameTransitionJudge
         {
             return Undetermined(before, after.StableScene, $"stability:{after.Status}");
         }
-        var stable = after.StableScene;
+        return CompareScenes(before, after.StableScene);
+    }
+
+    private static GameTransitionComparison CompareScenes(ObservedScene before, ObservedScene stable)
+    {
+        if (before.CaptureAvailability != CaptureAvailability.Available || stable.CaptureAvailability != CaptureAvailability.Available)
+            return Undetermined(before, stable, "操作前後の画像を取得できません。");
         if (!string.Equals(before.Frame.SourceId, stable.Frame.SourceId, StringComparison.Ordinal)
             || before.Frame.Backend != stable.Frame.Backend
             || before.Frame.TransformRevision != stable.Frame.TransformRevision)
@@ -241,6 +262,15 @@ public sealed class GameTransitionJudge
         var afterSignature = GameSceneSemanticComparer.Signature(stable);
         if (!beforeSignature.HasEvidence || !afterSignature.HasEvidence)
         {
+            if (before.SceneVisualPatch is not null && stable.SceneVisualPatch is not null)
+            {
+                var difference = VisualPatchSignatureComparer.MeanAbsoluteDifference(before.SceneVisualPatch, stable.SceneVisualPatch);
+                var moved = difference >= MinimumVisualDifference(before);
+                return new(ContractSchemaVersions.Revision03, before.ObservationId, stable.ObservationId,
+                    moved ? GameTransitionJudgement.Moved : GameTransitionJudgement.Stayed,
+                    moved ? [new EvidenceRegion(ContractSchemaVersions.Revision03, "rect", [0d, 0d, 1d, 1d], "scene-visual")] : [],
+                    [$"操作前後の画像特徴を比較しました。平均輝度差: {difference:F3}"]);
+            }
             return Undetermined(before, stable, "semantic evidence is empty");
         }
         var identityUncertain = before.StateIdentity is StateIdentityStatus.Ambiguous or StateIdentityStatus.InsufficientEvidence

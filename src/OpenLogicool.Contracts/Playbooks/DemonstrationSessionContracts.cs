@@ -408,8 +408,11 @@ public static class DemonstrationSessionValidator
             string.Equals(comparison.BeforeObservationId, before.ObservationId, StringComparison.Ordinal),
             "ComparisonのBeforeが操作前観測と一致しません。");
         Require(
-            string.Equals(comparison.AfterObservationId, after.StableScene?.ObservationId, StringComparison.Ordinal),
-            "ComparisonのAfterが安定後観測と一致しません。");
+            comparison.AfterObservationId is { } afterId
+                ? after.Observations.Any(scene => scene.ObservationId == afterId)
+                    || after.StableScene?.ObservationId == afterId
+                : after.StableScene is null && comparison.Judgement == GameTransitionJudgement.Undetermined,
+            "ComparisonのAfterが操作後の記録観測と一致しません。");
     }
 
     private static void RequireNormalizedPoint(IReadOnlyList<double> point, string name)

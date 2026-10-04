@@ -32,11 +32,12 @@ public sealed class DemonstrationRouteCompilerTests
 
         Assert.Equal(3, result.Decisions.Count);
         Assert.Equal(DemonstrationRouteDecisionKind.Accepted, result.Decisions[0].Kind);
-        Assert.Equal(DemonstrationRouteDecisionKind.PendingReview, result.Decisions[1].Kind);
+        Assert.Equal(DemonstrationRouteDecisionKind.Accepted, result.Decisions[1].Kind);
         Assert.Equal(DemonstrationRouteDecisionKind.PendingReview, result.Decisions[2].Kind);
         Assert.Single(result.Route.EdgeIds);
         Assert.Equal(["op-1", "op-2", "op-3"], result.Route.RecordedSteps!.Select(step => step.OperationId));
-        Assert.Equal(2, result.Route.PendingStepCount);
+        Assert.Equal(1, result.Route.PendingStepCount);
+        Assert.Equal(GameTransitionJudgement.Stayed, result.Route.RecordedSteps![1].ExpectedJudgement);
         Assert.Equal(1, committer.CommitCallCount);
         Assert.Equal(GameId, result.Route.GameId);
         Assert.Equal(Goal, result.Route.Goal);
@@ -65,6 +66,23 @@ public sealed class DemonstrationRouteCompilerTests
         Assert.Equal(2, committer.CommitCallCount);
         Assert.Equal(new ExplorationWaitCondition(ContractSchemaVersions.Revision03, 2, 1_000, 10_000), committer.LastWaitCondition);
         Assert.Equal(2, session.Events.Count(item => item.Operation is not null));
+    }
+
+    [Fact]
+    public void Recorded_transition_commits_the_compared_frame_without_claiming_after_stability()
+    {
+        var before = Scene("before", "ロビー");
+        var after = Scene("after", "アーク");
+        var operation = Operation("op-1", GameInteractionOperations.Click, before, after, GameTransitionJudgement.Moved);
+        operation = operation with { After = operation.After with { Status = GameInteractionStabilityStatus.TimedOut,
+            StableScene = null, StableFramesObserved = 1, StableMillisecondsObserved = 0 } };
+        var committer = new FakeStructureCommitter();
+        var result = new DemonstrationRouteCompiler(new FakeStructureStore(), committer, new FakeLearningRouteStore())
+            .Compile(Session(operation));
+        Assert.Single(result.Route.EdgeIds);
+        Assert.Equal(0, result.Route.PendingStepCount);
+        Assert.Equal(GameTransitionJudgement.Moved, result.Route.RecordedSteps![0].ExpectedJudgement);
+        Assert.Null(operation.After.StableScene);
     }
 
     [Fact]
@@ -183,8 +201,9 @@ public sealed class DemonstrationRouteCompilerTests
         var result = compiler.Compile(session);
         Assert.Empty(result.Route.EdgeIds);
         Assert.Equal(1, result.Route.StepCount);
-        Assert.Equal(1, result.Route.PendingStepCount);
-        Assert.Equal(LearningRouteStatus.Draft, result.Route.Status);
+        Assert.Equal(0, result.Route.PendingStepCount);
+        Assert.Equal(GameTransitionJudgement.Stayed, result.Route.RecordedSteps![0].ExpectedJudgement);
+        Assert.Equal(LearningRouteStatus.Compiled, result.Route.Status);
     }
 
     [Fact]

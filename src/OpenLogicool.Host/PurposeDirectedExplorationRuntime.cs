@@ -194,6 +194,7 @@ public sealed class PurposeDirectedExplorationRuntime
             || saved && stepIndex == route!.StepCount && route.PendingStepCount == 0
                 && (route.RecordedSteps is not null || route.Status != LearningRouteStatus.Draft);
         return new(completed ? PurposeDirectedStepStatus.Completed : PurposeDirectedStepStatus.Advanced,
-            stepIndex, step, route, saved, completed ? "目的を完了しました。" : "Movedを保存して次stepへ進みます。");
+            stepIndex, step, route, saved, completed ? "目的を完了しました。"
+                : expected == GameTransitionJudgement.Stayed ? "記録と同じ無変化を照合して次stepへ進みます。" : "Movedを保存して次stepへ進みます。");
     }
 }

@@ -159,7 +159,7 @@ public static class DemonstrationTimelineAnalyzer
             ObservedScene before, ExplorationWaitCondition condition, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(After);
         public GameTransitionComparison Compare(ObservedScene before, GameInteractionStabilityResult after) =>
-            new GameTransitionJudge().Compare(before, after);
+            new GameTransitionJudge().CompareRecorded(before, after);
     }
 
     private static ObservationResult Observation(ObservedScene scene) => new(

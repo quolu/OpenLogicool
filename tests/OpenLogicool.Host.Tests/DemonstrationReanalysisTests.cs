@@ -88,9 +88,9 @@ public sealed class DemonstrationReanalysisTests : IDisposable
         File.WriteAllLines(Path.Combine(directory, "timeline-inputs.jsonl"), inputs.Select(item => JsonSerializer.Serialize(item)));
         File.WriteAllText(Path.Combine(directory, "timeline-stopped.json"), JsonSerializer.Serialize(new { SchemaVersion = "0.4.0", StoppedUtc = Origin.AddSeconds(9) }));
         MacroTargetSettingsStore.ForDatabase(Database).Save("game");
-        // 旧解析は安定区間を欠いた結果として保持する。原本のframe列は完全なまま。
+        // 旧解析は操作後観測を欠いた結果として保持する。原本のframe列は完全なまま。
         var original = await DemonstrationTimelineAnalyzer.AnalyzeAsync(draft,
-            frames.Where(frame => frame.Frame.Sequence is 1 or 2 or 3 or 6 or 7).ToArray(), inputs,
+            frames.Where(frame => frame.Frame.Sequence is 1 or 2 or 6).ToArray(), inputs,
             Origin.AddSeconds(9), new SqliteDemonstrationSessionStore(db), SceneAsync, _ => { });
         Assert.All(original.Events.Where(item => item.Operation is not null),
             item => Assert.Equal(GameTransitionJudgement.Undetermined, item.Operation!.Comparison.Judgement));

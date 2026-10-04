@@ -131,7 +131,9 @@ public sealed class DemonstrationTimelineTests : IDisposable
             new SqliteDemonstrationSessionStore(connection),
             (frame, _) => ValueTask.FromResult(Scene(frame, frame.Frame.Sequence < 6 ? "アーク" : "ロビー")), _ => { });
         var operation = Assert.Single(result.Events, item => item.Operation is not null).Operation!;
-        Assert.Equal(GameTransitionJudgement.Undetermined, operation.Comparison.Judgement);
+        Assert.Equal(GameTransitionJudgement.Moved, operation.Comparison.Judgement);
+        Assert.Equal(GameInteractionStabilityStatus.TimedOut, operation.After.Status);
+        Assert.Null(operation.After.StableScene);
     }
 
     [Fact]
@@ -160,7 +162,7 @@ public sealed class DemonstrationTimelineTests : IDisposable
     }
 
     [Fact]
-    public async Task One_after_image_does_not_invent_a_second_observation_or_a_stability_duration()
+    public async Task One_after_image_is_compared_with_before_without_inventing_stability()
     {
         var frames = new[] { Frame(1, 0), Frame(2, 0) with { ObservedUtc = Origin.AddMilliseconds(250) } };
         using var connection = Open();
@@ -168,7 +170,9 @@ public sealed class DemonstrationTimelineTests : IDisposable
             Origin.AddMilliseconds(600), new SqliteDemonstrationSessionStore(connection),
             (frame, _) => ValueTask.FromResult(Scene(frame, frame.Frame.Sequence == 1 ? "ロビー" : "アーク")), _ => { });
         var operation = Assert.Single(result.Events, item => item.Operation is not null).Operation!;
-        Assert.Equal(GameTransitionJudgement.Undetermined, operation.Comparison.Judgement);
+        Assert.Equal(GameTransitionJudgement.Moved, operation.Comparison.Judgement);
+        Assert.Equal(GameInteractionStabilityStatus.TimedOut, operation.After.Status);
+        Assert.Null(operation.After.StableScene);
         Assert.Single(operation.After.Observations);
         Assert.Equal(1, operation.After.StableFramesObserved);
         Assert.Equal(0, operation.After.StableMillisecondsObserved);

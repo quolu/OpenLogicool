@@ -36,9 +36,11 @@ Game Operatorの探索、構造学習、教師付きmacro、将来の自律実�
 - `ProductGameExplorerRuntime`: 10の基盤機能、Durable Attempt、明示Game Policy、Structure学習、Explorer UI controlを一つのzero-seed stepへ合成する。送出前の追加AI再観測を行わない。
 - `WindowsProductGameExplorerComposition`: WGC、Windows OCR、Foundry Local、Nano Serial HID、Game Policy、Structure Storeを接続するWindows正規入口。
 - `PurposeDirectedExplorationRuntime`: 利用者goal、決定的Learning Route ID、route cursorを所有し、既存`ProductGameExplorerRuntime`だけを一手実行器として使う。`Moved` edgeを逐次appendし、`Stayed`／`Undetermined`は同じstepの学習継続、失敗stepの修復は当該edgeだけを新版で差し替える。
-- `SemanticTextGoalCompletionEvaluator`: `Moved`したaction名またはafter sceneにあるlocal OCR／affordanceをgoal coreへ類似照合して初回完了を判定する。正規化後の空文字は候補にしない。操作受付gateではない。保存route再生は`Compiled` routeの全edge `Moved`で完了し、`Draft` prefixは再生後も探索を続ける。
+- `SemanticTextGoalCompletionEvaluator`: `Moved`したaction名またはafter sceneにあるlocal OCR／affordanceをgoal coreへ類似照合して初回完了を判定する。正規化後の空文字は候補にしない。操作受付gateではない。探索由来の保存route再生は`Compiled` routeの全edge `Moved`で完了し、`Draft` prefixは再生後も探索を続ける。録画由来のrouteは全手順の期待結果を実観測と照合して完了する。
 
 目的runのCompareは、操作前と操作後の両方をcomparison-only local sceneで作る。AI／保存actionで一件に絞ったtarget sceneはdispatch、index、learningに保持し、異なるscene表現同士をCompareしない。state identityがAmbiguous／Insufficientでもactionable structureが同じなら`Stayed`、明確に変われば`Moved`、構造証拠が無い時だけ`Undetermined`とする。
+
+録画のCompareは、閉じた因果区間の操作前と末尾の実観測を`GameTransitionJudge.CompareRecorded`へ渡す。操作後の意味安定と操作前後の変化は独立した結果として保持し、意味安定不足のstatusだけでは前後比較を未判定にしない。文字認識の根拠が欠けても、取得済みの前後画像特徴を比較できる。比較に使ったObservation IDを保存し、画像欠落や取得境界の不一致は比較不能として明示する。live再生のCompareは意味安定と10秒観測を必要とする。
 
 保存routeのedgeにsemantic key、primitive、normalized boundsがあれば、current window／frame／transformへ直接再束縛してOCR state identityより先に実行する。正常`Moved`再生は同じStructure edgeを使い、新edgeを再commitしない。非遷移後だけ当該stepをAI repairへ移し、修復成功時だけ新版edgeへ差し替える。
 
@@ -48,8 +50,8 @@ Foundry Localのgoal指定responseはgoalとの類似／包含を満たす1件�
 
 - Nano ACKまたはAPI戻り値だけで`Moved`にする。
 - raw PNG SHA-256が変わっただけで`Moved`にする。
-- timeoutを`Stayed`にする。
-- timeoutや途中で古くなった安定候補を`Moved`にする。
+- timeoutのstatusだけを根拠に`Stayed`にする。
+- live再生のtimeoutや途中で古くなった安定候補を`Moved`にする。
 - provider failureを別provider、OCR、既知fixtureへfallbackして成功扱いする。
 - pointer移動後にOCR矩形を追跡し、別targetへ座標を補正する。
 - OCRまたはAI labelの「購入」「戦闘」「開始」等を固定禁止tagへ変換して通常操作を拒否する。

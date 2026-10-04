@@ -13,7 +13,7 @@ public interface IDemonstrationRouteCompiler
 
 /// <summary>
 /// 停止済みの操作デモ原本を、既存Game Structure／Transition Evidence／Learning Routeへ導出する。
-/// 全操作を記録順で候補routeへ保持する。Movedだけを構造へ学習し、他は確認待ちにする。
+/// 全操作を記録順で候補routeへ保持する。Movedを構造へ学習し、Stayedも観測結果として採用する。
 /// 重複も独立した手順として残す。元sessionと既存route revisionは
 /// 変更せず、goal単位のrouteへ新しいrevisionだけを追記する。
 /// </summary>
@@ -52,7 +52,15 @@ public sealed class DemonstrationRouteCompiler(
 
         foreach (var operation in operations)
         {
-            var afterScene = operation.After.StableScene;
+            var afterScene = ComparisonScene(operation);
+            if (operation.Comparison.Judgement == GameTransitionJudgement.Stayed && afterScene is not null)
+            {
+                const string reason = "記録の操作前後に画面変化がないことを確認しました。再生でもこの結果を照合します。";
+                recordedSteps.Add(ToStep(session.Session.SessionId, operation, null, GameTransitionJudgement.Stayed, reason));
+                decisions.Add(new DemonstrationRouteDecision(operation.OperationId,
+                    DemonstrationRouteDecisionKind.Accepted, reason, null));
+                continue;
+            }
             if (operation.Comparison.Judgement != GameTransitionJudgement.Moved || afterScene is null)
             {
                 var reason = operation.Comparison.Judgement == GameTransitionJudgement.Stayed
@@ -125,12 +133,17 @@ public sealed class DemonstrationRouteCompiler(
         if (operations.Length != 1)
             throw new InvalidOperationException("差し替える一手だけを記録してください。原本と候補は変更していません。");
         var operation = operations[0];
-        var edgeId = operation.Comparison.Judgement == GameTransitionJudgement.Moved && operation.After.StableScene is { } after
+        var edgeId = operation.Comparison.Judgement == GameTransitionJudgement.Moved && ComparisonScene(operation) is { } after
             ? Commit(session.Session, operation, after).EdgeId : null;
+        var expected = operation.Comparison.Judgement == GameTransitionJudgement.Stayed && ComparisonScene(operation) is not null
+            ? GameTransitionJudgement.Stayed : edgeId is not null ? GameTransitionJudgement.Moved : (GameTransitionJudgement?)null;
         return ToStep(session.Session.SessionId, operation, edgeId,
-            edgeId is null ? null : GameTransitionJudgement.Moved,
-            edgeId is null ? "再記録した手順も確認待ちです。前後画像を確認してください。" : "この一手を再記録して遷移を確認しました。");
+            expected, expected == GameTransitionJudgement.Stayed ? "再記録の操作前後に画面変化がないことを確認しました。"
+            : edgeId is null ? "再記録した手順も確認待ちです。前後画像を確認してください。" : "この一手を再記録して遷移を確認しました。");
     }
+
+    private static ObservedScene? ComparisonScene(DemonstrationOperation operation) =>
+        operation.After.Observations.LastOrDefault(scene => scene.ObservationId == operation.Comparison.AfterObservationId);
 
     private GameInteractionStructureCommitResult Commit(
         DemonstrationSessionDraft session, DemonstrationOperation operation, ObservedScene afterScene)

@@ -414,4 +414,41 @@ public sealed class GameTransitionJudgeTests
         8,
         Convert.ToBase64String(Enumerable.Repeat(value, 64).ToArray()),
         $"patch-{value}");
+
+    [Fact]
+    public void Recorded_change_is_compared_even_when_the_after_screen_has_not_settled()
+    {
+        var before = Scene("before", 1, "ロビー", 0.1);
+        var after = Scene("after", 2, "アーク", 0.7);
+        var unsettled = Stable(after) with { Status = GameInteractionStabilityStatus.TimedOut, StableScene = null,
+            StableFramesObserved = 1, StableMillisecondsObserved = 0 };
+        Assert.Equal(GameTransitionJudgement.Moved, new GameTransitionJudge().CompareRecorded(before, unsettled).Judgement);
+        Assert.Equal(GameTransitionJudgement.Undetermined, new GameTransitionJudge().Compare(before, unsettled).Judgement);
+        Assert.Equal(GameInteractionStabilityStatus.TimedOut, unsettled.Status);
+        Assert.Null(unsettled.StableScene);
+    }
+
+    [Theory]
+    [InlineData(40, 80, GameTransitionJudgement.Moved)]
+    [InlineData(40, 42, GameTransitionJudgement.Stayed)]
+    public void Recorded_images_remain_evidence_when_ocr_is_empty(byte left, byte right, GameTransitionJudgement expected)
+    {
+        var before = EmptyScene("before", 1) with { SceneVisualPatch = Patch(left) };
+        var after = EmptyScene("after", 2) with { SceneVisualPatch = Patch(right) };
+        var result = new GameTransitionJudge().CompareRecorded(before, Stable(after));
+        Assert.Equal(expected, result.Judgement);
+        Assert.Equal("after", result.AfterObservationId);
+        Assert.Contains(result.Reasons, reason => reason.Contains("画像特徴"));
+    }
+
+    [Fact]
+    public void Recorded_comparison_cannot_use_a_different_window_or_missing_after_image()
+    {
+        var before = EmptyScene("before", 1) with { SceneVisualPatch = Patch(40) };
+        var after = EmptyScene("after", 2) with { SceneVisualPatch = Patch(80),
+            Frame = before.Frame with { SourceId = "window:other" } };
+        Assert.Equal(GameTransitionJudgement.Undetermined, new GameTransitionJudge().CompareRecorded(before, Stable(after)).Judgement);
+        Assert.Equal(GameTransitionJudgement.Undetermined, new GameTransitionJudge().CompareRecorded(before,
+            Stable(after) with { Observations = [], StableScene = null }).Judgement);
+    }
 }

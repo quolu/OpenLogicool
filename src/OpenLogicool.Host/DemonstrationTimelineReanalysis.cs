@@ -89,6 +89,6 @@ public sealed record DemonstrationTimelineArchive(
             SessionId = $"demo-analysis:{Guid.NewGuid():N}",
             SourceSessionId = Source.SessionId,
             ReanalyzedUtc = DateTimeOffset.UtcNow,
-            RecorderVersion = "recorder-2.0.1-reanalysis",
+            RecorderVersion = "recorder-2.1.0-reanalysis",
         }, Frames, Inputs, StoppedUtc, store, analyze, progress, cancellationToken);
 }

@@ -1,0 +1,66 @@
+{
+  "schema": "openlogicool.demonstration-outcome-acceptance.v1",
+  "recorded_at": "2026-10-04",
+  "source_session_id": "demo:734539a78392431fb1f7648d110230e6",
+  "analysis_session_id": "demo-analysis:1e5f155c7b764e1784881661e56f9155",
+  "recorder_version": "recorder-2.1.0-reanalysis",
+  "route_id": "purpose:ae30d666b130363f7fac0bba80ba8e74da9c004a7c781c1d42cd408898e6dca0",
+  "revision": 4,
+  "version_id": "route:96b8b833ee2de629e112c26f01bfdf2e2eba522fb2875aa0a2ed109f28632901",
+  "operation_count": 51,
+  "source_judgements": {
+    "Undetermined": 47,
+    "Moved": 4
+  },
+  "reanalysis_judgements": {
+    "Moved": 45,
+    "Stayed": 6,
+    "Undetermined": 0
+  },
+  "previous_reanalysis_judgements": {
+    "Moved": 36,
+    "Stayed": 4,
+    "Undetermined": 11
+  },
+  "previous_known_outcomes_preserved": true,
+  "compared_observations_match_recorded_suffix": true,
+  "stability_status_counts": {
+    "Stable": 41,
+    "TimedOut": 10
+  },
+  "pending_step_count": 0,
+  "accepted_edge_count": 45,
+  "stayed_steps": [
+    13,
+    14,
+    23,
+    26,
+    27,
+    28
+  ],
+  "visual_comparison_steps": [
+    41,
+    46,
+    47
+  ],
+  "preserved_baseline_rows": {
+    "demonstration_sessions": 7,
+    "demonstration_events": 138,
+    "learning_route_revisions": 9,
+    "workspace_revisions": 4,
+    "mapping_profiles": 4,
+    "app_profile_associations": 4
+  },
+  "preserved_raw_sha256_files": 298,
+  "operation_order_and_parameters_preserved": true,
+  "candidate_matches_analysis": true,
+  "analysis_entry": "開発版GUIの保存した記録を解析し直す",
+  "candidate_entry": "開発版GUIのこのデモから候補を作る",
+  "manual_expectation_edits": 0,
+  "game_input_dispatches_during_reanalysis": 0,
+  "live_frame_capture_during_reanalysis": 0,
+  "test_projects": 22,
+  "tests_passed": 1432,
+  "daily_macro_live_playback": "未確認",
+  "phase_exit": "未宣言"
+}

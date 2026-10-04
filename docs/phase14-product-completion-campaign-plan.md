@@ -14,7 +14,7 @@ OpenLogicoolを、利用者がGame Operatorだけで目的入力、操作デモ�
 
 1. NIKKEをforegroundにして明示的に記録開始した時だけ、mouse、keyboard、G13、G600の有限操作と時刻を取得する。他appへ切り替わった間は記録を一時停止する。
 2. 入力とWGC画面は取得時刻で原本へ保存し、記録停止後に既存の認識・安定判定・Compareで解析する。各操作はcurrent window／frame／transform、正規化座標またはkey／device control、操作前後のWGC scene、上限10秒のCompare、Moved／Stayed／Undeterminedへ束縛する。
-3. 操作デモ原本は修正しない。候補routeは全操作を記録順で保持し、Stayed／Undeterminedと重複を自動除外しない。Movedだけを構造edgeへ学習し、他は確認待ちとして理由を表示する。画像から期待結果を指定するか、一手だけを再記録して新版へ差し替え、正常な手順・原本・旧版を保持する。確認待ちを飛ばして完了扱いにせず、修復後は停止した手順から再開できる。
+3. 操作デモ原本は修正しない。候補routeは全操作を記録順で保持し、Stayed／Undeterminedと重複を自動除外しない。Movedだけを構造edgeへ学習し、Stayedは記録で確認した期待結果として採用する。Undeterminedは確認待ちとして理由を表示する。残る未判定は画像から期待結果を指定するか、一手だけを再記録して新版へ差し替え、正常な手順・原本・旧版を保持する。確認待ちを飛ばして完了扱いにせず、修復後は停止した手順から再開できる。
 4. 記録から作った候補routeをAI監視ありで再生し、保存action優先、非遷移stepだけAI修復、正常stepと旧revision維持を成立させる。
 5. 別process再起動後に同routeをAI 0で再生し、route revision不変で完了する。
 6. Game Operatorにgoal、記録開始／停止、記録session、記録からmacro作成、AI監視あり／なし再生、進捗、停止理由を利用者語彙で表示する。
@@ -49,7 +49,7 @@ Demonstration Sessionをmacroとして直接再生しない。座標列だけの
 - 実記録はAIを開始条件にしない。対象windowの最初のWGC画像と入力受理の開始後に「記録中」を表示する。
 - 記録区間の原本はschema `0.4.0`のsession見出し・入力・frame観測時刻・停止とPNGで保存する。PNGはSHA-256へ束縛する。静止画は同じframe識別子と画像を共有し、各回の観測時刻を別に残す。
 - 停止後は保存済みPNGだけを既存の認識へ渡す。解析結果は従来のschema `0.3.0`のDemonstration Sessionへ投影し、SQLiteへappend-only保存する。過去の操作を後のlive画面で判定しない。
-- 1操作の因果区間は解放から次の押下・ホイール・focus喪失・停止までとし、上限10秒とする。保存した区間内のframeを最初からすべて比較し、既存の意味安定windowで末尾の連続2観測が同じ画面かを確認してCompareへ渡す。live再生の待機時間を保存画像へ適用せず、安定時間は最後の実観測までの取得時刻だけから算出する。操作後の画像が一枚以下、末尾が不安定、認識根拠不足の場合はUndeterminedで保持する。再生側の最低10秒Compareと安定条件は維持する。
+- 1操作の因果区間は解放から次の押下・ホイール・focus喪失・停止までとし、上限10秒とする。保存した区間内のframeを最初から評価し、操作前と区間末尾の実観測をCompareへ渡す。意味安定の結果は別に保持し、末尾の連続2観測が揃わないことだけでは未判定にしない。文字認識の根拠が欠けた場合も取得済みの前後画像特徴を比較する。live再生の待機時間を保存画像へ適用せず、安定時間は最後の実観測までの取得時刻だけから算出する。前後画像の欠落、取得失敗、対象window／transform不一致はUndeterminedで保持する。再生側の最低10秒Compareと安定条件は維持する。
 - 記録中にAI、画像保存、SQLiteをhook／device fast pathで待たせない。停止時は入力取得とframe取得を閉じて原本を保存し、解析進捗を表示する。取得・保存の失敗は明示し、保存済み原本を保持する。
 
 ## F／A／H
@@ -92,7 +92,7 @@ Windows環境別mouse／keyboard recorderと、既存G13／G600 edge observerを
 
 ### t03-demonstration-route-compiler
 
-Demonstration Sessionを既存Game Structure／Transition Evidence／Learning Routeへ導出する。全操作を記録順の候補手順列にし、Movedの構造edgeと、他の確認待ち手順を区別する。画像確認の期待結果は観測済み事実へ昇格させず、毎回の10秒Compareで照合する。元sessionと既存routeを変更せず、新route revisionだけを作る。
+Demonstration Sessionを既存Game Structure／Transition Evidence／Learning Routeへ導出する。全操作を記録順の候補手順列にし、Movedは構造edgeと期待結果へ、Stayedはedgeを作らず観測済みの期待結果へ、未判定は確認待ちへ保存する。画像確認で利用者が指定した期待結果は観測済み事実へ昇格させず、毎回の10秒Compareで照合する。元sessionと既存routeを変更せず、新route revisionだけを作る。
 
 ### t04-recording-host-intents
 
