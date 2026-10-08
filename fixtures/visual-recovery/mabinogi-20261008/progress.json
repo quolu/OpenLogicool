@@ -3,11 +3,19 @@
   "ResultTimeoutMs": 5000,
   "UnknownTimeoutMs": 5000,
   "ReviewWhen": [
-    { "Text": "ボーナス", "Bounds": [0.15, 0.1, 0.7, 0.65],
+    { "Text": "ボーナスを選択してください", "Bounds": [0.15, 0.1, 0.7, 0.65],
       "ChoiceBounds": [[0.35, 0.435, 0.09, 0.052], [0.455, 0.435, 0.09, 0.052], [0.56, 0.435, 0.09, 0.052]] },
-    { "Text": "行動不能", "Bounds": [0.2, 0.15, 0.6, 0.7] }
+    { "Text": "行動不能", "Bounds": [0.35, 0.15, 0.3, 0.1] }
   ],
   "Rules": [
+    {
+      "Id": "animation-wait", "WaitForChange": true, "Priority": -10,
+      "When": [{ "Text": "スキップ", "Bounds": [0.85, 0, 0.15, 0.12] }]
+    },
+    {
+      "Id": "loot-wait", "WaitForChange": true, "Priority": -10,
+      "When": [{ "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] }]
+    },
     {
       "Id": "npc-dialogue-cue", "Key": "Key:Space", "Timed": true, "Priority": 20,
       "When": [{ "Text": "", "Bounds": [0.2, 0.04, 0.6, 0.3] }],

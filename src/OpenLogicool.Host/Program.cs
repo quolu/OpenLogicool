@@ -79,6 +79,7 @@ using OpenLogicool.Playbooks;
 //   game-index key-tap --process <name> --db <path> --keys <Key:名前[,Key:名前]>
 //       現在frameへ束縛してNanoで1回だけdown/upする。結果の判定待ちや再送は行わない。
 //   game-index key-assist --process <name> --db <path> --inhibit-image <png> --cue-text <文字列> --keys <Key:名前> --duration-ms N --evidence <dir>
+//   同じ入口に --recovery-only --recovery-profile <json> を付けると、進行キーを送らず回復だけを監視する。
 //       停止画像を優先し、表示条件または8〜12秒の間隔でNanoキー入力する。通常入力で画面変化がない場合は確認用画像を保存して停止する。
 //   macro list [--db <path>]
 //       保存済みmacroのgoal・route・版・step数をread-onlyで一覧表示する。

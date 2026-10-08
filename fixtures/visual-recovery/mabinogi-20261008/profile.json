@@ -24,5 +24,6 @@
   "BandageKey": "Key:F2",
   "BandageThreshold": 0.2,
   "BandageCooldownMs": 5000,
-  "IncapacitatedText": "行動不能"
+  "IncapacitatedText": "行動不能",
+  "IncapacitatedContextText": "キャンプファイアで復活"
 }

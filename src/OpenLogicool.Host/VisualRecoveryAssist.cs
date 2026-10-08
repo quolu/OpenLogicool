@@ -21,7 +21,7 @@ public sealed record VisualRecoveryProfile(
     double PotionThreshold, int PotionCooldownMs, int FoodMinimumIntervalMs,
     int[] Viewport, double CanvasAspectRatio,
     string BandageKey, double BandageThreshold, int BandageCooldownMs,
-    string? IncapacitatedText = null)
+    string? IncapacitatedText = null, string? IncapacitatedContextText = null)
 {
     public static VisualRecoveryProfile Load(string path)
     {
@@ -67,10 +67,15 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
     private readonly VisualKeyTemplate ready = VisualKeyTemplate.Load(profile.FoodReadyImage);
     private readonly VisualKeyTemplate active = VisualKeyTemplate.Load(profile.FoodActiveImage, relativeColor: true);
 
+    public bool HasIncapacitatedDisplay(string screenText) =>
+        !string.IsNullOrWhiteSpace(profile.IncapacitatedText)
+        && VisualKeyAssistRuntime.ContainsCue(screenText, profile.IncapacitatedText)
+        && (string.IsNullOrWhiteSpace(profile.IncapacitatedContextText)
+            || VisualKeyAssistRuntime.ContainsCue(screenText, profile.IncapacitatedContextText));
+
     public VisualRecoveryObservation Observe(CapturedFrame frame, FrameRect? viewport = null, string? screenText = null)
     {
-        if (!string.IsNullOrWhiteSpace(profile.IncapacitatedText) && screenText is not null
-            && VisualKeyAssistRuntime.ContainsCue(screenText, profile.IncapacitatedText))
+        if (screenText is not null && HasIncapacitatedDisplay(screenText))
             return new(false, null, null, VisualFoodState.Unknown, "対象の行動不能表示を確認しました。回復入力を終了します。");
         var sourceFrame = frame;
         if (viewport is null && (frame.Width != profile.Width || frame.Height != profile.Height))

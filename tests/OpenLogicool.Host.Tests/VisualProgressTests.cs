@@ -99,6 +99,65 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public void 既知の演出では待機し操作可能な会話が現れたら入力規則へ移る()
+    {
+        var wait = new VisualProgressRule("animation", [new("スキップ", [0.8, 0, 0.2, 0.2])], Priority: -10, WaitForChange: true);
+        var dialogue = new VisualProgressRule("dialogue", [new("スキップ", [0.8, 0, 0.2, 0.2]), new("", [0.2, 0.2, 0.6, 0.3])], "Key:Space");
+        var profile = new VisualProgressProfile(1, [wait, dialogue], []);
+        var recognizer = new VisualProgressRecognizer(profile);
+        var skip = new WindowsGameOcrWord("スキップ", 900, 40, 60, 20);
+        var waiting = recognizer.Recognize(Ocr([skip]), 1000, 600, new(0, 0, 1000, 600));
+        Assert.Equal(VisualProgressAction.Wait, waiting.Action);
+        Assert.Null(waiting.Key);
+        var schedule = new VisualProgressSchedule(profile);
+        schedule.RecordInput(0, new(VisualProgressAction.Key, "previous", "previous", "Key:Space"));
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(100, waiting, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(800, waiting, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(30000, waiting, false, false, true).Action);
+        var ready = recognizer.Recognize(Ocr([skip, new("会話の本文", 300, 150, 200, 30)]), 1000, 600, new(0, 0, 1000, 600));
+        Assert.Equal(VisualProgressAction.Key, ready.Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(31000, ready, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(31600, ready, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(32000, ready, true, false, true).Action);
+    }
+
+    [Fact]
+    public void 固定ラベルの周囲のOCR変動は操作候補を変えず会話本文の変更は区別する()
+    {
+        var rule = new VisualProgressRule("prompt", [new("画面を押してください", [0, 0, 1, 1])], "Key:Space");
+        var recognizer = new VisualProgressRecognizer(new(1, [rule], []));
+        var first = recognizer.Recognize(Ocr([new("イこ画面を押してください", 100, 100, 200, 30)]), 1000, 600, new(0, 0, 1000, 600));
+        var second = recognizer.Recognize(Ocr([new("画面を押してください", 100, 100, 200, 30)]), 1000, 600, new(0, 0, 1000, 600));
+        Assert.Equal(first.Signature, second.Signature);
+        var schedule = new VisualProgressSchedule(new(1, [rule], []));
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, first, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(600, second, false, false, true).Action);
+        var dialogue = new VisualProgressRecognizer(new(1, [rule with { When = [new("", [0, 0, 1, 1])] }], []));
+        Assert.NotEqual(dialogue.Recognize(Ocr([new("最初の会話", 100, 100, 200, 30)]), 1000, 600, new(0, 0, 1000, 600)).Signature,
+            dialogue.Recognize(Ocr([new("次の会話", 100, 100, 200, 30)]), 1000, 600, new(0, 0, 1000, 600)).Signature);
+    }
+
+    [Fact]
+    public async Task クリア画面の協力ボーナスと行動不能の説明を選択や敗北と誤認しない()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures", "visual-recovery", "mabinogi-20261008");
+        var frame = ReadFrame(Path.Combine(fixture, "dungeon-clear.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var recovery = new VisualRecoveryRecognizer(VisualRecoveryProfile.Load(Path.Combine(fixture, "profile.json")));
+        Assert.False(recovery.HasIncapacitatedDisplay(ocr.Text));
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, new(1, 31, 1506, 814), frame);
+        Assert.Equal(VisualProgressAction.Key, choice.Action);
+        Assert.Equal("screen-prompt", choice.RuleId);
+        Assert.Equal("Key:Space", choice.Key);
+        var defeat = ReadFrame(Path.Combine(fixture, "../../../evidence/mabinogi-key-assist-20261008/potion-monitor-defeat.png"));
+        var defeatOcr = await new WindowsGameOcrRecognizer().RecognizeAsync(defeat);
+        Assert.True(recovery.HasIncapacitatedDisplay(defeatOcr.Text));
+    }
+
+    [Fact]
     public async Task Recorded_bonus_stops_and_preserves_all_three_choices_for_the_owner()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

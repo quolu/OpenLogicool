@@ -7,6 +7,43 @@ namespace OpenLogicool.Host.Tests;
 public sealed class VisualKeyAssistWorkersTests
 {
     [Fact]
+    public async Task 回復専用では進行処理を起動せず監視の終了結果を返す()
+    {
+        var ticks = 0;
+        var result = await VisualKeyAssistWorkers.RunAsync(async token =>
+        {
+            for (var i = 0; i < 4; i++) { await Task.Yield(); token.ThrowIfCancellationRequested(); ticks++; }
+            return "回復終了";
+        }, _ => throw new InvalidOperationException("進行キーを送ってはいけません。"),
+            CancellationToken.None, recoveryOnly: true);
+        Assert.Equal("回復終了", result);
+        Assert.Equal(4, ticks);
+    }
+
+    [Fact]
+    public async Task 回復専用でも取消で監視を回収し障害を隠さない()
+    {
+        using var stop = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var ended = false;
+        var running = VisualKeyAssistWorkers.RunAsync(async token =>
+        {
+            started.SetResult();
+            try { await Task.Delay(Timeout.Infinite, token); }
+            finally { ended = true; }
+            return 0;
+        }, _ => throw new InvalidOperationException("進行不可"), stop.Token, recoveryOnly: true);
+        await started.Task;
+        stop.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => running);
+        Assert.True(ended);
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => VisualKeyAssistWorkers.RunAsync<int>(
+            _ => throw new InvalidOperationException("Nano接続異常"), _ => Task.FromResult(0),
+            CancellationToken.None, recoveryOnly: true));
+        Assert.Equal("Nano接続異常", error.Message);
+    }
+
+    [Fact]
     public async Task 回復監視は未完了の画面比較と同期OCRを待たない()
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));

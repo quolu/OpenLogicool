@@ -9,7 +9,7 @@ public sealed record VisualProgressText(string Text, double[] Bounds, double[][]
 public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
-    bool ImageRotates = false);
+    bool ImageRotates = false, bool WaitForChange = false);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 5000)
 {
@@ -24,8 +24,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
         foreach (var rule in value.Rules)
         {
             if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is not { Length: > 0 }
-                || (rule.Key is null) == (rule.Click is null))
-                throw new InvalidDataException("進行規則には条件と、キーまたはクリック先が必要です。");
+                || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) != 1)
+                throw new InvalidDataException("進行規則には条件と、キー・クリック・待機のいずれか一つが必要です。");
             if (rule.Key is not null) OpenLogicool.Input.OutputTokens.Parse(rule.Key);
             if (rule.Image is not null && (rule.ImageBounds is null || rule.ImageClientWidth <= 0))
                 throw new InvalidDataException("進行規則の画像には探索範囲と基準描画幅が必要です。");
@@ -111,8 +111,10 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     || Math.Abs(span.EvidenceRegion.NormalizedBounds[1] - bounds[1]) > bounds[3]))
                     return new(VisualProgressAction.Review, Detail: $"クリック先が複数あります: {rule.Id}");
             }
-            candidates.Add(new(rule.Click is null ? VisualProgressAction.Key : VisualProgressAction.Click,
-                rule.Id, rule.Id + ":" + string.Join("|", texts), rule.Key, point));
+            candidates.Add(new(rule.WaitForChange ? VisualProgressAction.Wait
+                : rule.Click is null ? VisualProgressAction.Key : VisualProgressAction.Click,
+                rule.Id, rule.Id + ":" + string.Join("|", rule.When.Select((condition, i) =>
+                    string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text))), rule.Key, point));
         }
         var priority = candidates.Count == 0 ? 0 : candidates.Max(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority);
         var preferred = candidates.Where(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority == priority).ToArray();

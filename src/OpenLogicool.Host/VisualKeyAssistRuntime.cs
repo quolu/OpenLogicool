@@ -224,6 +224,7 @@ public static class VisualKeyAssistRuntime
             return index >= 0 && index + 1 < arguments.Length ? arguments[index + 1]
                 : throw new ArgumentException($"{name} が必要です。");
         }
+        var recoveryOnly = arguments.Contains("--recovery-only", StringComparer.Ordinal);
         var inhibit = VisualKeyTemplate.Load(Required("--inhibit-image"));
         var cues = arguments.Select((value, index) => (value, index))
             .Where(item => item.value == "--cue-image")
@@ -236,9 +237,9 @@ public static class VisualKeyAssistRuntime
             .Select(item => item.index + 1 < arguments.Length ? arguments[item.index + 1]
                 : throw new ArgumentException("--cue-text に文字列が必要です。"))
             .ToArray();
-        if (cues.Length == 0 && cueTexts.Length == 0)
+        if (!recoveryOnly && cues.Length == 0 && cueTexts.Length == 0)
             throw new ArgumentException("--cue-image または --cue-text が必要です。");
-        var keys = Required("--keys").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var keys = recoveryOnly ? [] : Required("--keys").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         var regionIndex = Array.IndexOf(arguments, "--search-bounds");
         var regionText = regionIndex >= 0 ? Required("--search-bounds") : "0,0,1,1";
         var region = regionText.Split(',').Select(value =>
@@ -257,6 +258,9 @@ public static class VisualKeyAssistRuntime
         var recoveryRecognizer = recoveryProfile is null ? null : new VisualRecoveryRecognizer(recoveryProfile);
         var progressProfile = Array.IndexOf(arguments, "--progress-profile") < 0 ? null
             : VisualProgressProfile.Load(Required("--progress-profile"));
+        if (recoveryOnly && (recoveryProfile is null || progressProfile is not null
+            || arguments.Contains("--observe-only", StringComparer.Ordinal)))
+            throw new ArgumentException("--recovery-only には --recovery-profile が必要です。進行設定・--observe-only とは併用できません。");
         if (progressProfile is not null && recoveryRecognizer is null)
             throw new ArgumentException("進行設定には、描画領域とHUDを認識する --recovery-profile が必要です。");
         var progressRecognizer = progressProfile is null ? null : new VisualProgressRecognizer(progressProfile);
@@ -287,7 +291,7 @@ public static class VisualKeyAssistRuntime
             var progress = new VisualKeyAssistProgress();
             var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)
                 ? await RunProgressAsync(stop.Token)
-                : await VisualKeyAssistWorkers.RunAsync(RunRecoveryAsync, RunProgressAsync, stop.Token);
+                : await VisualKeyAssistWorkers.RunAsync(RunRecoveryAsync, RunProgressAsync, stop.Token, recoveryOnly);
             var resultJson = JsonSerializer.SerializeToElement(result);
             if (!measureOnly && !arguments.Contains("--observe-only", StringComparer.Ordinal)
                 && resultJson.TryGetProperty("NeedsReview", out var needsReview) && needsReview.GetBoolean())
@@ -531,7 +535,7 @@ public static class VisualKeyAssistRuntime
                         {
                             var text = await deathText;
                             deathText = null;
-                            if (ContainsCue(text, recoveryProfile!.IncapacitatedText!))
+                            if (recoveryRecognizer!.HasIncapacitatedDisplay(text))
                                 recoveryObservation = recoveryObservation with
                                 {
                                     HudVisible = false,

@@ -313,6 +313,15 @@ public sealed class VisualRecoveryAssistTests
     }
 
     [Fact]
+    public void クリア説明に行動不能が含まれても復活操作がなければ死亡扱いしない()
+    {
+        var recognizer = new VisualRecoveryRecognizer(Profile());
+        Assert.False(recognizer.HasIncapacitatedDisplay("スムーズにダンジョンをクリア 行動不能にならずにクリアしました。"));
+        Assert.False(recognizer.HasIncapacitatedDisplay("キャンプファイアで復活"));
+        Assert.True(recognizer.HasIncapacitatedDisplay("行 動 不 能 キャンプファイアで復活"));
+    }
+
+    [Fact]
     public void Recorded_defeat_text_ends_recovery_even_when_the_health_hud_is_hidden()
     {
         var frame = Frame("../../../evidence/mabinogi-key-assist-20261008/potion-monitor-defeat.png");
