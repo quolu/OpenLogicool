@@ -197,7 +197,7 @@ public sealed record VisualRecoveryState(DateTimeOffset? LastFood = null, DateTi
     bool BandagePending = false, double? BeforeBandageWhiteFraction = null);
 public sealed record VisualRecoveryChoice(VisualRecoveryAction Action, string Detail);
 
-/// <summary>食事の結果待ちと薬の待ち時間を保持し、未確認の消費を繰り返さない。</summary>
+/// <summary>食事の結果待ちと回復品の待ち時間を保持する。被弾中のHP差分でポーション使用の成否を判定しない。</summary>
 public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, VisualRecoveryState? initial = null)
 {
     public VisualRecoveryState State { get; private set; } = initial ?? new();
@@ -244,11 +244,10 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
         }
         if (State.Pending == VisualRecoveryAction.Potion)
         {
-            if (observation.HealthFraction > State.BeforePotion)
+            // HPの差分は被ダメージも含む。増加が見えなくても監視と次回の使用を止めない。
+            if (observation.HealthFraction > State.BeforePotion
+                || now - State.LastPotion >= TimeSpan.FromMilliseconds(profile.PotionCooldownMs))
                 State = State with { Pending = VisualRecoveryAction.None };
-            else return now - State.LastPotion >= TimeSpan.FromSeconds(3)
-                ? new(VisualRecoveryAction.Review, "ポーション後のHP増加を確認できません。追加入力を停止しました。")
-                : new(VisualRecoveryAction.Wait, "ポーション後のHPを確認しています。");
         }
         if (!observation.HudVisible) return new(VisualRecoveryAction.None, "HUD非表示中は消費しません。");
         if (observation.HealthFraction == 0)
@@ -256,7 +255,7 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
         if (observation.HealthFraction <= profile.PotionThreshold)
             return State.LastPotion is null || now - State.LastPotion >= TimeSpan.FromMilliseconds(profile.PotionCooldownMs)
                 ? new(VisualRecoveryAction.Potion, "HPの割合が回復基準以下です。")
-                : new(VisualRecoveryAction.None, "ポーションの待ち時間中です。");
+                : new(VisualRecoveryAction.None, "ポーションの待ち時間中です。HPと包帯の監視は継続します。");
         if (observation.Food == VisualFoodState.Unknown)
             return new(VisualRecoveryAction.None, "食事は未判別のため使用しません。HP監視は続けます。");
         if (observation.Food == VisualFoodState.Ready)

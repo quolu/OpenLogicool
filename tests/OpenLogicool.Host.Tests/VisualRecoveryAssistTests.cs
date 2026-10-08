@@ -235,7 +235,7 @@ public sealed class VisualRecoveryAssistTests
     }
 
     [Fact]
-    public void Potion_uses_threshold_and_persistent_cooldown_and_stops_if_result_is_unknown()
+    public void Potion_uses_threshold_and_persistent_cooldown_while_health_keeps_falling()
     {
         var now = DateTimeOffset.UnixEpoch;
         var low = new VisualRecoveryObservation(true, 0.5, 198, VisualFoodState.Active, null);
@@ -244,11 +244,43 @@ public sealed class VisualRecoveryAssistTests
         Assert.Equal(VisualRecoveryAction.Potion, schedule.Decide(now, low, false).Action);
         schedule.RecordAttempt(VisualRecoveryAction.Potion, now, low);
         var restarted = new VisualRecoverySchedule(Profile(), schedule.State);
-        Assert.Equal(VisualRecoveryAction.Wait, restarted.Decide(now.AddSeconds(1), low, false).Action);
-        Assert.Equal(VisualRecoveryAction.Review, restarted.Decide(now.AddSeconds(3), low, false).Action);
+        Assert.Equal(VisualRecoveryAction.None, restarted.Decide(now.AddSeconds(1), low, false).Action);
+        Assert.Equal(VisualRecoveryAction.None, restarted.Decide(now.AddSeconds(3), low with { HealthFraction = 0.13 }, false).Action);
         Assert.Equal(VisualRecoveryAction.None, restarted.Decide(now.AddSeconds(4), low with { HealthFraction = 0.6 }, false).Action);
         Assert.Equal(VisualRecoveryAction.None, restarted.Decide(now.AddSeconds(9), low, false).Action);
         Assert.Equal(VisualRecoveryAction.Potion, restarted.Decide(now.AddSeconds(10), low, false).Action);
+    }
+
+    [Fact]
+    public void Recorded_potion_health_decrease_keeps_monitoring_and_allows_next_cooldown_use()
+    {
+        // 実戦のF1前48.5％→3.224秒後13.1％。被弾中の差分を使用失敗にしない。
+        var now = DateTimeOffset.UnixEpoch;
+        var before = new VisualRecoveryObservation(true, 0.48484848484848486, 198, VisualFoodState.Active, null, 0.07575757575757576);
+        var schedule = new VisualRecoverySchedule(Profile());
+        schedule.RecordAttempt(VisualRecoveryAction.Potion, now, before);
+        var after = before with { HealthFraction = 0.13131313131313133, WhiteFraction = 0.015151515151515152 };
+        Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddMilliseconds(3224), after, false).Action);
+        Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddMilliseconds(9999), after, false).Action);
+        var restarted = new VisualRecoverySchedule(Profile(), schedule.State);
+        Assert.Equal(VisualRecoveryAction.Potion, restarted.Decide(now.AddSeconds(10), after, false).Action);
+        Assert.Equal(VisualRecoveryAction.Review, restarted.Decide(now.AddSeconds(10), after with { HealthFraction = 0 }, false).Action);
+        Assert.Equal(VisualRecoveryAction.None, restarted.Decide(now.AddSeconds(10), after, true).Action);
+        Assert.Equal(VisualRecoveryAction.None, restarted.Decide(now.AddSeconds(10), after with { HudVisible = false }, false).Action);
+    }
+
+    [Fact]
+    public void Old_pending_potion_state_does_not_block_bandage_or_new_potion_when_health_never_rises()
+    {
+        var now = DateTimeOffset.UnixEpoch;
+        var old = new VisualRecoveryState(LastPotion: now, Pending: VisualRecoveryAction.Potion, BeforePotion: 0.48);
+        var schedule = new VisualRecoverySchedule(Profile(), old);
+        var low = new VisualRecoveryObservation(true, 0.13, 198, VisualFoodState.Unknown, null, 0.25);
+        Assert.Equal(VisualRecoveryAction.Bandage, schedule.Decide(now.AddSeconds(4), low, false).Action);
+        schedule.RecordAttempt(VisualRecoveryAction.Bandage, now.AddSeconds(4), low);
+        var healed = low with { WhiteFraction = 0.05 };
+        Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddSeconds(5), healed, false).Action);
+        Assert.Equal(VisualRecoveryAction.Potion, schedule.Decide(now.AddSeconds(10), healed, false).Action);
     }
 
     [Fact]

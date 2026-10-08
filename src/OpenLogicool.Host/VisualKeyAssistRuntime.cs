@@ -300,7 +300,7 @@ public static class VisualKeyAssistRuntime
                     if (recovery.State != previousRecoveryState)
                     {
                         SaveRecoveryState();
-                        File.WriteAllBytes(Path.Combine(evidenceDirectory, $"recovery-{events.Count}-confirmed.png"),
+                        File.WriteAllBytes(Path.Combine(evidenceDirectory, $"recovery-{events.Count}-state.png"),
                             new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
                     }
                     if (recoveryObservation != previousRecovery || choice.Action != VisualRecoveryAction.None)
