@@ -67,6 +67,33 @@ public sealed class VisualRecoveryAssistTests
     }
 
     [Fact]
+    public void Combat_food_icon_is_found_after_other_effects_shift_it_to_the_right()
+    {
+        var observation = new VisualRecoveryRecognizer(Profile()).Observe(Frame("combat.png"));
+        Assert.Equal(VisualFoodState.Active, observation.Food);
+        Assert.Null(observation.Problem);
+        Assert.InRange(observation.HealthFraction!.Value, 0.98, 1);
+    }
+
+    [Fact]
+    public void Background_resembling_the_rail_does_not_extend_the_health_denominator()
+    {
+        var frame = Frame("after.png");
+        var bytes = frame.Pixels!.Bgra8.ToArray();
+        for (var y = 138; y <= 142; y++)
+        for (var x = 329; x < 390; x++)
+        {
+            var offset = y * frame.Pixels.Stride + x * 4;
+            bytes[offset] = 50;
+            bytes[offset + 1] = 47;
+            bytes[offset + 2] = 45;
+        }
+        var result = new VisualRecoveryRecognizer(Profile()).Observe(frame with { Pixels = new FramePixels(bytes, frame.Pixels.Stride) });
+        Assert.InRange(result.BarWidth!.Value, 197, 200);
+        Assert.InRange(result.HealthFraction!.Value, 0.98, 1);
+    }
+
+    [Fact]
     public void Food_requires_visible_ready_state_and_observed_effect_before_any_other_input()
     {
         var schedule = new VisualRecoverySchedule(Profile());

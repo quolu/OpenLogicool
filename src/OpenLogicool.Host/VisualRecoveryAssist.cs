@@ -85,7 +85,11 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
                 if (rail && start < 0) start = x;
                 if (rail || start < 0) continue;
                 if (start <= area[0] + 15 && x - start >= profile.MinimumBarWidth
-                    && x - start > bestRight - bestLeft + 1)
+                    && x - start > bestRight - bestLeft + 1
+                    && y + 2 < frame.Height
+                    && IsRail(bytes, pixels.Stride, (start + x - 1) / 2, y + 2)
+                    && IsRail(bytes, pixels.Stride, x - 5, y + 2)
+                    && !IsRail(bytes, pixels.Stride, x - 1, y + 2))
                 {
                     bestLeft = start;
                     bestRight = x - 1;
