@@ -9,6 +9,14 @@
   ],
   "Rules": [
     {
+      "Id": "dialogue-accept", "Priority": 30,
+      "When": [
+        { "Text": "承諾", "Bounds": [0.2, 0.75, 0.6, 0.25] },
+        { "Text": "やめる", "Bounds": [0.2, 0.75, 0.6, 0.25] }
+      ],
+      "Click": { "Text": "承諾", "Bounds": [0.2, 0.75, 0.6, 0.25] }
+    },
+    {
       "Id": "animation-wait", "WaitForChange": true, "Priority": -10,
       "When": [{ "Text": "スキップ", "Bounds": [0.85, 0, 0.15, 0.12] }]
     },

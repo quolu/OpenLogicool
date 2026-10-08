@@ -1,0 +1,93 @@
+[
+  {
+    "Event": "progress-input",
+    "AtMs": 2327,
+    "RuleId": "dialogue-accept",
+    "Signature": "dialogue-accept:承諾|やめる",
+    "Key": null,
+    "Point": [
+      0.4671628721541156,
+      0.9333034914950761
+    ],
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:8",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:02:09.3120258+09:00",
+      "CompletedUtc": "2026-10-08T21:02:09.7323696+09:00",
+      "CandidateId": "dialogue-accept",
+      "TransportReceiptId": "pointer:829,1414->1972,1049;deltas:26;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 12338,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:つ一よし知っておけば色々と役に立つだろう俺が優しく教えてやるからな0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:39",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:02:19.737018+09:00",
+      "CompletedUtc": "2026-10-08T21:02:19.7429108+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 22168,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:加工に必要な材料を渡すからちょっと待っててくれよ0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:74",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:02:29.5703529+09:00",
+      "CompletedUtc": "2026-10-08T21:02:29.5733809+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 46954,
+    "RuleId": "npc-dialogue-skip",
+    "Signature": "npc-dialogue-skip:スキップ|ファースほらよ鉱石20個だ",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:153",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:02:54.3565439+09:00",
+      "CompletedUtc": "2026-10-08T21:02:54.3593519+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]

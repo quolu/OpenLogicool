@@ -138,6 +138,30 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public async Task 承諾とやめるがある会話ではSpaceより承諾クリックを優先する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, "dialogue-accept.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var recognizer = new VisualProgressRecognizer(profile);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal(VisualProgressAction.Click, choice.Action);
+        Assert.Equal("dialogue-accept", choice.RuleId);
+        Assert.InRange(choice.Point![0], 0.44, 0.49);
+        Assert.InRange(choice.Point[1], 0.90, 0.96);
+        Assert.NotEqual("dialogue-accept", recognizer.Recognize(
+            Ocr(ocr.Words.Where(word => !(word.X >= frame.Width * 0.5 && word.Y >= frame.Height * 0.75)).ToArray()),
+            frame.Width, frame.Height, viewport, frame).RuleId);
+        Assert.NotEqual("dialogue-accept", recognizer.Recognize(
+            Ocr([new("承諾", 200, 150, 60, 30), new("やめる", 280, 150, 60, 30)]),
+            frame.Width, frame.Height, viewport, frame).RuleId);
+    }
+
+    [Fact]
     public async Task 自動着用の確認窓は背景の同名ボタンより優先してSpaceで確定する()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
