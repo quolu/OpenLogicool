@@ -1,0 +1,22 @@
+{
+  "SchemaVersion": 1,
+  "Width": 2203,
+  "Height": 1319,
+  "HudImage": "hud.png",
+  "HudSearch": [0.005, 0.038, 0.02, 0.032],
+  "FoodReadyImage": "food-ready.png",
+  "FoodReadySearch": [0.117, 0.039, 0.025, 0.035],
+  "FoodActiveImage": "food-active.png",
+  "FoodActiveSearch": [0.055, 0.114, 0.026, 0.036],
+  "RailSearch": [125, 138, 325, 5],
+  "RailRgb": [39, 42, 46],
+  "RailTolerance": 8,
+  "CapPixels": 2,
+  "FillOffsetY": -7,
+  "MinimumBarWidth": 80,
+  "FoodKey": "Key:B",
+  "PotionKey": "Key:F1",
+  "PotionThreshold": 0.5,
+  "PotionCooldownMs": 10000,
+  "FoodMinimumIntervalMs": 1200000
+}

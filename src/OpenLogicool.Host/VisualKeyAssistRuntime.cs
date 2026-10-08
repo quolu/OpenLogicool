@@ -196,6 +196,15 @@ public static class VisualKeyAssistRuntime
         if (duration <= 0) throw new ArgumentException("実行時間は正のミリ秒です。");
         var evidenceDirectory = Path.GetFullPath(Required("--evidence"));
         Directory.CreateDirectory(evidenceDirectory);
+        var recoveryIndex = Array.IndexOf(arguments, "--recovery-profile");
+        var recoveryProfile = recoveryIndex < 0 ? null : VisualRecoveryProfile.Load(Required("--recovery-profile"));
+        var recoveryRecognizer = recoveryProfile is null ? null : new VisualRecoveryRecognizer(recoveryProfile);
+        var recoveryStatePath = Path.GetFullPath(Required("--db")) + ".visual-recovery.json";
+        var recovery = recoveryProfile is null ? null : new VisualRecoverySchedule(recoveryProfile,
+            File.Exists(recoveryStatePath)
+                ? JsonSerializer.Deserialize<VisualRecoveryState>(File.ReadAllText(recoveryStatePath))
+                    ?? throw new InvalidDataException("保存した回復状態が空です。")
+                : null);
         using var stop = new CancellationTokenSource();
         ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; stop.Cancel(); };
         Console.CancelKeyPress += cancel;
@@ -211,6 +220,7 @@ public static class VisualKeyAssistRuntime
             var schedule = new VisualKeyAssistSchedule(0, () => Random.Shared.Next(8_000, 12_001));
             var events = new List<object>();
             VisualKeyAssistDecision? previous = null;
+            VisualRecoveryObservation? previousRecovery = null;
             while (clock.ElapsedMilliseconds < duration)
             {
                 stop.Token.ThrowIfCancellationRequested();
@@ -223,6 +233,7 @@ public static class VisualKeyAssistRuntime
                 var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
                 var decision = schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
                     cueMatch?.Matches == true || matchedTexts.Length > 0);
+                var recoveryObservation = recoveryRecognizer?.Observe(frame);
                 if (decision != previous)
                 {
                     Emit(new { Event = "condition", Decision = decision.ToString(), AtMs = clock.ElapsedMilliseconds,
@@ -234,7 +245,60 @@ public static class VisualKeyAssistRuntime
                     File.WriteAllBytes(Path.Combine(evidenceDirectory, "observation.png"),
                         new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
                     return new { Mode = "key-assist-observation", decision, inhibitMatch, cueMatch,
-                        MatchedTexts = matchedTexts, OcrText = ocr?.Text, InputCount = 0, AiCallCount = 0 };
+                        MatchedTexts = matchedTexts, OcrText = ocr?.Text, Recovery = recoveryObservation, InputCount = 0, AiCallCount = 0 };
+                }
+                if (recovery is not null && recoveryObservation is not null)
+                {
+                    var previousRecoveryState = recovery.State;
+                    var choice = recovery.Decide(DateTimeOffset.UtcNow, recoveryObservation, inhibitMatch.Matches);
+                    if (recovery.State != previousRecoveryState)
+                    {
+                        SaveRecoveryState();
+                        File.WriteAllBytes(Path.Combine(evidenceDirectory, $"recovery-{events.Count}-confirmed.png"),
+                            new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                    }
+                    if (recoveryObservation != previousRecovery || choice.Action != VisualRecoveryAction.None)
+                    {
+                        Emit(new { Event = "recovery", AtMs = clock.ElapsedMilliseconds,
+                            Observation = recoveryObservation, Action = choice.Action.ToString(), choice.Detail });
+                        previousRecovery = recoveryObservation;
+                    }
+                    if (choice.Action == VisualRecoveryAction.Review)
+                    {
+                        File.WriteAllBytes(Path.Combine(evidenceDirectory, "recovery-review.png"),
+                            new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                        return new { Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
+                            NeedsReview = true, Recovery = recoveryObservation, Events = events, choice.Detail };
+                    }
+                    if (choice.Action == VisualRecoveryAction.Wait)
+                    {
+                        await Task.Delay(250, stop.Token);
+                        continue;
+                    }
+                    if (choice.Action is VisualRecoveryAction.Food or VisualRecoveryAction.Potion)
+                    {
+                        WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                        var fresh = await frames.CaptureAsync(stop.Token);
+                        var freshObservation = recoveryRecognizer!.Observe(fresh);
+                        if (recovery.Decide(DateTimeOffset.UtcNow, freshObservation, inhibit.Find(fresh, region).Matches).Action != choice.Action)
+                            continue;
+                        File.WriteAllBytes(Path.Combine(evidenceDirectory, $"recovery-{events.Count}-before.png"),
+                            new WindowsGameFramePngEncoder().Encode(fresh).Bytes.ToArray());
+                        var bound = Observation(fresh);
+                        var token = choice.Action == VisualRecoveryAction.Food ? recoveryProfile!.FoodKey : recoveryProfile!.PotionKey;
+                        // USB送出とファイル保存の境界で終了しても、同じ消費を未実行扱いにしない。
+                        recovery.RecordAttempt(choice.Action, DateTimeOffset.UtcNow, freshObservation);
+                        SaveRecoveryState();
+                        var sent = actions.KeyTap(new GameInteractionKeyTapRequest(
+                            ContractSchemaVersions.Revision03, bound.ObservationId, fresh.Sequence,
+                            fresh.TransformRevision, fresh.SourceId, [token]), bound);
+                        if (sent.Status != GameInteractionDispatchStatus.Dispatched)
+                            throw new InvalidOperationException($"回復キーのNano入力に失敗しました: {sent.FailureReason}");
+                        Emit(new { Event = "recovery-input", AtMs = clock.ElapsedMilliseconds,
+                            Action = choice.Action.ToString(), Token = token, dispatch = sent });
+                        schedule.RecordInput(clock.ElapsedMilliseconds);
+                        continue;
+                    }
                 }
                 if (decision is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed)
                 {
@@ -287,6 +351,13 @@ public static class VisualKeyAssistRuntime
                 var json = JsonSerializer.Serialize(entry);
                 File.AppendAllText(Path.Combine(evidenceDirectory, "events.jsonl"), json + "\n");
                 Console.WriteLine(json);
+            }
+
+            void SaveRecoveryState()
+            {
+                var temporary = recoveryStatePath + ".tmp";
+                File.WriteAllText(temporary, JsonSerializer.Serialize(recovery!.State));
+                File.Move(temporary, recoveryStatePath, overwrite: true);
             }
         }
         finally { Console.CancelKeyPress -= cancel; }

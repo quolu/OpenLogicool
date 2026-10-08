@@ -41,6 +41,10 @@ OpenLogicool.Host.exe game-index key-tap --process MabinogiMobile --db <記録�
 OpenLogicool.Host.exe game-index key-assist --process <対象プロセス> --db <記録用DB> --inhibit-image <停止画像.png> --cue-text Space --cue-text "画面を押してください" --keys Key:Space --duration-ms 60000 --evidence <記録フォルダ> --out <結果.json>
 ```
 
+`--recovery-profile <設定.json>`を付けると、校正したHUD画像とHPバーの枠から回復・食事を判断する。停止画像を最優先し、HUD非表示中は消費しない。枠の右端を毎回測り、目盛りの個数や使用前の固定幅を分母にしない。水色を含む充填部分の割合が設定基準以下ならポーションキー、食事の使用前表示があり効果アイコンがない時だけ食事キーを送る。食事後の効果、ポーション後のHP増加が確認できない場合と、校正外のサイズ・判別不能なHUDは`NeedsReview=true`で入力を止める。利用者への通知・裁定は操作者がApproval Boxで行う。
+
+`fixtures/visual-recovery/mabinogi-20261008/profile.json`は実測した2203×1319画面の設定であり、食事B・ポーションF1・HP50％・薬の待ち10秒・食事の最短間隔20分。包帯の自動使用は含まない。設定を付けた`--observe-only`は回復判定も返し、入力しない。消費の試行と待ち時間は`<記録用DB>.visual-recovery.json`へUSB送出前に保存し、同じDBでの再起動後も引き継ぐ。手動で削除して消費を繰り返す運用にはしない。前後画像と判定・送出履歴は指定の記録フォルダへ保存する。
+
 停止画像の一致を最優先し、一致中はキーを送らない。指定文字はWindows OCRの結果から空白を除いて照合する。文字表示がある場合はキーを送り、ない場合は送出時刻から8〜12秒の乱数による期限を設ける。実際の送出時刻には画面取得・照合・前面化の処理時間も含まれる。探索範囲は画面全体で、`--search-bounds x,y,width,height`で指定もできる。画像による入力条件は`--cue-image <png>`で指定できる。
 
 通常間隔で入力した場合は、1秒後の画面をOCRと画像特徴で比較する。変化が確認できなければ`NeedsReview=true`で終了し、`review-before.png`と`review-after.png`を残す。呼び出した操作者はそこで画面を確認し、判断できない場合はApproval Boxへ利用者の判断を申請する。比較結果はゲーム内の成功やページ遷移の確定を意味しない。自動戦闘やアニメーションの影響で変化が出ることがある。
