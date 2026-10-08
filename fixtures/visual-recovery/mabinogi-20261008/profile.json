@@ -23,5 +23,6 @@
   "CanvasAspectRatio": 1.7777777777777777,
   "BandageKey": "Key:F2",
   "BandageThreshold": 0.2,
-  "BandageCooldownMs": 5000
+  "BandageCooldownMs": 5000,
+  "IncapacitatedText": "行動不能"
 }

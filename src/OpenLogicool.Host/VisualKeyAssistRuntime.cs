@@ -274,12 +274,12 @@ public static class VisualKeyAssistRuntime
                 var inhibitMatch = inhibit.FindAtWindowScale(frame, region, windowScale);
                 var cueMatch = inhibitMatch.Matches || cues.Length == 0 ? null : cues.Select(cue => cue.FindAtWindowScale(frame, region, windowScale))
                     .OrderBy(match => match.Difference).First();
-                var ocr = !inhibitMatch.Matches && cueTexts.Length > 0
+                var ocr = !inhibitMatch.Matches && (cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                     ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, stop.Token) : null;
                 var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
                 var decision = progress.Apply(schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
                     cueMatch?.Matches == true || matchedTexts.Length > 0));
-                var recoveryObservation = recoveryRecognizer?.Observe(frame, viewport);
+                var recoveryObservation = recoveryRecognizer?.Observe(frame, viewport, ocr?.Text);
                 if (decision != previous)
                 {
                     Emit(new { Event = "condition", Decision = decision.ToString(), AtMs = clock.ElapsedMilliseconds,

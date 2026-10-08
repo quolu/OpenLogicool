@@ -298,6 +298,22 @@ public sealed class VisualRecoveryAssistTests
     }
 
     [Fact]
+    public void Recorded_defeat_text_ends_recovery_even_when_the_health_hud_is_hidden()
+    {
+        var frame = Frame("../../../evidence/mabinogi-key-assist-20261008/potion-monitor-defeat.png");
+        var recognizer = new VisualRecoveryRecognizer(Profile());
+        var viewport = new FrameRect(1, 31, 1506, 814);
+        var hidden = recognizer.Observe(frame, viewport);
+        Assert.False(hidden.HudVisible);
+        Assert.Null(hidden.Problem);
+        // 実画面OCRで空白が挿入されても、設定した行動不能表示を識別する。
+        var defeated = recognizer.Observe(frame, viewport, "サキュバスに倒されました。行 動 不 能 キャンプファイアで復活");
+        var schedule = new VisualRecoverySchedule(Profile());
+        Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(DateTimeOffset.UnixEpoch, defeated, false).Action);
+        Assert.Contains("行動不能", defeated.Problem);
+    }
+
+    [Fact]
     public void Progress_review_stops_space_without_stopping_the_independent_recovery_schedule()
     {
         var progress = new VisualKeyAssistProgress();

@@ -20,7 +20,8 @@ public sealed record VisualRecoveryProfile(
     int MinimumBarWidth, string FoodKey, string PotionKey,
     double PotionThreshold, int PotionCooldownMs, int FoodMinimumIntervalMs,
     int[] Viewport, double CanvasAspectRatio,
-    string BandageKey, double BandageThreshold, int BandageCooldownMs)
+    string BandageKey, double BandageThreshold, int BandageCooldownMs,
+    string? IncapacitatedText = null)
 {
     public static VisualRecoveryProfile Load(string path)
     {
@@ -66,8 +67,11 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
     private readonly VisualKeyTemplate ready = VisualKeyTemplate.Load(profile.FoodReadyImage);
     private readonly VisualKeyTemplate active = VisualKeyTemplate.Load(profile.FoodActiveImage, relativeColor: true);
 
-    public VisualRecoveryObservation Observe(CapturedFrame frame, FrameRect? viewport = null)
+    public VisualRecoveryObservation Observe(CapturedFrame frame, FrameRect? viewport = null, string? screenText = null)
     {
+        if (!string.IsNullOrWhiteSpace(profile.IncapacitatedText) && screenText is not null
+            && VisualKeyAssistRuntime.ContainsCue(screenText, profile.IncapacitatedText))
+            return new(false, null, null, VisualFoodState.Unknown, "対象の行動不能表示を確認しました。回復入力を終了します。");
         var sourceFrame = frame;
         if (viewport is null && (frame.Width != profile.Width || frame.Height != profile.Height))
             return new(false, null, null, VisualFoodState.Unknown, "ゲームの描画領域が必要です。");
