@@ -1,7 +1,7 @@
 {
   "SchemaVersion": 1,
   "ResultTimeoutMs": 5000,
-  "UnknownTimeoutMs": 5000,
+  "UnknownTimeoutMs": 10000,
   "ReviewWhen": [
     { "Text": "ボーナスを選択してください", "Bounds": [0.15, 0.1, 0.7, 0.65],
       "ChoiceBounds": [[0.35, 0.435, 0.09, 0.052], [0.455, 0.435, 0.09, 0.052], [0.56, 0.435, 0.09, 0.052]] },

@@ -309,6 +309,7 @@ public static class VisualKeyAssistRuntime
             async Task<object> RunProgressAsync(CancellationToken token)
             {
                 using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId + ":progress", TimeSpan.FromSeconds(10));
+                var sceneMonitor = new VisualProgressSceneMonitor();
                 VisualKeyAssistDecision? previous = null;
                 while (clock.ElapsedMilliseconds < duration)
                 {
@@ -329,10 +330,17 @@ public static class VisualKeyAssistRuntime
                     var flowCandidate = progressRecognizer is null || ocr is null ? null
                         : progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame);
                     var flowTimed = flowCandidate?.RuleId is not null && progressProfile!.Rules.Single(rule => rule.Id == flowCandidate.RuleId).Timed;
+                    var sceneActivity = progressProfile is null ? (Changed: false, Difference: 0d)
+                        : sceneMonitor.Observe(frame, viewport!);
                     var flowChoice = progressSchedule?.Decide(clock.ElapsedMilliseconds,
                         flowCandidate ?? new(VisualProgressAction.Normal), inhibitMatch.Matches,
                         recoveryRecognizer!.Observe(frame, viewport).HudVisible,
-                        schedule.Decide(clock.ElapsedMilliseconds, false, !flowTimed) is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed);
+                        schedule.Decide(clock.ElapsedMilliseconds, false, !flowTimed) is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed,
+                        sceneActivity.Changed);
+                    if (flowChoice is not null)
+                        Emit(new { Event = "progress-observation", AtMs = clock.ElapsedMilliseconds,
+                            sceneActivity.Changed, sceneActivity.Difference, Candidate = flowCandidate?.Action.ToString(),
+                            RuleId = flowCandidate?.RuleId, Decision = flowChoice.Action.ToString() });
                     if (decision != previous)
                     {
                         Emit(new

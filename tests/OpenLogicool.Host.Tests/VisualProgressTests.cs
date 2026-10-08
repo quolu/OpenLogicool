@@ -296,11 +296,76 @@ public sealed class VisualProgressTests
         var schedule = new VisualProgressSchedule(Profile());
         var candidate = new VisualProgressChoice(VisualProgressAction.Key, "reward", "reward:確認", "Key:Space");
         schedule.RecordInput(100, candidate);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1000, candidate, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(3000, candidate, false, false, true).Action);
         Assert.Equal(VisualProgressAction.Review, schedule.Decide(5100, candidate, false, false, true).Action);
         var unknown = new VisualProgressSchedule(Profile());
         Assert.Equal(VisualProgressAction.Wait, unknown.Decide(0, new(VisualProgressAction.Normal), false, false, true).Action);
-        Assert.Equal(VisualProgressAction.Review, unknown.Decide(5000, new(VisualProgressAction.Normal), false, false, true).Action);
-        Assert.Equal(VisualProgressAction.Normal, unknown.Decide(6000, new(VisualProgressAction.Normal), false, true, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, unknown.Decide(5000, new(VisualProgressAction.Normal), false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Review, unknown.Decide(10000, new(VisualProgressAction.Normal), false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Normal, unknown.Decide(11000, new(VisualProgressAction.Normal), false, true, true).Action);
+    }
+
+    [Fact]
+    public void 未知画面は変化中なら待ち続け同じ画面を複数回観測してから通知する()
+    {
+        var schedule = new VisualProgressSchedule(Profile());
+        var unknown = new VisualProgressChoice(VisualProgressAction.Normal);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, unknown, false, false, true).Action);
+        // 長い観測間隔だけで判定を成立させない。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(12000, unknown, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(12500, unknown, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(18000, unknown, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(24000, unknown, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(29000, unknown, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(34000, unknown, false, false, true).Action);
+    }
+
+    [Fact]
+    public void 操作後の未知の演出も観測を続け既知画面へ到着したら結果待ちを解消する()
+    {
+        var schedule = new VisualProgressSchedule(Profile());
+        schedule.RecordInput(0, new(VisualProgressAction.Key, "prompt", "prompt", "Key:Space"));
+        var unknown = new VisualProgressChoice(VisualProgressAction.Normal);
+        foreach (var at in new[] { 1000, 6000, 12000, 18000 })
+            Assert.Equal(VisualProgressAction.Wait, schedule.Decide(at, unknown, false, false, true, sceneChanged: true).Action);
+        var known = new VisualProgressChoice(VisualProgressAction.Key, "next", "next", "Key:Space");
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(20000, known, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(20600, known, false, false, true).Action);
+    }
+
+    [Fact]
+    public void 画像の小さな揺れは静止と扱いゆっくりした変化は基準画像から累積して検出する()
+    {
+        CapturedFrame Solid(byte luma)
+        {
+            var pixels = new byte[32 * 16 * 4];
+            for (var i = 0; i < pixels.Length; i += 4) { pixels[i] = pixels[i + 1] = pixels[i + 2] = luma; pixels[i + 3] = 255; }
+            return new(ContractSchemaVersions.Revision03, "test", CaptureBackend.WindowsGraphicsCapture,
+                1, 0, DateTimeOffset.UnixEpoch, 32, 16, "BGRA8", 96, 96, 1, 0, 0,
+                Pixels: new FramePixels(pixels, 32 * 4));
+        }
+        var monitor = new VisualProgressSceneMonitor();
+        var viewport = new FrameRect(0, 0, 32, 16);
+        Assert.False(monitor.Observe(Solid(20), viewport).Changed);
+        Assert.False(monitor.Observe(Solid(22), viewport).Changed);
+        Assert.False(monitor.Observe(Solid(25), viewport).Changed);
+        Assert.True(monitor.Observe(Solid(26), viewport).Changed);
+        Assert.False(monitor.Observe(Solid(26), viewport).Changed);
+    }
+
+    [Fact]
+    public void 保存済みクリア画面から戦利品表示への変化を画像で検出する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var frame = ReadFrame(Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008/dungeon-clear.png"));
+        var next = ReadFrame(Path.Combine(directory.FullName, "evidence/mabinogi-key-assist-20261008/recovery-only-loot.png"));
+        var monitor = new VisualProgressSceneMonitor();
+        var viewport = new FrameRect(1, 31, 1506, 814);
+        Assert.False(monitor.Observe(frame, viewport).Changed);
+        Assert.False(monitor.Observe(frame, viewport).Changed);
+        Assert.True(monitor.Observe(next, viewport).Changed);
     }
 
     [Fact]

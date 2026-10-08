@@ -11,7 +11,7 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
     bool ImageRotates = false, bool WaitForChange = false);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
-    VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 5000)
+    VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
     public static VisualProgressProfile Load(string path)
     {
@@ -153,39 +153,49 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
 public sealed class VisualProgressSchedule(VisualProgressProfile profile)
 {
     private VisualProgressChoice? pending;
-    private long sentAt;
     private string? stableSignature;
     private long stableAt;
     private long? unknownAt;
+    private int unresolvedObservations;
 
     public VisualProgressChoice Decide(long now, VisualProgressChoice candidate, bool inhibited,
-        bool hudVisible, bool due)
+        bool hudVisible, bool due, bool sceneChanged = false)
     {
         if (inhibited) { pending = null; unknownAt = null; stableSignature = null; return new(VisualProgressAction.Wait); }
         if (candidate.Action == VisualProgressAction.Review) return candidate;
         if (pending is not null)
         {
             if (candidate.Signature == pending.Signature || (candidate.Action == VisualProgressAction.Normal && !hudVisible))
-                return now - sentAt >= profile.ResultTimeoutMs
-                    ? new(VisualProgressAction.Review, Detail: $"{pending.RuleId} の操作結果を確認できません。再送していません。")
-                    : new(VisualProgressAction.Wait);
+                return ObserveUnresolved(now, sceneChanged,
+                    candidate.Action == VisualProgressAction.Normal ? Math.Max(profile.ResultTimeoutMs, profile.UnknownTimeoutMs) : profile.ResultTimeoutMs,
+                    $"{pending.RuleId} の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。");
             if (stableSignature != candidate.Signature) { stableSignature = candidate.Signature; stableAt = now; }
             if (now - stableAt < 600) return new(VisualProgressAction.Wait);
             pending = null;
+            ResetUnresolved();
         }
         if (candidate.Action == VisualProgressAction.Normal)
         {
             stableSignature = null;
-            if (hudVisible) { unknownAt = null; return candidate; }
-            unknownAt ??= now;
-            return now - unknownAt >= profile.UnknownTimeoutMs
-                ? new(VisualProgressAction.Review, Detail: "確認済みの画面規則とHUDに一致しません。")
-                : new(VisualProgressAction.Wait);
+            if (hudVisible) { ResetUnresolved(); return candidate; }
+            return ObserveUnresolved(now, sceneChanged, profile.UnknownTimeoutMs,
+                "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。");
         }
-        unknownAt = null;
+        ResetUnresolved();
         if (stableSignature != candidate.Signature) { stableSignature = candidate.Signature; stableAt = now; }
         return now - stableAt >= 600 && due ? candidate : new(VisualProgressAction.Wait);
     }
 
-    public void RecordInput(long now, VisualProgressChoice choice) { pending = choice; sentAt = now; }
+    public void RecordInput(long now, VisualProgressChoice choice) { pending = choice; unknownAt = now; unresolvedObservations = 0; }
+
+    private VisualProgressChoice ObserveUnresolved(long now, bool sceneChanged, int waitMs, string detail)
+    {
+        if (unknownAt is null || sceneChanged) { unknownAt = now; unresolvedObservations = 0; }
+        unresolvedObservations++;
+        return unresolvedObservations >= 3 && now - unknownAt >= waitMs
+            ? new(VisualProgressAction.Review, Detail: detail)
+            : new(VisualProgressAction.Wait);
+    }
+
+    private void ResetUnresolved() { unknownAt = null; unresolvedObservations = 0; }
 }
