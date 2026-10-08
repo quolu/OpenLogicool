@@ -5,10 +5,10 @@ using OpenLogicool.Contracts.Capture;
 namespace OpenLogicool.Host;
 
 public enum VisualFoodState { Ready, Active, Unknown }
-public enum VisualRecoveryAction { None, Wait, Food, Potion, Review }
+public enum VisualRecoveryAction { None, Wait, Food, Potion, Review, Bandage }
 
 public sealed record VisualRecoveryObservation(bool HudVisible, double? HealthFraction,
-    int? BarWidth, VisualFoodState Food, string? Problem);
+    int? BarWidth, VisualFoodState Food, string? Problem, double? WhiteFraction = null);
 
 /// <summary>実画面で校正したHUDと使用キー。ゲーム固有の画像と座標はデータに置く。</summary>
 public sealed record VisualRecoveryProfile(
@@ -19,7 +19,8 @@ public sealed record VisualRecoveryProfile(
     int[] RailSearch, int[] RailRgb, int RailTolerance, int CapPixels, int FillOffsetY,
     int MinimumBarWidth, string FoodKey, string PotionKey,
     double PotionThreshold, int PotionCooldownMs, int FoodMinimumIntervalMs,
-    int[] Viewport, double CanvasAspectRatio)
+    int[] Viewport, double CanvasAspectRatio,
+    string BandageKey, double BandageThreshold, int BandageCooldownMs)
 {
     public static VisualRecoveryProfile Load(string path)
     {
@@ -34,7 +35,10 @@ public sealed record VisualRecoveryProfile(
             || profile.RailRgb.Any(value => value is < 0 or > 255)
             || profile.RailTolerance is < 0 or > 255 || profile.CapPixels < 0
             || profile.MinimumBarWidth <= 0 || profile.PotionThreshold is <= 0 or > 1
-            || profile.PotionCooldownMs <= 0 || profile.FoodMinimumIntervalMs <= 0)
+            || profile.PotionCooldownMs <= 0 || profile.FoodMinimumIntervalMs <= 0
+            || string.IsNullOrWhiteSpace(profile.BandageKey)
+            || !double.IsFinite(profile.BandageThreshold) || profile.BandageThreshold is <= 0 or > 1
+            || profile.BandageCooldownMs <= 0)
             throw new InvalidDataException("回復判定設定の形式または値が不正です。");
         if (profile.Viewport is not { Length: 4 } || profile.Viewport.Any(value => value < 0)
             || profile.Viewport[2] == 0 || profile.Viewport[3] == 0
@@ -123,6 +127,7 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
         if (left < 0 || right >= frame.Width || fillY < 0 || fillY >= frame.Height)
             return new(true, null, null, food, "HPバーの測定範囲が画面外です。");
         var filledRight = left - 1;
+        var whitePixels = 0;
         for (var x = left; x <= right; x++)
         {
             var offset = fillY * pixels.Stride + x * 4;
@@ -130,9 +135,11 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
             var minimum = Math.Min(bytes[offset], Math.Min(bytes[offset + 1], bytes[offset + 2]));
             // 水色の追加HPも充填として測る。目盛りの暗い縦線は残量の終端にしない。
             if (maximum >= 110 && maximum - minimum >= 45) filledRight = x;
+            // 白い部分は色付きHPと別に測り、目盛りで分割されても全長に対する割合を返す。
+            if (minimum >= 170 && maximum - minimum <= 25) whitePixels++;
         }
         var width = right - left + 1;
-        return new(true, (filledRight - left + 1) / (double)width, width, food, null);
+        return new(true, (filledRight - left + 1) / (double)width, width, food, null, whitePixels / (double)width);
     }
 
     private CapturedFrame NormalizeHud(CapturedFrame frame, FrameRect viewport)
@@ -186,7 +193,8 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
 
 public sealed record VisualRecoveryState(DateTimeOffset? LastFood = null, DateTimeOffset? LastPotion = null,
     VisualRecoveryAction Pending = VisualRecoveryAction.None, double? BeforePotion = null,
-    int? BeforeFoodBarWidth = null);
+    int? BeforeFoodBarWidth = null, DateTimeOffset? LastBandage = null,
+    bool BandagePending = false, double? BeforeBandageWhiteFraction = null);
 public sealed record VisualRecoveryChoice(VisualRecoveryAction Action, string Detail);
 
 /// <summary>食事の結果待ちと薬の待ち時間を保持し、未確認の消費を繰り返さない。</summary>
@@ -207,6 +215,18 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
                 : new(VisualRecoveryAction.Review, observation.Problem);
         }
         uncertainHealthSince = null;
+        if (State.BandagePending)
+        {
+            if (observation.HudVisible && observation.WhiteFraction < State.BeforeBandageWhiteFraction)
+                State = State with { BandagePending = false };
+            else return now - State.LastBandage >= TimeSpan.FromSeconds(3)
+                ? new(VisualRecoveryAction.Review, "包帯後に白い部分の減少を確認できません。追加使用せず停止しました。")
+                : new(VisualRecoveryAction.Wait, "包帯後の白い部分を確認しています。");
+        }
+        if (observation.HudVisible && observation.HealthFraction > 0
+            && observation.WhiteFraction >= profile.BandageThreshold
+            && (State.LastBandage is null || now - State.LastBandage >= TimeSpan.FromMilliseconds(profile.BandageCooldownMs)))
+            return new(VisualRecoveryAction.Bandage, "HPバーの白い部分が包帯の使用基準以上です。");
         if (State.Pending == VisualRecoveryAction.Food)
         {
             if (observation.HudVisible && observation.Food == VisualFoodState.Active
@@ -246,6 +266,8 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
         {
             VisualRecoveryAction.Food => State with { LastFood = now, Pending = action, BeforeFoodBarWidth = observation.BarWidth },
             VisualRecoveryAction.Potion => State with { LastPotion = now, Pending = action, BeforePotion = observation.HealthFraction },
+            VisualRecoveryAction.Bandage => State with { LastBandage = now, BandagePending = true,
+                BeforeBandageWhiteFraction = observation.WhiteFraction },
             _ => throw new ArgumentException("消費操作だけを記録できます。", nameof(action)),
         };
     }

@@ -23,6 +23,8 @@ public sealed class VisualRecoveryAssistTests
         Assert.Null(before.Problem);
         Assert.Equal(VisualFoodState.Ready, before.Food);
         Assert.Equal(VisualFoodState.Active, after.Food);
+        Assert.Equal(0, before.WhiteFraction);
+        Assert.Equal(0, after.WhiteFraction);
         Assert.InRange(before.HealthFraction!.Value, 0.98, 1);
         Assert.InRange(after.HealthFraction!.Value, 0.98, 1);
         Assert.InRange(after.BarWidth!.Value / (double)before.BarWidth!.Value, 1.48, 1.51);
@@ -149,6 +151,55 @@ public sealed class VisualRecoveryAssistTests
         Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddSeconds(9), active, false).Action);
         Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(now.AddMinutes(1), ready, false).Action);
         Assert.Equal(VisualRecoveryAction.Food, schedule.Decide(now.AddMinutes(20), ready, false).Action);
+    }
+
+    [Theory]
+    [InlineData("wounded.png", 0.20, 0.30)]
+    [InlineData("wounded-low.png", 0.30, 0.40)]
+    public void White_in_recorded_resized_health_bars_is_measured_separately_from_colored_health(string image, double minimum, double maximum)
+    {
+        var observation = new VisualRecoveryRecognizer(Profile()).Observe(Frame(image), new FrameRect(1, 31, 1506, 814));
+        Assert.Null(observation.Problem);
+        Assert.Equal(198, observation.BarWidth);
+        Assert.InRange(observation.WhiteFraction!.Value, minimum, maximum);
+        Assert.Equal(VisualRecoveryAction.Bandage, new VisualRecoverySchedule(Profile()).Decide(DateTimeOffset.UnixEpoch, observation, false).Action);
+    }
+
+    [Fact]
+    public void Bandage_uses_twenty_percent_white_before_potion_and_keeps_its_own_persistent_cooldown()
+    {
+        var now = DateTimeOffset.UnixEpoch;
+        var white = new VisualRecoveryObservation(true, 0.4, 198, VisualFoodState.Active, null, 0.2);
+        var schedule = new VisualRecoverySchedule(Profile());
+        Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now, white, true).Action);
+        Assert.Equal(VisualRecoveryAction.Potion, schedule.Decide(now, white with { WhiteFraction = 0.19 }, false).Action);
+        Assert.Equal(VisualRecoveryAction.Bandage, schedule.Decide(now, white, false).Action);
+        schedule.RecordAttempt(VisualRecoveryAction.Bandage, now, white);
+        var restarted = new VisualRecoverySchedule(Profile(), schedule.State);
+        Assert.Equal(VisualRecoveryAction.Wait, restarted.Decide(now.AddSeconds(1), white, false).Action);
+        Assert.Equal(VisualRecoveryAction.Review, restarted.Decide(now.AddSeconds(3), white, false).Action);
+        var healed = white with { WhiteFraction = 0.1, HealthFraction = 0.6 };
+        Assert.Equal(VisualRecoveryAction.None, restarted.Decide(now.AddSeconds(3.5), healed, false).Action);
+        Assert.False(restarted.State.BandagePending);
+        Assert.Equal(VisualRecoveryAction.None, restarted.Decide(now.AddSeconds(4.9), healed with { WhiteFraction = 0.2 }, false).Action);
+        Assert.Equal(VisualRecoveryAction.Bandage, restarted.Decide(now.AddSeconds(5), healed with { WhiteFraction = 0.2 }, false).Action);
+    }
+
+    [Fact]
+    public void New_white_damage_can_request_bandage_during_potion_confirmation_without_erasing_the_potion_attempt()
+    {
+        var now = DateTimeOffset.UnixEpoch;
+        var low = new VisualRecoveryObservation(true, 0.4, 198, VisualFoodState.Active, null, 0.1);
+        var schedule = new VisualRecoverySchedule(Profile());
+        schedule.RecordAttempt(VisualRecoveryAction.Potion, now, low);
+        var white = low with { WhiteFraction = 0.25 };
+        Assert.Equal(VisualRecoveryAction.Bandage, schedule.Decide(now.AddSeconds(1), white, false).Action);
+        schedule.RecordAttempt(VisualRecoveryAction.Bandage, now.AddSeconds(1), white);
+        Assert.Equal(VisualRecoveryAction.Potion, schedule.State.Pending);
+        Assert.Equal(now, schedule.State.LastPotion);
+        Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddSeconds(2), low with { HealthFraction = 0.6 }, false).Action);
+        Assert.False(schedule.State.BandagePending);
+        Assert.Equal(VisualRecoveryAction.None, schedule.State.Pending);
     }
 
     [Fact]

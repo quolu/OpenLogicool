@@ -1,6 +1,6 @@
 # OpenLogicool knowledge index
 
-- [マビノギモバイルの回復・食事調査](openlogicool/mabinogi-recovery-food-2026-10-08.md) — 使用キー、食事前後のHUD比較、窓の移動・3サイズへの対応と再挑戦の停止原因。取得日: 2026-10-08、確度: 修理後の食事B送出と効果確認・HP47.5％でのF1送出は確認済み／ポーション後のHP回復・戦闘継続は未確認
+- [マビノギモバイルの回復・食事調査](openlogicool/mabinogi-recovery-food-2026-10-08.md) — 使用キー、食事前後のHUD比較、窓の移動・3サイズへの対応、白20％の包帯条件と再戦の停止原因。取得日: 2026-10-08、確度: 食事効果・F1送出・白の一時減少は確認済み／F2実使用・白の意味・ポーション後のHP回復・クリアは未確認
 
 - [Codex App ServerのGUI起動とUTF-8 stdio](openlogicool/codex-gui-stdio-encoding-2026-10-03.md) — コンソールなしのCP932誤読、BOMなしUTF-8明示、修理前後と導入後GUIの実測。取得日: 2026-10-03、確度: 確認済み（Microsoft一次資料＋Windows native）
 

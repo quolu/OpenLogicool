@@ -321,17 +321,29 @@ public static class VisualKeyAssistRuntime
                         await Task.Delay(250, stop.Token);
                         continue;
                     }
-                    if (choice.Action is VisualRecoveryAction.Food or VisualRecoveryAction.Potion)
+                    if (choice.Action is VisualRecoveryAction.Food or VisualRecoveryAction.Potion or VisualRecoveryAction.Bandage)
                     {
                         WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
                         var fresh = await frames.CaptureAsync(stop.Token);
                         var freshObservation = recoveryRecognizer!.Observe(fresh, WindowsGameTargetLocator.CaptureClientBounds(target.Window));
-                        if (recovery.Decide(DateTimeOffset.UtcNow, freshObservation, Inhibited(fresh)).Action != choice.Action)
+                        var freshChoice = recovery.Decide(DateTimeOffset.UtcNow, freshObservation, Inhibited(fresh));
+                        if (freshChoice.Action != choice.Action)
+                        {
+                            Emit(new { Event = "recovery-input-withheld", AtMs = clock.ElapsedMilliseconds,
+                                RequestedAction = choice.Action.ToString(), Observation = freshObservation,
+                                Action = freshChoice.Action.ToString(), freshChoice.Detail });
                             continue;
+                        }
                         File.WriteAllBytes(Path.Combine(evidenceDirectory, $"recovery-{events.Count}-before.png"),
                             new WindowsGameFramePngEncoder().Encode(fresh).Bytes.ToArray());
                         var bound = Observation(fresh);
-                        var token = choice.Action == VisualRecoveryAction.Food ? recoveryProfile!.FoodKey : recoveryProfile!.PotionKey;
+                        var token = choice.Action switch
+                        {
+                            VisualRecoveryAction.Food => recoveryProfile!.FoodKey,
+                            VisualRecoveryAction.Potion => recoveryProfile!.PotionKey,
+                            VisualRecoveryAction.Bandage => recoveryProfile!.BandageKey,
+                            _ => throw new InvalidOperationException("消費操作のキーがありません。"),
+                        };
                         // USB送出とファイル保存の境界で終了しても、同じ消費を未実行扱いにしない。
                         recovery.RecordAttempt(choice.Action, DateTimeOffset.UtcNow, freshObservation);
                         SaveRecoveryState();

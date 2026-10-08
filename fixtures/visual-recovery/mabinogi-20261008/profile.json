@@ -20,5 +20,8 @@
   "PotionCooldownMs": 10000,
   "FoodMinimumIntervalMs": 1200000,
   "Viewport": [1, 31, 2201, 1287],
-  "CanvasAspectRatio": 1.7777777777777777
+  "CanvasAspectRatio": 1.7777777777777777,
+  "BandageKey": "Key:F2",
+  "BandageThreshold": 0.2,
+  "BandageCooldownMs": 5000
 }
