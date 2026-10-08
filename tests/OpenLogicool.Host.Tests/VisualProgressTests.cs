@@ -122,6 +122,22 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public async Task Spaceと確認が表示された案内はゲーム固有の見出しを要求せず進める()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, "space-confirm.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var choice = new VisualProgressRecognizer(profile).Recognize(ocr, frame.Width, frame.Height,
+            new(1, 31, frame.Width - 2, frame.Height - 32), frame);
+        Assert.Equal(VisualProgressAction.Key, choice.Action);
+        Assert.Equal("Key:Space", choice.Key);
+        Assert.Equal("space-confirm", choice.RuleId);
+    }
+
+    [Fact]
     public async Task 自動着用の確認窓は背景の同名ボタンより優先してSpaceで確定する()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

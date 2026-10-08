@@ -83,6 +83,18 @@ public sealed class VisualRecoveryAssistTests
     }
 
     [Fact]
+    public void 縮小で下辺の行が丸められても丸い右端と全長を取得する()
+    {
+        var observation = new VisualRecoveryRecognizer(Profile()).Observe(
+            Frame("window-resized-rounding.png"), new FrameRect(1, 31, 1711, 1085));
+        Assert.True(observation.HudVisible);
+        Assert.Null(observation.Problem);
+        Assert.InRange(observation.BarWidth!.Value, 129, 136);
+        Assert.InRange(observation.HealthFraction!.Value, 0.97, 1);
+        Assert.Equal(0, observation.WhiteFraction);
+    }
+
+    [Fact]
     public void Combat_food_icon_is_found_after_other_effects_shift_it_to_the_right()
     {
         var observation = new VisualRecoveryRecognizer(Profile()).Observe(Frame("combat.png"));

@@ -116,9 +116,10 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
             {
                 if (IsRail(bytes, pixels.Stride, x, y)
                     && x - start > bestRight - bestLeft
+                    // 縮小画像を基準座標へ戻すと下辺の高さが1行ずれる。隣接する下側の行で丸い端を確かめる。
                     && y + 2 < frame.Height
-                    && IsRail(bytes, pixels.Stride, x - 4, y + 2)
-                    && !IsRail(bytes, pixels.Stride, x, y + 2)
+                    && ((IsRail(bytes, pixels.Stride, x - 4, y + 1) && !IsRail(bytes, pixels.Stride, x, y + 1))
+                        || (IsRail(bytes, pixels.Stride, x - 4, y + 2) && !IsRail(bytes, pixels.Stride, x, y + 2)))
                     && !IsRail(bytes, pixels.Stride, x + 1, y))
                 {
                     bestLeft = start;

@@ -52,6 +52,13 @@
       ]
     },
     {
+      "Id": "space-confirm", "Key": "Key:Space", "Priority": 5,
+      "When": [
+        { "Text": "Space", "Bounds": [0.2, 0.65, 0.6, 0.35] },
+        { "Text": "確認", "Bounds": [0.2, 0.65, 0.6, 0.35] }
+      ]
+    },
+    {
       "Id": "screen-prompt", "Key": "Key:Space",
       "When": [ { "Text": "画面を押してください", "Bounds": [0.2, 0.65, 0.6, 0.35] } ]
     },
