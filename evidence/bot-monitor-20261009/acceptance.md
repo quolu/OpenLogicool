@@ -10,10 +10,12 @@ Windowsの実測では0xF3がdown、scanは0x29、逆変換も0xF3。SDKのIME�
 
 修理前の再現試験12件が失敗、修理後の関連22件とHost全505件が成功。開発版へ反映済み。Host DLLはRelease成果物と一致: `2850B4BF6B4A02FF4400D413E4B839DF3F53759677A016F2B3491AE1BC770EA4`。
 
-## 未確認・外部待ち
+## 通信障害と後続の復旧
 
 更新後のBot起動と正規の`serial-hid-test --repeat 1`の両方で、COM3のNanoがHELLOへ応答せず時間切れ。入力前に停止し、別の入力経路や自動再送は使わない。記録は`restart.json`、`after.json`、`serial-diagnostic.json`。通信障害の原因は未特定。修理後の実機再開は未確認。
 
 NanoのUSB抜き挿しを決裁箱K-3YHZG5で依頼した。回答後は接続診断→CLIからBot開始→初期HeldCountと3秒後の再開→コンパスSpace送出・HP観測の継続を確認する。録画原本・マクロ・キー割当・回復設定は変更しない。
 
-5分ごとの監視をこの会話へ設定済み。現在はアプリが起動、Botは通信エラーで停止している。
+その後、オーナーから抜き挿しせず解決する指示を受け、Windows標準のNano一台の機器再起動で通信を復旧した。修正版BotはHeldCount=0で再開し、Spaceと回復観測を実測できた。詳細は[後続記録](../nano-software-recovery-20261009/acceptance.md)。通信障害の発生原因自体は未特定。
+
+5分ごとの監視をこの会話へ設定済み。現在はアプリとBotを再開している。

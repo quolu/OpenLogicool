@@ -96,6 +96,14 @@ baselineが無い、またはbyte一致を確認できない場合は成功扱�
 
 ## firmware再flash
 
+### 無応答時のWindows機器再起動
+
+HELLOが時間切れでもNanoのUSB・CDCが列挙されている場合、管理者権限でWindows標準`pnputil /restart-device <Nano本体のPnP機器ID>`を使い、物理抜き挿しせず通信が戻る場合がある。対象は出力設定で選択したNanoと同一ContainerIdの本体一台だけとし、USBコントローラー全体へ操作しない。BotやNanoを使う通常割当の接続を先に回収する。
+
+再認識後は正規`serial-hid-test --repeat 1`でHELLO/READYと全解放を確認してからBotを明示的に再開する。失敗した入力を再送せず、応答回復と障害原因の特定を区別する。再起動も診断も失敗した場合はその結果を残す。実測は[復旧記録](../evidence/nano-software-recovery-20261009/acceptance.md)。
+
+### 再flash手順
+
 repo内のfirmware 1.1.3を再flashする場合:
 
 ```powershell
