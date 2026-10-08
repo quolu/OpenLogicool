@@ -113,12 +113,73 @@ public sealed class VisualProgressTests
         schedule.RecordInput(0, new(VisualProgressAction.Key, "previous", "previous", "Key:Space"));
         Assert.Equal(VisualProgressAction.Wait, schedule.Decide(100, waiting, false, false, true).Action);
         Assert.Equal(VisualProgressAction.Wait, schedule.Decide(800, waiting, false, false, true).Action);
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(30000, waiting, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(30000, waiting, false, false, true, sceneChanged: true).Action);
         var ready = recognizer.Recognize(Ocr([skip, new("会話の本文", 300, 150, 200, 30)]), 1000, 600, new(0, 0, 1000, 600));
         Assert.Equal(VisualProgressAction.Key, ready.Action);
         Assert.Equal(VisualProgressAction.Wait, schedule.Decide(31000, ready, false, false, true).Action);
         Assert.Equal(VisualProgressAction.Key, schedule.Decide(31600, ready, false, false, true).Action);
         Assert.Equal(VisualProgressAction.Wait, schedule.Decide(32000, ready, true, false, true).Action);
+    }
+
+    [Fact]
+    public async Task 自動着用の確認窓は背景の同名ボタンより優先してSpaceで確定する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, "loot-equip-confirm.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var choice = new VisualProgressRecognizer(profile).Recognize(ocr, frame.Width, frame.Height,
+            new(1, 31, frame.Width - 2, frame.Height - 32), frame);
+        Assert.Equal(VisualProgressAction.Key, choice.Action);
+        Assert.Equal("Key:Space", choice.Key);
+        Assert.Equal("auto-equip-confirm", choice.RuleId);
+    }
+
+    [Fact]
+    public async Task 戦利品の見出しが描画領域の中央寄りでも表示済みの操作ボタンを認識する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, "loot-buttons.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var choice = new VisualProgressRecognizer(profile).Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal(VisualProgressAction.Click, choice.Action);
+        Assert.Equal("loot-auto-equip", choice.RuleId);
+        var exitProfile = profile with { Rules = profile.Rules.Where(rule => rule.Id != "loot-auto-equip").ToArray() };
+        Assert.Equal("dungeon-exit", new VisualProgressRecognizer(exitProfile).Recognize(ocr, frame.Width, frame.Height, viewport, frame).RuleId);
+    }
+
+    [Fact]
+    public void 既知の待機画面も複数回観測して静止が続けば入力せず通知する()
+    {
+        var schedule = new VisualProgressSchedule(Profile());
+        var waiting = new VisualProgressChoice(VisualProgressAction.Wait, "演出", "演出");
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, waiting, false, false, false).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(12000, waiting, false, false, false).Action);
+        var review = schedule.Decide(12500, waiting, false, false, false);
+        Assert.Equal(VisualProgressAction.Review, review.Action);
+        Assert.Contains("演出", review.Detail);
+        Assert.Null(review.Key);
+        Assert.Null(review.Point);
+    }
+
+    [Fact]
+    public void 待機画面の変化は静止時間を数え直し別の待機画面にも猶予を与える()
+    {
+        var schedule = new VisualProgressSchedule(Profile());
+        var waiting = new VisualProgressChoice(VisualProgressAction.Wait, "演出", "演出");
+        foreach (var at in new[] { 0, 5000, 12000, 18000 })
+            Assert.Equal(VisualProgressAction.Wait, schedule.Decide(at, waiting, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(23000, waiting, false, false, true).Action);
+        var next = waiting with { RuleId = "戦利品", Signature = "戦利品" };
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(27000, next, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(32000, next, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(37000, next, false, false, true).Action);
     }
 
     [Fact]

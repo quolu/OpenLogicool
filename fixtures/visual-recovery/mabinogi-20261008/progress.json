@@ -57,8 +57,15 @@
     },
     {
       "Id": "loot-auto-equip", "Priority": 10,
-      "When": [ { "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.35] } ],
+      "When": [ { "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] } ],
       "Click": { "Text": "自動着用", "Bounds": [0.2, 0.6, 0.8, 0.4] }
+    },
+    {
+      "Id": "auto-equip-confirm", "Key": "Key:Space", "Priority": 20,
+      "When": [
+        { "Text": "より良い装備", "Bounds": [0.25, 0.5, 0.5, 0.25] },
+        { "Text": "以下の装備を着用", "Bounds": [0.25, 0.5, 0.5, 0.25] }
+      ]
     },
     {
       "Id": "equipment-confirm", "Key": "Key:Space",
@@ -69,8 +76,8 @@
     },
     {
       "Id": "dungeon-exit",
-      "When": [ { "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.35] } ],
-      "Click": { "Text": "退出", "Bounds": [0.55, 0.6, 0.45, 0.4] }
+      "When": [ { "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] } ],
+      "Click": { "Text": "退出", "Bounds": [0.2, 0.6, 0.8, 0.4] }
     }
   ]
 }

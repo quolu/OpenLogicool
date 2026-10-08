@@ -109,7 +109,10 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 // 離れた同名ボタンが複数ある場合は選ばない。
                 if (spans.Any(span => Math.Abs(span.EvidenceRegion.NormalizedBounds[0] - bounds[0]) > bounds[2]
                     || Math.Abs(span.EvidenceRegion.NormalizedBounds[1] - bounds[1]) > bounds[3]))
-                    return new(VisualProgressAction.Review, Detail: $"クリック先が複数あります: {rule.Id}");
+                {
+                    candidates.Add(new(VisualProgressAction.Review, rule.Id, Detail: $"クリック先が複数あります: {rule.Id}"));
+                    continue;
+                }
             }
             candidates.Add(new(rule.WaitForChange ? VisualProgressAction.Wait
                 : rule.Click is null ? VisualProgressAction.Key : VisualProgressAction.Click,
@@ -157,11 +160,13 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     private long stableAt;
     private long? unknownAt;
     private int unresolvedObservations;
+    private string? waitingSignature;
 
     public VisualProgressChoice Decide(long now, VisualProgressChoice candidate, bool inhibited,
         bool hudVisible, bool due, bool sceneChanged = false)
     {
-        if (inhibited) { pending = null; unknownAt = null; stableSignature = null; return new(VisualProgressAction.Wait); }
+        if (inhibited) { pending = null; ResetUnresolved(); stableSignature = null; waitingSignature = null; return new(VisualProgressAction.Wait); }
+        if (candidate.Action != VisualProgressAction.Wait) waitingSignature = null;
         if (candidate.Action == VisualProgressAction.Review) return candidate;
         if (pending is not null)
         {
@@ -180,6 +185,12 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
             if (hudVisible) { ResetUnresolved(); return candidate; }
             return ObserveUnresolved(now, sceneChanged, profile.UnknownTimeoutMs,
                 "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。");
+        }
+        if (candidate.Action == VisualProgressAction.Wait)
+        {
+            if (waitingSignature != candidate.Signature) { waitingSignature = candidate.Signature; ResetUnresolved(); }
+            return ObserveUnresolved(now, sceneChanged, profile.UnknownTimeoutMs,
+                $"{candidate.RuleId} の待機中、複数回観測して画面の変化が止まったままです。追加入力はしていません。");
         }
         ResetUnresolved();
         if (stableSignature != candidate.Signature) { stableSignature = candidate.Signature; stableAt = now; }
