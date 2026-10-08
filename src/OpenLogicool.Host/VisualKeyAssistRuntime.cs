@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -17,8 +18,9 @@ public enum VisualKeyAssistDecision { Hold, Wait, Cue, Timed }
 /// <summary>進行の確認待ちはSpaceだけを止め、独立した回復監視は継続する。</summary>
 public sealed class VisualKeyAssistProgress
 {
-    public bool NeedsReview { get; private set; }
-    public void Pause() => NeedsReview = true;
+    private volatile bool needsReview;
+    public bool NeedsReview => needsReview;
+    public void Pause() => needsReview = true;
     public VisualKeyAssistDecision Apply(VisualKeyAssistDecision decision) =>
         NeedsReview && decision != VisualKeyAssistDecision.Hold ? VisualKeyAssistDecision.Wait : decision;
 }
@@ -28,16 +30,22 @@ public sealed class VisualKeyAssistSchedule(long startedMilliseconds, Func<int> 
 {
     private long nextTimed = startedMilliseconds + nextInterval();
     private long nextCue;
+    private readonly object gate = new();
 
-    public VisualKeyAssistDecision Decide(long now, bool inhibited, bool cue) =>
-        inhibited ? VisualKeyAssistDecision.Hold
+    public VisualKeyAssistDecision Decide(long now, bool inhibited, bool cue)
+    {
+        lock (gate) return inhibited ? VisualKeyAssistDecision.Hold
         : cue ? now >= nextCue ? VisualKeyAssistDecision.Cue : VisualKeyAssistDecision.Wait
         : now >= nextTimed ? VisualKeyAssistDecision.Timed : VisualKeyAssistDecision.Wait;
+    }
 
     public void RecordInput(long now)
     {
-        nextTimed = now + nextInterval();
-        nextCue = now + 750;
+        lock (gate)
+        {
+            nextTimed = now + nextInterval();
+            nextCue = now + 750;
+        }
     }
 }
 
@@ -81,14 +89,14 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         var matches = new List<VisualKeyTemplateMatch>();
         // 小さい文字は縮小描画で平滑化される。参照画像も同じ倍率へ縮小して比較する。
         foreach (var w in Enumerable.Range(Math.Max(8, (int)Math.Round(width * scale) - 1), 3))
-        foreach (var h in Enumerable.Range(Math.Max(8, (int)Math.Round(height * scale) - 1), 3))
-        {
-            var resized = new TransformedBitmap(source, new ScaleTransform(w / (double)width, h / (double)height));
-            var bytes = new byte[resized.PixelWidth * resized.PixelHeight * 4];
-            resized.CopyPixels(bytes, resized.PixelWidth * 4, 0);
-            matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor)
-                .FindNativeSize(frame, searchBounds));
-        }
+            foreach (var h in Enumerable.Range(Math.Max(8, (int)Math.Round(height * scale) - 1), 3))
+            {
+                var resized = new TransformedBitmap(source, new ScaleTransform(w / (double)width, h / (double)height));
+                var bytes = new byte[resized.PixelWidth * resized.PixelHeight * 4];
+                resized.CopyPixels(bytes, resized.PixelWidth * 4, 0);
+                matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor)
+                    .FindNativeSize(frame, searchBounds));
+            }
         return matches.MinBy(match => match.Difference)!;
     }
 
@@ -111,28 +119,28 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         {
             var scaleBest = double.PositiveInfinity;
             for (var y = top; y + sampleHeight <= bottom; y += step)
-            for (var x = left; x + sampleWidth <= right; x += step)
-            {
-                if (!Candidate(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight)) continue;
-                var difference = Difference(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight, scaleBest);
-                if (difference >= scaleBest) continue;
-                scaleBest = difference;
-                bestX = x;
-                bestY = y;
-                bestWidth = sampleWidth;
-                bestHeight = sampleHeight;
-            }
+                for (var x = left; x + sampleWidth <= right; x += step)
+                {
+                    if (!Candidate(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight)) continue;
+                    var difference = Difference(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight, scaleBest);
+                    if (difference >= scaleBest) continue;
+                    scaleBest = difference;
+                    bestX = x;
+                    bestY = y;
+                    bestWidth = sampleWidth;
+                    bestHeight = sampleHeight;
+                }
             // 粗い探索で隣の倍率が勝っても、各倍率の正確な座標まで照合する。
             if (double.IsPositiveInfinity(scaleBest)) continue;
             for (var y = Math.Max(top, bestY - 2); y <= Math.Min(bottom - bestHeight, bestY + 2); y++)
-            for (var x = Math.Max(left, bestX - 2); x <= Math.Min(right - bestWidth, bestX + 2); x++)
-            {
-                var difference = Difference(bytes, pixels.Stride, x, y, bestWidth, bestHeight, best);
-                if (difference >= best) continue;
-                best = difference;
-                bestBounds = [x / (double)frame.Width, y / (double)frame.Height,
+                for (var x = Math.Max(left, bestX - 2); x <= Math.Min(right - bestWidth, bestX + 2); x++)
+                {
+                    var difference = Difference(bytes, pixels.Stride, x, y, bestWidth, bestHeight, best);
+                    if (difference >= best) continue;
+                    best = difference;
+                    bestBounds = [x / (double)frame.Width, y / (double)frame.Height,
                     bestWidth / (double)frame.Width, bestHeight / (double)frame.Height];
-            }
+                }
         }
         return new(double.IsPositiveInfinity(best) ? 255 : best, bestBounds);
     }
@@ -141,15 +149,15 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
     {
         var total = 0;
         for (var sy = 1; sy < Samples; sy += 4)
-        for (var sx = 1; sx < Samples; sx += 4)
-        {
-            var sampleX = x + (int)(w * (0.15 + 0.7 * (sx + 0.5) / Samples));
-            var sampleY = y + (int)(h * (0.15 + 0.7 * (sy + 0.5) / Samples));
-            var expected = (sy * Samples + sx) * 3;
-            for (var channel = 0; channel < 3; channel++)
-                total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor) - samples[expected + channel]);
-            if (total > 32 * 16 * 3) return false;
-        }
+            for (var sx = 1; sx < Samples; sx += 4)
+            {
+                var sampleX = x + (int)(w * (0.15 + 0.7 * (sx + 0.5) / Samples));
+                var sampleY = y + (int)(h * (0.15 + 0.7 * (sy + 0.5) / Samples));
+                var expected = (sy * Samples + sx) * 3;
+                for (var channel = 0; channel < 3; channel++)
+                    total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor) - samples[expected + channel]);
+                if (total > 32 * 16 * 3) return false;
+            }
         return true;
     }
 
@@ -158,15 +166,15 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         var total = 0;
         var count = Samples * Samples * 3;
         for (var sy = 0; sy < Samples; sy++)
-        for (var sx = 0; sx < Samples; sx++)
-        {
-            var sampleX = x + (int)(w * (0.15 + 0.7 * (sx + 0.5) / Samples));
-            var sampleY = y + (int)(h * (0.15 + 0.7 * (sy + 0.5) / Samples));
-            var expected = (sy * Samples + sx) * 3;
-            for (var channel = 0; channel < 3; channel++)
-                total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor) - samples[expected + channel]);
-            if (total > best * count) return double.PositiveInfinity;
-        }
+            for (var sx = 0; sx < Samples; sx++)
+            {
+                var sampleX = x + (int)(w * (0.15 + 0.7 * (sx + 0.5) / Samples));
+                var sampleY = y + (int)(h * (0.15 + 0.7 * (sy + 0.5) / Samples));
+                var expected = (sy * Samples + sx) * 3;
+                for (var channel = 0; channel < 3; channel++)
+                    total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor) - samples[expected + channel]);
+                if (total > best * count) return double.PositiveInfinity;
+            }
         return total / (double)count;
     }
 
@@ -174,13 +182,13 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
     {
         var result = new byte[Samples * Samples * 3];
         for (var sy = 0; sy < Samples; sy++)
-        for (var sx = 0; sx < Samples; sx++)
-        {
-            var x = (int)(width * (0.15 + 0.7 * (sx + 0.5) / Samples));
-            var y = (int)(height * (0.15 + 0.7 * (sy + 0.5) / Samples));
-            for (var channel = 0; channel < 3; channel++)
-                result[(sy * Samples + sx) * 3 + channel] = (byte)Value(bytes, width * 4, x, y, channel, relativeColor);
-        }
+            for (var sx = 0; sx < Samples; sx++)
+            {
+                var x = (int)(width * (0.15 + 0.7 * (sx + 0.5) / Samples));
+                var y = (int)(height * (0.15 + 0.7 * (sy + 0.5) / Samples));
+                for (var channel = 0; channel < 3; channel++)
+                    result[(sy * Samples + sx) * 3 + channel] = (byte)Value(bytes, width * 4, x, y, channel, relativeColor);
+            }
         return result;
     }
 
@@ -237,6 +245,8 @@ public static class VisualKeyAssistRuntime
             throw new ArgumentException("画像条件の探索範囲が不正です。");
         var duration = int.Parse(Required("--duration-ms"), System.Globalization.CultureInfo.InvariantCulture);
         if (duration <= 0) throw new ArgumentException("実行時間は正のミリ秒です。");
+        // 計測では撮影と判定だけを実行し、前面化・Space・回復品を送出しない。
+        var measureOnly = arguments.Contains("--measure-only", StringComparer.Ordinal);
         var evidenceDirectory = Path.GetFullPath(Required("--evidence"));
         Directory.CreateDirectory(evidenceDirectory);
         var recoveryIndex = Array.IndexOf(arguments, "--recovery-profile");
@@ -253,170 +263,346 @@ public static class VisualKeyAssistRuntime
         Console.CancelKeyPress += cancel;
         try
         {
-            if (!arguments.Contains("--observe-only", StringComparer.Ordinal))
+            if (!measureOnly && !arguments.Contains("--observe-only", StringComparer.Ordinal))
                 WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
-            using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId, TimeSpan.FromSeconds(10));
             var actions = new NanoGameInteractionActions(
                 new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()),
                 new WindowsGameInteractionCoordinateMapper(() => target.Bounds));
             var clock = Stopwatch.StartNew();
             var schedule = new VisualKeyAssistSchedule(0, () => Random.Shared.Next(8_000, 12_001));
-            var events = new List<object>();
+            var events = new ConcurrentQueue<object>();
+            using var inputGate = new SemaphoreSlim(1, 1);
+            var eventGate = new object();
             var progress = new VisualKeyAssistProgress();
-            VisualKeyAssistDecision? previous = null;
-            VisualRecoveryObservation? previousRecovery = null;
-            while (clock.ElapsedMilliseconds < duration)
+            if (recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal))
+                return await RunProgressAsync(stop.Token);
+            return await VisualKeyAssistWorkers.RunAsync(RunRecoveryAsync, RunProgressAsync, stop.Token);
+
+            async Task<object> RunProgressAsync(CancellationToken token)
             {
-                stop.Token.ThrowIfCancellationRequested();
-                var frame = await frames.CaptureAsync(stop.Token);
-                var viewport = recoveryRecognizer is null ? null : WindowsGameTargetLocator.CaptureClientBounds(target.Window);
-                var windowScale = viewport is null ? 1 : recoveryRecognizer!.HudScale(viewport);
-                var inhibitMatch = inhibit.FindAtWindowScale(frame, region, windowScale);
-                var cueMatch = inhibitMatch.Matches || cues.Length == 0 ? null : cues.Select(cue => cue.FindAtWindowScale(frame, region, windowScale))
-                    .OrderBy(match => match.Difference).First();
-                var ocr = !inhibitMatch.Matches && (cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
-                    ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, stop.Token) : null;
-                var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
-                var decision = progress.Apply(schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
-                    cueMatch?.Matches == true || matchedTexts.Length > 0));
-                var recoveryObservation = recoveryRecognizer?.Observe(frame, viewport, ocr?.Text);
-                if (decision != previous)
+                using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId + ":progress", TimeSpan.FromSeconds(10));
+                VisualKeyAssistDecision? previous = null;
+                while (clock.ElapsedMilliseconds < duration)
                 {
-                    Emit(new { Event = "condition", Decision = decision.ToString(), AtMs = clock.ElapsedMilliseconds,
-                        InhibitDifference = inhibitMatch.Difference, CueDifference = cueMatch?.Difference, MatchedTexts = matchedTexts });
-                    previous = decision;
-                }
-                if (arguments.Contains("--observe-only", StringComparer.Ordinal))
-                {
-                    File.WriteAllBytes(Path.Combine(evidenceDirectory, "observation.png"),
-                        new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
-                    return new { Mode = "key-assist-observation", decision, inhibitMatch, cueMatch,
-                        MatchedTexts = matchedTexts, OcrText = ocr?.Text, Recovery = recoveryObservation, InputCount = 0, AiCallCount = 0 };
-                }
-                if (recovery is not null && recoveryObservation is not null)
-                {
-                    var previousRecoveryState = recovery.State;
-                    var choice = recovery.Decide(DateTimeOffset.UtcNow, recoveryObservation, inhibitMatch.Matches);
-                    if (recovery.State != previousRecoveryState)
+                    token.ThrowIfCancellationRequested();
+                    var frame = await frames.CaptureAsync(token);
+                    var viewport = recoveryRecognizer is null ? null : WindowsGameTargetLocator.CaptureClientBounds(target.Window);
+                    var windowScale = viewport is null ? 1 : recoveryRecognizer!.HudScale(viewport);
+                    var inhibitMatch = inhibit.FindAtWindowScale(frame, region, windowScale);
+                    var cueMatch = inhibitMatch.Matches || cues.Length == 0 ? null : cues.Select(cue => cue.FindAtWindowScale(frame, region, windowScale))
+                        .OrderBy(match => match.Difference).First();
+                    var ocr = !inhibitMatch.Matches && (cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
+                        ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token) : null;
+                    var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
+                    var decision = progress.Apply(schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
+                        cueMatch?.Matches == true || matchedTexts.Length > 0));
+                    var recoveryObservation = arguments.Contains("--observe-only", StringComparer.Ordinal)
+                        ? recoveryRecognizer?.Observe(frame, viewport, ocr?.Text) : null;
+                    if (decision != previous)
                     {
-                        SaveRecoveryState();
-                        File.WriteAllBytes(Path.Combine(evidenceDirectory, $"recovery-{events.Count}-state.png"),
-                            new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
-                    }
-                    if (recoveryObservation != previousRecovery || choice.Action != VisualRecoveryAction.None)
-                    {
-                        Emit(new { Event = "recovery", AtMs = clock.ElapsedMilliseconds,
-                            Observation = recoveryObservation, Action = choice.Action.ToString(), choice.Detail });
-                        previousRecovery = recoveryObservation;
-                    }
-                    if (choice.Action == VisualRecoveryAction.Review)
-                    {
-                        File.WriteAllBytes(Path.Combine(evidenceDirectory, "recovery-review.png"),
-                            new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
-                        return new { Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
-                            NeedsReview = true, Recovery = recoveryObservation, Events = events, choice.Detail };
-                    }
-                    if (choice.Action == VisualRecoveryAction.Wait)
-                    {
-                        await Task.Delay(250, stop.Token);
-                        continue;
-                    }
-                    if (choice.Action is VisualRecoveryAction.Food or VisualRecoveryAction.Potion or VisualRecoveryAction.Bandage)
-                    {
-                        WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
-                        var fresh = await frames.CaptureAsync(stop.Token);
-                        var freshObservation = recoveryRecognizer!.Observe(fresh, WindowsGameTargetLocator.CaptureClientBounds(target.Window));
-                        var freshChoice = recovery.Decide(DateTimeOffset.UtcNow, freshObservation, Inhibited(fresh));
-                        if (freshChoice.Action != choice.Action)
+                        Emit(new
                         {
-                            Emit(new { Event = "recovery-input-withheld", AtMs = clock.ElapsedMilliseconds,
-                                RequestedAction = choice.Action.ToString(), Observation = freshObservation,
-                                Action = freshChoice.Action.ToString(), freshChoice.Detail });
-                            continue;
-                        }
-                        File.WriteAllBytes(Path.Combine(evidenceDirectory, $"recovery-{events.Count}-before.png"),
-                            new WindowsGameFramePngEncoder().Encode(fresh).Bytes.ToArray());
-                        var bound = Observation(fresh);
-                        var token = choice.Action switch
+                            Event = "condition",
+                            Decision = decision.ToString(),
+                            AtMs = clock.ElapsedMilliseconds,
+                            InhibitDifference = inhibitMatch.Difference,
+                            CueDifference = cueMatch?.Difference,
+                            MatchedTexts = matchedTexts
+                        });
+                        previous = decision;
+                    }
+                    if (arguments.Contains("--observe-only", StringComparer.Ordinal))
+                    {
+                        File.WriteAllBytes(Path.Combine(evidenceDirectory, "observation.png"),
+                            new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                        return new
                         {
-                            VisualRecoveryAction.Food => recoveryProfile!.FoodKey,
-                            VisualRecoveryAction.Potion => recoveryProfile!.PotionKey,
-                            VisualRecoveryAction.Bandage => recoveryProfile!.BandageKey,
-                            _ => throw new InvalidOperationException("消費操作のキーがありません。"),
+                            Mode = "key-assist-observation",
+                            decision,
+                            inhibitMatch,
+                            cueMatch,
+                            MatchedTexts = matchedTexts,
+                            OcrText = ocr?.Text,
+                            Recovery = recoveryObservation,
+                            InputCount = 0,
+                            AiCallCount = 0
                         };
-                        // USB送出とファイル保存の境界で終了しても、同じ消費を未実行扱いにしない。
-                        recovery.RecordAttempt(choice.Action, DateTimeOffset.UtcNow, freshObservation);
-                        SaveRecoveryState();
-                        var sent = actions.KeyTap(new GameInteractionKeyTapRequest(
-                            ContractSchemaVersions.Revision03, bound.ObservationId, fresh.Sequence,
-                            fresh.TransformRevision, fresh.SourceId, [token]), bound);
-                        if (sent.Status != GameInteractionDispatchStatus.Dispatched)
-                            throw new InvalidOperationException($"回復キーのNano入力に失敗しました: {sent.FailureReason}");
-                        Emit(new { Event = "recovery-input", AtMs = clock.ElapsedMilliseconds,
-                            Action = choice.Action.ToString(), Token = token, dispatch = sent });
-                        schedule.RecordInput(clock.ElapsedMilliseconds);
-                        continue;
                     }
-                }
-                if (decision is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed)
-                {
-                    Emit(new { Event = "foreground", AtMs = clock.ElapsedMilliseconds,
-                        Identity = ForegroundAppTracker.GetForegroundIdentity(),
-                        Title = ForegroundAppTracker.GetForegroundWindowTitle() });
-                    WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
-                    var beforeObservation = Observation(frame);
-                    var beforeScene = decision == VisualKeyAssistDecision.Timed ? await Scene(frame, beforeObservation) : null;
-                    // OCRや前面化の間に停止画像へ変わった場合も、その画像を優先する。
-                    var dispatchFrame = await frames.CaptureAsync(stop.Token);
-                    if (Inhibited(dispatchFrame)) continue;
-                    var dispatchObservation = Observation(dispatchFrame);
-                    var dispatch = actions.KeyTap(new GameInteractionKeyTapRequest(
-                        ContractSchemaVersions.Revision03, dispatchObservation.ObservationId, dispatchFrame.Sequence,
-                        dispatchFrame.TransformRevision, dispatchFrame.SourceId, keys), dispatchObservation);
-                    if (dispatch.Status != GameInteractionDispatchStatus.Dispatched)
-                        throw new InvalidOperationException($"Nano入力に失敗しました: {dispatch.FailureReason}");
-                    schedule.RecordInput(clock.ElapsedMilliseconds);
-                    Emit(new { Event = "input", Decision = decision.ToString(), AtMs = clock.ElapsedMilliseconds, dispatch });
-                    if (beforeScene is not null)
+                    if (!measureOnly && decision is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed)
                     {
-                        await Task.Delay(1_000, stop.Token);
-                        var after = await frames.CaptureAsync(stop.Token);
-                        var afterScene = await Scene(after, Observation(after));
-                        var comparison = new GameTransitionJudge().CompareRecorded(beforeScene,
-                            new GameInteractionStabilityResult(ContractSchemaVersions.Revision03,
-                                GameInteractionStabilityStatus.TimedOut, [afterScene], null, 0, 0, 1_000, null));
-                        Emit(new { Event = "comparison", AtMs = clock.ElapsedMilliseconds,
-                            Judgement = comparison.Judgement.ToString(), comparison.Reasons });
-                        if (comparison.Judgement != GameTransitionJudgement.Moved)
+                        Emit(new
                         {
-                            var encoder = new WindowsGameFramePngEncoder();
-                            File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-before.png"), encoder.Encode(frame).Bytes.ToArray());
-                            File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-after.png"), encoder.Encode(after).Bytes.ToArray());
-                            if (recovery is not null)
+                            Event = "foreground",
+                            AtMs = clock.ElapsedMilliseconds,
+                            Identity = ForegroundAppTracker.GetForegroundIdentity(),
+                            Title = ForegroundAppTracker.GetForegroundWindowTitle()
+                        });
+                        var beforeObservation = Observation(frame);
+                        var beforeScene = decision == VisualKeyAssistDecision.Timed ? await Scene(frame, beforeObservation, token) : null;
+                        await inputGate.WaitAsync(token);
+                        try
+                        {
+                            token.ThrowIfCancellationRequested();
+                            WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                            // OCRや前面化の間に停止画像へ変わった場合も、その画像を優先する。
+                            var dispatchFrame = await frames.CaptureAsync(token);
+                            if (Inhibited(dispatchFrame)) continue;
+                            // 待っている間に回復キーが送られた場合は、更新後の進行期限に従う。
+                            if (schedule.Decide(clock.ElapsedMilliseconds, false,
+                                cueMatch?.Matches == true || matchedTexts.Length > 0) != decision) continue;
+                            var dispatchObservation = Observation(dispatchFrame);
+                            var dispatch = actions.KeyTap(new GameInteractionKeyTapRequest(
+                                ContractSchemaVersions.Revision03, dispatchObservation.ObservationId, dispatchFrame.Sequence,
+                                dispatchFrame.TransformRevision, dispatchFrame.SourceId, keys), dispatchObservation);
+                            if (dispatch.Status != GameInteractionDispatchStatus.Dispatched)
+                                throw new InvalidOperationException($"Nano入力に失敗しました: {dispatch.FailureReason}");
+                            schedule.RecordInput(clock.ElapsedMilliseconds);
+                            Emit(new { Event = "input", Decision = decision.ToString(), AtMs = clock.ElapsedMilliseconds, dispatch });
+                        }
+                        finally { inputGate.Release(); }
+                        if (beforeScene is not null)
+                        {
+                            await Task.Delay(1_000, token);
+                            var after = await frames.CaptureAsync(token);
+                            var afterScene = await Scene(after, Observation(after), token);
+                            var comparison = new GameTransitionJudge().CompareRecorded(beforeScene,
+                                new GameInteractionStabilityResult(ContractSchemaVersions.Revision03,
+                                    GameInteractionStabilityStatus.TimedOut, [afterScene], null, 0, 0, 1_000, null));
+                            Emit(new
                             {
-                                progress.Pause();
-                                Emit(new { Event = "progress-paused", AtMs = clock.ElapsedMilliseconds,
-                                    NeedsReview = true, Detail = "画面変化が未確認のためSpaceを停止しました。HP監視は継続します。" });
+                                Event = "comparison",
+                                AtMs = clock.ElapsedMilliseconds,
+                                Judgement = comparison.Judgement.ToString(),
+                                comparison.Reasons
+                            });
+                            if (comparison.Judgement != GameTransitionJudgement.Moved)
+                            {
+                                var encoder = new WindowsGameFramePngEncoder();
+                                File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-before.png"), encoder.Encode(frame).Bytes.ToArray());
+                                File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-after.png"), encoder.Encode(after).Bytes.ToArray());
+                                if (recovery is not null)
+                                {
+                                    progress.Pause();
+                                    Emit(new
+                                    {
+                                        Event = "progress-paused",
+                                        AtMs = clock.ElapsedMilliseconds,
+                                        NeedsReview = true,
+                                        Detail = "画面変化が未確認のためSpaceを停止しました。HP監視は継続します。"
+                                    });
+                                    continue;
+                                }
+                                return new
+                                {
+                                    Mode = "key-assist",
+                                    ProductHostEntry = true,
+                                    AiCallCount = 0,
+                                    NeedsReview = true,
+                                    comparison,
+                                    Events = events,
+                                    Detail = "通常間隔のキー入力後に画面の切替を確認できないため、追加入力を停止しました。"
+                                };
+                            }
+                        }
+                    }
+                    await Task.Delay(250, token);
+                }
+                return new
+                {
+                    Mode = "key-assist",
+                    ProductHostEntry = true,
+                    AiCallCount = 0,
+                    NeedsReview = progress.NeedsReview,
+                    Events = events,
+                    Detail = progress.NeedsReview ? "Spaceは確認待ちで停止し、指定時間までHP監視を継続しました。" : "指定時間が終了しました。"
+                };
+
+            }
+
+            async Task<object> RunRecoveryAsync(CancellationToken token)
+            {
+                using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId + ":recovery", TimeSpan.FromSeconds(10), 250);
+                using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(250));
+                using var deathStop = CancellationTokenSource.CreateLinkedTokenSource(token);
+                Task<string>? deathText = null;
+                long? previousSample = null;
+                VisualRecoveryAction? pendingAction = null;
+                long detectedAt = 0;
+                var first = true;
+                try
+                {
+                    while (clock.ElapsedMilliseconds < duration)
+                    {
+                        if (!first && !await timer.WaitForNextTickAsync(token)) break;
+                        first = false;
+                        token.ThrowIfCancellationRequested();
+                        var frame = await frames.CaptureAsync(token);
+                        var viewport = WindowsGameTargetLocator.CaptureClientBounds(target.Window);
+                        var inhibitMatch = inhibit.FindAtWindowScale(frame, region, recoveryRecognizer!.HudScale(viewport));
+                        var recoveryObservation = recoveryRecognizer.Observe(frame, viewport);
+                        if (deathText?.IsCompleted == true)
+                        {
+                            var text = await deathText;
+                            deathText = null;
+                            if (ContainsCue(text, recoveryProfile!.IncapacitatedText!))
+                                recoveryObservation = recoveryObservation with
+                                {
+                                    HudVisible = false,
+                                    Problem = "対象の行動不能表示を確認しました。回復入力を終了します。"
+                                };
+                        }
+                        if (!recoveryObservation.HudVisible && deathText is null
+                            && !string.IsNullOrWhiteSpace(recoveryProfile!.IncapacitatedText)
+                            && recoveryObservation.Problem is null)
+                            deathText = Task.Run(async () => (await new WindowsGameOcrRecognizer().RecognizeAsync(frame, deathStop.Token)).Text, deathStop.Token);
+                        var sampleAt = clock.ElapsedMilliseconds;
+                        Emit(new
+                        {
+                            Event = "recovery-sample",
+                            AtMs = sampleAt,
+                            IntervalMs = previousSample is null ? (long?)null : sampleAt - previousSample,
+                            FrameFreshnessMs = frame.FreshnessMs,
+                            TargetIntervalMs = 250
+                        });
+                        previousSample = sampleAt;
+                        if (recovery is not null && recoveryObservation is not null)
+                        {
+                            var previousRecoveryState = recovery.State;
+                            var choice = recovery.Decide(DateTimeOffset.UtcNow, recoveryObservation, inhibitMatch.Matches);
+                            if (choice.Action != pendingAction)
+                            {
+                                pendingAction = choice.Action;
+                                detectedAt = sampleAt;
+                            }
+                            if (!measureOnly && recovery.State != previousRecoveryState)
+                            {
+                                SaveRecoveryState();
+                                File.WriteAllBytes(Path.Combine(evidenceDirectory, $"recovery-{events.Count}-state.png"),
+                                    new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                            }
+                            Emit(new
+                            {
+                                Event = "recovery",
+                                AtMs = clock.ElapsedMilliseconds,
+                                Observation = recoveryObservation,
+                                Action = choice.Action.ToString(),
+                                choice.Detail
+                            });
+                            if (choice.Action == VisualRecoveryAction.Review)
+                            {
+                                File.WriteAllBytes(Path.Combine(evidenceDirectory, "recovery-review.png"),
+                                    new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                                return new
+                                {
+                                    Mode = "key-assist",
+                                    ProductHostEntry = true,
+                                    AiCallCount = 0,
+                                    NeedsReview = true,
+                                    Recovery = recoveryObservation,
+                                    Events = events,
+                                    choice.Detail
+                                };
+                            }
+                            if (choice.Action == VisualRecoveryAction.Wait)
+                            {
                                 continue;
                             }
-                            return new { Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
-                                NeedsReview = true, comparison, Events = events,
-                                Detail = "通常間隔のキー入力後に画面の切替を確認できないため、追加入力を停止しました。" };
+                            if (choice.Action is VisualRecoveryAction.Food or VisualRecoveryAction.Potion or VisualRecoveryAction.Bandage)
+                            {
+                                if (measureOnly) continue;
+                                if (!inputGate.Wait(0))
+                                {
+                                    Emit(new { Event = "recovery-input-busy", AtMs = clock.ElapsedMilliseconds,
+                                        Action = choice.Action.ToString(), DetectedAtMs = detectedAt });
+                                    continue;
+                                }
+                                try
+                                {
+                                    token.ThrowIfCancellationRequested();
+                                    WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                                    var fresh = await frames.CaptureAsync(token);
+                                    var freshObservation = recoveryRecognizer!.Observe(fresh, WindowsGameTargetLocator.CaptureClientBounds(target.Window));
+                                    var freshChoice = recovery.Decide(DateTimeOffset.UtcNow, freshObservation, Inhibited(fresh));
+                                    if (freshChoice.Action != choice.Action)
+                                    {
+                                        Emit(new
+                                        {
+                                            Event = "recovery-input-withheld",
+                                            AtMs = clock.ElapsedMilliseconds,
+                                            RequestedAction = choice.Action.ToString(),
+                                            Observation = freshObservation,
+                                            Action = freshChoice.Action.ToString(),
+                                            freshChoice.Detail
+                                        });
+                                        continue;
+                                    }
+                                    var beforeImagePath = Path.Combine(evidenceDirectory, $"recovery-{events.Count}-before.png");
+                                    var bound = Observation(fresh);
+                                    var outputToken = choice.Action switch
+                                    {
+                                        VisualRecoveryAction.Food => recoveryProfile!.FoodKey,
+                                        VisualRecoveryAction.Potion => recoveryProfile!.PotionKey,
+                                        VisualRecoveryAction.Bandage => recoveryProfile!.BandageKey,
+                                        _ => throw new InvalidOperationException("消費操作のキーがありません。"),
+                                    };
+                                    // USB送出とファイル保存の境界で終了しても、同じ消費を未実行扱いにしない。
+                                    recovery.RecordAttempt(choice.Action, DateTimeOffset.UtcNow, freshObservation);
+                                    SaveRecoveryState();
+                                    var sent = actions.KeyTap(new GameInteractionKeyTapRequest(
+                                        ContractSchemaVersions.Revision03, bound.ObservationId, fresh.Sequence,
+                                        fresh.TransformRevision, fresh.SourceId, [outputToken]), bound);
+                                    if (sent.Status != GameInteractionDispatchStatus.Dispatched)
+                                        throw new InvalidOperationException($"回復キーのNano入力に失敗しました: {sent.FailureReason}");
+                                    Emit(new
+                                    {
+                                        Event = "recovery-input",
+                                        AtMs = clock.ElapsedMilliseconds,
+                                        DetectedAtMs = detectedAt,
+                                        DetectionToDispatchMs = clock.ElapsedMilliseconds - detectedAt,
+                                        Action = choice.Action.ToString(),
+                                        Token = outputToken,
+                                        dispatch = sent
+                                    });
+                                    File.WriteAllBytes(beforeImagePath,
+                                        new WindowsGameFramePngEncoder().Encode(fresh).Bytes.ToArray());
+                                    schedule.RecordInput(clock.ElapsedMilliseconds);
+                                }
+                                finally { inputGate.Release(); }
+                                continue;
+                            }
                         }
+
+                    }
+                    return new
+                    {
+                        Mode = "key-assist",
+                        ProductHostEntry = true,
+                        AiCallCount = 0,
+                        NeedsReview = progress.NeedsReview,
+                        Events = events,
+                        Detail = "指定時間が終了しました。"
+                    };
+                }
+                finally
+                {
+                    await deathStop.CancelAsync();
+                    if (deathText is not null)
+                    {
+                        try { await deathText; }
+                        catch (OperationCanceledException) when (deathStop.IsCancellationRequested) { }
                     }
                 }
-                await Task.Delay(250, stop.Token);
             }
-            return new { Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
-                NeedsReview = progress.NeedsReview, Events = events,
-                Detail = progress.NeedsReview ? "Spaceは確認待ちで停止し、指定時間までHP監視を継続しました。" : "指定時間が終了しました。" };
 
             void Emit(object entry)
             {
-                events.Add(entry);
-                var json = JsonSerializer.Serialize(entry);
-                File.AppendAllText(Path.Combine(evidenceDirectory, "events.jsonl"), json + "\n");
-                Console.WriteLine(json);
+                lock (eventGate)
+                {
+                    events.Enqueue(entry);
+                    var json = JsonSerializer.Serialize(entry);
+                    File.AppendAllText(Path.Combine(evidenceDirectory, "events.jsonl"), json + "\n");
+                    Console.WriteLine(json);
+                }
             }
 
             bool Inhibited(CapturedFrame candidate) => inhibit.FindAtWindowScale(candidate, region,
@@ -445,9 +631,9 @@ public static class VisualKeyAssistRuntime
             frame.Sequence, frame.MonotonicMs, frame.WallClockUtc, frame.TransformRevision, frame.FreshnessMs, frame.LastChangeMs),
         CaptureAvailability.Available, StateIdentityStatus.Novel, [], "visual-key-local", frame.FreshnessMs, null);
 
-    private static async Task<ObservedScene> Scene(CapturedFrame frame, ObservationResult observation)
+    private static async Task<ObservedScene> Scene(CapturedFrame frame, ObservationResult observation, CancellationToken token)
     {
-        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token);
         return LocalTargetTrackingSceneBuilder.Build(observation, frame,
             WindowsGameOcrSpanBuilder.Build(ocr, frame.Width, frame.Height), []);
     }
