@@ -1,0 +1,7 @@
+{
+  "DetectedAtMs": 91929,
+  "DispatchedAtMs": 92081,
+  "DelayMs": 152,
+  "Route": "NanoSerialHid",
+  "DispatchCount": 1
+}

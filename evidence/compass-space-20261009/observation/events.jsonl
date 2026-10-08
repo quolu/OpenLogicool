@@ -1,0 +1,2 @@
+{"Event":"progress-observation","AtMs":1071,"Changed":false,"Difference":0,"Candidate":"Key","RuleId":"compass-space","Immediate":true,"Decision":"Key"}
+{"Event":"condition","Decision":"Wait","AtMs":1079,"InhibitDifference":255,"CueDifference":null,"MatchedTexts":[]}

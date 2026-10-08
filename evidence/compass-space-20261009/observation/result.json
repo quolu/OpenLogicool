@@ -1,0 +1,39 @@
+{
+  "Mode": "key-assist-observation",
+  "decision": "Wait",
+  "inhibitMatch": {
+    "Difference": 255,
+    "Bounds": [],
+    "Matches": false
+  },
+  "cueMatch": null,
+  "MatchedTexts": [],
+  "OcrText": null,
+  "OcrWords": null,
+  "Viewport": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Recovery": {
+    "HudVisible": true,
+    "HealthFraction": 1,
+    "BarWidth": 198,
+    "Food": "Active",
+    "Problem": null,
+    "WhiteFraction": 0
+  },
+  "Progress": {
+    "Action": "Key",
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Detail": null,
+    "Options": null,
+    "Immediate": true
+  },
+  "InputCount": 0,
+  "AiCallCount": 0
+}

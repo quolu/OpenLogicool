@@ -9,7 +9,7 @@ public sealed record VisualProgressText(string Text, double[] Bounds, double[][]
 public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
-    bool ImageRotates = false, bool WaitForChange = false);
+    bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
@@ -23,7 +23,7 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             throw new InvalidDataException("進行設定の形式が不正です。");
         foreach (var rule in value.Rules)
         {
-            if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is not { Length: > 0 }
+            if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null || (rule.When.Length == 0 && rule.Image is null)
                 || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) != 1)
                 throw new InvalidDataException("進行規則には条件と、キー・クリック・待機のいずれか一つが必要です。");
             if (rule.Key is not null) OpenLogicool.Input.OutputTokens.Parse(rule.Key);
@@ -31,11 +31,16 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("進行規則の画像には探索範囲と基準描画幅が必要です。");
             if (rule.ImageRotates && (rule.Image is null || rule.ImageSilhouette))
                 throw new InvalidDataException("回転する印には単色画像を指定します。");
+            if (rule.ImageStableRegions is not null && (rule.Image is null || rule.ImageRotates || rule.ImageStableRegions.Length == 0))
+                throw new InvalidDataException("固定部分の照合には画像と一つ以上の領域が必要です。");
+            if (rule.Immediate && (rule.Image is null || rule.When.Length != 0 || rule.Timed || rule.Key is null))
+                throw new InvalidDataException("即時入力には文字条件や時間待ちを持たない画像キー規則を指定します。");
         }
         foreach (var bounds in value.Rules.SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }))
             .Concat(value.ReviewWhen).Select(text => text.Bounds)
             .Concat(value.ReviewWhen.SelectMany(text => text.ChoiceBounds ?? []))
-            .Concat(value.Rules.Where(rule => rule.Image is not null).Select(rule => rule.ImageBounds!)))
+            .Concat(value.Rules.Where(rule => rule.Image is not null).Select(rule => rule.ImageBounds!))
+            .Concat(value.Rules.SelectMany(rule => rule.ImageStableRegions ?? [])))
             if (bounds is not { Length: 4 } || bounds.Any(x => !double.IsFinite(x) || x < 0 || x > 1)
                 || bounds[2] <= 0 || bounds[3] <= 0
                 || bounds[0] + bounds[2] > 1 || bounds[1] + bounds[3] > 1)
@@ -51,19 +56,21 @@ public enum VisualProgressAction { Wait, Normal, Key, Click, Review }
 public sealed record VisualProgressOption(string Id, string Label);
 public sealed record VisualProgressChoice(VisualProgressAction Action, string? RuleId = null,
     string? Signature = null, string? Key = null, double[]? Point = null, string? Detail = null,
-    VisualProgressOption[]? Options = null);
+    VisualProgressOption[]? Options = null, bool Immediate = false);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
 {
     private readonly Dictionary<string, VisualKeyTemplate> templates = profile.Rules.Where(rule => rule.Image is not null && !rule.ImageRotates)
-        .ToDictionary(rule => rule.Id, rule => VisualKeyTemplate.Load(rule.Image!, silhouette: rule.ImageSilhouette));
+        .ToDictionary(rule => rule.Id, rule => VisualKeyTemplate.Load(rule.Image!, silhouette: rule.ImageSilhouette,
+            stableRegions: rule.ImageStableRegions));
     private readonly Dictionary<string, VisualRotatingTemplate> rotatingTemplates = profile.Rules.Where(rule => rule.ImageRotates)
         .ToDictionary(rule => rule.Id, rule => new VisualRotatingTemplate(rule.Image!));
 
     public VisualProgressChoice Recognize(WindowsGameOcrResult ocr, int width, int height, FrameRect viewport,
         CapturedFrame? frame = null)
     {
+        if (frame is not null && RecognizeImmediateImage(frame, viewport) is { } immediate) return immediate;
         string Read(VisualProgressText area) => Normalize(string.Concat(ocr.Words
             .Where(word => Inside(word, area.Bounds, viewport))
             .Select(word => word.Text)));
@@ -129,6 +136,20 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         };
     }
 
+    public VisualProgressChoice? RecognizeImmediateImage(CapturedFrame frame, FrameRect viewport)
+    {
+        foreach (var rule in profile.Rules.Where(rule => rule.Immediate).OrderByDescending(rule => rule.Priority))
+        {
+            var area = rule.ImageBounds!;
+            double[] mapped = [(viewport.X + area[0] * viewport.Width) / frame.Width,
+                (viewport.Y + area[1] * viewport.Height) / frame.Height,
+                area[2] * viewport.Width / frame.Width, area[3] * viewport.Height / frame.Height];
+            if (templates[rule.Id].FindAtWindowScale(frame, mapped, viewport.Width / rule.ImageClientWidth).Matches)
+                return new(VisualProgressAction.Key, rule.Id, rule.Id, rule.Key, Immediate: true);
+        }
+        return null;
+    }
+
     private static bool Inside(WindowsGameOcrWord word, double[] area, FrameRect viewport)
     {
         var x = (word.X + word.Width / 2 - viewport.X) / viewport.Width;
@@ -161,11 +182,27 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     private long? unknownAt;
     private int unresolvedObservations;
     private string? waitingSignature;
+    private string? consumedImmediate;
+    private long? immediateMissingAt;
 
     public VisualProgressChoice Decide(long now, VisualProgressChoice candidate, bool inhibited,
         bool hudVisible, bool due, bool sceneChanged = false)
     {
-        if (inhibited) { pending = null; ResetUnresolved(); stableSignature = null; waitingSignature = null; return new(VisualProgressAction.Wait); }
+        if (inhibited) { pending = null; ResetUnresolved(); stableSignature = null; waitingSignature = null;
+            consumedImmediate = null; immediateMissingAt = null; return new(VisualProgressAction.Wait); }
+        if (candidate.Immediate)
+        {
+            immediateMissingAt = null;
+            ResetUnresolved();
+            if (candidate.Signature == consumedImmediate) return new(VisualProgressAction.Wait);
+            pending = null;
+            return candidate;
+        }
+        if (consumedImmediate is not null)
+        {
+            immediateMissingAt ??= now;
+            if (now - immediateMissingAt >= 600) { consumedImmediate = null; immediateMissingAt = null; }
+        }
         if (candidate.Action != VisualProgressAction.Wait) waitingSignature = null;
         if (candidate.Action == VisualProgressAction.Review) return candidate;
         if (pending is not null)
@@ -197,7 +234,11 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
         return now - stableAt >= 600 && due ? candidate : new(VisualProgressAction.Wait);
     }
 
-    public void RecordInput(long now, VisualProgressChoice choice) { pending = choice; unknownAt = now; unresolvedObservations = 0; }
+    public void RecordInput(long now, VisualProgressChoice choice)
+    {
+        if (choice.Immediate) { consumedImmediate = choice.Signature; pending = null; ResetUnresolved(); return; }
+        pending = choice; unknownAt = now; unresolvedObservations = 0;
+    }
 
     private VisualProgressChoice ObserveUnresolved(long now, bool sceneChanged, int waitMs, string detail)
     {

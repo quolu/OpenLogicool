@@ -19,3 +19,5 @@
 `progress.json`は確認済み画面の進行規則。`dialogue-screen.png`・`dialogue-day.png`・`dialogue-tail.png`は会話の末尾と昼夜の背景差、`dialogue-wide.png`は形が異なる吹き出しの実画像。スキップ表示がある会話は文字の組合せ、末尾は白い吹き出しの形と文字を照合する。`class-level.png`はSpaceで閉じるダンサーのレベル表示、`bonus-three.png`は自動で選ばず全3択を通知するボーナス画面。`stop.png`は利用者から渡された停止表示の画像。HUDと停止表示の倍率・窓内位置は現在の描画領域へ合わせる。画像は製品撮影と利用者提供の原本を保持する。
 
 `dialogue-cue.jpg`は利用者提供の回転する会話待ちの印。`dialogue-ocr-broken.png`はOCRが崩れて停止した製品撮影原本。`ImageRotates`は回転形状の照合を選び、固有名や台詞を条件にしない。回転・倍率・位置変更、印を消した会話、HUD・選択画面の負例を試験する。実画面では異なる向き3種類を含む5枚すべてで検出した。詳細は[実測記録](../../../evidence/mabinogi-key-assist-20261008/progress-script-live.md)。
+
+`compass-space.png`は利用者提供の右下コンパス原本。`compass-screen.png`はBotが演出待ちと判定した実画面。原本の緑の外周4領域とSpaceラベルを`ImageStableRegions`で指定し、針・外周の淡い揺れ・背景を比較から除く。画像の基準描画幅は保存実画面に合わせる。縮小時は参照も描き直し、各領域それぞれが一致した場合だけ検出する。`Immediate`は文字認識と待ち時間を省く画像キー規則。針の6方向・倍率・位置、通常HUD・停止表示・ラベル欠落、同じ表示への再送抑止を`CompassSpaceTests`で確認する。

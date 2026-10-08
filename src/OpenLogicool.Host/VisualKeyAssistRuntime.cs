@@ -56,12 +56,23 @@ public sealed record VisualKeyTemplateMatch(double Difference, IReadOnlyList<dou
 }
 
 /// <summary>周囲の背景を除いた利用者画像を、小さく平滑化したRGB標本で照合する。</summary>
-public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool relativeColor = false, bool silhouette = false)
+public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool relativeColor = false, bool silhouette = false,
+    double[][]? stableRegions = null)
 {
     private const int Samples = 16;
     private readonly byte[] samples = Sample(bgra, width, height, relativeColor, silhouette);
+    private readonly (double X, double Y, byte[] Color)[][]? stableSamples = stableRegions?.Select(area =>
+        Enumerable.Range(0, 64).Select(index =>
+        {
+            var x = area[0] + (index % 8 + 0.5) * area[2] / 8;
+            var y = area[1] + (index / 8 + 0.5) * area[3] / 8;
+            var color = Enumerable.Range(0, 3).Select(channel => (byte)Value(bgra, width * 4,
+                (int)(x * width), (int)(y * height), channel, relativeColor, silhouette)).ToArray();
+            return (x, y, color);
+        }).ToArray()).ToArray();
 
-    public static VisualKeyTemplate Load(string path, bool relativeColor = false, bool silhouette = false)
+    public static VisualKeyTemplate Load(string path, bool relativeColor = false, bool silhouette = false,
+        double[][]? stableRegions = null)
     {
         using var stream = File.OpenRead(path);
         var bitmap = new FormatConvertedBitmap(
@@ -71,15 +82,16 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
             throw new ArgumentException("画像条件には縦横8px以上の画像が必要です。", nameof(path));
         var bytes = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4];
         bitmap.CopyPixels(bytes, bitmap.PixelWidth * 4, 0);
-        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor, silhouette);
+        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor, silhouette, stableRegions);
     }
 
     public VisualKeyTemplateMatch Find(CapturedFrame frame, IReadOnlyList<double> searchBounds) =>
         FindAtWindowScale(frame, searchBounds, 1);
 
     public VisualKeyTemplateMatch FindAtWindowScale(CapturedFrame frame, IReadOnlyList<double> searchBounds, double windowScale) =>
-        Find(frame, searchBounds, new[] { 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2 }
-            .Select(scale => ((int)Math.Round(width * scale * windowScale), (int)Math.Round(height * scale * windowScale))), 3);
+        stableRegions is not null ? FindAtScale(frame, searchBounds, windowScale)
+            : Find(frame, searchBounds, new[] { 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2 }
+                .Select(scale => ((int)Math.Round(width * scale * windowScale), (int)Math.Round(height * scale * windowScale))), 3);
 
     public VisualKeyTemplateMatch FindNativeSize(CapturedFrame frame, IReadOnlyList<double> searchBounds) =>
         Find(frame, searchBounds, new[] { (width, height) }, 1);
@@ -95,7 +107,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 var resized = new TransformedBitmap(source, new ScaleTransform(w / (double)width, h / (double)height));
                 var bytes = new byte[resized.PixelWidth * resized.PixelHeight * 4];
                 resized.CopyPixels(bytes, resized.PixelWidth * 4, 0);
-                matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor, silhouette)
+                matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor, silhouette, stableRegions)
                     .FindNativeSize(frame, searchBounds));
             }
         return matches.MinBy(match => match.Difference)!;
@@ -148,6 +160,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
 
     private bool Candidate(ReadOnlySpan<byte> bytes, int stride, int x, int y, int w, int h)
     {
+        if (stableSamples is not null) return StableDifference(bytes, stride, x, y, w, h, 32, coarse: true) <= 32;
         var total = 0;
         for (var sy = 1; sy < Samples; sy += 4)
             for (var sx = 1; sx < Samples; sx += 4)
@@ -164,6 +177,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
 
     private double Difference(ReadOnlySpan<byte> bytes, int stride, int x, int y, int w, int h, double best)
     {
+        if (stableSamples is not null) return StableDifference(bytes, stride, x, y, w, h, best);
         var total = 0;
         var count = Samples * Samples * 3;
         for (var sy = 0; sy < Samples; sy++)
@@ -177,6 +191,26 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 if (total > best * count) return double.PositiveInfinity;
             }
         return total / (double)count;
+    }
+
+    private double StableDifference(ReadOnlySpan<byte> bytes, int stride, int x, int y, int w, int h, double best, bool coarse = false)
+    {
+        var maximum = 0d;
+        // 動く針や背景を含めず、指定した各領域がそれぞれ一致することを要求する。
+        foreach (var region in stableSamples!)
+        {
+            var total = 0;
+            foreach (var point in region)
+            {
+                for (var channel = 0; channel < 3; channel++)
+                    total += Math.Abs(Value(bytes, stride, x + (int)(point.X * w), y + (int)(point.Y * h),
+                        channel, relativeColor, silhouette) - point.Color[channel]);
+                if (total > best * region.Length * 3) return double.PositiveInfinity;
+            }
+            maximum = Math.Max(maximum, total / (double)(region.Length * 3));
+            if (coarse) break; // 文字の細部は隣接座標を探索してから照合する。
+        }
+        return maximum;
     }
 
     private static byte[] Sample(byte[] bytes, int width, int height, bool relativeColor, bool silhouette)
@@ -337,15 +371,17 @@ public static class VisualKeyAssistRuntime
                     var inhibitMatch = inhibit.FindAtWindowScale(frame, region, windowScale);
                     var cueMatch = inhibitMatch.Matches || cues.Length == 0 ? null : cues.Select(cue => cue.FindAtWindowScale(frame, region, windowScale))
                         .OrderBy(match => match.Difference).First();
-                    var ocr = !inhibitMatch.Matches && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
+                    var immediate = inhibitMatch.Matches || progressRecognizer is null ? null
+                        : progressRecognizer.RecognizeImmediateImage(frame, viewport!);
+                    var ocr = immediate is null && !inhibitMatch.Matches && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                         ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token) : null;
                     var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
                     var decision = progress.Apply(schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
                         cueMatch?.Matches == true || matchedTexts.Length > 0));
                     var recoveryObservation = arguments.Contains("--observe-only", StringComparer.Ordinal)
                         ? recoveryRecognizer?.Observe(frame, viewport, ocr?.Text) : null;
-                    var flowCandidate = progressRecognizer is null || ocr is null ? null
-                        : progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame);
+                    var flowCandidate = immediate ?? (progressRecognizer is null || ocr is null ? null
+                        : progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame));
                     if (reviewMonitor.IsHolding)
                     {
                         var candidate = flowCandidate ?? new(VisualProgressAction.Normal);
@@ -389,7 +425,7 @@ public static class VisualKeyAssistRuntime
                     if (flowChoice is not null)
                         Emit(new { Event = "progress-observation", AtMs = clock.ElapsedMilliseconds,
                             sceneActivity.Changed, sceneActivity.Difference, Candidate = flowCandidate?.Action.ToString(),
-                            RuleId = flowCandidate?.RuleId, Decision = flowChoice.Action.ToString() });
+                            RuleId = flowCandidate?.RuleId, Immediate = flowCandidate?.Immediate, Decision = flowChoice.Action.ToString() });
                     if (decision != previous)
                     {
                         Emit(new
@@ -460,9 +496,13 @@ public static class VisualKeyAssistRuntime
                                 if (!TryForeground()) continue;
                                 var fresh = await frames.CaptureAsync(token);
                                 if (Inhibited(fresh)) continue;
-                                var freshOcr = await new WindowsGameOcrRecognizer().RecognizeAsync(fresh, token);
-                                var current = progressRecognizer!.Recognize(freshOcr, fresh.Width, fresh.Height,
-                                    WindowsGameTargetLocator.CaptureClientBounds(target.Window), fresh);
+                                var freshViewport = WindowsGameTargetLocator.CaptureClientBounds(target.Window);
+                                var current = progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport);
+                                if (current is null)
+                                {
+                                    var freshOcr = await new WindowsGameOcrRecognizer().RecognizeAsync(fresh, token);
+                                    current = progressRecognizer.Recognize(freshOcr, fresh.Width, fresh.Height, freshViewport, fresh);
+                                }
                                 if (current.Signature != flowChoice.Signature || current.Action != flowChoice.Action) continue;
                                 if (UserIsActive()) continue;
                                 var bound = Observation(fresh);
@@ -477,7 +517,7 @@ public static class VisualKeyAssistRuntime
                                 progressSchedule!.RecordInput(clock.ElapsedMilliseconds, current);
                                 schedule.RecordInput(clock.ElapsedMilliseconds);
                                 Emit(new { Event = "progress-input", AtMs = clock.ElapsedMilliseconds, current.RuleId,
-                                    current.Signature, current.Key, current.Point, dispatch });
+                                    current.Signature, current.Key, current.Point, current.Immediate, dispatch });
                             }
                             finally { inputGate.Release(); }
                             await Task.Delay(250, token);
