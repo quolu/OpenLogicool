@@ -1,0 +1,48 @@
+[
+  {
+    "Event": "progress-review-monitoring",
+    "AtMs": 11187,
+    "Detail": "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。",
+    "EvidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261008-211453-024-3fc2839b\\review-001"
+  },
+  {
+    "Event": "review-notified",
+    "DecisionId": "K-8CCY67",
+    "MonitoringContinues": true
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 114145,
+    "IntervalMs": 233,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 114408,
+    "IntervalMs": 263,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 114645,
+    "IntervalMs": 237,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 114924,
+    "IntervalMs": 279,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 115154,
+    "IntervalMs": 230,
+    "FrameFreshnessMs": 191,
+    "TargetIntervalMs": 250
+  }
+]

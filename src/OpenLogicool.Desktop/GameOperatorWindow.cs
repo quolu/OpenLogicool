@@ -93,7 +93,7 @@ public sealed class GameOperatorWindow : Window
             Closing += async (_, eventArgs) =>
             {
                 if (closingAfterStop) return;
-                if (botScriptIntents.Current().Phase is not (BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.Stopping)) return;
+                if (botScriptIntents.Current().Phase is not (BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.Stopping or BotScriptPhase.ReviewMonitoring)) return;
                 eventArgs.Cancel = true;
                 if (stoppingForClose) return;
                 stoppingForClose = true;

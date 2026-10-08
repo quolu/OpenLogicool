@@ -18,6 +18,12 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
     }
 
     public async Task<string> NotifyAsync(string evidenceDirectory, JsonElement result, CancellationToken token)
+        => await ExchangeAsync(evidenceDirectory, result, token);
+
+    public async Task ResolveAsync(string decisionId, CancellationToken token)
+        => _ = await ExchangeAsync("", default, token, decisionId);
+
+    private async Task<string> ExchangeAsync(string evidenceDirectory, JsonElement result, CancellationToken token, string? resolvedDecisionId = null)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
         deadline.CancelAfter(TimeSpan.FromSeconds(30));
@@ -38,6 +44,14 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
             await Call("initialize", new { protocolVersion = "2024-11-05", capabilities = new { },
                 clientInfo = new { name = "openlogicool-review", version = "1.0" } });
             await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new { jsonrpc = "2.0", method = "notifications/initialized" }));
+            if (resolvedDecisionId is not null)
+            {
+                var decision = await Tool("get_decision", new { decision_id = resolvedDecisionId });
+                if (decision.GetProperty("status").GetString() is "pending" or "deferred")
+                    await Tool("cancel_decision", new { decision_id = resolvedDecisionId,
+                        reason = "監視を続けた結果、確認済みの画面に戻ったため自動進行を再開しました。" });
+                return resolvedDecisionId;
+            }
             var decisions = await Tool("list_my_decisions", new { });
             var images = new[] { "progress-review.png", "recovery-review.png", "review-after.png" }
                 .Select(name => Path.Combine(evidenceDirectory, name)).Where(File.Exists).ToArray();
@@ -45,11 +59,15 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
             var options = ReviewOptions(result);
             var choiceText = options.Length > 2 ? "\n画面の選択肢（OCR・添付画像も確認）:\n"
                 + string.Join("\n", options.Where(option => option.Id != "stop").Select(option => option.Label)) : "";
-            var title = "ゲームの自動進行を停止しました: " + detail?[..Math.Min(80, detail.Length)];
+            var monitoring = result.TryGetProperty("MonitoringContinues", out var continues) && continues.GetBoolean();
+            var title = (monitoring ? "ゲーム画面の確認が必要です（監視継続）: " : "ゲームの自動進行を停止しました: ") + detail?[..Math.Min(80, detail.Length)];
+            var context = detail + choiceText + (monitoring
+                ? "\n進行入力を止めて画面観測と回復監視を継続しています。確認済みの別画面に戻ったら自動で進行を再開します。"
+                : "\n入力は停止済みです。判断結果だけでは入力を再開しません。操作者が回答を確認して再開します。")
+                + "\n確認記録: " + Path.Combine(evidenceDirectory, "review.json");
             object Request(string? checkToken) => new
             {
-                title, context = detail + choiceText + "\n入力は停止済みです。停止記録: " + Path.Combine(evidenceDirectory, "review.json")
-                    + "\n判断結果だけでは入力を再開しません。操作者が回答を確認して再開します。",
+                title, context,
                 options = options.Select(option => new { id = option.Id, label = option.Label }).ToArray(),
                 image_paths = images, session_label = "OpenLogicool / スクリプト主体のクエスト進行",
                 check_token = checkToken,
@@ -75,7 +93,7 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
                         || item.GetProperty("status").GetString() is not ("pending" or "deferred")) continue;
                     var decisionId = item.GetProperty("decision_id").GetString()!;
                     await Tool("amend_decision", new { decision_id = decisionId, version = item.GetProperty("version").GetInt32(),
-                        changes = new { context = detail + choiceText + "\n入力停止済み。停止記録: " + Path.Combine(evidenceDirectory, "review.json"),
+                        changes = new { context,
                             options = options.Select(option => new { id = option.Id, label = option.Label }).ToArray(), image_paths = images },
                         note = "同じ停止理由の未決申請へ、新しい画面と停止記録を反映しました。" });
                     return decisionId;

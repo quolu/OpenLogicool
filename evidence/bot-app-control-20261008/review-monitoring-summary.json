@@ -1,0 +1,13 @@
+{
+  "RunId": "20261008-211453-024-3fc2839b",
+  "ReviewAtMs": 11187,
+  "LastAtMs": 115154,
+  "RecoverySamplesAfterReview": 416,
+  "IntervalMedianMs": 251,
+  "IntervalMaxMs": 309.0,
+  "ProgressMonitoringCount": 224,
+  "Notifications": 1,
+  "NotificationErrors": 0,
+  "Inputs": 0,
+  "Ended": false
+}

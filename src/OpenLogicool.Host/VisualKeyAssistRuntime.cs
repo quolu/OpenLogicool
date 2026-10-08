@@ -21,6 +21,7 @@ public sealed class VisualKeyAssistProgress
     private volatile bool needsReview;
     public bool NeedsReview => needsReview;
     public void Pause() => needsReview = true;
+    public void Resume() => needsReview = false;
     public VisualKeyAssistDecision Apply(VisualKeyAssistDecision decision) =>
         NeedsReview && decision != VisualKeyAssistDecision.Hold ? VisualKeyAssistDecision.Wait : decision;
 }
@@ -252,6 +253,7 @@ public static class VisualKeyAssistRuntime
         if (duration <= 0) throw new ArgumentException("実行時間は正のミリ秒です。");
         // 計測では撮影と判定だけを実行し、前面化・Space・回復品を送出しない。
         var measureOnly = arguments.Contains("--measure-only", StringComparer.Ordinal);
+        var keepMonitoring = arguments.Contains("--keep-monitoring-on-review", StringComparer.Ordinal);
         var evidenceDirectory = Path.GetFullPath(Required("--evidence"));
         Directory.CreateDirectory(evidenceDirectory);
         var recoveryIndex = Array.IndexOf(arguments, "--recovery-profile");
@@ -290,6 +292,10 @@ public static class VisualKeyAssistRuntime
             using var inputGate = new SemaphoreSlim(1, 1);
             var eventGate = new object();
             var progress = new VisualKeyAssistProgress();
+            var reviewMonitor = new VisualProgressReviewMonitor();
+            Task notificationWork = Task.CompletedTask;
+            string? reviewDecisionId = null;
+            var reviewNumber = 0;
             var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)
                 ? await RunProgressAsync(stop.Token)
                 : await VisualKeyAssistWorkers.RunAsync(RunRecoveryAsync, RunProgressAsync, stop.Token, recoveryOnly);
@@ -312,6 +318,8 @@ public static class VisualKeyAssistRuntime
                 using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId + ":progress", TimeSpan.FromSeconds(10));
                 var sceneMonitor = new VisualProgressSceneMonitor();
                 VisualKeyAssistDecision? previous = null;
+                try
+                {
                 while (clock.ElapsedMilliseconds < duration)
                 {
                     token.ThrowIfCancellationRequested();
@@ -330,6 +338,29 @@ public static class VisualKeyAssistRuntime
                         ? recoveryRecognizer?.Observe(frame, viewport, ocr?.Text) : null;
                     var flowCandidate = progressRecognizer is null || ocr is null ? null
                         : progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame);
+                    if (reviewMonitor.IsHolding)
+                    {
+                        var candidate = flowCandidate ?? new(VisualProgressAction.Normal);
+                        if (!reviewMonitor.TryResume(clock.ElapsedMilliseconds, candidate, inhibitMatch.Matches,
+                            recoveryRecognizer?.Observe(frame, viewport).HudVisible == true))
+                        {
+                            Emit(new { Event = "progress-monitoring", AtMs = clock.ElapsedMilliseconds,
+                                Candidate = candidate.Action.ToString(), candidate.RuleId });
+                            await Task.Delay(250, token);
+                            continue;
+                        }
+                        progress.Resume();
+                        progressSchedule = progressProfile is null ? null : new VisualProgressSchedule(progressProfile);
+                        schedule.RecordInput(clock.ElapsedMilliseconds);
+                        Emit(new { Event = "progress-resumed", AtMs = clock.ElapsedMilliseconds,
+                            Detail = "確認済みの画面に戻ったため進行を再開しました。" });
+                        QueueNotification(async () =>
+                        {
+                            if (reviewNotifier is not null && reviewDecisionId is not null)
+                                await reviewNotifier.ResolveAsync(reviewDecisionId, token);
+                            reviewDecisionId = null;
+                        }, token);
+                    }
                     var flowTimed = flowCandidate?.RuleId is not null && progressProfile!.Rules.Single(rule => rule.Id == flowCandidate.RuleId).Timed;
                     var sceneActivity = progressProfile is null ? (Changed: false, Difference: 0d)
                         : sceneMonitor.Observe(frame, viewport!);
@@ -386,6 +417,13 @@ public static class VisualKeyAssistRuntime
                                 Image = Path.Combine(evidenceDirectory, "progress-review.png") };
                             File.WriteAllText(Path.Combine(evidenceDirectory, "review.json"), JsonSerializer.Serialize(review));
                             Emit(new { Event = "progress-review", AtMs = clock.ElapsedMilliseconds, flowChoice.Detail });
+                            if (keepMonitoring)
+                            {
+                                BeginMonitoring(flowCandidate ?? new(VisualProgressAction.Normal), frame,
+                                    flowChoice.Detail!, flowChoice.Options, ocr?.Text, token);
+                                await Task.Delay(250, token);
+                                continue;
+                            }
                             return review;
                         }
                         if (flowChoice.Action is VisualProgressAction.Key or VisualProgressAction.Click)
@@ -474,12 +512,21 @@ public static class VisualKeyAssistRuntime
                                 File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-before.png"), encoder.Encode(frame).Bytes.ToArray());
                                 File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-after.png"), encoder.Encode(after).Bytes.ToArray());
                                 if (progressProfile is not null)
+                                {
+                                    if (keepMonitoring)
+                                    {
+                                        BeginMonitoring(flowCandidate ?? new(VisualProgressAction.Normal), after,
+                                            "通常Space後の画面変化を確認できません。進行入力を止めて監視を続けています。", null, ocr?.Text, token);
+                                        await Task.Delay(250, token);
+                                        continue;
+                                    }
                                     return new
                                     {
                                         Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
                                         NeedsReview = true, Events = events,
                                         Detail = "通常Space後の画面変化を確認できないため、進行規則の実行を停止しました。"
                                     };
+                                }
                                 if (recovery is not null)
                                 {
                                     progress.Pause();
@@ -517,6 +564,53 @@ public static class VisualKeyAssistRuntime
                     Detail = progress.NeedsReview ? "Spaceは確認待ちで停止し、指定時間までHP監視を継続しました。" : "指定時間が終了しました。"
                 };
 
+                }
+                finally
+                {
+                    try { await notificationWork; }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+                }
+
+            }
+
+            void BeginMonitoring(VisualProgressChoice candidate, CapturedFrame frame, string detail,
+                VisualProgressOption[]? options, string? ocrText, CancellationToken token)
+            {
+                reviewMonitor.Hold(candidate, recoveryRecognizer?.Observe(frame,
+                    WindowsGameTargetLocator.CaptureClientBounds(target.Window)).HudVisible == true);
+                progress.Pause();
+                var folder = Path.Combine(evidenceDirectory, $"review-{++reviewNumber:D3}");
+                Directory.CreateDirectory(folder);
+                var image = Path.Combine(folder, "progress-review.png");
+                File.WriteAllBytes(image, new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                var review = JsonSerializer.SerializeToElement(new { Mode = "key-assist", ProductHostEntry = true,
+                    NeedsReview = true, MonitoringContinues = true, Detail = detail, ReviewOptions = options,
+                    OcrText = ocrText, Image = image, AiCallCount = 0 });
+                File.WriteAllText(Path.Combine(folder, "review.json"), review.GetRawText());
+                Emit(new { Event = "progress-review-monitoring", AtMs = clock.ElapsedMilliseconds,
+                    Detail = detail, EvidenceDirectory = folder });
+                QueueNotification(async () =>
+                {
+                    if (reviewNotifier is null) return;
+                    reviewDecisionId = await reviewNotifier.NotifyAsync(folder, review, token);
+                    File.WriteAllText(Path.Combine(folder, "notification.json"), JsonSerializer.Serialize(new { DecisionId = reviewDecisionId }));
+                    Emit(new { Event = "review-notified", DecisionId = reviewDecisionId, MonitoringContinues = true });
+                }, token);
+            }
+
+            void QueueNotification(Func<Task> operation, CancellationToken token)
+            {
+                var previousNotification = notificationWork;
+                notificationWork = Task.Run(async () =>
+                {
+                    await previousNotification;
+                    try { await operation(); }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                    catch (Exception error)
+                    {
+                        Emit(new { Event = "review-notification-failed", Detail = "確認通知に失敗しました。画面観測と回復監視は継続しています。 " + error.Message });
+                    }
+                });
             }
 
             async Task<object> RunRecoveryAsync(CancellationToken token)

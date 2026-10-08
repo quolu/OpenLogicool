@@ -23,6 +23,11 @@ public sealed class BotScriptPanelTests
                 var stop = controls.OfType<Button>().Single(button => Equals(button.Content, "Botを停止"));
                 Assert.True(start.IsEnabled);
                 Assert.False(stop.IsEnabled);
+                intents.State = new(BotScriptPhase.ReviewMonitoring, "画面観測と回復監視を継続中です。");
+                panel.Refresh();
+                Assert.Contains("確認待ち・監視継続中", controls.OfType<TextBlock>().Select(text => text.Text));
+                Assert.False(start.IsEnabled);
+                Assert.True(stop.IsEnabled);
                 start.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Assert.Equal("test", intents.Started);
                 Assert.False(start.IsEnabled);

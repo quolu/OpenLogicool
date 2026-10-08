@@ -74,10 +74,10 @@ public sealed class BotScriptPanel : UserControl
     public void Refresh()
     {
         var current = intents.Current();
-        var busy = current.Phase is BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.Stopping;
+        var busy = current.Phase is BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.Stopping or BotScriptPhase.ReviewMonitoring;
         scripts.IsEnabled = !busy;
         start.IsEnabled = !busy && scripts.SelectedItem is not null;
-        stop.IsEnabled = current.Phase is BotScriptPhase.Starting or BotScriptPhase.Running;
+        stop.IsEnabled = current.Phase is BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.ReviewMonitoring;
         evidence.IsEnabled = current.EvidenceDirectory is not null;
         status.Text = current.Phase switch
         {
@@ -85,6 +85,7 @@ public sealed class BotScriptPanel : UserControl
             BotScriptPhase.Running => "実行中",
             BotScriptPhase.Stopping => "停止しています",
             BotScriptPhase.AwaitingReview => "画面の確認が必要です",
+            BotScriptPhase.ReviewMonitoring => "確認待ち・監視継続中",
             BotScriptPhase.Faulted => "エラーで停止しました",
             _ => "停止済み"
         };
@@ -92,7 +93,7 @@ public sealed class BotScriptPanel : UserControl
         {
             BotScriptPhase.Running => Theme.Ok,
             BotScriptPhase.Faulted => Theme.Danger,
-            BotScriptPhase.AwaitingReview => Theme.Warn,
+            BotScriptPhase.AwaitingReview or BotScriptPhase.ReviewMonitoring => Theme.Warn,
             _ => Theme.Text
         };
         detail.Text = current.Detail;

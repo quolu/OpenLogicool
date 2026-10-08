@@ -85,7 +85,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                     "--cue-text", "画面を押してください", "--keys", "Key:Space",
                     "--duration-ms", package.DurationMs.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     "--recovery-profile", package.File("profile.json"), "--progress-profile", package.File("progress.json"),
-                    "--evidence", evidence };
+                    "--evidence", evidence, "--keep-monitoring-on-review" };
                 if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
                 var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(), nano, emitter, target,
                     $"window:bot:{target.ProcessId}", token, report);
@@ -143,8 +143,8 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
     {
         lock (gate)
         {
-            if (state.Phase is not (BotScriptPhase.Starting or BotScriptPhase.Running)) return;
-            state = state with { Phase = BotScriptPhase.Running };
+            if (state.Phase is not (BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.ReviewMonitoring)) return;
+            if (state.Phase == BotScriptPhase.Starting) state = state with { Phase = BotScriptPhase.Running };
             switch (entry.GetProperty("Event").GetString())
             {
                 case "recovery-sample":
@@ -154,7 +154,17 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                 case "recovery":
                     var health = entry.GetProperty("Observation").GetProperty("HealthFraction");
                     state = state with { HealthFraction = health.ValueKind == JsonValueKind.Number ? health.GetDouble() : null,
-                        Detail = entry.GetProperty("Detail").GetString()! };
+                        Detail = state.Phase == BotScriptPhase.ReviewMonitoring ? state.Detail : entry.GetProperty("Detail").GetString()! };
+                    break;
+                case "progress-review-monitoring":
+                    state = state with { Phase = BotScriptPhase.ReviewMonitoring,
+                        Detail = entry.GetProperty("Detail").GetString() + " 画面観測と回復監視は継続中です。" };
+                    break;
+                case "progress-resumed":
+                    state = state with { Phase = BotScriptPhase.Running, Detail = entry.GetProperty("Detail").GetString()! };
+                    break;
+                case "review-notification-failed":
+                    state = state with { Detail = entry.GetProperty("Detail").GetString()! };
                     break;
                 case "input": case "progress-input":
                     state = state with { InputCount = state.InputCount + 1 };

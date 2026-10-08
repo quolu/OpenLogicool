@@ -81,6 +81,33 @@ public sealed class HostBotScriptIntentsTests
             Assert.True(File.Exists(package.File(file)), file);
     }
 
+    [Fact]
+    public async Task 確認待ちは実行中として扱い回復観測で理由を消さず再開できる()
+    {
+        Action<JsonElement>? report = null;
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var intents = Create(new(), async (_, _, emit, token) =>
+        {
+            report = emit;
+            emit(JsonSerializer.SerializeToElement(new { Event = "progress-review-monitoring", Detail = "選択を待っています。" }));
+            entered.SetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            return new(false, "終了");
+        });
+        intents.Start("test");
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(BotScriptPhase.ReviewMonitoring, intents.Current().Phase);
+        Assert.Throws<InvalidOperationException>(() => intents.Start("test"));
+        report!(JsonSerializer.SerializeToElement(new { Event = "recovery-sample", IntervalMs = 250 }));
+        report(JsonSerializer.SerializeToElement(new { Event = "recovery", Observation = new { HealthFraction = 0.6 }, Detail = "回復監視中" }));
+        Assert.Equal(1, intents.Current().ObservationCount);
+        Assert.Contains("選択を待っています", intents.Current().Detail);
+        report(JsonSerializer.SerializeToElement(new { Event = "progress-resumed", Detail = "再開しました。" }));
+        Assert.Equal(BotScriptPhase.Running, intents.Current().Phase);
+        await intents.StopAsync();
+        Assert.Equal(BotScriptPhase.Stopped, intents.Current().Phase);
+    }
+
     private static HostBotScriptIntents Create(DemonstrationRecordingGate gate,
         Func<string, string, Action<JsonElement>, CancellationToken, Task<BotScriptResult>> execute) =>
         new([new("test", "テスト", "説明")], Path.Combine(Path.GetTempPath(), "openlogicool-bot-tests", Guid.NewGuid().ToString("N")), gate, execute);
