@@ -11,6 +11,57 @@ namespace OpenLogicool.Host.Tests;
 public sealed class VisualProgressTests
 {
     [Fact]
+    public async Task クエストの必要アイテム不足では再入力をせず待機する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, "quest-items-missing.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var candidate = new VisualProgressRecognizer(profile).Recognize(ocr, frame.Width, frame.Height,
+            new(1, 31, frame.Width - 2, frame.Height - 32), frame);
+        Assert.Equal("missing-quest-items", candidate.RuleId);
+        Assert.Equal(VisualProgressAction.Wait, candidate.Action);
+        Assert.Null(candidate.Key);
+        Assert.Null(candidate.Point);
+        Assert.Equal(VisualProgressAction.Wait, VisualProgressContinuation.AfterReview(candidate, true).Action);
+    }
+
+    [Theory]
+    [InlineData("npc-quest-menu.png")]
+    [InlineData("npc-quest-menu-2.png")]
+    public async Task NPCのクエスト印とメニューが揃ったらクエスト名を固定せず項目を選ぶ(string filename)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, filename));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var recognizer = new VisualProgressRecognizer(profile);
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("npc-quest-option", choice.RuleId);
+        Assert.Equal(VisualProgressAction.Click, choice.Action);
+        Assert.InRange(choice.Point![0], 0.34, 0.45);
+        var renamed = new WindowsGameOcrResult("", "ja", 0, ocr.Words
+            .Where(word => word.Y < 1000 || word.X < 575 || word.X > 770)
+            .Append(new("別のクエスト", 630, 1032, 110, 26)).ToArray());
+        Assert.Equal("npc-quest-option", recognizer.Recognize(renamed, frame.Width, frame.Height, viewport, frame).RuleId);
+        var bytes = frame.Pixels!.Bgra8.ToArray();
+        var color = bytes.AsSpan(1025 * frame.Pixels.Stride + 610 * 4, 4).ToArray();
+        for (var y = 1028; y < 1060; y++)
+            for (var x = 600; x < 620; x++) color.CopyTo(bytes.AsSpan(y * frame.Pixels.Stride + x * 4));
+        var noMarker = frame with { Pixels = new FramePixels(bytes, frame.Pixels.Stride) };
+        Assert.NotEqual("npc-quest-option", recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, noMarker).RuleId);
+        var merchant = ReadFrame(Path.Combine(fixture, "merchant-menu.png"));
+        var merchantOcr = await new WindowsGameOcrRecognizer().RecognizeAsync(merchant);
+        Assert.Equal("merchant-exit", recognizer.Recognize(merchantOcr, merchant.Width, merchant.Height,
+            new(1, 31, merchant.Width - 2, merchant.Height - 32), merchant).RuleId);
+    }
+
+    [Fact]
     public async Task 商人メニューは通常会話のSpaceよりEsc終了を優先する()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

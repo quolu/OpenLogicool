@@ -9,6 +9,21 @@
   ],
   "Rules": [
     {
+      "Id": "missing-quest-items", "WaitForChange": true, "Priority": 50,
+      "When": [{ "Text": "クエストに必要なアイテムがありません", "Bounds": [0.2, 0.5, 0.6, 0.25] }]
+    },
+    {
+      "Id": "npc-quest-option", "Priority": 35,
+      "When": [
+        { "Text": "商店", "Bounds": [0.45, 0.88, 0.1, 0.12] },
+        { "Text": "世間話", "Bounds": [0.52, 0.88, 0.08, 0.12] },
+        { "Text": "会話終了", "Bounds": [0.58, 0.88, 0.16, 0.12] }
+      ],
+      "Image": "quest-marker.png", "ImageBounds": [0.33, 0.915, 0.035, 0.045],
+      "ImageClientWidth": 1711, "ImageSilhouette": true,
+      "Click": { "Text": "", "Bounds": [0.34, 0.88, 0.11, 0.12] }
+    },
+    {
       "Id": "merchant-exit", "Key": "Key:Esc", "Priority": 30,
       "When": [
         { "Text": "商店", "Bounds": [0.3, 0.88, 0.16, 0.12] },

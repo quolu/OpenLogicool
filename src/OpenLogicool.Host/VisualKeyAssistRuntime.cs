@@ -89,7 +89,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         FindAtWindowScale(frame, searchBounds, 1);
 
     public VisualKeyTemplateMatch FindAtWindowScale(CapturedFrame frame, IReadOnlyList<double> searchBounds, double windowScale) =>
-        stableRegions is not null ? FindAtScale(frame, searchBounds, windowScale)
+        stableRegions is not null || silhouette ? FindAtScale(frame, searchBounds, windowScale)
             : Find(frame, searchBounds, new[] { 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2 }
                 .Select(scale => ((int)Math.Round(width * scale * windowScale), (int)Math.Round(height * scale * windowScale))), 3);
 

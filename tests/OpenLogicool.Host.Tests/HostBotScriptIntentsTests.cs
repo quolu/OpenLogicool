@@ -77,7 +77,7 @@ public sealed class HostBotScriptIntentsTests
         Assert.Equal(0.7, recovery.PotionThreshold);
         Assert.Equal(0.2, recovery.BandageThreshold);
         Assert.Equal(3600000, package.DurationMs);
-        foreach (var file in new[] { "stop.png", "hud.png", "food-ready.png", "food-active.png", "dialogue-tail.png", "dialogue-cue.jpg", "compass-space.png" })
+        foreach (var file in new[] { "stop.png", "hud.png", "food-ready.png", "food-active.png", "dialogue-tail.png", "dialogue-cue.jpg", "compass-space.png", "quest-marker.png" })
             Assert.True(File.Exists(package.File(file)), file);
     }
 
