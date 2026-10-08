@@ -76,6 +76,17 @@ public sealed class VisualRecoveryAssistTests
     }
 
     [Fact]
+    public void Food_timer_shading_keeps_the_active_state_without_changing_the_ready_detection()
+    {
+        var recognizer = new VisualRecoveryRecognizer(Profile());
+        var timer = recognizer.Observe(Frame("food-timer.png"));
+        Assert.Equal(VisualFoodState.Active, timer.Food);
+        Assert.Null(timer.Problem);
+        Assert.Equal(1, timer.HealthFraction);
+        Assert.Equal(VisualFoodState.Ready, recognizer.Observe(Frame("before.png")).Food);
+    }
+
+    [Fact]
     public void Background_resembling_the_rail_does_not_extend_the_health_denominator()
     {
         var frame = Frame("after.png");
@@ -128,15 +139,32 @@ public sealed class VisualRecoveryAssistTests
     }
 
     [Fact]
-    public void Unknown_food_or_dead_health_does_not_spend_any_item()
+    public void Unknown_food_does_not_spend_food_or_block_potion_but_zero_health_stops()
     {
         var schedule = new VisualRecoverySchedule(Profile());
         var unknown = new VisualRecoveryObservation(true, 1, 133, VisualFoodState.Unknown, null);
-        Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(DateTimeOffset.UnixEpoch, unknown, false).Action);
+        Assert.Equal(VisualRecoveryAction.None, schedule.Decide(DateTimeOffset.UnixEpoch, unknown, false).Action);
+        Assert.Equal(VisualRecoveryAction.Potion, schedule.Decide(DateTimeOffset.UnixEpoch,
+            unknown with { HealthFraction = 0.4 }, false).Action);
         Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(DateTimeOffset.UnixEpoch,
             unknown with { HealthFraction = 0 }, false).Action);
         Assert.Equal(VisualRecoveryAction.None, schedule.Decide(DateTimeOffset.UnixEpoch,
             new(false, null, null, VisualFoodState.Unknown, null), false).Action);
+    }
+
+    [Fact]
+    public void Unreadable_health_waits_without_input_then_recovers_or_stops_with_the_problem()
+    {
+        var schedule = new VisualRecoverySchedule(Profile());
+        var now = DateTimeOffset.UnixEpoch;
+        var flashing = new VisualRecoveryObservation(true, null, null, VisualFoodState.Unknown, "HPバーの枠を識別できません。");
+        Assert.Equal(VisualRecoveryAction.Wait, schedule.Decide(now, flashing, false).Action);
+        Assert.Equal(VisualRecoveryAction.Wait, schedule.Decide(now.AddMilliseconds(1500), flashing, false).Action);
+        var low = flashing with { HealthFraction = 0.4, BarWidth = 198, Problem = null };
+        Assert.Equal(VisualRecoveryAction.Potion, schedule.Decide(now.AddMilliseconds(1600), low, false).Action);
+        Assert.Equal(VisualRecoveryAction.Wait, schedule.Decide(now.AddSeconds(2), flashing, false).Action);
+        Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(now.AddSeconds(4), flashing, false).Action);
+        Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(now, flashing with { HudVisible = false }, false).Action);
     }
 
     private static CapturedFrame Frame(string name)

@@ -53,7 +53,7 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
 {
     private readonly VisualKeyTemplate hud = VisualKeyTemplate.Load(profile.HudImage);
     private readonly VisualKeyTemplate ready = VisualKeyTemplate.Load(profile.FoodReadyImage);
-    private readonly VisualKeyTemplate active = VisualKeyTemplate.Load(profile.FoodActiveImage);
+    private readonly VisualKeyTemplate active = VisualKeyTemplate.Load(profile.FoodActiveImage, relativeColor: true);
 
     public VisualRecoveryObservation Observe(CapturedFrame frame)
     {
@@ -135,11 +135,20 @@ public sealed record VisualRecoveryChoice(VisualRecoveryAction Action, string De
 public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, VisualRecoveryState? initial = null)
 {
     public VisualRecoveryState State { get; private set; } = initial ?? new();
+    private DateTimeOffset? uncertainHealthSince;
 
     public VisualRecoveryChoice Decide(DateTimeOffset now, VisualRecoveryObservation observation, bool inhibited)
     {
         if (inhibited) return new(VisualRecoveryAction.None, "停止画像を優先します。");
-        if (observation.Problem is not null) return new(VisualRecoveryAction.Review, observation.Problem);
+        if (observation.Problem is not null)
+        {
+            if (!observation.HudVisible) return new(VisualRecoveryAction.Review, observation.Problem);
+            uncertainHealthSince ??= now;
+            return now - uncertainHealthSince < TimeSpan.FromSeconds(2)
+                ? new(VisualRecoveryAction.Wait, "HP表示を識別できません。入力せず表示の安定を観測しています。")
+                : new(VisualRecoveryAction.Review, observation.Problem);
+        }
+        uncertainHealthSince = null;
         if (State.Pending == VisualRecoveryAction.Food)
         {
             if (observation.HudVisible && observation.Food == VisualFoodState.Active)
@@ -164,7 +173,7 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
                 ? new(VisualRecoveryAction.Potion, "HPの割合が回復基準以下です。")
                 : new(VisualRecoveryAction.None, "ポーションの待ち時間中です。");
         if (observation.Food == VisualFoodState.Unknown)
-            return new(VisualRecoveryAction.Review, "食事の使用前・効果中を判別できません。食事は使用せず停止しました。");
+            return new(VisualRecoveryAction.None, "食事は未判別のため使用しません。HP監視は続けます。");
         if (observation.Food == VisualFoodState.Ready)
             return State.LastFood is null || now - State.LastFood >= TimeSpan.FromMilliseconds(profile.FoodMinimumIntervalMs)
                 ? new(VisualRecoveryAction.Food, "食事ボタンがあり、食事効果がありません。")

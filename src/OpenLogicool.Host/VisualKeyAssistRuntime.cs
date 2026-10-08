@@ -38,12 +38,12 @@ public sealed record VisualKeyTemplateMatch(double Difference, IReadOnlyList<dou
 }
 
 /// <summary>周囲の背景を除いた利用者画像を、小さく平滑化したRGB標本で照合する。</summary>
-public sealed class VisualKeyTemplate(int width, int height, byte[] bgra)
+public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool relativeColor = false)
 {
     private const int Samples = 16;
-    private readonly byte[] samples = Sample(bgra, width, height);
+    private readonly byte[] samples = Sample(bgra, width, height, relativeColor);
 
-    public static VisualKeyTemplate Load(string path)
+    public static VisualKeyTemplate Load(string path, bool relativeColor = false)
     {
         using var stream = File.OpenRead(path);
         var bitmap = new FormatConvertedBitmap(
@@ -53,7 +53,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra)
             throw new ArgumentException("画像条件には縦横8px以上の画像が必要です。", nameof(path));
         var bytes = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4];
         bitmap.CopyPixels(bytes, bitmap.PixelWidth * 4, 0);
-        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes);
+        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor);
     }
 
     public VisualKeyTemplateMatch Find(CapturedFrame frame, IReadOnlyList<double> searchBounds)
@@ -114,7 +114,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra)
             var sampleY = y + (int)(h * (0.15 + 0.7 * (sy + 0.5) / Samples));
             var expected = (sy * Samples + sx) * 3;
             for (var channel = 0; channel < 3; channel++)
-                total += Math.Abs(Average(bytes, stride, sampleX, sampleY, channel) - samples[expected + channel]);
+                total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor) - samples[expected + channel]);
             if (total > 32 * 16 * 3) return false;
         }
         return true;
@@ -131,13 +131,13 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra)
             var sampleY = y + (int)(h * (0.15 + 0.7 * (sy + 0.5) / Samples));
             var expected = (sy * Samples + sx) * 3;
             for (var channel = 0; channel < 3; channel++)
-                total += Math.Abs(Average(bytes, stride, sampleX, sampleY, channel) - samples[expected + channel]);
+                total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor) - samples[expected + channel]);
             if (total > best * count) return double.PositiveInfinity;
         }
         return total / (double)count;
     }
 
-    private static byte[] Sample(byte[] bytes, int width, int height)
+    private static byte[] Sample(byte[] bytes, int width, int height, bool relativeColor)
     {
         var result = new byte[Samples * Samples * 3];
         for (var sy = 0; sy < Samples; sy++)
@@ -146,9 +146,19 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra)
             var x = (int)(width * (0.15 + 0.7 * (sx + 0.5) / Samples));
             var y = (int)(height * (0.15 + 0.7 * (sy + 0.5) / Samples));
             for (var channel = 0; channel < 3; channel++)
-                result[(sy * Samples + sx) * 3 + channel] = (byte)Average(bytes, width * 4, x, y, channel);
+                result[(sy * Samples + sx) * 3 + channel] = (byte)Value(bytes, width * 4, x, y, channel, relativeColor);
         }
         return result;
+    }
+
+    private static int Value(ReadOnlySpan<byte> bytes, int stride, int x, int y, int channel, bool relativeColor)
+    {
+        var value = Average(bytes, stride, x, y, channel);
+        if (!relativeColor) return value;
+        // 時間表示の暗い重ね描きは明るさを変える。色の比率とアイコンの形を照合する。
+        var maximum = Math.Max(Average(bytes, stride, x, y, 0),
+            Math.Max(Average(bytes, stride, x, y, 1), Average(bytes, stride, x, y, 2)));
+        return maximum == 0 ? 0 : value * 255 / maximum;
     }
 
     private static int Average(ReadOnlySpan<byte> bytes, int stride, int x, int y, int channel) =>
