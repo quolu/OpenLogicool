@@ -203,6 +203,38 @@ public sealed class VisualRecoveryAssistTests
     }
 
     [Fact]
+    public void Bandage_threshold_crossing_survives_the_next_frame_until_one_dispatch()
+    {
+        var now = DateTimeOffset.UnixEpoch;
+        var schedule = new VisualRecoverySchedule(Profile());
+        var trigger = new VisualRecoveryObservation(true, 0.353535, 198, VisualFoodState.Active, null, 0.217171);
+        schedule.RecordAttempt(VisualRecoveryAction.Potion, now, trigger with { HealthFraction = 0.414141 });
+        Assert.Equal(VisualRecoveryAction.Bandage, schedule.Decide(now.AddMilliseconds(800), trigger, false).Action);
+        var next = trigger with { HealthFraction = 0.363636, WhiteFraction = 0.050505 };
+        Assert.Equal(VisualRecoveryAction.Bandage, schedule.Decide(now.AddMilliseconds(900), next, false).Action);
+        schedule.RecordAttempt(VisualRecoveryAction.Bandage, now.AddMilliseconds(900), next);
+        Assert.Equal(0.050505, schedule.State.BeforeBandageWhiteFraction);
+        Assert.Equal(VisualRecoveryAction.Wait, schedule.Decide(now.AddSeconds(1), next, false).Action);
+        Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddSeconds(2), next with { WhiteFraction = 0, HealthFraction = 0.6 }, false).Action);
+    }
+
+    [Theory]
+    [InlineData(true, true, 0.4)]
+    [InlineData(false, false, 0.4)]
+    [InlineData(false, true, 0)]
+    public void Bandage_request_is_cancelled_by_stop_image_hidden_hud_or_death(bool inhibited, bool hudVisible, double health)
+    {
+        var now = DateTimeOffset.UnixEpoch;
+        var schedule = new VisualRecoverySchedule(Profile());
+        var trigger = new VisualRecoveryObservation(true, 0.4, 198, VisualFoodState.Active, null, 0.25);
+        Assert.Equal(VisualRecoveryAction.Bandage, schedule.Decide(now, trigger, false).Action);
+        Assert.NotEqual(VisualRecoveryAction.Bandage,
+            schedule.Decide(now.AddMilliseconds(100), trigger with { HudVisible = hudVisible, HealthFraction = health }, inhibited).Action);
+        Assert.Equal(VisualRecoveryAction.None,
+            schedule.Decide(now.AddMilliseconds(200), trigger with { HealthFraction = 0.8, WhiteFraction = 0 }, false).Action);
+    }
+
+    [Fact]
     public void Potion_uses_threshold_and_persistent_cooldown_and_stops_if_result_is_unknown()
     {
         var now = DateTimeOffset.UnixEpoch;

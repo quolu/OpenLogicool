@@ -1,0 +1,286 @@
+[
+  {
+    "Event": "recovery",
+    "AtMs": 298,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 131,
+      "Food": 0,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "Food",
+    "Detail": "食事ボタンがあり、食事効果がありません。"
+  },
+  {
+    "Event": "recovery-input",
+    "AtMs": 422,
+    "Action": "Food",
+    "Token": "Key:B",
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:game-index:76720:3",
+      "TargetWindowSourceId": "window:game-index:76720",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T14:16:45.987566+09:00",
+      "CompletedUtc": "2026-10-08T14:16:46.0020228+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:B:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 606,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 131,
+      "Food": 0,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "Wait",
+    "Detail": "食事効果を確認しています。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 1034,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 131,
+      "Food": 0,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "Wait",
+    "Detail": "食事効果を確認しています。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 1482,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "回復・食事の使用は不要です。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 95996,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.6767676767676768,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.21212121212121213
+    },
+    "Action": "Bandage",
+    "Detail": "HPバーの白い部分が包帯の使用基準以上です。"
+  },
+  {
+    "Event": "recovery-input",
+    "AtMs": 96156,
+    "Action": "Bandage",
+    "Token": "Key:F2",
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:game-index:76720:325",
+      "TargetWindowSourceId": "window:game-index:76720",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T14:18:21.7339037+09:00",
+      "CompletedUtc": "2026-10-08T14:18:21.7361319+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:F2:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 96402,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.6161616161616161,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.25757575757575757
+    },
+    "Action": "Wait",
+    "Detail": "包帯後の白い部分を確認しています。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 96969,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.5555555555555556,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.06060606060606061
+    },
+    "Action": "None",
+    "Detail": "回復・食事の使用は不要です。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 97476,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.5555555555555556,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.005050505050505051
+    },
+    "Action": "None",
+    "Detail": "回復・食事の使用は不要です。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 98031,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.48484848484848486,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.07575757575757576
+    },
+    "Action": "Potion",
+    "Detail": "HPの割合が回復基準以下です。"
+  },
+  {
+    "Event": "recovery-input",
+    "AtMs": 98195,
+    "Action": "Potion",
+    "Token": "Key:F1",
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:game-index:76720:334",
+      "TargetWindowSourceId": "window:game-index:76720",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T14:18:23.7726103+09:00",
+      "CompletedUtc": "2026-10-08T14:18:23.7752664+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:F1:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 98484,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.48484848484848486,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.045454545454545456
+    },
+    "Action": "Wait",
+    "Detail": "ポーション後のHPを確認しています。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 99044,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.48484848484848486,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.005050505050505051
+    },
+    "Action": "Wait",
+    "Detail": "ポーション後のHPを確認しています。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 99563,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.4444444444444444,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.010101010101010102
+    },
+    "Action": "Wait",
+    "Detail": "ポーション後のHPを確認しています。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 100019,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.15151515151515152,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.30303030303030304
+    },
+    "Action": "Wait",
+    "Detail": "ポーション後のHPを確認しています。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 100480,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.15151515151515152,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.30303030303030304
+    },
+    "Action": "Wait",
+    "Detail": "ポーション後のHPを確認しています。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 100936,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.13131313131313133,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.020202020202020204
+    },
+    "Action": "Wait",
+    "Detail": "ポーション後のHPを確認しています。"
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 101419,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 0.13131313131313133,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0.015151515151515152
+    },
+    "Action": "Review",
+    "Detail": "ポーション後のHP増加を確認できません。追加入力を停止しました。"
+  }
+]

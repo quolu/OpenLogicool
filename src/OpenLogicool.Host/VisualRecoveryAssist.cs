@@ -202,9 +202,12 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
 {
     public VisualRecoveryState State { get; private set; } = initial ?? new();
     private DateTimeOffset? uncertainHealthSince;
+    private bool bandageRequested;
 
     public VisualRecoveryChoice Decide(DateTimeOffset now, VisualRecoveryObservation observation, bool inhibited)
     {
+        if (inhibited || !observation.HudVisible || observation.HealthFraction == 0 || observation.Problem is not null)
+            bandageRequested = false;
         if (inhibited) return new(VisualRecoveryAction.None, "停止画像を優先します。");
         if (observation.Problem is not null)
         {
@@ -223,9 +226,12 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
                 ? new(VisualRecoveryAction.Review, "包帯後に白い部分の減少を確認できません。追加使用せず停止しました。")
                 : new(VisualRecoveryAction.Wait, "包帯後の白い部分を確認しています。");
         }
+        // 閾値への到達は1回の使用要求。送出直前の別frameで白が減っても要求を失わない。
         if (observation.HudVisible && observation.HealthFraction > 0
-            && observation.WhiteFraction >= profile.BandageThreshold
-            && (State.LastBandage is null || now - State.LastBandage >= TimeSpan.FromMilliseconds(profile.BandageCooldownMs)))
+            && (State.LastBandage is null || now - State.LastBandage >= TimeSpan.FromMilliseconds(profile.BandageCooldownMs))
+            && observation.WhiteFraction >= profile.BandageThreshold)
+            bandageRequested = true;
+        if (bandageRequested)
             return new(VisualRecoveryAction.Bandage, "HPバーの白い部分が包帯の使用基準以上です。");
         if (State.Pending == VisualRecoveryAction.Food)
         {
@@ -270,5 +276,6 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
                 BeforeBandageWhiteFraction = observation.WhiteFraction },
             _ => throw new ArgumentException("消費操作だけを記録できます。", nameof(action)),
         };
+        if (action == VisualRecoveryAction.Bandage) bandageRequested = false;
     }
 }
