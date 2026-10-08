@@ -18,7 +18,8 @@ public sealed record VisualRecoveryProfile(
     string FoodActiveImage, double[] FoodActiveSearch,
     int[] RailSearch, int[] RailRgb, int RailTolerance, int CapPixels, int FillOffsetY,
     int MinimumBarWidth, string FoodKey, string PotionKey,
-    double PotionThreshold, int PotionCooldownMs, int FoodMinimumIntervalMs)
+    double PotionThreshold, int PotionCooldownMs, int FoodMinimumIntervalMs,
+    int[] Viewport, double CanvasAspectRatio)
 {
     public static VisualRecoveryProfile Load(string path)
     {
@@ -35,6 +36,12 @@ public sealed record VisualRecoveryProfile(
             || profile.MinimumBarWidth <= 0 || profile.PotionThreshold is <= 0 or > 1
             || profile.PotionCooldownMs <= 0 || profile.FoodMinimumIntervalMs <= 0)
             throw new InvalidDataException("回復判定設定の形式または値が不正です。");
+        if (profile.Viewport is not { Length: 4 } || profile.Viewport.Any(value => value < 0)
+            || profile.Viewport[2] == 0 || profile.Viewport[3] == 0
+            || profile.Viewport[0] + profile.Viewport[2] > profile.Width
+            || profile.Viewport[1] + profile.Viewport[3] > profile.Height
+            || !double.IsFinite(profile.CanvasAspectRatio) || profile.CanvasAspectRatio <= 0)
+            throw new InvalidDataException("回復判定の描画領域設定が不正です。");
         foreach (var bounds in new[] { profile.HudSearch, profile.FoodReadySearch, profile.FoodActiveSearch })
             if (bounds is not { Length: 4 } || bounds.Any(value => !double.IsFinite(value) || value < 0 || value > 1)
                 || bounds[2] <= 0 || bounds[3] <= 0 || bounds[0] + bounds[2] > 1 || bounds[1] + bounds[3] > 1)
@@ -55,14 +62,24 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
     private readonly VisualKeyTemplate ready = VisualKeyTemplate.Load(profile.FoodReadyImage);
     private readonly VisualKeyTemplate active = VisualKeyTemplate.Load(profile.FoodActiveImage, relativeColor: true);
 
-    public VisualRecoveryObservation Observe(CapturedFrame frame)
+    public VisualRecoveryObservation Observe(CapturedFrame frame, FrameRect? viewport = null)
     {
-        if (frame.Width != profile.Width || frame.Height != profile.Height)
-            return new(false, null, null, VisualFoodState.Unknown, "校正した画面サイズと異なります。");
+        var sourceFrame = frame;
+        if (viewport is null && (frame.Width != profile.Width || frame.Height != profile.Height))
+            return new(false, null, null, VisualFoodState.Unknown, "ゲームの描画領域が必要です。");
+        if (viewport is not null)
+        {
+            if (viewport.X < 0 || viewport.Y < 0 || viewport.Width <= 0 || viewport.Height <= 0
+                || viewport.X + viewport.Width > frame.Width || viewport.Y + viewport.Height > frame.Height)
+                return new(true, null, null, VisualFoodState.Unknown, "撮影中に描画領域が変わりました。");
+            frame = NormalizeHud(frame, viewport);
+        }
         if (!hud.Find(frame, profile.HudSearch).Matches)
             return new(false, null, null, VisualFoodState.Unknown, null);
-        var foodReady = ready.Find(frame, profile.FoodReadySearch).Matches;
-        var foodActive = active.Find(frame, profile.FoodActiveSearch).Matches;
+        var foodReady = viewport is null || sourceFrame == frame
+            ? ready.FindNativeSize(frame, profile.FoodReadySearch).Matches
+            : ready.FindAtScale(sourceFrame, MapSearch(sourceFrame, viewport, profile.FoodReadySearch), HudScale(viewport)).Matches;
+        var foodActive = active.Find(frame, profile.FoodActiveSearch).Difference <= 8;
         var food = (foodReady, foodActive) switch
         {
             (true, false) => VisualFoodState.Ready,
@@ -72,31 +89,31 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
         var pixels = frame.Pixels ?? throw new InvalidOperationException("回復判定の画像がありません。");
         var bytes = pixels.Bgra8.Span;
         var area = profile.RailSearch;
-        // 下辺の連続した枠を探す。残量や食事で変わる右端を固定値にしない。
+        // 被弾の白い表示は下辺を分断する。左端と丸い右端を独立に探す。
         var bestLeft = -1;
         var bestRight = -1;
         var bestY = -1;
-        for (var y = area[1]; y < area[1] + area[3]; y++)
+        foreach (var y in Enumerable.Range(area[1], area[3]).OrderBy(y => Math.Abs(y - (area[1] + area[3] / 2))))
         {
             var start = -1;
-            for (var x = area[0]; x <= area[0] + area[2]; x++)
+            for (var x = area[0]; x < area[0] + 15; x++)
+                if (IsRail(bytes, pixels.Stride, x, y)) { start = x; break; }
+            if (start < 0) continue;
+            for (var x = start + profile.MinimumBarWidth - 1; x < area[0] + area[2]; x++)
             {
-                var rail = x < area[0] + area[2] && IsRail(bytes, pixels.Stride, x, y);
-                if (rail && start < 0) start = x;
-                if (rail || start < 0) continue;
-                if (start <= area[0] + 15 && x - start >= profile.MinimumBarWidth
-                    && x - start > bestRight - bestLeft + 1
+                if (IsRail(bytes, pixels.Stride, x, y)
+                    && x - start > bestRight - bestLeft
                     && y + 2 < frame.Height
-                    && IsRail(bytes, pixels.Stride, (start + x - 1) / 2, y + 2)
-                    && IsRail(bytes, pixels.Stride, x - 5, y + 2)
-                    && !IsRail(bytes, pixels.Stride, x - 1, y + 2))
+                    && IsRail(bytes, pixels.Stride, x - 4, y + 2)
+                    && !IsRail(bytes, pixels.Stride, x, y + 2)
+                    && !IsRail(bytes, pixels.Stride, x + 1, y))
                 {
                     bestLeft = start;
-                    bestRight = x - 1;
+                    bestRight = x;
                     bestY = y;
                 }
-                start = -1;
             }
+            if (bestLeft >= 0) break;
         }
         if (bestLeft < 0)
             return new(true, null, null, food, "HPバーの枠を識別できません。");
@@ -118,6 +135,46 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
         return new(true, (filledRight - left + 1) / (double)width, width, food, null);
     }
 
+    private CapturedFrame NormalizeHud(CapturedFrame frame, FrameRect viewport)
+    {
+        var reference = profile.Viewport;
+        if (frame.Width == profile.Width && frame.Height == profile.Height
+            && viewport == new FrameRect(reference[0], reference[1], reference[2], reference[3])) return frame;
+        var scale = HudScale(viewport);
+        var source = frame.Pixels ?? throw new InvalidOperationException("回復判定の画像がありません。");
+        var bytes = source.Bgra8.Span;
+        var normalized = new byte[profile.Width * profile.Height * 4];
+        // 窓枠を除いた描画領域の倍率で、判定に使う左上のHUDだけを基準座標へ戻す。
+        var right = Math.Min(profile.Width, Math.Max(profile.RailSearch[0] + profile.RailSearch[2],
+            (int)Math.Ceiling((profile.FoodReadySearch[0] + profile.FoodReadySearch[2]) * profile.Width)) + 2);
+        var bottom = Math.Min(profile.Height,
+            (int)Math.Ceiling((profile.FoodActiveSearch[1] + profile.FoodActiveSearch[3]) * profile.Height) + 2);
+        for (var y = reference[1]; y < bottom; y++)
+        for (var x = reference[0]; x < right; x++)
+        {
+            var sourceX = (int)Math.Round(viewport.X + (x - reference[0]) * scale);
+            var sourceY = (int)Math.Round(viewport.Y + (y - reference[1]) * scale);
+            if (sourceX >= viewport.X + viewport.Width || sourceY >= viewport.Y + viewport.Height) continue;
+            bytes.Slice(sourceY * source.Stride + sourceX * 4, 4).CopyTo(normalized.AsSpan((y * profile.Width + x) * 4, 4));
+        }
+        return frame with { Width = profile.Width, Height = profile.Height,
+            Pixels = new FramePixels(normalized, profile.Width * 4) };
+    }
+
+    public double HudScale(FrameRect viewport) => Math.Min(viewport.Width, viewport.Height * profile.CanvasAspectRatio)
+        / Math.Min(profile.Viewport[2], profile.Viewport[3] * profile.CanvasAspectRatio);
+
+    private double[] MapSearch(CapturedFrame frame, FrameRect viewport, double[] search)
+    {
+        var scale = HudScale(viewport);
+        return [
+            (viewport.X + (search[0] * profile.Width - profile.Viewport[0]) * scale) / frame.Width,
+            (viewport.Y + (search[1] * profile.Height - profile.Viewport[1]) * scale) / frame.Height,
+            search[2] * profile.Width * scale / frame.Width,
+            search[3] * profile.Height * scale / frame.Height,
+        ];
+    }
+
     private bool IsRail(ReadOnlySpan<byte> bytes, int stride, int x, int y)
     {
         var offset = y * stride + x * 4;
@@ -128,7 +185,8 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
 }
 
 public sealed record VisualRecoveryState(DateTimeOffset? LastFood = null, DateTimeOffset? LastPotion = null,
-    VisualRecoveryAction Pending = VisualRecoveryAction.None, double? BeforePotion = null);
+    VisualRecoveryAction Pending = VisualRecoveryAction.None, double? BeforePotion = null,
+    int? BeforeFoodBarWidth = null);
 public sealed record VisualRecoveryChoice(VisualRecoveryAction Action, string Detail);
 
 /// <summary>食事の結果待ちと薬の待ち時間を保持し、未確認の消費を繰り返さない。</summary>
@@ -151,7 +209,8 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
         uncertainHealthSince = null;
         if (State.Pending == VisualRecoveryAction.Food)
         {
-            if (observation.HudVisible && observation.Food == VisualFoodState.Active)
+            if (observation.HudVisible && observation.Food == VisualFoodState.Active
+                && observation.BarWidth > State.BeforeFoodBarWidth)
                 State = State with { Pending = VisualRecoveryAction.None };
             else return now - State.LastFood >= TimeSpan.FromSeconds(8)
                 ? new(VisualRecoveryAction.Review, "食事後の効果を確認できません。再使用せず停止しました。")
@@ -185,7 +244,7 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
     {
         State = action switch
         {
-            VisualRecoveryAction.Food => State with { LastFood = now, Pending = action },
+            VisualRecoveryAction.Food => State with { LastFood = now, Pending = action, BeforeFoodBarWidth = observation.BarWidth },
             VisualRecoveryAction.Potion => State with { LastPotion = now, Pending = action, BeforePotion = observation.HealthFraction },
             _ => throw new ArgumentException("消費操作だけを記録できます。", nameof(action)),
         };

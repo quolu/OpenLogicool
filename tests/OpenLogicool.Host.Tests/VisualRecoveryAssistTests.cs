@@ -66,6 +66,20 @@ public sealed class VisualRecoveryAssistTests
         Assert.NotNull(recognizer.Observe(frame with { Width = 1000 }).Problem);
     }
 
+    [Theory]
+    [InlineData("window-small.png", 1808, 1051)]
+    [InlineData("window-narrow.png", 1504, 1052)]
+    [InlineData("window-short.png", 1506, 814)]
+    public void Resized_real_windows_use_the_client_viewport_and_keep_the_ready_button(string image, int width, int height)
+    {
+        var observation = new VisualRecoveryRecognizer(Profile()).Observe(Frame(image), new FrameRect(1, 31, width, height));
+        Assert.True(observation.HudVisible);
+        Assert.Null(observation.Problem);
+        Assert.Equal(VisualFoodState.Ready, observation.Food);
+        Assert.InRange(observation.BarWidth!.Value, 129, 136);
+        Assert.InRange(observation.HealthFraction!.Value, 0.97, 1);
+    }
+
     [Fact]
     public void Combat_food_icon_is_found_after_other_effects_shift_it_to_the_right()
     {
@@ -73,6 +87,20 @@ public sealed class VisualRecoveryAssistTests
         Assert.Equal(VisualFoodState.Active, observation.Food);
         Assert.Null(observation.Problem);
         Assert.InRange(observation.HealthFraction!.Value, 0.98, 1);
+    }
+
+    [Fact]
+    public void Damage_flash_does_not_split_the_denominator_or_count_white_as_remaining_health()
+    {
+        var observation = new VisualRecoveryRecognizer(Profile()).Observe(Frame("damaged.png"));
+        Assert.True(observation.HudVisible);
+        Assert.Null(observation.Problem);
+        Assert.Equal(132, observation.BarWidth);
+        Assert.InRange(observation.HealthFraction!.Value, 0.2, 0.4);
+        Assert.Equal(VisualFoodState.Ready, observation.Food);
+        var match = VisualKeyTemplate.Load(Profile().FoodReadyImage).FindNativeSize(Frame("damaged.png"), Profile().FoodReadySearch);
+        Assert.InRange(match.Difference, 0, 1);
+        Assert.False(VisualKeyTemplate.Load(Profile().FoodReadyImage).FindNativeSize(Frame("after.png"), Profile().FoodReadySearch).Matches);
     }
 
     [Fact]
@@ -114,6 +142,8 @@ public sealed class VisualRecoveryAssistTests
         Assert.Equal(VisualRecoveryAction.Food, schedule.Decide(now, ready, false).Action);
         schedule.RecordAttempt(VisualRecoveryAction.Food, now, ready);
         Assert.Equal(VisualRecoveryAction.Wait, schedule.Decide(now.AddSeconds(1), ready, false).Action);
+        Assert.Equal(VisualRecoveryAction.Wait, schedule.Decide(now.AddSeconds(2),
+            ready with { Food = VisualFoodState.Active }, false).Action);
         Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(now.AddSeconds(8), ready, false).Action);
         var active = ready with { Food = VisualFoodState.Active, BarWidth = 198 };
         Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddSeconds(9), active, false).Action);
@@ -150,6 +180,20 @@ public sealed class VisualRecoveryAssistTests
             unknown with { HealthFraction = 0 }, false).Action);
         Assert.Equal(VisualRecoveryAction.None, schedule.Decide(DateTimeOffset.UnixEpoch,
             new(false, null, null, VisualFoodState.Unknown, null), false).Action);
+    }
+
+    [Fact]
+    public void Progress_review_stops_space_without_stopping_the_independent_recovery_schedule()
+    {
+        var progress = new VisualKeyAssistProgress();
+        Assert.Equal(VisualKeyAssistDecision.Timed, progress.Apply(VisualKeyAssistDecision.Timed));
+        progress.Pause();
+        Assert.True(progress.NeedsReview);
+        Assert.Equal(VisualKeyAssistDecision.Wait, progress.Apply(VisualKeyAssistDecision.Timed));
+        Assert.Equal(VisualKeyAssistDecision.Wait, progress.Apply(VisualKeyAssistDecision.Cue));
+        Assert.Equal(VisualKeyAssistDecision.Hold, progress.Apply(VisualKeyAssistDecision.Hold));
+        var low = new VisualRecoveryObservation(true, 0.4, 132, VisualFoodState.Unknown, null);
+        Assert.Equal(VisualRecoveryAction.Potion, new VisualRecoverySchedule(Profile()).Decide(DateTimeOffset.UnixEpoch, low, false).Action);
     }
 
     [Fact]

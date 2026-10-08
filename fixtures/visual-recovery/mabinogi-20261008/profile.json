@@ -5,10 +5,10 @@
   "HudImage": "hud.png",
   "HudSearch": [0.005, 0.038, 0.02, 0.032],
   "FoodReadyImage": "food-ready.png",
-  "FoodReadySearch": [0.117, 0.039, 0.025, 0.035],
+  "FoodReadySearch": [0.12165683159328189, 0.04170583775587566, 0.014525646845211076, 0.02350265352539803],
   "FoodActiveImage": "food-active.png",
   "FoodActiveSearch": [0.055, 0.114, 0.12, 0.036],
-  "RailSearch": [125, 138, 325, 5],
+  "RailSearch": [125, 137, 325, 5],
   "RailRgb": [39, 42, 46],
   "RailTolerance": 0,
   "CapPixels": 2,
@@ -18,5 +18,7 @@
   "PotionKey": "Key:F1",
   "PotionThreshold": 0.5,
   "PotionCooldownMs": 10000,
-  "FoodMinimumIntervalMs": 1200000
+  "FoodMinimumIntervalMs": 1200000,
+  "Viewport": [1, 31, 2201, 1287],
+  "CanvasAspectRatio": 1.7777777777777777
 }

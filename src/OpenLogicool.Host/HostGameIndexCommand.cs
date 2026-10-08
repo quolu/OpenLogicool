@@ -693,6 +693,7 @@ public static class HostGameIndexCommand
             Image = imagePath,
             png.Width,
             png.Height,
+            ClientBounds = WindowsGameTargetLocator.CaptureClientBounds(target.Window),
             Sha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(png.Bytes.Span)).ToLowerInvariant(),
             frame.FreshnessMs,
             AiCallCount = 0,

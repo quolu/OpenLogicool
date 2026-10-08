@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using OpenLogicool.Contracts.Capture;
 
 namespace OpenLogicool.Host;
 
@@ -13,6 +14,16 @@ public sealed record WindowsGameTarget(
 
 public static class WindowsGameTargetLocator
 {
+    public static FrameRect CaptureClientBounds(nint window)
+    {
+        var origin = new NativePoint();
+        if (!GetClientRect(window, out var client) || !ClientToScreen(window, ref origin))
+            throw new InvalidOperationException($"ゲームの描画領域を取得できません: {Marshal.GetLastWin32Error()}");
+        var result = DwmGetWindowAttribute(window, 9, out var visible, Marshal.SizeOf<NativeRect>());
+        Marshal.ThrowExceptionForHR(result);
+        return new(origin.X - visible.Left, origin.Y - visible.Top, client.Right, client.Bottom);
+    }
+
     public static WindowsGameTarget Locate(string processName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(processName);
@@ -43,6 +54,20 @@ public static class WindowsGameTargetLocator
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetWindowRect(nint window, out NativeRect rect);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetClientRect(nint window, out NativeRect rect);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ClientToScreen(nint window, ref NativePoint point);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmGetWindowAttribute(nint window, int attribute, out NativeRect rect, int size);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct NativeRect { public int Left; public int Top; public int Right; public int Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint { public int X; public int Y; }
 }

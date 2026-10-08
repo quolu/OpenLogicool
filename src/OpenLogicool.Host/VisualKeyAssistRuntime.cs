@@ -14,6 +14,15 @@ namespace OpenLogicool.Host;
 
 public enum VisualKeyAssistDecision { Hold, Wait, Cue, Timed }
 
+/// <summary>進行の確認待ちはSpaceだけを止め、独立した回復監視は継続する。</summary>
+public sealed class VisualKeyAssistProgress
+{
+    public bool NeedsReview { get; private set; }
+    public void Pause() => NeedsReview = true;
+    public VisualKeyAssistDecision Apply(VisualKeyAssistDecision decision) =>
+        NeedsReview && decision != VisualKeyAssistDecision.Hold ? VisualKeyAssistDecision.Wait : decision;
+}
+
 /// <summary>利用者の画像条件を優先し、通常の待ち時間だけを乱数で決める。</summary>
 public sealed class VisualKeyAssistSchedule(long startedMilliseconds, Func<int> nextInterval)
 {
@@ -56,7 +65,35 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor);
     }
 
-    public VisualKeyTemplateMatch Find(CapturedFrame frame, IReadOnlyList<double> searchBounds)
+    public VisualKeyTemplateMatch Find(CapturedFrame frame, IReadOnlyList<double> searchBounds) =>
+        FindAtWindowScale(frame, searchBounds, 1);
+
+    public VisualKeyTemplateMatch FindAtWindowScale(CapturedFrame frame, IReadOnlyList<double> searchBounds, double windowScale) =>
+        Find(frame, searchBounds, new[] { 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2 }
+            .Select(scale => ((int)Math.Round(width * scale * windowScale), (int)Math.Round(height * scale * windowScale))), 3);
+
+    public VisualKeyTemplateMatch FindNativeSize(CapturedFrame frame, IReadOnlyList<double> searchBounds) =>
+        Find(frame, searchBounds, new[] { (width, height) }, 1);
+
+    public VisualKeyTemplateMatch FindAtScale(CapturedFrame frame, IReadOnlyList<double> searchBounds, double scale)
+    {
+        var source = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, bgra, width * 4);
+        var matches = new List<VisualKeyTemplateMatch>();
+        // 小さい文字は縮小描画で平滑化される。参照画像も同じ倍率へ縮小して比較する。
+        foreach (var w in Enumerable.Range(Math.Max(8, (int)Math.Round(width * scale) - 1), 3))
+        foreach (var h in Enumerable.Range(Math.Max(8, (int)Math.Round(height * scale) - 1), 3))
+        {
+            var resized = new TransformedBitmap(source, new ScaleTransform(w / (double)width, h / (double)height));
+            var bytes = new byte[resized.PixelWidth * resized.PixelHeight * 4];
+            resized.CopyPixels(bytes, resized.PixelWidth * 4, 0);
+            matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor)
+                .FindNativeSize(frame, searchBounds));
+        }
+        return matches.MinBy(match => match.Difference)!;
+    }
+
+    private VisualKeyTemplateMatch Find(CapturedFrame frame, IReadOnlyList<double> searchBounds,
+        IEnumerable<(int Width, int Height)> sizes, int step)
     {
         var pixels = frame.Pixels ?? throw new InvalidOperationException("画像条件の照合にpixelsがありません。");
         var bytes = pixels.Bgra8.Span;
@@ -70,27 +107,23 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         var bestY = 0;
         var bestWidth = 0;
         var bestHeight = 0;
-        foreach (var scale in new[] { 0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2 })
+        foreach (var (sampleWidth, sampleHeight) in sizes)
         {
-            var sampleWidth = (int)Math.Round(width * scale);
-            var sampleHeight = (int)Math.Round(height * scale);
-            for (var y = top; y + sampleHeight <= bottom; y += 3)
-            for (var x = left; x + sampleWidth <= right; x += 3)
+            var scaleBest = double.PositiveInfinity;
+            for (var y = top; y + sampleHeight <= bottom; y += step)
+            for (var x = left; x + sampleWidth <= right; x += step)
             {
                 if (!Candidate(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight)) continue;
-                var difference = Difference(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight, best);
-                if (difference >= best) continue;
-                best = difference;
+                var difference = Difference(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight, scaleBest);
+                if (difference >= scaleBest) continue;
+                scaleBest = difference;
                 bestX = x;
                 bestY = y;
                 bestWidth = sampleWidth;
                 bestHeight = sampleHeight;
-                bestBounds = [x / (double)frame.Width, y / (double)frame.Height,
-                    sampleWidth / (double)frame.Width, sampleHeight / (double)frame.Height];
             }
-        }
-        if (bestWidth > 0)
-        {
+            // 粗い探索で隣の倍率が勝っても、各倍率の正確な座標まで照合する。
+            if (double.IsPositiveInfinity(scaleBest)) continue;
             for (var y = Math.Max(top, bestY - 2); y <= Math.Min(bottom - bestHeight, bestY + 2); y++)
             for (var x = Math.Max(left, bestX - 2); x <= Math.Min(right - bestWidth, bestX + 2); x++)
             {
@@ -229,21 +262,24 @@ public static class VisualKeyAssistRuntime
             var clock = Stopwatch.StartNew();
             var schedule = new VisualKeyAssistSchedule(0, () => Random.Shared.Next(8_000, 12_001));
             var events = new List<object>();
+            var progress = new VisualKeyAssistProgress();
             VisualKeyAssistDecision? previous = null;
             VisualRecoveryObservation? previousRecovery = null;
             while (clock.ElapsedMilliseconds < duration)
             {
                 stop.Token.ThrowIfCancellationRequested();
                 var frame = await frames.CaptureAsync(stop.Token);
-                var inhibitMatch = inhibit.Find(frame, region);
-                var cueMatch = inhibitMatch.Matches || cues.Length == 0 ? null : cues.Select(cue => cue.Find(frame, region))
+                var viewport = recoveryRecognizer is null ? null : WindowsGameTargetLocator.CaptureClientBounds(target.Window);
+                var windowScale = viewport is null ? 1 : recoveryRecognizer!.HudScale(viewport);
+                var inhibitMatch = inhibit.FindAtWindowScale(frame, region, windowScale);
+                var cueMatch = inhibitMatch.Matches || cues.Length == 0 ? null : cues.Select(cue => cue.FindAtWindowScale(frame, region, windowScale))
                     .OrderBy(match => match.Difference).First();
                 var ocr = !inhibitMatch.Matches && cueTexts.Length > 0
                     ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, stop.Token) : null;
                 var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
-                var decision = schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
-                    cueMatch?.Matches == true || matchedTexts.Length > 0);
-                var recoveryObservation = recoveryRecognizer?.Observe(frame);
+                var decision = progress.Apply(schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
+                    cueMatch?.Matches == true || matchedTexts.Length > 0));
+                var recoveryObservation = recoveryRecognizer?.Observe(frame, viewport);
                 if (decision != previous)
                 {
                     Emit(new { Event = "condition", Decision = decision.ToString(), AtMs = clock.ElapsedMilliseconds,
@@ -289,8 +325,8 @@ public static class VisualKeyAssistRuntime
                     {
                         WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
                         var fresh = await frames.CaptureAsync(stop.Token);
-                        var freshObservation = recoveryRecognizer!.Observe(fresh);
-                        if (recovery.Decide(DateTimeOffset.UtcNow, freshObservation, inhibit.Find(fresh, region).Matches).Action != choice.Action)
+                        var freshObservation = recoveryRecognizer!.Observe(fresh, WindowsGameTargetLocator.CaptureClientBounds(target.Window));
+                        if (recovery.Decide(DateTimeOffset.UtcNow, freshObservation, Inhibited(fresh)).Action != choice.Action)
                             continue;
                         File.WriteAllBytes(Path.Combine(evidenceDirectory, $"recovery-{events.Count}-before.png"),
                             new WindowsGameFramePngEncoder().Encode(fresh).Bytes.ToArray());
@@ -320,7 +356,7 @@ public static class VisualKeyAssistRuntime
                     var beforeScene = decision == VisualKeyAssistDecision.Timed ? await Scene(frame, beforeObservation) : null;
                     // OCRや前面化の間に停止画像へ変わった場合も、その画像を優先する。
                     var dispatchFrame = await frames.CaptureAsync(stop.Token);
-                    if (inhibit.Find(dispatchFrame, region).Matches) continue;
+                    if (Inhibited(dispatchFrame)) continue;
                     var dispatchObservation = Observation(dispatchFrame);
                     var dispatch = actions.KeyTap(new GameInteractionKeyTapRequest(
                         ContractSchemaVersions.Revision03, dispatchObservation.ObservationId, dispatchFrame.Sequence,
@@ -344,6 +380,13 @@ public static class VisualKeyAssistRuntime
                             var encoder = new WindowsGameFramePngEncoder();
                             File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-before.png"), encoder.Encode(frame).Bytes.ToArray());
                             File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-after.png"), encoder.Encode(after).Bytes.ToArray());
+                            if (recovery is not null)
+                            {
+                                progress.Pause();
+                                Emit(new { Event = "progress-paused", AtMs = clock.ElapsedMilliseconds,
+                                    NeedsReview = true, Detail = "画面変化が未確認のためSpaceを停止しました。HP監視は継続します。" });
+                                continue;
+                            }
                             return new { Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
                                 NeedsReview = true, comparison, Events = events,
                                 Detail = "通常間隔のキー入力後に画面の切替を確認できないため、追加入力を停止しました。" };
@@ -353,7 +396,8 @@ public static class VisualKeyAssistRuntime
                 await Task.Delay(250, stop.Token);
             }
             return new { Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
-                NeedsReview = false, Events = events, Detail = "指定時間が終了しました。" };
+                NeedsReview = progress.NeedsReview, Events = events,
+                Detail = progress.NeedsReview ? "Spaceは確認待ちで停止し、指定時間までHP監視を継続しました。" : "指定時間が終了しました。" };
 
             void Emit(object entry)
             {
@@ -362,6 +406,9 @@ public static class VisualKeyAssistRuntime
                 File.AppendAllText(Path.Combine(evidenceDirectory, "events.jsonl"), json + "\n");
                 Console.WriteLine(json);
             }
+
+            bool Inhibited(CapturedFrame candidate) => inhibit.FindAtWindowScale(candidate, region,
+                recoveryRecognizer is null ? 1 : recoveryRecognizer.HudScale(WindowsGameTargetLocator.CaptureClientBounds(target.Window))).Matches;
 
             void SaveRecoveryState()
             {

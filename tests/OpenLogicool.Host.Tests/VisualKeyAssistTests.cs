@@ -64,6 +64,13 @@ public sealed class VisualKeyAssistTests
         Assert.Equal(0, match.Difference);
         Assert.False(template.Find(Frame(new byte[target.Length]), [0, 0, 1, 1]).Matches);
         Assert.False(template.Find(Frame(target), [0, 0, 0.4, 0.4]).Matches);
+        var reduced = new byte[target.Length];
+        for (var y = 0; y < size / 2; y++)
+        for (var x = 0; x < size / 2; x++)
+            reference.AsSpan(((y * 2) * size + x * 2) * 4, 4)
+                .CopyTo(reduced.AsSpan(((y + 42) * 90 + x + 39) * 4, 4));
+        Assert.True(template.FindAtWindowScale(Frame(reduced), [0, 0, 1, 1], 0.5).Matches);
+        Assert.False(template.FindAtWindowScale(Frame(new byte[target.Length]), [0, 0, 1, 1], 0.5).Matches);
     }
 
     [Fact]
