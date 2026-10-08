@@ -37,6 +37,14 @@ OpenLogicool.Host.exe game-index key-tap --process MabinogiMobile --db <記録�
 
 `game-index key-assist`は、利用者指定の停止画像、文字表示、通常間隔の順でキー入力を判断する開発用の製品入口である。
 
+`--progress-profile <設定.json>`は、確認済みの会話送り・クエスト報酬・自動着用・装備確認・退出を画像と文字の条件で実行する。現在のゲーム描画領域内の位置で照合し、クリック先はその画像のOCRで求める。会話は8〜12秒の間隔を維持し、「スキップ＋会話文」または「吹き出しの形＋会話文」が必要。同じ表示への再送をせず、結果未確認・未知画面・選択画面では進行と回復の両処理を終了する。回復設定だけで通常Spaceを停止する場合との違いに注意する。進行設定には`--recovery-profile`も必要。規則の正本は`fixtures/visual-recovery/mabinogi-20261008/progress.json`。
+
+`--review-mcp <接続.json>`を付けると、両処理の終了後にApproval Boxの公開MCPへ画像・停止理由・記録場所を送る。接続設定は`Executable`と`Arguments`でMCPの標準入出力接続を指定する。申請前の一覧確認と確認札による再申請を行い、同じ停止理由の未決申請には画像と状況を更新する。通知失敗はエラーとして返す。選択画面の`ChoiceBounds`は各選択肢の見出し領域で、読み取った選択肢を個別に通知する。OCRで読めないものは位置と読取不能を明記して画像を添え、自動で決めない。
+
+回転する会話待ちの印は、進行規則の`ImageRotates`で指定する。明るい背景上の単色の印を連結画素へ分け、回転した参照形との重なりで照合する。探索範囲・画像・描画幅は設定が所有し、ゲーム名・NPC名・台詞をコードに持たせない。回転中も会話文の存在を必要とし、印が回ったことを会話の進行とは扱わない。OCRが完全に空の場合はこの規則に一致せず、未知画面の通知へ進む。実測と未確認範囲は[記録](../evidence/mabinogi-key-assist-20261008/progress-script-live.md)を参照する。
+
+回答だけではゲーム入力を再開しない。操作者が回答と現在の画面を確認して再開する。Throughlineで会話が切り替わったら、`list_my_decisions`で対象を確認し`resume_decision`で返信先を引き継ぐ。通常の画面判定・入力にAIは不要だが、未知画面の規則追加と選択の反映は操作者が担当する。`--duration-ms`の実行期限でも処理は終了し、時間切れだけでは決裁申請しない。
+
 ```powershell
 OpenLogicool.Host.exe game-index key-assist --process <対象プロセス> --db <記録用DB> --inhibit-image <停止画像.png> --cue-text Space --cue-text "画面を押してください" --keys Key:Space --duration-ms 60000 --evidence <記録フォルダ> --out <結果.json>
 ```

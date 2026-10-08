@@ -1,0 +1,68 @@
+{
+  "SchemaVersion": 1,
+  "ResultTimeoutMs": 5000,
+  "UnknownTimeoutMs": 5000,
+  "ReviewWhen": [
+    { "Text": "ボーナス", "Bounds": [0.15, 0.1, 0.7, 0.65],
+      "ChoiceBounds": [[0.35, 0.435, 0.09, 0.052], [0.455, 0.435, 0.09, 0.052], [0.56, 0.435, 0.09, 0.052]] },
+    { "Text": "行動不能", "Bounds": [0.2, 0.15, 0.6, 0.7] }
+  ],
+  "Rules": [
+    {
+      "Id": "npc-dialogue-cue", "Key": "Key:Space", "Timed": true, "Priority": 20,
+      "When": [{ "Text": "", "Bounds": [0.2, 0.04, 0.6, 0.3] }],
+      "Image": "dialogue-cue.jpg", "ImageBounds": [0.2, 0.04, 0.6, 0.3],
+      "ImageClientWidth": 1506, "ImageRotates": true
+    },
+    {
+      "Id": "npc-dialogue-skip", "Key": "Key:Space", "Timed": true, "Priority": 10,
+      "When": [
+        { "Text": "スキップ", "Bounds": [0.85, 0, 0.15, 0.12] },
+        { "Text": "", "Bounds": [0.28, 0.04, 0.44, 0.25] }
+      ]
+    },
+    {
+      "Id": "npc-dialogue", "Key": "Key:Space", "Timed": true,
+      "When": [
+        { "Text": "", "Bounds": [0.28, 0.04, 0.44, 0.25] }
+      ],
+      "Image": "dialogue-tail.png", "ImageBounds": [0.51, 0.19, 0.07, 0.09], "ImageClientWidth": 1506, "ImageSilhouette": true
+    },
+    {
+      "Id": "quest-reward", "Key": "Key:Space",
+      "When": [
+        { "Text": "クエストクリア", "Bounds": [0.25, 0.1, 0.5, 0.25] },
+        { "Text": "確認", "Bounds": [0.3, 0.85, 0.4, 0.15] }
+      ]
+    },
+    {
+      "Id": "class-level", "Key": "Key:Space",
+      "When": [
+        { "Text": "ダンサ", "Bounds": [0.3, 0.18, 0.4, 0.18] },
+        { "Text": "レベル", "Bounds": [0.3, 0.18, 0.4, 0.18] },
+        { "Text": "フィナーレ", "Bounds": [0.25, 0.35, 0.5, 0.2] }
+      ]
+    },
+    {
+      "Id": "screen-prompt", "Key": "Key:Space",
+      "When": [ { "Text": "画面を押してください", "Bounds": [0.2, 0.65, 0.6, 0.35] } ]
+    },
+    {
+      "Id": "loot-auto-equip", "Priority": 10,
+      "When": [ { "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.35] } ],
+      "Click": { "Text": "自動着用", "Bounds": [0.2, 0.6, 0.8, 0.4] }
+    },
+    {
+      "Id": "equipment-confirm", "Key": "Key:Space",
+      "When": [
+        { "Text": "装備変更", "Bounds": [0.2, 0.1, 0.6, 0.65] },
+        { "Text": "確認", "Bounds": [0.3, 0.65, 0.5, 0.35] }
+      ]
+    },
+    {
+      "Id": "dungeon-exit",
+      "When": [ { "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.35] } ],
+      "Click": { "Text": "退出", "Bounds": [0.55, 0.6, 0.45, 0.4] }
+    }
+  ]
+}

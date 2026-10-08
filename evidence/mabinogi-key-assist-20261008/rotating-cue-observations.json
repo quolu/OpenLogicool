@@ -1,0 +1,37 @@
+[
+  {
+    "sample": "cue-observe001",
+    "rule": "npc-dialogue-cue",
+    "inputCount": 0,
+    "aiCallCount": 0,
+    "cueSha256": "0f71e307662dad6111ab73d3072d4c7d515cda0ef1ab5070439f7b88d97aab78"
+  },
+  {
+    "sample": "cue-observe002",
+    "rule": "npc-dialogue-cue",
+    "inputCount": 0,
+    "aiCallCount": 0,
+    "cueSha256": "71e3cffb01f469386a45bd3fb22b28d2f0cf47c55590f4f6960d47d21d13ce10"
+  },
+  {
+    "sample": "cue-observe003",
+    "rule": "npc-dialogue-cue",
+    "inputCount": 0,
+    "aiCallCount": 0,
+    "cueSha256": "71e3cffb01f469386a45bd3fb22b28d2f0cf47c55590f4f6960d47d21d13ce10"
+  },
+  {
+    "sample": "cue-observe004",
+    "rule": "npc-dialogue-cue",
+    "inputCount": 0,
+    "aiCallCount": 0,
+    "cueSha256": "71e3cffb01f469386a45bd3fb22b28d2f0cf47c55590f4f6960d47d21d13ce10"
+  },
+  {
+    "sample": "cue-observe005",
+    "rule": "npc-dialogue-cue",
+    "inputCount": 0,
+    "aiCallCount": 0,
+    "cueSha256": "8c4fd12557dc1e99aa2acd96310140dbc23570478ede8aebd94689e468b78a58"
+  }
+]

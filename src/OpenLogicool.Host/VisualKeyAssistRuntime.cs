@@ -55,12 +55,12 @@ public sealed record VisualKeyTemplateMatch(double Difference, IReadOnlyList<dou
 }
 
 /// <summary>周囲の背景を除いた利用者画像を、小さく平滑化したRGB標本で照合する。</summary>
-public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool relativeColor = false)
+public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool relativeColor = false, bool silhouette = false)
 {
     private const int Samples = 16;
-    private readonly byte[] samples = Sample(bgra, width, height, relativeColor);
+    private readonly byte[] samples = Sample(bgra, width, height, relativeColor, silhouette);
 
-    public static VisualKeyTemplate Load(string path, bool relativeColor = false)
+    public static VisualKeyTemplate Load(string path, bool relativeColor = false, bool silhouette = false)
     {
         using var stream = File.OpenRead(path);
         var bitmap = new FormatConvertedBitmap(
@@ -70,7 +70,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
             throw new ArgumentException("画像条件には縦横8px以上の画像が必要です。", nameof(path));
         var bytes = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4];
         bitmap.CopyPixels(bytes, bitmap.PixelWidth * 4, 0);
-        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor);
+        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor, silhouette);
     }
 
     public VisualKeyTemplateMatch Find(CapturedFrame frame, IReadOnlyList<double> searchBounds) =>
@@ -94,7 +94,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 var resized = new TransformedBitmap(source, new ScaleTransform(w / (double)width, h / (double)height));
                 var bytes = new byte[resized.PixelWidth * resized.PixelHeight * 4];
                 resized.CopyPixels(bytes, resized.PixelWidth * 4, 0);
-                matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor)
+                matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor, silhouette)
                     .FindNativeSize(frame, searchBounds));
             }
         return matches.MinBy(match => match.Difference)!;
@@ -155,7 +155,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 var sampleY = y + (int)(h * (0.15 + 0.7 * (sy + 0.5) / Samples));
                 var expected = (sy * Samples + sx) * 3;
                 for (var channel = 0; channel < 3; channel++)
-                    total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor) - samples[expected + channel]);
+                    total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor, silhouette) - samples[expected + channel]);
                 if (total > 32 * 16 * 3) return false;
             }
         return true;
@@ -172,13 +172,13 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 var sampleY = y + (int)(h * (0.15 + 0.7 * (sy + 0.5) / Samples));
                 var expected = (sy * Samples + sx) * 3;
                 for (var channel = 0; channel < 3; channel++)
-                    total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor) - samples[expected + channel]);
+                    total += Math.Abs(Value(bytes, stride, sampleX, sampleY, channel, relativeColor, silhouette) - samples[expected + channel]);
                 if (total > best * count) return double.PositiveInfinity;
             }
         return total / (double)count;
     }
 
-    private static byte[] Sample(byte[] bytes, int width, int height, bool relativeColor)
+    private static byte[] Sample(byte[] bytes, int width, int height, bool relativeColor, bool silhouette)
     {
         var result = new byte[Samples * Samples * 3];
         for (var sy = 0; sy < Samples; sy++)
@@ -187,19 +187,22 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 var x = (int)(width * (0.15 + 0.7 * (sx + 0.5) / Samples));
                 var y = (int)(height * (0.15 + 0.7 * (sy + 0.5) / Samples));
                 for (var channel = 0; channel < 3; channel++)
-                    result[(sy * Samples + sx) * 3 + channel] = (byte)Value(bytes, width * 4, x, y, channel, relativeColor);
+                    result[(sy * Samples + sx) * 3 + channel] = (byte)Value(bytes, width * 4, x, y, channel, relativeColor, silhouette);
             }
         return result;
     }
 
-    private static int Value(ReadOnlySpan<byte> bytes, int stride, int x, int y, int channel, bool relativeColor)
+    private static int Value(ReadOnlySpan<byte> bytes, int stride, int x, int y, int channel, bool relativeColor, bool silhouette)
     {
+        if (silhouette) return Average(bytes, stride, x, y, 0) >= 235
+            && Average(bytes, stride, x, y, 1) >= 235 && Average(bytes, stride, x, y, 2) >= 235 ? 255 : 0;
         var value = Average(bytes, stride, x, y, channel);
         if (!relativeColor) return value;
         // 時間表示の暗い重ね描きは明るさを変える。色の比率とアイコンの形を照合する。
         var maximum = Math.Max(Average(bytes, stride, x, y, 0),
             Math.Max(Average(bytes, stride, x, y, 1), Average(bytes, stride, x, y, 2)));
         return maximum == 0 ? 0 : value * 255 / maximum;
+
     }
 
     private static int Average(ReadOnlySpan<byte> bytes, int stride, int x, int y, int channel) =>
@@ -252,6 +255,14 @@ public static class VisualKeyAssistRuntime
         var recoveryIndex = Array.IndexOf(arguments, "--recovery-profile");
         var recoveryProfile = recoveryIndex < 0 ? null : VisualRecoveryProfile.Load(Required("--recovery-profile"));
         var recoveryRecognizer = recoveryProfile is null ? null : new VisualRecoveryRecognizer(recoveryProfile);
+        var progressProfile = Array.IndexOf(arguments, "--progress-profile") < 0 ? null
+            : VisualProgressProfile.Load(Required("--progress-profile"));
+        if (progressProfile is not null && recoveryRecognizer is null)
+            throw new ArgumentException("進行設定には、描画領域とHUDを認識する --recovery-profile が必要です。");
+        var progressRecognizer = progressProfile is null ? null : new VisualProgressRecognizer(progressProfile);
+        var progressSchedule = progressProfile is null ? null : new VisualProgressSchedule(progressProfile);
+        var reviewNotifier = Array.IndexOf(arguments, "--review-mcp") < 0 ? null
+            : VisualAssistReviewNotifier.Load(Required("--review-mcp"));
         var recoveryStatePath = Path.GetFullPath(Required("--db")) + ".visual-recovery.json";
         var recovery = recoveryProfile is null ? null : new VisualRecoverySchedule(recoveryProfile,
             File.Exists(recoveryStatePath)
@@ -267,16 +278,29 @@ public static class VisualKeyAssistRuntime
                 WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
             var actions = new NanoGameInteractionActions(
                 new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()),
-                new WindowsGameInteractionCoordinateMapper(() => target.Bounds));
+                new WindowsGameInteractionCoordinateMapper(() => WindowsGameTargetLocator.Locate(target.ProcessName).Bounds));
             var clock = Stopwatch.StartNew();
             var schedule = new VisualKeyAssistSchedule(0, () => Random.Shared.Next(8_000, 12_001));
             var events = new ConcurrentQueue<object>();
             using var inputGate = new SemaphoreSlim(1, 1);
             var eventGate = new object();
             var progress = new VisualKeyAssistProgress();
-            if (recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal))
-                return await RunProgressAsync(stop.Token);
-            return await VisualKeyAssistWorkers.RunAsync(RunRecoveryAsync, RunProgressAsync, stop.Token);
+            var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)
+                ? await RunProgressAsync(stop.Token)
+                : await VisualKeyAssistWorkers.RunAsync(RunRecoveryAsync, RunProgressAsync, stop.Token);
+            var resultJson = JsonSerializer.SerializeToElement(result);
+            if (!measureOnly && !arguments.Contains("--observe-only", StringComparer.Ordinal)
+                && resultJson.TryGetProperty("NeedsReview", out var needsReview) && needsReview.GetBoolean())
+            {
+                File.WriteAllText(Path.Combine(evidenceDirectory, "review.json"), resultJson.GetRawText());
+                if (reviewNotifier is not null)
+                {
+                    var decisionId = await reviewNotifier.NotifyAsync(evidenceDirectory, resultJson, stop.Token);
+                    File.WriteAllText(Path.Combine(evidenceDirectory, "notification.json"), JsonSerializer.Serialize(new { DecisionId = decisionId }));
+                    Emit(new { Event = "review-notified", DecisionId = decisionId });
+                }
+            }
+            return result;
 
             async Task<object> RunProgressAsync(CancellationToken token)
             {
@@ -291,13 +315,20 @@ public static class VisualKeyAssistRuntime
                     var inhibitMatch = inhibit.FindAtWindowScale(frame, region, windowScale);
                     var cueMatch = inhibitMatch.Matches || cues.Length == 0 ? null : cues.Select(cue => cue.FindAtWindowScale(frame, region, windowScale))
                         .OrderBy(match => match.Difference).First();
-                    var ocr = !inhibitMatch.Matches && (cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
+                    var ocr = !inhibitMatch.Matches && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                         ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token) : null;
                     var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
                     var decision = progress.Apply(schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
                         cueMatch?.Matches == true || matchedTexts.Length > 0));
                     var recoveryObservation = arguments.Contains("--observe-only", StringComparer.Ordinal)
                         ? recoveryRecognizer?.Observe(frame, viewport, ocr?.Text) : null;
+                    var flowCandidate = progressRecognizer is null || ocr is null ? null
+                        : progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame);
+                    var flowTimed = flowCandidate?.RuleId is not null && progressProfile!.Rules.Single(rule => rule.Id == flowCandidate.RuleId).Timed;
+                    var flowChoice = progressSchedule?.Decide(clock.ElapsedMilliseconds,
+                        flowCandidate ?? new(VisualProgressAction.Normal), inhibitMatch.Matches,
+                        recoveryRecognizer!.Observe(frame, viewport).HudVisible,
+                        schedule.Decide(clock.ElapsedMilliseconds, false, !flowTimed) is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed);
                     if (decision != previous)
                     {
                         Emit(new
@@ -323,10 +354,59 @@ public static class VisualKeyAssistRuntime
                             cueMatch,
                             MatchedTexts = matchedTexts,
                             OcrText = ocr?.Text,
+                            OcrWords = progressProfile is null ? null : ocr?.Words,
+                            Viewport = viewport,
                             Recovery = recoveryObservation,
+                            Progress = flowCandidate,
                             InputCount = 0,
                             AiCallCount = 0
                         };
+                    }
+                    if (!measureOnly && flowChoice is not null)
+                    {
+                        if (flowChoice.Action == VisualProgressAction.Review)
+                        {
+                            File.WriteAllBytes(Path.Combine(evidenceDirectory, "progress-review.png"),
+                                new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                            var review = new { Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
+                                NeedsReview = true, Events = events, flowChoice.Detail, ReviewOptions = flowChoice.Options, OcrText = ocr?.Text,
+                                Image = Path.Combine(evidenceDirectory, "progress-review.png") };
+                            File.WriteAllText(Path.Combine(evidenceDirectory, "review.json"), JsonSerializer.Serialize(review));
+                            Emit(new { Event = "progress-review", AtMs = clock.ElapsedMilliseconds, flowChoice.Detail });
+                            return review;
+                        }
+                        if (flowChoice.Action is VisualProgressAction.Key or VisualProgressAction.Click)
+                        {
+                            await inputGate.WaitAsync(token);
+                            try
+                            {
+                                token.ThrowIfCancellationRequested();
+                                WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                                var fresh = await frames.CaptureAsync(token);
+                                if (Inhibited(fresh)) continue;
+                                var freshOcr = await new WindowsGameOcrRecognizer().RecognizeAsync(fresh, token);
+                                var current = progressRecognizer!.Recognize(freshOcr, fresh.Width, fresh.Height,
+                                    WindowsGameTargetLocator.CaptureClientBounds(target.Window), fresh);
+                                if (current.Signature != flowChoice.Signature || current.Action != flowChoice.Action) continue;
+                                var bound = Observation(fresh);
+                                var dispatch = current.Action == VisualProgressAction.Key
+                                    ? actions.KeyTap(new GameInteractionKeyTapRequest(ContractSchemaVersions.Revision03,
+                                        bound.ObservationId, fresh.Sequence, fresh.TransformRevision, fresh.SourceId, [current.Key!]), bound)
+                                    : actions.Click(new GameInteractionTargetBinding(ContractSchemaVersions.Revision03,
+                                        bound.ObservationId, fresh.Sequence, fresh.TransformRevision, fresh.SourceId,
+                                        current.RuleId!, "visual-progress-v1", [current.Point![0] - 0.0005, current.Point[1] - 0.0005, 0.001, 0.001]), bound);
+                                if (dispatch.Status != GameInteractionDispatchStatus.Dispatched)
+                                    throw new InvalidOperationException($"進行操作のNano入力に失敗しました: {dispatch.FailureReason}");
+                                progressSchedule!.RecordInput(clock.ElapsedMilliseconds, current);
+                                schedule.RecordInput(clock.ElapsedMilliseconds);
+                                Emit(new { Event = "progress-input", AtMs = clock.ElapsedMilliseconds, current.RuleId,
+                                    current.Signature, current.Key, current.Point, dispatch });
+                            }
+                            finally { inputGate.Release(); }
+                            await Task.Delay(250, token);
+                            continue;
+                        }
+                        if (flowChoice.Action == VisualProgressAction.Wait) { await Task.Delay(250, token); continue; }
                     }
                     if (!measureOnly && decision is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed)
                     {
@@ -380,6 +460,13 @@ public static class VisualKeyAssistRuntime
                                 var encoder = new WindowsGameFramePngEncoder();
                                 File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-before.png"), encoder.Encode(frame).Bytes.ToArray());
                                 File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-after.png"), encoder.Encode(after).Bytes.ToArray());
+                                if (progressProfile is not null)
+                                    return new
+                                    {
+                                        Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
+                                        NeedsReview = true, Events = events,
+                                        Detail = "通常Space後の画面変化を確認できないため、進行規則の実行を停止しました。"
+                                    };
                                 if (recovery is not null)
                                 {
                                     progress.Pause();

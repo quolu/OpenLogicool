@@ -1,0 +1,88 @@
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Architecture.Tests\bin\Debug\net10.0-windows\OpenLogicool.Architecture.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Packaging.Tests\bin\Debug\net10.0-windows\OpenLogicool.Packaging.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Desktop.SmokeApp.Tests\bin\Debug\net10.0-windows\OpenLogicool.Desktop.SmokeApp.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Perception.Tests\bin\Debug\net10.0-windows\OpenLogicool.Perception.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Domain.Tests\bin\Debug\net10.0-windows\OpenLogicool.Domain.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.GameLab.Prototype.Tests\bin\Debug\net10.0-windows\OpenLogicool.GameLab.Prototype.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Playbooks.Tests\bin\Debug\net10.0-windows\OpenLogicool.Playbooks.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.AI.Tests\bin\Debug\net10.0-windows\OpenLogicool.AI.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Persistence.Tests\bin\Debug\net10.0-windows\OpenLogicool.Persistence.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+成功!   -失敗:     0、合格:     8、スキップ:     0、合計:     8、期間: 404 ms - OpenLogicool.Architecture.Tests.dll (net10.0)
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Profiles.Tests\bin\Debug\net10.0-windows\OpenLogicool.Profiles.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+成功!   -失敗:     0、合格:     2、スキップ:     0、合計:     2、期間: 36 ms - OpenLogicool.Desktop.SmokeApp.Tests.dll (net10.0)
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+成功!   -失敗:     0、合格:    13、スキップ:     0、合計:    13、期間: 33 ms - OpenLogicool.Packaging.Tests.dll (net10.0)
+
+成功!   -失敗:     0、合格:    83、スキップ:     0、合計:    83、期間: 144 ms - OpenLogicool.Domain.Tests.dll (net10.0)
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Capture.Matrix.Tests\bin\Debug\net10.0-windows10.0.22621.0\OpenLogicool.Capture.Matrix.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+
+成功!   -失敗:     0、合格:    32、スキップ:     0、合計:    32、期間: 63 ms - OpenLogicool.Perception.Tests.dll (net10.0)
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Capture.Tests\bin\Debug\net10.0-windows10.0.22621.0\OpenLogicool.Capture.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+
+成功!   -失敗:     0、合格:     3、スキップ:     0、合計:     3、期間: 22 ms - OpenLogicool.GameLab.Prototype.Tests.dll (net10.0)
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+成功!   -失敗:     0、合格:   194、スキップ:     0、合計:   194、期間: 359 ms - OpenLogicool.Playbooks.Tests.dll (net10.0)
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+成功!   -失敗:     0、合格:    43、スキップ:     0、合計:    43、期間: 141 ms - OpenLogicool.AI.Tests.dll (net10.0)
+
+成功!   -失敗:     0、合格:    25、スキップ:     0、合計:    25、期間: 47 ms - OpenLogicool.Profiles.Tests.dll (net10.0)
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Exploration.Tests\bin\Debug\net10.0-windows\OpenLogicool.Exploration.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.GameLab.Discovery.Tests\bin\Debug\net10.0-windows\OpenLogicool.GameLab.Discovery.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+成功!   -失敗:     0、合格:     6、スキップ:     0、合計:     6、期間: 16 ms - OpenLogicool.Capture.Matrix.Tests.dll (net10.0)
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Devices.G600.Tests\bin\Debug\net10.0-windows\OpenLogicool.Devices.G600.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Devices.G13.Tests\bin\Debug\net10.0-windows\OpenLogicool.Devices.G13.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Input.Tests\bin\Debug\net10.0-windows\OpenLogicool.Input.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.GameLab.Tests\bin\Debug\net10.0-windows\OpenLogicool.GameLab.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Conformance.Tests\bin\Debug\net10.0-windows\OpenLogicool.Conformance.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+
+成功!   -失敗:     0、合格:    55、スキップ:     0、合計:    55、期間: 1 s - OpenLogicool.Persistence.Tests.dll (net10.0)
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+成功!   -失敗:     0、合格:    79、スキップ:     0、合計:    79、期間: 183 ms - OpenLogicool.Exploration.Tests.dll (net10.0)
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Desktop.Tests\bin\Debug\net10.0-windows\OpenLogicool.Desktop.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+
+成功!   -失敗:     0、合格:    16、スキップ:     0、合計:    16、期間: 785 ms - OpenLogicool.Capture.Tests.dll (net10.0)
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+
+成功!   -失敗:     0、合格:   162、スキップ:     0、合計:   162、期間: 140 ms - OpenLogicool.Input.Tests.dll (net10.0)
+成功!   -失敗:     0、合格:    24、スキップ:     0、合計:    24、期間: 71 ms - OpenLogicool.GameLab.Tests.dll (net10.0)
+
+成功!   -失敗:     0、合格:    61、スキップ:     0、合計:    61、期間: 133 ms - OpenLogicool.Conformance.Tests.dll (net10.0)
+
+成功!   -失敗:     0、合格:    69、スキップ:     0、合計:    69、期間: 859 ms - OpenLogicool.Devices.G600.Tests.dll (net10.0)
+
+成功!   -失敗:     0、合格:    28、スキップ:     0、合計:    28、期間: 924 ms - OpenLogicool.Devices.G13.Tests.dll (net10.0)
+
+成功!   -失敗:     0、合格:    10、スキップ:     0、合計:    10、期間: 1 s - OpenLogicool.GameLab.Discovery.Tests.dll (net10.0)
+
+成功!   -失敗:     0、合格:   112、スキップ:     0、合計:   112、期間: 775 ms - OpenLogicool.Desktop.Tests.dll (net10.0)
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Host.Tests\bin\Debug\net10.0-windows10.0.22621.0\OpenLogicool.Host.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+成功!   -失敗:     0、合格:   426、スキップ:     0、合計:   426、期間: 2 s - OpenLogicool.Host.Tests.dll (net10.0)
+C:\Users\kite_\Developer\OpenLogicool\tests\OpenLogicool.Probe.Tests\bin\Debug\net10.0-windows10.0.22621.0\OpenLogicool.Probe.Tests.dll (.NETCoreApp,Version=v10.0) のテスト実行
+合計 1 個のテスト ファイルが指定されたパターンと一致しました。
+
+成功!   -失敗:     0、合格:    70、スキップ:     0、合計:    70、期間: 71 ms - OpenLogicool.Probe.Tests.dll (net10.0)

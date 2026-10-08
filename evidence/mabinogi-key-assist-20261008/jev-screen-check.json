@@ -1,0 +1,60 @@
+{
+  "elapsedMs": 241,
+  "cases": [
+    {
+      "id": "dialogue",
+      "ocr": "マ ビ モ バ ダ ン カ ン 来 た か 。 お お 、 き れ い な 花 だ な ・ ・ ・ あ り が と う 。 0 0 0 ロ X ス キ ッ プ"
+    },
+    {
+      "id": "bonus",
+      "ocr": "マ ビ モ バ レ ベ ル ア ッ プ ポ ー ナ ス を 選 択 し て く だ さ い Rare 0. 十 DEX 成 長 6 段 階 DEX + 100 ト + 120 素 阜 く 正 確 に 動 け る よ う に な り ま す . 違 攻 + 25.00 ・ + 30.8 コ ン ホ 強 化 ◆ 25.00 ・ ◆ 30. 00 冫 れ 強 化 ◆ 25.00 ・ ◆ 30. LIJCK 成 長 8 段 階 LUCK + 210 ・ ◆ 240 予 測 不 可 能 な 状 況 で よ り 良 い 結 果 を も た ら し ま す . 急 所 回 避 ◆ . 聞 ・ ク リ テ ィ カ ル ◆ 5 ~ ・ 「 第 加 攻 ・ ◆ 52 ・ . キ ャ ラ ク タ ー メ ニ ュ ー で い つ で も 再 度 選 択 で き ま す 。 W に [ 成 長 1 段 WILL ◆ 強 固 な 意 新 困 難 に 打 ち ・ ・ 回 置 カ ◆ 1 第 P ◆ 2"
+    },
+    {
+      "id": "garbled",
+      "ocr": "だ モ バ が さ り な て 帰 一 れ ラ 一 く も つ ら 譲 か を だ 花 険 な 危 れ こ き こ 0 0"
+    }
+  ],
+  "response": {
+    "model": "jev-1.13.0",
+    "answers": {
+      "dialogue": {
+        "type": "choice",
+        "choice": "dialogue",
+        "confidence": 0.85,
+        "probabilities": {
+          "dialogue": 0.89,
+          "unknown": 0.04,
+          "reward": 0,
+          "selection": 0.07
+        }
+      },
+      "bonus": {
+        "type": "choice",
+        "choice": "selection",
+        "confidence": 0.96,
+        "probabilities": {
+          "dialogue": 0,
+          "unknown": 0.03,
+          "reward": 0,
+          "selection": 0.97
+        }
+      },
+      "garbled": {
+        "type": "choice",
+        "choice": "unknown",
+        "confidence": 0.92,
+        "probabilities": {
+          "dialogue": 0.06,
+          "unknown": 0.94,
+          "reward": 0,
+          "selection": 0
+        }
+      }
+    },
+    "usage": {
+      "input_tokens": 1353,
+      "output_tokens": 135
+    }
+  },
+  "inputCount": 0
+}

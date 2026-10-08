@@ -1,0 +1,134 @@
+using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+
+namespace OpenLogicool.Host;
+
+/// <summary>入力処理の終了後、公開MCP経由で確認画像と停止理由を決裁箱へ送る。</summary>
+internal sealed record VisualAssistReviewNotifier(string Executable, string[] Arguments)
+{
+    public static VisualAssistReviewNotifier Load(string path)
+    {
+        var value = JsonSerializer.Deserialize<VisualAssistReviewNotifier>(File.ReadAllText(path))
+            ?? throw new InvalidDataException("確認通知の接続設定が空です。");
+        if (string.IsNullOrWhiteSpace(value.Executable) || value.Arguments is null)
+            throw new InvalidDataException("確認通知にはMCPの実行ファイルと引数が必要です。");
+        return value;
+    }
+
+    public async Task<string> NotifyAsync(string evidenceDirectory, JsonElement result, CancellationToken token)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+        deadline.CancelAfter(TimeSpan.FromSeconds(30));
+        token = deadline.Token;
+        var start = new ProcessStartInfo(Executable)
+        {
+            UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true,
+            RedirectStandardOutput = true, RedirectStandardError = true,
+            StandardInputEncoding = new UTF8Encoding(false), StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+        };
+        foreach (var argument in Arguments) start.ArgumentList.Add(argument);
+        using var process = Process.Start(start) ?? throw new IOException("確認通知のMCPを起動できません。");
+        var stderr = process.StandardError.ReadToEndAsync(token);
+        var id = 0;
+        try
+        {
+            await Call("initialize", new { protocolVersion = "2024-11-05", capabilities = new { },
+                clientInfo = new { name = "openlogicool-review", version = "1.0" } });
+            await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new { jsonrpc = "2.0", method = "notifications/initialized" }));
+            var decisions = await Tool("list_my_decisions", new { });
+            var images = new[] { "progress-review.png", "recovery-review.png", "review-after.png" }
+                .Select(name => Path.Combine(evidenceDirectory, name)).Where(File.Exists).ToArray();
+            var detail = result.TryGetProperty("Detail", out var text) ? text.GetString() : "画面の確認が必要です。";
+            var options = ReviewOptions(result);
+            var choiceText = options.Length > 2 ? "\n画面の選択肢（OCR・添付画像も確認）:\n"
+                + string.Join("\n", options.Where(option => option.Id != "stop").Select(option => option.Label)) : "";
+            var title = "ゲームの自動進行を停止しました: " + detail?[..Math.Min(80, detail.Length)];
+            object Request(string? checkToken) => new
+            {
+                title, context = detail + choiceText + "\n入力は停止済みです。停止記録: " + Path.Combine(evidenceDirectory, "review.json")
+                    + "\n判断結果だけでは入力を再開しません。操作者が回答を確認して再開します。",
+                options = options.Select(option => new { id = option.Id, label = option.Label }).ToArray(),
+                image_paths = images, session_label = "OpenLogicool / スクリプト主体のクエスト進行",
+                check_token = checkToken,
+            };
+            var existing = await RefreshExisting(decisions.GetProperty("items"));
+            if (existing is not null) return existing;
+            var first = await Tool("request_decision", Request(null));
+            var check = first.TryGetProperty("check_token", out var checkToken) ? checkToken.GetString() : null;
+            if (check is not null)
+            {
+                existing = await RefreshExisting(first.GetProperty("decisions"));
+                if (existing is not null) return existing;
+            }
+            var final = check is null ? first : await Tool("request_decision", Request(check));
+            return final.GetProperty("decision_id").GetString()
+                ?? throw new InvalidDataException("確認通知が受理されませんでした: " + final.GetRawText());
+
+            async Task<string?> RefreshExisting(JsonElement items)
+            {
+                foreach (var item in items.EnumerateArray())
+                {
+                    if (item.GetProperty("title").GetString() != title
+                        || item.GetProperty("status").GetString() is not ("pending" or "deferred")) continue;
+                    var decisionId = item.GetProperty("decision_id").GetString()!;
+                    await Tool("amend_decision", new { decision_id = decisionId, version = item.GetProperty("version").GetInt32(),
+                        changes = new { context = detail + choiceText + "\n入力停止済み。停止記録: " + Path.Combine(evidenceDirectory, "review.json"),
+                            options = options.Select(option => new { id = option.Id, label = option.Label }).ToArray(), image_paths = images },
+                        note = "同じ停止理由の未決申請へ、新しい画面と停止記録を反映しました。" });
+                    return decisionId;
+                }
+                return null;
+            }
+        }
+        finally
+        {
+            process.StandardInput.Close();
+            if (!process.HasExited) process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync(CancellationToken.None);
+            try { await stderr; } catch (OperationCanceledException) when (deadline.IsCancellationRequested) { }
+        }
+
+        async Task<JsonElement> Tool(string name, object arguments)
+        {
+            return ReadToolResult(await Call("tools/call", new { name, arguments }));
+        }
+        async Task<JsonElement> Call(string method, object parameters)
+        {
+            var requestId = ++id;
+            await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new { jsonrpc = "2.0", id = requestId, method, @params = parameters },
+                new JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull }));
+            while (true)
+            {
+                var line = await process.StandardOutput.ReadLineAsync(token)
+                    ?? throw new EndOfStreamException("確認通知のMCPが応答前に終了しました。");
+                using var document = JsonDocument.Parse(line);
+                var root = document.RootElement;
+                if (!root.TryGetProperty("id", out var responseId) || responseId.ValueKind != JsonValueKind.Number
+                    || responseId.GetInt32() != requestId) continue;
+                if (root.TryGetProperty("error", out var error)) throw new IOException("確認通知のMCPエラー: " + error);
+                return root.GetProperty("result").Clone();
+            }
+        }
+    }
+
+    internal static JsonElement ReadToolResult(JsonElement response)
+    {
+        var payload = response.GetProperty("structuredContent");
+        if (response.TryGetProperty("isError", out var failed) && failed.ValueKind == JsonValueKind.True
+            && (!payload.TryGetProperty("error", out var error) || error.GetString() != "confirm_required"))
+            throw new IOException("確認通知のMCPがエラーを返しました: " + response.GetRawText());
+        return payload;
+    }
+
+    internal static VisualProgressOption[] ReviewOptions(JsonElement result)
+    {
+        var choices = result.TryGetProperty("ReviewOptions", out var value) && value.ValueKind == JsonValueKind.Array
+            ? value.Deserialize<VisualProgressOption[]>()! : [];
+        return choices.Length > 0 ? [..choices, new("stop", "入力を停止したままにする")]
+            : [new("inspect", "停止画面を調べて、確認済みの操作なら規則へ追加して続ける"),
+               new("stop", "入力を停止したままにする")];
+    }
+}
