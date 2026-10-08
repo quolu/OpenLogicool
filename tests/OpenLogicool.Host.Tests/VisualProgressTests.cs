@@ -392,6 +392,31 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public void 会話は通常の十二秒待ちを使わず次の台詞の安定後に送る()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var profile = VisualProgressProfile.Load(Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008/progress.json"));
+        foreach (var id in new[] { "npc-dialogue-cue", "npc-dialogue-skip", "npc-dialogue" })
+        {
+            var rule = profile.Rules.Single(rule => rule.Id == id);
+            var timer = new VisualKeyAssistSchedule(0, () => 12000);
+            var flow = new VisualProgressSchedule(profile);
+            var first = new VisualProgressChoice(VisualProgressAction.Key, id, id + ":最初の台詞", "Key:Space");
+            bool Due(long now) => timer.Decide(now, false, !rule.Timed) is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed;
+            Assert.Equal(VisualProgressAction.Wait, flow.Decide(0, first, false, false, Due(0)).Action);
+            Assert.Equal(VisualProgressAction.Key, flow.Decide(600, first, false, false, Due(600)).Action);
+            flow.RecordInput(600, first); timer.RecordInput(600);
+            Assert.Equal(VisualProgressAction.Wait, flow.Decide(1400, first, false, false, Due(1400)).Action);
+            var next = first with { Signature = id + ":次の台詞" };
+            Assert.Equal(VisualProgressAction.Wait, flow.Decide(1500, next, false, false, Due(1500)).Action);
+            Assert.Equal(VisualProgressAction.Key, flow.Decide(2100, next, false, false, Due(2100)).Action);
+            Assert.Equal(VisualKeyAssistDecision.Wait, timer.Decide(2100, false, false));
+            Assert.Equal(VisualProgressAction.Wait, flow.Decide(2200, next, true, false, true).Action);
+        }
+    }
+
+    [Fact]
     public void No_result_stops_without_retry_and_unknown_screen_gets_a_short_loading_grace()
     {
         var schedule = new VisualProgressSchedule(Profile());

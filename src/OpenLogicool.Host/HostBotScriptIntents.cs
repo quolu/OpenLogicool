@@ -58,7 +58,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
             var recovery = VisualRecoveryProfile.Load(package.File("profile.json"));
             _ = VisualProgressProfile.Load(package.File("progress.json"));
             return new BotScriptItem(package.Id, package.Name,
-                $"Nanoで入力・Spaceは8〜12秒間隔・回復監視は毎秒4回\nポーション: HP {recovery.PotionThreshold:P0}以下 ／ 包帯: 白 {recovery.BandageThreshold:P0}以上 ／ 最長{package.DurationMs / 60000}分");
+                $"Nanoで入力・会話は表示の安定後に送る・通常Spaceは8〜12秒間隔\n回復監視は毎秒4回 ／ ポーション: HP {recovery.PotionThreshold:P0}以下 ／ 包帯: 白 {recovery.BandageThreshold:P0}以上 ／ 最長{package.DurationMs / 60000}分");
         }).ToArray();
         var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-runs");
         var reviewSettings = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-review-mcp.json");

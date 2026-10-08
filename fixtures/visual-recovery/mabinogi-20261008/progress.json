@@ -25,20 +25,20 @@
       "When": [{ "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] }]
     },
     {
-      "Id": "npc-dialogue-cue", "Key": "Key:Space", "Timed": true, "Priority": 20,
+      "Id": "npc-dialogue-cue", "Key": "Key:Space", "Priority": 20,
       "When": [{ "Text": "", "Bounds": [0.2, 0.04, 0.6, 0.3] }],
       "Image": "dialogue-cue.jpg", "ImageBounds": [0.2, 0.04, 0.6, 0.3],
       "ImageClientWidth": 1506, "ImageRotates": true
     },
     {
-      "Id": "npc-dialogue-skip", "Key": "Key:Space", "Timed": true, "Priority": 10,
+      "Id": "npc-dialogue-skip", "Key": "Key:Space", "Priority": 10,
       "When": [
         { "Text": "スキップ", "Bounds": [0.85, 0, 0.15, 0.12] },
         { "Text": "", "Bounds": [0.28, 0.04, 0.44, 0.25] }
       ]
     },
     {
-      "Id": "npc-dialogue", "Key": "Key:Space", "Timed": true,
+      "Id": "npc-dialogue", "Key": "Key:Space",
       "When": [
         { "Text": "", "Bounds": [0.28, 0.04, 0.44, 0.25] }
       ],

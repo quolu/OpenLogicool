@@ -1,0 +1,35 @@
+{
+  "RunId": "20261008-214934-950-58cdb153",
+  "Conversation": "アリサ・新しい友達",
+  "InputCount": 8,
+  "InputTimesMs": [
+    27353,
+    30135,
+    32908,
+    37044,
+    39840,
+    42642,
+    46852,
+    50072
+  ],
+  "IntervalsMs": [
+    2782,
+    2773,
+    4136,
+    2796,
+    2802,
+    4210,
+    3220
+  ],
+  "MedianIntervalMs": 2802,
+  "AverageIntervalMs": 3245.5714285714284,
+  "MaximumIntervalMs": 4210.0,
+  "PreviousIntervalsMs": [
+    10744,
+    10476,
+    11901,
+    19124,
+    26845
+  ],
+  "PreviousMedianMs": 11901
+}

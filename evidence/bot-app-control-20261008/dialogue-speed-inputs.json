@@ -1,0 +1,178 @@
+[
+  {
+    "Event": "progress-input",
+    "AtMs": 27353,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:くおりゅんマックスとメテオって知ってるでしょ0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:95",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:50:11.3951398+09:00",
+      "CompletedUtc": "2026-10-08T21:50:11.3977519+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 30135,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:アリサディアンとラサお姉ちゃんの友達あたしも動物の友達が欲しいってお祈りしてたんだよね0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:107",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:50:14.177343+09:00",
+      "CompletedUtc": "2026-10-08T21:50:14.1797147+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 32908,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:アリサそしたらじやじゃん見てよ本当に女神様が願いを叶えてくれたの0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:117",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:50:16.9499002+09:00",
+      "CompletedUtc": "2026-10-08T21:50:16.9529425+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 37044,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:クウーン0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:133",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:50:21.086751+09:00",
+      "CompletedUtc": "2026-10-08T21:50:21.0891433+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 39840,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:ノリサ子グマちゃんかつわいいでしょトレイシーおじさんに会いに行った時に出会ったんだ0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:143",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:50:23.8829001+09:00",
+      "CompletedUtc": "2026-10-08T21:50:23.8851412+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 42642,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:でもごはんを食べてくれないのマックスが小さかった頃に食べてたごはんなら食べるかも0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:155",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:50:26.6835119+09:00",
+      "CompletedUtc": "2026-10-08T21:50:26.6875679+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 46852,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:なんていうエサだっけなディアンお兄ちゃんに間いてみてくれる0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:173",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:50:30.894547+09:00",
+      "CompletedUtc": "2026-10-08T21:50:30.8975992+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 50072,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:マックスの特別なごはんって言えば分かるはずだよついでにいくつかもらってきて0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:187",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T21:50:34.1143333+09:00",
+      "CompletedUtc": "2026-10-08T21:50:34.1167703+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]
