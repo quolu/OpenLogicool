@@ -1,0 +1,15 @@
+{"Event":"recovery-sample","AtMs":513,"IntervalMs":null,"FrameFreshnessMs":0,"TargetIntervalMs":250}
+{"Event":"recovery","AtMs":520,"Observation":{"HudVisible":false,"HealthFraction":null,"BarWidth":null,"Food":2,"Problem":null,"WhiteFraction":null},"Action":"None","Detail":"HUD\u975E\u8868\u793A\u4E2D\u306F\u6D88\u8CBB\u3057\u307E\u305B\u3093\u3002"}
+{"Event":"recovery-sample","AtMs":709,"IntervalMs":196,"FrameFreshnessMs":0,"TargetIntervalMs":250}
+{"Event":"recovery","AtMs":710,"Observation":{"HudVisible":false,"HealthFraction":null,"BarWidth":null,"Food":2,"Problem":null,"WhiteFraction":null},"Action":"None","Detail":"HUD\u975E\u8868\u793A\u4E2D\u306F\u6D88\u8CBB\u3057\u307E\u305B\u3093\u3002"}
+{"Event":"progress-observation","AtMs":859,"Changed":false,"Difference":0,"Candidate":"Key","RuleId":"npc-dialogue-cue","Decision":"Wait"}
+{"Event":"condition","Decision":"Wait","AtMs":861,"InhibitDifference":255,"CueDifference":null,"MatchedTexts":[]}
+{"Event":"recovery-sample","AtMs":954,"IntervalMs":245,"FrameFreshnessMs":210,"TargetIntervalMs":250}
+{"Event":"recovery","AtMs":955,"Observation":{"HudVisible":false,"HealthFraction":null,"BarWidth":null,"Food":2,"Problem":null,"WhiteFraction":null},"Action":"None","Detail":"HUD\u975E\u8868\u793A\u4E2D\u306F\u6D88\u8CBB\u3057\u307E\u305B\u3093\u3002"}
+{"Event":"recovery-sample","AtMs":1217,"IntervalMs":263,"FrameFreshnessMs":211,"TargetIntervalMs":250}
+{"Event":"recovery","AtMs":1218,"Observation":{"HudVisible":false,"HealthFraction":null,"BarWidth":null,"Food":2,"Problem":null,"WhiteFraction":null},"Action":"None","Detail":"HUD\u975E\u8868\u793A\u4E2D\u306F\u6D88\u8CBB\u3057\u307E\u305B\u3093\u3002"}
+{"Event":"progress-observation","AtMs":1391,"Changed":false,"Difference":3.171875,"Candidate":"Key","RuleId":"npc-dialogue-cue","Decision":"Wait"}
+{"Event":"recovery-sample","AtMs":1464,"IntervalMs":247,"FrameFreshnessMs":208,"TargetIntervalMs":250}
+{"Event":"recovery","AtMs":1465,"Observation":{"HudVisible":false,"HealthFraction":null,"BarWidth":null,"Food":2,"Problem":null,"WhiteFraction":null},"Action":"None","Detail":"HUD\u975E\u8868\u793A\u4E2D\u306F\u6D88\u8CBB\u3057\u307E\u305B\u3093\u3002"}
+{"Event":"recovery-sample","AtMs":1712,"IntervalMs":248,"FrameFreshnessMs":204,"TargetIntervalMs":250}
+{"Event":"recovery","AtMs":1714,"Observation":{"HudVisible":false,"HealthFraction":null,"BarWidth":null,"Food":2,"Problem":null,"WhiteFraction":null},"Action":"None","Detail":"HUD\u975E\u8868\u793A\u4E2D\u306F\u6D88\u8CBB\u3057\u307E\u305B\u3093\u3002"}

@@ -1,0 +1,6 @@
+{
+  "Id": "mabinogi-mobile",
+  "Name": "マビノギモバイル 自動進行",
+  "ProcessName": "MabinogiMobile",
+  "DurationMs": 3600000
+}

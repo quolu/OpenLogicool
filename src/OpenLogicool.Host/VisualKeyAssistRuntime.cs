@@ -216,7 +216,8 @@ public static class VisualKeyAssistRuntime
 {
     public static async Task<object> RunAsync(
         string[] arguments, SerialHidResidentOutputSession nano, SerialHidEmitter emitter,
-        WindowsGameTarget target, string sourceId)
+        WindowsGameTarget target, string sourceId, CancellationToken cancellationToken = default,
+        Action<JsonElement>? onEvent = null)
     {
         string Required(string name)
         {
@@ -273,7 +274,7 @@ public static class VisualKeyAssistRuntime
                 ? JsonSerializer.Deserialize<VisualRecoveryState>(File.ReadAllText(recoveryStatePath))
                     ?? throw new InvalidDataException("保存した回復状態が空です。")
                 : null);
-        using var stop = new CancellationTokenSource();
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; stop.Cancel(); };
         Console.CancelKeyPress += cancel;
         try
@@ -700,6 +701,7 @@ public static class VisualKeyAssistRuntime
                     events.Enqueue(entry);
                     var json = JsonSerializer.Serialize(entry);
                     File.AppendAllText(Path.Combine(evidenceDirectory, "events.jsonl"), json + "\n");
+                    onEvent?.Invoke(JsonSerializer.SerializeToElement(entry));
                     Console.WriteLine(json);
                 }
             }

@@ -33,6 +33,7 @@ public sealed class InputStudioWindow : Window
     private readonly ILearningRouteIntents? _learningRouteIntents;
     private readonly ISupervisedMacroIntents? _supervisedMacroIntents;
     private readonly IMacroAutomationIntents? _macroAutomationIntents;
+    private readonly IBotScriptIntents? _botScriptIntents;
     private readonly string? _supervisedUnavailableReason;
     private DiagnosticsWindow? _diagnosticsWindow;
     private GameOperatorWindow? _gameOperatorWindow;
@@ -227,7 +228,8 @@ public sealed class InputStudioWindow : Window
         ISupervisedMacroIntents? supervisedMacroIntents = null,
         string? supervisedUnavailableReason = null,
         IMacroAutomationIntents? macroAutomationIntents = null,
-        IDemonstrationRecordingIntents? demonstrationRecordingIntents = null)
+        IDemonstrationRecordingIntents? demonstrationRecordingIntents = null,
+        IBotScriptIntents? botScriptIntents = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
@@ -241,6 +243,7 @@ public sealed class InputStudioWindow : Window
         _learningRouteIntents = learningRouteIntents;
         _supervisedMacroIntents = supervisedMacroIntents;
         _macroAutomationIntents = macroAutomationIntents;
+        _botScriptIntents = botScriptIntents;
         _supervisedUnavailableReason = supervisedUnavailableReason;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
@@ -665,7 +668,8 @@ public sealed class InputStudioWindow : Window
                 _supervisedUnavailableReason,
                 _macroAutomationIntents,
                 openMacroTab,
-                _demonstrationRecordingIntents) { Owner = this };
+                _demonstrationRecordingIntents,
+                _botScriptIntents) { Owner = this };
             _gameOperatorWindow.Show();
         }
         else

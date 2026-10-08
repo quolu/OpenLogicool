@@ -18,6 +18,11 @@
     <InternalsVisibleTo Include="OpenLogicool.Host.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="BotScripts\**\bot.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\profile.json;..\..\fixtures\visual-recovery\mabinogi-20261008\progress.json;..\..\fixtures\visual-recovery\mabinogi-20261008\stop.png;..\..\fixtures\visual-recovery\mabinogi-20261008\hud.png;..\..\fixtures\visual-recovery\mabinogi-20261008\food-ready.png;..\..\fixtures\visual-recovery\mabinogi-20261008\food-active.png;..\..\fixtures\visual-recovery\mabinogi-20261008\dialogue-tail.png;..\..\fixtures\visual-recovery\mabinogi-20261008\dialogue-cue.jpg"
+             Link="BotScripts\MabinogiMobile\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\OpenLogicool.Contracts\OpenLogicool.Contracts.csproj" />
     <ProjectReference Include="..\OpenLogicool.Domain\OpenLogicool.Domain.csproj" />
     <ProjectReference Include="..\OpenLogicool.Devices.G13\OpenLogicool.Devices.G13.csproj" />

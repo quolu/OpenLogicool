@@ -40,7 +40,8 @@ public sealed class GameOperatorWindow : Window
         string? supervisedUnavailableReason = null,
         IMacroAutomationIntents? macroAutomationIntents = null,
         bool openMacroTab = false,
-        IDemonstrationRecordingIntents? demonstrationRecordingIntents = null)
+        IDemonstrationRecordingIntents? demonstrationRecordingIntents = null,
+        IBotScriptIntents? botScriptIntents = null)
     {
         ArgumentNullException.ThrowIfNull(intent);
         _workspace = new WebResearchWorkspace(intent);
@@ -83,6 +84,24 @@ public sealed class GameOperatorWindow : Window
             openMacroTab,
             demonstrationRecordingIntents);
         RefreshDocuments();
+        if (botScriptIntents is not null && Content is TabControl botTabs)
+        {
+            var botPanel = new BotScriptPanel(botScriptIntents);
+            botTabs.Items.Add(new TabItem { Header = "Bot", Content = botPanel, MinWidth = 90 });
+            var closingAfterStop = false;
+            var stoppingForClose = false;
+            Closing += async (_, eventArgs) =>
+            {
+                if (closingAfterStop) return;
+                if (botScriptIntents.Current().Phase is not (BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.Stopping)) return;
+                eventArgs.Cancel = true;
+                if (stoppingForClose) return;
+                stoppingForClose = true;
+                await botPanel.StopAsync();
+                closingAfterStop = true;
+                Close();
+            };
+        }
     }
 
     private UIElement BuildContent(

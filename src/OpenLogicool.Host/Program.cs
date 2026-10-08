@@ -670,6 +670,8 @@ static int Ui(string[] arguments)
     // 記録と再生は同じgateを共有する。共有しないと、記録中にG13/G600のbuttonやUIから
     // 再生が走り、Nanoが出した入力を自分で記録してしまう（injected flagでは送信元を確定できない）。
     var demonstrationGate = new DemonstrationRecordingGate();
+    using var botScriptIntents = HostBotScriptIntents.Create(databasePath, serialHidDiscovery,
+        () => residentHost?.BorrowedNanoSession, demonstrationGate, outputSettingsForMacro.SelectedDeviceInstanceId);
     using var macroAutomationIntents = new HostMacroAutomationIntents(
         databasePath,
         CreateMacroExecutionEngine(
@@ -753,7 +755,8 @@ static int Ui(string[] arguments)
             supervisedMacroIntents,
             supervisedUnavailableReason,
             macroAutomationIntents,
-            demonstrationRecordingIntents);
+            demonstrationRecordingIntents,
+            botScriptIntents);
         System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
         if (residentHost is not null)
         {
@@ -795,6 +798,7 @@ static int Ui(string[] arguments)
     thread.SetApartmentState(ApartmentState.STA);
     thread.Start();
     thread.Join();
+    botScriptIntents.StopAsync().GetAwaiter().GetResult();
     macroAutomationIntents.Stop();
     macroWorker?.Dispose();
     residentHost?.Stop();
