@@ -9,6 +9,15 @@
   ],
   "Rules": [
     {
+      "Id": "merchant-exit", "Key": "Key:Esc", "Priority": 30,
+      "When": [
+        { "Text": "商店", "Bounds": [0.3, 0.88, 0.16, 0.12] },
+        { "Text": "世間話", "Bounds": [0.48, 0.88, 0.15, 0.12] },
+        { "Text": "会話終了", "Bounds": [0.58, 0.88, 0.16, 0.12] },
+        { "Text": "ESC", "Bounds": [0.58, 0.88, 0.16, 0.12] }
+      ]
+    },
+    {
       "Id": "compass-space", "Key": "Key:Space", "Priority": 40, "Immediate": true,
       "When": [], "Image": "compass-space.png", "ImageBounds": [0.84, 0.76, 0.16, 0.24],
       "ImageClientWidth": 1712,

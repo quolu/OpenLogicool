@@ -11,6 +11,27 @@ namespace OpenLogicool.Host.Tests;
 public sealed class VisualProgressTests
 {
     [Fact]
+    public async Task 商人メニューは通常会話のSpaceよりEsc終了を優先する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, "merchant-menu.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var recognizer = new VisualProgressRecognizer(profile);
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("merchant-exit", choice.RuleId);
+        Assert.Equal("Key:Esc", choice.Key);
+        Assert.Null(choice.Point);
+        var withoutExit = new WindowsGameOcrResult("", "ja", 0,
+            ocr.Words.Where(word => word.X < viewport.X + viewport.Width * 0.58
+                || word.Y < viewport.Y + viewport.Height * 0.88).ToArray());
+        Assert.NotEqual("merchant-exit", recognizer.Recognize(withoutExit, frame.Width, frame.Height, viewport, frame).RuleId);
+    }
+
+    [Fact]
     public async Task 戦利品のSpaceは見出しを十秒確認して一回だけ送る()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
