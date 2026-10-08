@@ -204,7 +204,8 @@ public sealed class VisualRecoveryRecognizer(VisualRecoveryProfile profile)
 public sealed record VisualRecoveryState(DateTimeOffset? LastFood = null, DateTimeOffset? LastPotion = null,
     VisualRecoveryAction Pending = VisualRecoveryAction.None, double? BeforePotion = null,
     int? BeforeFoodBarWidth = null, DateTimeOffset? LastBandage = null,
-    bool BandagePending = false, double? BeforeBandageWhiteFraction = null);
+    bool BandagePending = false, double? BeforeBandageWhiteFraction = null,
+    bool FoodUnverified = false, bool BandageUnverified = false);
 public sealed record VisualRecoveryChoice(VisualRecoveryAction Action, string Detail);
 
 /// <summary>食事の結果待ちと回復品の待ち時間を保持する。被弾中のHP差分でポーション使用の成否を判定しない。</summary>
@@ -214,7 +215,8 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
     private DateTimeOffset? uncertainHealthSince;
     private bool bandageRequested;
 
-    public VisualRecoveryChoice Decide(DateTimeOffset now, VisualRecoveryObservation observation, bool inhibited)
+    public VisualRecoveryChoice Decide(DateTimeOffset now, VisualRecoveryObservation observation, bool inhibited,
+        bool continueIndependentActions = false)
     {
         if (inhibited || !observation.HudVisible || observation.HealthFraction == 0 || observation.Problem is not null)
             bandageRequested = false;
@@ -228,17 +230,24 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
                 : new(VisualRecoveryAction.Review, observation.Problem);
         }
         uncertainHealthSince = null;
+        if (State.FoodUnverified && observation.HudVisible && observation.Food == VisualFoodState.Active
+            && observation.BarWidth > State.BeforeFoodBarWidth)
+            State = State with { FoodUnverified = false };
+        if (State.BandageUnverified && observation.HudVisible && observation.WhiteFraction < State.BeforeBandageWhiteFraction)
+            State = State with { BandageUnverified = false };
         if (State.BandagePending)
         {
             if (observation.HudVisible && observation.WhiteFraction < State.BeforeBandageWhiteFraction)
                 State = State with { BandagePending = false };
-            else return now - State.LastBandage >= TimeSpan.FromSeconds(3)
-                ? new(VisualRecoveryAction.Review, "包帯後に白い部分の減少を確認できません。追加使用せず停止しました。")
-                : new(VisualRecoveryAction.Wait, "包帯後の白い部分を確認しています。");
+            else if (now - State.LastBandage >= TimeSpan.FromSeconds(3))
+                return new(VisualRecoveryAction.Review, "包帯後に白い部分の減少を確認できません。包帯の追加使用を保留します。");
+            else if (!continueIndependentActions)
+                return new(VisualRecoveryAction.Wait, "包帯後の白い部分を確認しています。");
         }
         // 閾値への到達は1回の使用要求。送出直前の別frameで白が減っても要求を失わない。
         if (observation.HudVisible && observation.HealthFraction > 0
             && (State.LastBandage is null || now - State.LastBandage >= TimeSpan.FromMilliseconds(profile.BandageCooldownMs))
+            && !State.BandagePending && !State.BandageUnverified
             && observation.WhiteFraction >= profile.BandageThreshold)
             bandageRequested = true;
         if (bandageRequested)
@@ -248,9 +257,10 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
             if (observation.HudVisible && observation.Food == VisualFoodState.Active
                 && observation.BarWidth > State.BeforeFoodBarWidth)
                 State = State with { Pending = VisualRecoveryAction.None };
-            else return now - State.LastFood >= TimeSpan.FromSeconds(8)
-                ? new(VisualRecoveryAction.Review, "食事後の効果を確認できません。再使用せず停止しました。")
-                : new(VisualRecoveryAction.Wait, "食事効果を確認しています。");
+            else if (now - State.LastFood >= TimeSpan.FromSeconds(8))
+                return new(VisualRecoveryAction.Review, "食事後の効果を確認できません。食事の再使用を保留します。");
+            else if (!continueIndependentActions)
+                return new(VisualRecoveryAction.Wait, "食事効果を確認しています。");
         }
         if (State.Pending == VisualRecoveryAction.Potion)
         {
@@ -268,6 +278,8 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
                 : new(VisualRecoveryAction.None, "ポーションの待ち時間中です。HPと包帯の監視は継続します。");
         if (observation.Food == VisualFoodState.Unknown)
             return new(VisualRecoveryAction.None, "食事は未判別のため使用しません。HP監視は続けます。");
+        if (State.FoodUnverified)
+            return new(VisualRecoveryAction.None, "食事効果が未確認のため食事だけ保留しています。他の回復判定は継続します。");
         if (observation.Food == VisualFoodState.Ready)
             return State.LastFood is null || now - State.LastFood >= TimeSpan.FromMilliseconds(profile.FoodMinimumIntervalMs)
                 ? new(VisualRecoveryAction.Food, "食事ボタンがあり、食事効果がありません。")
@@ -280,11 +292,22 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
         State = action switch
         {
             VisualRecoveryAction.Food => State with { LastFood = now, Pending = action, BeforeFoodBarWidth = observation.BarWidth },
-            VisualRecoveryAction.Potion => State with { LastPotion = now, Pending = action, BeforePotion = observation.HealthFraction },
+            VisualRecoveryAction.Potion => State with { LastPotion = now,
+                Pending = State.Pending == VisualRecoveryAction.Food ? VisualRecoveryAction.Food : action,
+                BeforePotion = observation.HealthFraction },
             VisualRecoveryAction.Bandage => State with { LastBandage = now, BandagePending = true,
                 BeforeBandageWhiteFraction = observation.WhiteFraction },
             _ => throw new ArgumentException("消費操作だけを記録できます。", nameof(action)),
         };
         if (action == VisualRecoveryAction.Bandage) bandageRequested = false;
+    }
+
+    public void ContinueAfterReview()
+    {
+        if (State.Pending == VisualRecoveryAction.Food)
+            State = State with { Pending = VisualRecoveryAction.None, FoodUnverified = true };
+        if (State.BandagePending)
+            State = State with { BandagePending = false, BandageUnverified = true };
+        bandageRequested = false;
     }
 }

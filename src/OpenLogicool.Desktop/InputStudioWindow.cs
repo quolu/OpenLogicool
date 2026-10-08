@@ -679,6 +679,28 @@ public sealed class InputStudioWindow : Window
         }
     }
 
+    public bool HasUnsavedChanges => _hasUnsavedChanges;
+
+    public Window ControlPanel(string panel, bool activate)
+    {
+        if (panel == "input-studio")
+        {
+            if (activate) { if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal; Show(); Activate(); }
+            return this;
+        }
+        if (_gameOperatorWindow is null || !_gameOperatorWindow.IsVisible)
+        {
+            if (_webResearchIntent is null) throw new InvalidOperationException("Game Operatorは利用できません。");
+            _gameOperatorWindow = new GameOperatorWindow(_webResearchIntent, _explorerIntents, _learningRouteIntents,
+                _supervisedMacroIntents, _supervisedUnavailableReason, _macroAutomationIntents, false,
+                _demonstrationRecordingIntents, _botScriptIntents) { Owner = this, ShowActivated = activate };
+            _gameOperatorWindow.Show();
+        }
+        _gameOperatorWindow.SelectControlPanel(panel);
+        if (activate) _gameOperatorWindow.Activate();
+        return _gameOperatorWindow;
+    }
+
     private void OnMacroStateChanged(MacroRunSnapshot snapshot)
     {
         if (snapshot.Phase != MacroRunPhase.AwaitingConfirmation) return;

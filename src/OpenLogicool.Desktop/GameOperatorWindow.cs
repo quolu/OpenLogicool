@@ -93,7 +93,7 @@ public sealed class GameOperatorWindow : Window
             Closing += async (_, eventArgs) =>
             {
                 if (closingAfterStop) return;
-                if (botScriptIntents.Current().Phase is not (BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.Stopping or BotScriptPhase.ReviewMonitoring)) return;
+                if (botScriptIntents.Current().Phase is not (BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.Stopping or BotScriptPhase.ReviewMonitoring or BotScriptPhase.UserPaused)) return;
                 eventArgs.Cancel = true;
                 if (stoppingForClose) return;
                 stoppingForClose = true;
@@ -171,6 +171,16 @@ public sealed class GameOperatorWindow : Window
         var macro = tabs.Items.Cast<TabItem>()
             .FirstOrDefault(item => string.Equals(item.Header?.ToString(), "マクロ", StringComparison.Ordinal));
         if (macro is not null) tabs.SelectedItem = macro;
+    }
+
+    public void SelectControlPanel(string panel)
+    {
+        var header = panel switch { "bot" => "Bot", "macro" => "マクロ", "recording" => "記録",
+            "explorer" => "構造探索", "learning" => "学習した操作", "research" => "STEP 0　Web調査",
+            _ => throw new ArgumentException($"表示先がありません: {panel}") };
+        var tabs = (TabControl)Content;
+        tabs.SelectedItem = tabs.Items.Cast<TabItem>().SingleOrDefault(item => item.Header?.ToString() == header)
+            ?? throw new InvalidOperationException($"この起動モードでは表示できません: {panel}");
     }
 
     private UIElement BuildResearchContent()

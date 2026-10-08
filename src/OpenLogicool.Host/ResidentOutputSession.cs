@@ -142,7 +142,8 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
     internal SerialHidResidentOutputSession(
         ISerialHidFrameExchange exchange,
         SerialHidProtocolSession connectedProtocol,
-        TimeSpan heartbeatInterval)
+        TimeSpan heartbeatInterval,
+        SerialHidCandidate? deviceIdentity = null)
     {
         ArgumentNullException.ThrowIfNull(exchange);
         ArgumentNullException.ThrowIfNull(connectedProtocol);
@@ -154,6 +155,7 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
 
         _exchange = exchange;
         _protocol = connectedProtocol;
+        DeviceIdentity = deviceIdentity;
         _hostVersion = default;
         _requestTimeout = default;
         _heartbeatInterval = heartbeatInterval;
@@ -161,6 +163,7 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
     }
 
     public ResidentOutputRoute Route => ResidentOutputRoute.SerialHid;
+    public SerialHidCandidate? DeviceIdentity { get; }
 
     public IOutputEmitter Emitter =>
         _emitter ?? throw new InvalidOperationException("Serial HID output sessionは未起動です。");

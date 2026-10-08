@@ -1,6 +1,7 @@
 using System.IO;
 using Microsoft.Data.Sqlite;
 using OpenLogicool.Contracts.Profiles;
+using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Devices.G13;
 using OpenLogicool.Domain;
 using OpenLogicool.Devices.G600;
@@ -99,6 +100,9 @@ public sealed class ResidentInputHost : IDisposable
 
     /// <summary>最近の profile 切替判断（診断表示・APP-005）。foreground 監視をしていなければ空。</summary>
     public IReadOnlyList<ProfileSwitchDecision> RecentProfileSwitchDecisions() => _decisionRing.Snapshot();
+
+    public IReadOnlyList<DeviceInstance> ConnectedDevices() =>
+        [.. _g13Source?.EnumerateDevices() ?? [], .. _g600Source?.EnumerateDevices() ?? []];
 
     /// <summary>
     /// 現在の foreground 状態（APP-008）。foreground 監視未開始（app 関連付けが無い）なら null。

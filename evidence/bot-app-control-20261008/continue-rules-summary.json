@@ -1,0 +1,17 @@
+{
+  "RunId": "20261008-222201-079-6cd14ea3",
+  "RecoveryNoticeAtMs": [
+    543
+  ],
+  "InputAtMs": [
+    12519,
+    19744,
+    31260,
+    39817,
+    67716
+  ],
+  "RecoverySamples": 274,
+  "LastAtMs": 68851,
+  "FoodInputs": 0,
+  "Ended": false
+}

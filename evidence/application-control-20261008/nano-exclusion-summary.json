@@ -1,0 +1,46 @@
+{
+  "SourceRun": "20261008-230708-312-b45fd0ca",
+  "MatchingIntervals": 139,
+  "Examples": [
+    {
+      "BeforeAtMs": 51838,
+      "AfterAtMs": 52844,
+      "NanoBefore": 0,
+      "NanoAfter": 4,
+      "UserEvents": 2762,
+      "Paused": false
+    },
+    {
+      "BeforeAtMs": 121340,
+      "AfterAtMs": 122352,
+      "NanoBefore": 8,
+      "NanoAfter": 12,
+      "UserEvents": 4545,
+      "Paused": false
+    },
+    {
+      "BeforeAtMs": 132336,
+      "AfterAtMs": 133341,
+      "NanoBefore": 12,
+      "NanoAfter": 16,
+      "UserEvents": 4545,
+      "Paused": false
+    },
+    {
+      "BeforeAtMs": 144342,
+      "AfterAtMs": 145343,
+      "NanoBefore": 16,
+      "NanoAfter": 20,
+      "UserEvents": 4545,
+      "Paused": false
+    },
+    {
+      "BeforeAtMs": 183339,
+      "AfterAtMs": 184339,
+      "NanoBefore": 24,
+      "NanoAfter": 28,
+      "UserEvents": 5068,
+      "Paused": false
+    }
+  ]
+}

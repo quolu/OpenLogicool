@@ -49,7 +49,7 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
                 var decision = await Tool("get_decision", new { decision_id = resolvedDecisionId });
                 if (decision.GetProperty("status").GetString() is "pending" or "deferred")
                     await Tool("cancel_decision", new { decision_id = resolvedDecisionId,
-                        reason = "監視を続けた結果、確認済みの画面に戻ったため自動進行を再開しました。" });
+                        reason = "確認済みの画面に戻り、この申請が対象としていた表示が解消しました。" });
                 return resolvedDecisionId;
             }
             var decisions = await Tool("list_my_decisions", new { });
@@ -60,8 +60,12 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
             var choiceText = options.Length > 2 ? "\n画面の選択肢（OCR・添付画像も確認）:\n"
                 + string.Join("\n", options.Where(option => option.Id != "stop").Select(option => option.Label)) : "";
             var monitoring = result.TryGetProperty("MonitoringContinues", out var continues) && continues.GetBoolean();
-            var title = (monitoring ? "ゲーム画面の確認が必要です（監視継続）: " : "ゲームの自動進行を停止しました: ") + detail?[..Math.Min(80, detail.Length)];
-            var context = detail + choiceText + (monitoring
+            var continuing = result.TryGetProperty("AutomaticRulesContinue", out var rulesContinue) && rulesContinue.GetBoolean();
+            var title = (continuing ? "ゲーム画面に確認事項があります（動作継続）: "
+                : monitoring ? "ゲーム画面の確認が必要です（監視継続）: " : "ゲームの自動進行を停止しました: ") + detail?[..Math.Min(80, detail.Length)];
+            var context = detail + choiceText + (continuing
+                ? "\n通常の操作規則・画面観測・回復監視は継続しています。確認通知を理由に操作全体を保留しません。回答が必要な選択は自動選択しません。"
+                : monitoring
                 ? "\n進行入力を止めて画面観測と回復監視を継続しています。確認済みの別画面に戻ったら自動で進行を再開します。"
                 : "\n入力は停止済みです。判断結果だけでは入力を再開しません。操作者が回答を確認して再開します。")
                 + "\n確認記録: " + Path.Combine(evidenceDirectory, "review.json");

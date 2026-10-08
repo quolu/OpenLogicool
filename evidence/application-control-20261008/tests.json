@@ -1,0 +1,146 @@
+{
+  "FullSuite": {
+    "Passed": 1579.0,
+    "Projects": 22,
+    "Failed": 0.0,
+    "Total": 1579.0
+  },
+  "PostSuiteCloseRaceFocused": {
+    "Passed": 5,
+    "Failed": 0
+  },
+  "Projects": [
+    {
+      "Project": "OpenLogicool.Architecture.Tests.ProjectReferenceDirectionTests",
+      "Total": 8,
+      "Passed": 8,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.AI.Tests.FoundryLocalVisionClientTests",
+      "Total": 43,
+      "Passed": 43,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Domain.Tests.GameStructureProjectorTests",
+      "Total": 83,
+      "Passed": 83,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Desktop.Tests.MacroStepConfirmationDialogTests",
+      "Total": 113,
+      "Passed": 113,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Desktop.SmokeApp.Tests.EnvironmentReportTests",
+      "Total": 2,
+      "Passed": 2,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Profiles.Tests.MappingProfileMaterializerTests",
+      "Total": 25,
+      "Passed": 25,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Perception.Tests.LearnedSceneMatcherTests",
+      "Total": 32,
+      "Passed": 32,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Capture.Tests.WgcFrameSourceTests",
+      "Total": 16,
+      "Passed": 16,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Packaging.Tests.ActiveRunUpdateHoldTests",
+      "Total": 13,
+      "Passed": 13,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Input.Tests.OutputTokensTests",
+      "Total": 162,
+      "Passed": 162,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Persistence.Tests.SqliteWebReferenceStoreTests",
+      "Total": 55,
+      "Passed": 55,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Devices.G600.Tests.G600LeftoverTests",
+      "Total": 69,
+      "Passed": 69,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Devices.G13.Tests.G13ReportParserTests",
+      "Total": 28,
+      "Passed": 28,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.GameLab.Tests.GameLabRunConsoleTests",
+      "Total": 24,
+      "Passed": 24,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Playbooks.Tests.SupervisedVisualMacroRunnerTests",
+      "Total": 194,
+      "Passed": 194,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Conformance.Tests.WebReferenceContractTests",
+      "Total": 61,
+      "Passed": 61,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.GameLab.Prototype.Tests.GameStateMachineTests",
+      "Total": 3,
+      "Passed": 3,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Capture.Matrix.Tests.CaptureCapabilityMatrixTests",
+      "Total": 6,
+      "Passed": 6,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Exploration.Tests.GameTransitionJudgeTests",
+      "Total": 79,
+      "Passed": 79,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.GameLab.Discovery.Tests.HiddenOracleDiscoveryTests",
+      "Total": 10,
+      "Passed": 10,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Host.Tests.WindowsGameFramePngEncoderTests",
+      "Total": 483,
+      "Passed": 483,
+      "Failed": 0
+    },
+    {
+      "Project": "OpenLogicool.Probe.Tests.LiveDiscoveryNanoActionSmokeTests",
+      "Total": 70,
+      "Passed": 70,
+      "Failed": 0
+    }
+  ]
+}

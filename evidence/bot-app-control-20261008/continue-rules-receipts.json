@@ -1,0 +1,111 @@
+[
+  {
+    "Event": "recovery-review-advisory",
+    "AtMs": 543,
+    "Detail": "食事後の効果を確認できません。食事の再使用を保留します。 通常の進行と、判定可能な回復処理は継続します。"
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 12519,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:41",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T22:22:21.9575163+09:00",
+      "CompletedUtc": "2026-10-08T22:22:21.9631605+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 19744,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:ようこそ工リンの星が集まる場所ステラドームへ0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:63",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T22:22:29.1857839+09:00",
+      "CompletedUtc": "2026-10-08T22:22:29.1885172+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 31260,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:素敵なファッションスタイルの方々に出会えますよ0",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:96",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T22:22:40.7001523+09:00",
+      "CompletedUtc": "2026-10-08T22:22:40.704127+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 39817,
+    "RuleId": "space-confirm",
+    "Signature": "space-confirm:SPACE|確認",
+    "Key": "Key:Space",
+    "Point": null,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:123",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T22:22:49.258977+09:00",
+      "CompletedUtc": "2026-10-08T22:22:49.2614152+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 67716,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:76720:progress:235",
+      "TargetWindowSourceId": "window:bot:76720:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-08T22:23:17.157648+09:00",
+      "CompletedUtc": "2026-10-08T22:23:17.1606397+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]

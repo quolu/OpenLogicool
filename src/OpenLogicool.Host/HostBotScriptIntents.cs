@@ -35,6 +35,8 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
     private CancellationTokenSource? stop;
     private Task? worker;
     private bool disposed;
+    private BotScriptPhase? userResumePhase;
+    private string? userResumeDetail;
     private BotScriptSnapshot state = new(BotScriptPhase.Stopped, "Botは停止しています。");
 
     internal HostBotScriptIntents(IReadOnlyList<BotScriptItem> scripts, string dataDirectory,
@@ -85,7 +87,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                     "--cue-text", "画面を押してください", "--keys", "Key:Space",
                     "--duration-ms", package.DurationMs.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     "--recovery-profile", package.File("profile.json"), "--progress-profile", package.File("progress.json"),
-                    "--evidence", evidence, "--keep-monitoring-on-review" };
+                    "--evidence", evidence, "--continue-on-review", "--pause-on-user-input" };
                 if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
                 var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(), nano, emitter, target,
                     $"window:bot:{target.ProcessId}", token, report);
@@ -111,6 +113,8 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
             if (!executionGate.TryBeginPlayback(out var refusal)) throw new InvalidOperationException(refusal);
             stop?.Dispose();
             stop = new CancellationTokenSource();
+            userResumePhase = null;
+            userResumeDetail = null;
             var evidence = Path.Combine(dataDirectory, scriptId, DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + "-" + Guid.NewGuid().ToString("N")[..8]);
             state = new(BotScriptPhase.Starting, "ゲームとNanoへ接続しています。", scriptId, evidence);
             var token = stop.Token;
@@ -143,9 +147,26 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
     {
         lock (gate)
         {
-            if (state.Phase is not (BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.ReviewMonitoring)) return;
+            if (state.Phase is not (BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.ReviewMonitoring or BotScriptPhase.UserPaused)) return;
+            var eventName = entry.GetProperty("Event").GetString();
+            if (eventName == "user-input-paused")
+            {
+                userResumePhase ??= state.Phase;
+                userResumeDetail ??= state.Detail;
+                state = state with { Phase = BotScriptPhase.UserPaused, Detail = entry.GetProperty("Detail").GetString()! };
+                return;
+            }
+            if (eventName == "user-input-resumed")
+            {
+                state = state with { Phase = userResumePhase ?? BotScriptPhase.Running,
+                    Detail = userResumeDetail ?? entry.GetProperty("Detail").GetString()! };
+                userResumePhase = null; userResumeDetail = null;
+                return;
+            }
+            var paused = userResumePhase is not null;
+            if (paused) state = state with { Phase = userResumePhase!.Value, Detail = userResumeDetail! };
             if (state.Phase == BotScriptPhase.Starting) state = state with { Phase = BotScriptPhase.Running };
-            switch (entry.GetProperty("Event").GetString())
+            switch (eventName)
             {
                 case "recovery-sample":
                     state = state with { ObservationCount = state.ObservationCount + 1,
@@ -158,7 +179,11 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                     break;
                 case "progress-review-monitoring":
                     state = state with { Phase = BotScriptPhase.ReviewMonitoring,
-                        Detail = entry.GetProperty("Detail").GetString() + " 画面観測と回復監視は継続中です。" };
+                        Detail = entry.GetProperty("Detail").GetString() + (entry.TryGetProperty("AutomaticRulesContinue", out var continuing) && continuing.GetBoolean()
+                            ? " 通常の操作規則・画面観測・回復監視を継続中です。" : " 画面観測と回復監視は継続中です。") };
+                    break;
+                case "recovery-review-advisory":
+                    state = state with { Phase = BotScriptPhase.ReviewMonitoring, Detail = entry.GetProperty("Detail").GetString()! };
                     break;
                 case "progress-resumed":
                     state = state with { Phase = BotScriptPhase.Running, Detail = entry.GetProperty("Detail").GetString()! };
@@ -175,6 +200,12 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                         PotionCount = state.PotionCount + (action == "Potion" ? 1 : 0),
                         BandageCount = state.BandageCount + (action == "Bandage" ? 1 : 0) };
                     break;
+            }
+            if (paused)
+            {
+                userResumePhase = state.Phase; userResumeDetail = state.Detail;
+                state = state with { Phase = BotScriptPhase.UserPaused,
+                    Detail = "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。" };
             }
         }
     }

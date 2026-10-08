@@ -64,7 +64,8 @@ public sealed class SerialHidDiscoveryService(
                     new SerialHidResidentOutputSession(
                         exchange,
                         protocol,
-                        SerialHidResidentOutputSession.DefaultHeartbeatInterval)));
+                        SerialHidResidentOutputSession.DefaultHeartbeatInterval,
+                        candidate)));
                 exchange = null; // sessionへownership transfer
             }
             catch (Exception exception)

@@ -253,7 +253,8 @@ public static class VisualKeyAssistRuntime
         if (duration <= 0) throw new ArgumentException("実行時間は正のミリ秒です。");
         // 計測では撮影と判定だけを実行し、前面化・Space・回復品を送出しない。
         var measureOnly = arguments.Contains("--measure-only", StringComparer.Ordinal);
-        var keepMonitoring = arguments.Contains("--keep-monitoring-on-review", StringComparer.Ordinal);
+        var continueRules = arguments.Contains("--continue-on-review", StringComparer.Ordinal);
+        var keepMonitoring = continueRules || arguments.Contains("--keep-monitoring-on-review", StringComparer.Ordinal);
         var evidenceDirectory = Path.GetFullPath(Required("--evidence"));
         Directory.CreateDirectory(evidenceDirectory);
         var recoveryIndex = Array.IndexOf(arguments, "--recovery-profile");
@@ -277,11 +278,14 @@ public static class VisualKeyAssistRuntime
                     ?? throw new InvalidDataException("保存した回復状態が空です。")
                 : null);
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var userInput = arguments.Contains("--pause-on-user-input", StringComparer.Ordinal)
+            ? new WindowsUserInputMonitor(nano.DeviceIdentity
+                ?? throw new InvalidOperationException("手入力の識別に必要なNanoのデバイス情報がありません。")) : null;
         ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; stop.Cancel(); };
         Console.CancelKeyPress += cancel;
         try
         {
-            if (!measureOnly && !arguments.Contains("--observe-only", StringComparer.Ordinal))
+            if (userInput is null && !measureOnly && !arguments.Contains("--observe-only", StringComparer.Ordinal))
                 WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
             var actions = new NanoGameInteractionActions(
                 new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()),
@@ -292,6 +296,9 @@ public static class VisualKeyAssistRuntime
             using var inputGate = new SemaphoreSlim(1, 1);
             var eventGate = new object();
             var progress = new VisualKeyAssistProgress();
+            var userEventGate = new object();
+            bool? userPaused = null;
+            long lastUserSample = -1000;
             var reviewMonitor = new VisualProgressReviewMonitor();
             Task notificationWork = Task.CompletedTask;
             string? reviewDecisionId = null;
@@ -324,6 +331,7 @@ public static class VisualKeyAssistRuntime
                 {
                     token.ThrowIfCancellationRequested();
                     var frame = await frames.CaptureAsync(token);
+                    _ = UserIsActive();
                     var viewport = recoveryRecognizer is null ? null : WindowsGameTargetLocator.CaptureClientBounds(target.Window);
                     var windowScale = viewport is null ? 1 : recoveryRecognizer!.HudScale(viewport);
                     var inhibitMatch = inhibit.FindAtWindowScale(frame, region, windowScale);
@@ -346,20 +354,29 @@ public static class VisualKeyAssistRuntime
                         {
                             Emit(new { Event = "progress-monitoring", AtMs = clock.ElapsedMilliseconds,
                                 Candidate = candidate.Action.ToString(), candidate.RuleId });
-                            await Task.Delay(250, token);
-                            continue;
+                            if (!continueRules)
+                            {
+                                await Task.Delay(250, token);
+                                continue;
+                            }
                         }
-                        progress.Resume();
-                        progressSchedule = progressProfile is null ? null : new VisualProgressSchedule(progressProfile);
-                        schedule.RecordInput(clock.ElapsedMilliseconds);
-                        Emit(new { Event = "progress-resumed", AtMs = clock.ElapsedMilliseconds,
-                            Detail = "確認済みの画面に戻ったため進行を再開しました。" });
-                        QueueNotification(async () =>
+                        else
                         {
-                            if (reviewNotifier is not null && reviewDecisionId is not null)
-                                await reviewNotifier.ResolveAsync(reviewDecisionId, token);
-                            reviewDecisionId = null;
-                        }, token);
+                            progress.Resume();
+                            if (!continueRules)
+                            {
+                                progressSchedule = progressProfile is null ? null : new VisualProgressSchedule(progressProfile);
+                                schedule.RecordInput(clock.ElapsedMilliseconds);
+                            }
+                            Emit(new { Event = "progress-resumed", AtMs = clock.ElapsedMilliseconds,
+                                Detail = continueRules ? "確認済みの画面に戻りました。操作規則は継続しています。" : "確認済みの画面に戻ったため進行を再開しました。" });
+                            QueueNotification(async () =>
+                            {
+                                if (reviewNotifier is not null && reviewDecisionId is not null)
+                                    await reviewNotifier.ResolveAsync(reviewDecisionId, token);
+                                reviewDecisionId = null;
+                            }, token);
+                        }
                     }
                     var flowTimed = flowCandidate?.RuleId is not null && progressProfile!.Rules.Single(rule => rule.Id == flowCandidate.RuleId).Timed;
                     var sceneActivity = progressProfile is null ? (Changed: false, Difference: 0d)
@@ -410,21 +427,29 @@ public static class VisualKeyAssistRuntime
                     {
                         if (flowChoice.Action == VisualProgressAction.Review)
                         {
-                            File.WriteAllBytes(Path.Combine(evidenceDirectory, "progress-review.png"),
-                                new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
-                            var review = new { Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
-                                NeedsReview = true, Events = events, flowChoice.Detail, ReviewOptions = flowChoice.Options, OcrText = ocr?.Text,
-                                Image = Path.Combine(evidenceDirectory, "progress-review.png") };
-                            File.WriteAllText(Path.Combine(evidenceDirectory, "review.json"), JsonSerializer.Serialize(review));
-                            Emit(new { Event = "progress-review", AtMs = clock.ElapsedMilliseconds, flowChoice.Detail });
                             if (keepMonitoring)
                             {
                                 BeginMonitoring(flowCandidate ?? new(VisualProgressAction.Normal), frame,
                                     flowChoice.Detail!, flowChoice.Options, ocr?.Text, token);
-                                await Task.Delay(250, token);
-                                continue;
+                                flowChoice = VisualProgressContinuation.AfterReview(
+                                    flowCandidate ?? new(VisualProgressAction.Normal), continueRules);
+                                if (flowChoice.Action == VisualProgressAction.Wait)
+                                {
+                                    await Task.Delay(250, token);
+                                    continue;
+                                }
                             }
-                            return review;
+                            else
+                            {
+                                File.WriteAllBytes(Path.Combine(evidenceDirectory, "progress-review.png"),
+                                    new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                                var review = new { Mode = "key-assist", ProductHostEntry = true, AiCallCount = 0,
+                                    NeedsReview = true, Events = events, flowChoice.Detail, ReviewOptions = flowChoice.Options, OcrText = ocr?.Text,
+                                    Image = Path.Combine(evidenceDirectory, "progress-review.png") };
+                                File.WriteAllText(Path.Combine(evidenceDirectory, "review.json"), JsonSerializer.Serialize(review));
+                                Emit(new { Event = "progress-review", AtMs = clock.ElapsedMilliseconds, flowChoice.Detail });
+                                return review;
+                            }
                         }
                         if (flowChoice.Action is VisualProgressAction.Key or VisualProgressAction.Click)
                         {
@@ -432,13 +457,14 @@ public static class VisualKeyAssistRuntime
                             try
                             {
                                 token.ThrowIfCancellationRequested();
-                                WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                                if (!TryForeground()) continue;
                                 var fresh = await frames.CaptureAsync(token);
                                 if (Inhibited(fresh)) continue;
                                 var freshOcr = await new WindowsGameOcrRecognizer().RecognizeAsync(fresh, token);
                                 var current = progressRecognizer!.Recognize(freshOcr, fresh.Width, fresh.Height,
                                     WindowsGameTargetLocator.CaptureClientBounds(target.Window), fresh);
                                 if (current.Signature != flowChoice.Signature || current.Action != flowChoice.Action) continue;
+                                if (UserIsActive()) continue;
                                 var bound = Observation(fresh);
                                 var dispatch = current.Action == VisualProgressAction.Key
                                     ? actions.KeyTap(new GameInteractionKeyTapRequest(ContractSchemaVersions.Revision03,
@@ -474,7 +500,7 @@ public static class VisualKeyAssistRuntime
                         try
                         {
                             token.ThrowIfCancellationRequested();
-                            WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                            if (!TryForeground()) continue;
                             // OCRや前面化の間に停止画像へ変わった場合も、その画像を優先する。
                             var dispatchFrame = await frames.CaptureAsync(token);
                             if (Inhibited(dispatchFrame)) continue;
@@ -482,6 +508,7 @@ public static class VisualKeyAssistRuntime
                             if (schedule.Decide(clock.ElapsedMilliseconds, false,
                                 cueMatch?.Matches == true || matchedTexts.Length > 0) != decision) continue;
                             var dispatchObservation = Observation(dispatchFrame);
+                            if (UserIsActive()) continue;
                             var dispatch = actions.KeyTap(new GameInteractionKeyTapRequest(
                                 ContractSchemaVersions.Revision03, dispatchObservation.ObservationId, dispatchFrame.Sequence,
                                 dispatchFrame.TransformRevision, dispatchFrame.SourceId, keys), dispatchObservation);
@@ -508,6 +535,15 @@ public static class VisualKeyAssistRuntime
                             });
                             if (comparison.Judgement != GameTransitionJudgement.Moved)
                             {
+                                var afterHud = recoveryRecognizer?.Observe(after,
+                                    WindowsGameTargetLocator.CaptureClientBounds(target.Window)).HudVisible == true;
+                                if (!VisualProgressContinuation.RequiresUnchangedReview(continueRules, afterHud))
+                                {
+                                    Emit(new { Event = "progress-comparison-inconclusive", AtMs = clock.ElapsedMilliseconds,
+                                        Detail = "HUD表示中の画面差だけでは確認要求にせず、通常の操作規則を継続します。" });
+                                    await Task.Delay(250, token);
+                                    continue;
+                                }
                                 var encoder = new WindowsGameFramePngEncoder();
                                 File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-before.png"), encoder.Encode(frame).Bytes.ToArray());
                                 File.WriteAllBytes(Path.Combine(evidenceDirectory, "review-after.png"), encoder.Encode(after).Bytes.ToArray());
@@ -516,7 +552,8 @@ public static class VisualKeyAssistRuntime
                                     if (keepMonitoring)
                                     {
                                         BeginMonitoring(flowCandidate ?? new(VisualProgressAction.Normal), after,
-                                            "通常Space後の画面変化を確認できません。進行入力を止めて監視を続けています。", null, ocr?.Text, token);
+                                            continueRules ? "通常Space後の画面変化は未確認です。通常の操作規則を継続しています。"
+                                                : "通常Space後の画面変化を確認できません。進行入力を止めて監視を続けています。", null, ocr?.Text, token);
                                         await Task.Delay(250, token);
                                         continue;
                                     }
@@ -576,19 +613,20 @@ public static class VisualKeyAssistRuntime
             void BeginMonitoring(VisualProgressChoice candidate, CapturedFrame frame, string detail,
                 VisualProgressOption[]? options, string? ocrText, CancellationToken token)
             {
+                if (reviewMonitor.IsHolding) return;
                 reviewMonitor.Hold(candidate, recoveryRecognizer?.Observe(frame,
                     WindowsGameTargetLocator.CaptureClientBounds(target.Window)).HudVisible == true);
-                progress.Pause();
+                if (!continueRules) progress.Pause();
                 var folder = Path.Combine(evidenceDirectory, $"review-{++reviewNumber:D3}");
                 Directory.CreateDirectory(folder);
                 var image = Path.Combine(folder, "progress-review.png");
                 File.WriteAllBytes(image, new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
                 var review = JsonSerializer.SerializeToElement(new { Mode = "key-assist", ProductHostEntry = true,
-                    NeedsReview = true, MonitoringContinues = true, Detail = detail, ReviewOptions = options,
+                    NeedsReview = true, MonitoringContinues = true, AutomaticRulesContinue = continueRules, Detail = detail, ReviewOptions = options,
                     OcrText = ocrText, Image = image, AiCallCount = 0 });
                 File.WriteAllText(Path.Combine(folder, "review.json"), review.GetRawText());
                 Emit(new { Event = "progress-review-monitoring", AtMs = clock.ElapsedMilliseconds,
-                    Detail = detail, EvidenceDirectory = folder });
+                    Detail = detail, AutomaticRulesContinue = continueRules, EvidenceDirectory = folder });
                 QueueNotification(async () =>
                 {
                     if (reviewNotifier is null) return;
@@ -613,6 +651,39 @@ public static class VisualKeyAssistRuntime
                 });
             }
 
+            bool UserIsActive()
+            {
+                if (userInput is null) return false;
+                var snapshot = userInput.Snapshot();
+                lock (userEventGate)
+                {
+                    if (clock.ElapsedMilliseconds - lastUserSample >= 1000)
+                    {
+                        lastUserSample = clock.ElapsedMilliseconds;
+                        Emit(new { Event = "user-input-state", AtMs = clock.ElapsedMilliseconds,
+                            snapshot.Paused, snapshot.HeldCount, snapshot.IdleMilliseconds, snapshot.UserEvents, snapshot.NanoEvents });
+                    }
+                    if (userPaused != snapshot.Paused)
+                    {
+                        userPaused = snapshot.Paused;
+                        Emit(new { Event = snapshot.Paused ? "user-input-paused" : "user-input-resumed",
+                            AtMs = clock.ElapsedMilliseconds, snapshot.HeldCount, snapshot.IdleMilliseconds,
+                            snapshot.UserEvents, snapshot.NanoEvents,
+                            Detail = snapshot.Paused ? "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+                                : "手入力がなくなって3秒経過したためBotの送出を再開しました。" });
+                    }
+                }
+                return snapshot.Paused;
+            }
+
+            bool TryForeground()
+            {
+                if (userInput is not null)
+                    return WindowsTaskbarNanoWindowActivator.TryEnsureForeground(target, nano.Protocol, emitter, () => !UserIsActive());
+                WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                return true;
+            }
+
             async Task<object> RunRecoveryAsync(CancellationToken token)
             {
                 using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId + ":recovery", TimeSpan.FromSeconds(10), 250);
@@ -621,6 +692,7 @@ public static class VisualKeyAssistRuntime
                 Task<string>? deathText = null;
                 long? previousSample = null;
                 VisualRecoveryAction? pendingAction = null;
+                var recoveryNotices = new HashSet<string>(StringComparer.Ordinal);
                 long detectedAt = 0;
                 var first = true;
                 try
@@ -631,19 +703,24 @@ public static class VisualKeyAssistRuntime
                         first = false;
                         token.ThrowIfCancellationRequested();
                         var frame = await frames.CaptureAsync(token);
+                        _ = UserIsActive();
                         var viewport = WindowsGameTargetLocator.CaptureClientBounds(target.Window);
                         var inhibitMatch = inhibit.FindAtWindowScale(frame, region, recoveryRecognizer!.HudScale(viewport));
                         var recoveryObservation = recoveryRecognizer.Observe(frame, viewport);
+                        var incapacitated = false;
                         if (deathText?.IsCompleted == true)
                         {
                             var text = await deathText;
                             deathText = null;
                             if (recoveryRecognizer!.HasIncapacitatedDisplay(text))
+                            {
+                                incapacitated = true;
                                 recoveryObservation = recoveryObservation with
                                 {
                                     HudVisible = false,
                                     Problem = "対象の行動不能表示を確認しました。回復入力を終了します。"
                                 };
+                            }
                         }
                         if (!recoveryObservation.HudVisible && deathText is null
                             && !string.IsNullOrWhiteSpace(recoveryProfile!.IncapacitatedText)
@@ -662,7 +739,7 @@ public static class VisualKeyAssistRuntime
                         if (recovery is not null && recoveryObservation is not null)
                         {
                             var previousRecoveryState = recovery.State;
-                            var choice = recovery.Decide(DateTimeOffset.UtcNow, recoveryObservation, inhibitMatch.Matches);
+                            var choice = recovery.Decide(DateTimeOffset.UtcNow, recoveryObservation, inhibitMatch.Matches, continueRules);
                             if (choice.Action != pendingAction)
                             {
                                 pendingAction = choice.Action;
@@ -684,6 +761,20 @@ public static class VisualKeyAssistRuntime
                             });
                             if (choice.Action == VisualRecoveryAction.Review)
                             {
+                                if (continueRules && !incapacitated)
+                                {
+                                    var beforeContinuation = recovery.State;
+                                    recovery.ContinueAfterReview();
+                                    if (recovery.State != beforeContinuation) SaveRecoveryState();
+                                    if (recoveryNotices.Add(choice.Detail))
+                                    {
+                                        File.WriteAllBytes(Path.Combine(evidenceDirectory, "recovery-review.png"),
+                                            new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                                        Emit(new { Event = "recovery-review-advisory", AtMs = clock.ElapsedMilliseconds,
+                                            Detail = choice.Detail + " 通常の進行と、判定可能な回復処理は継続します。" });
+                                    }
+                                    continue;
+                                }
                                 File.WriteAllBytes(Path.Combine(evidenceDirectory, "recovery-review.png"),
                                     new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
                                 return new
@@ -704,6 +795,7 @@ public static class VisualKeyAssistRuntime
                             if (choice.Action is VisualRecoveryAction.Food or VisualRecoveryAction.Potion or VisualRecoveryAction.Bandage)
                             {
                                 if (measureOnly) continue;
+                                if (UserIsActive()) continue;
                                 if (!inputGate.Wait(0))
                                 {
                                     Emit(new { Event = "recovery-input-busy", AtMs = clock.ElapsedMilliseconds,
@@ -713,10 +805,10 @@ public static class VisualKeyAssistRuntime
                                 try
                                 {
                                     token.ThrowIfCancellationRequested();
-                                    WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                                    if (!TryForeground()) continue;
                                     var fresh = await frames.CaptureAsync(token);
                                     var freshObservation = recoveryRecognizer!.Observe(fresh, WindowsGameTargetLocator.CaptureClientBounds(target.Window));
-                                    var freshChoice = recovery.Decide(DateTimeOffset.UtcNow, freshObservation, Inhibited(fresh));
+                                    var freshChoice = recovery.Decide(DateTimeOffset.UtcNow, freshObservation, Inhibited(fresh), continueRules);
                                     if (freshChoice.Action != choice.Action)
                                     {
                                         Emit(new
@@ -732,6 +824,7 @@ public static class VisualKeyAssistRuntime
                                     }
                                     var beforeImagePath = Path.Combine(evidenceDirectory, $"recovery-{events.Count}-before.png");
                                     var bound = Observation(fresh);
+                                    if (UserIsActive()) continue;
                                     var outputToken = choice.Action switch
                                     {
                                         VisualRecoveryAction.Food => recoveryProfile!.FoodKey,

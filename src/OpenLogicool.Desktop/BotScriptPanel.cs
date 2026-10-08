@@ -55,7 +55,7 @@ public sealed class BotScriptPanel : UserControl
         root.Children.Add(operationError);
         root.Children.Add(new Border { Background = Theme.Raised, Padding = new Thickness(18), CornerRadius = new CornerRadius(6),
             Child = new StackPanel { Children = { status, detail, metrics, evidence } } });
-        root.Children.Add(new TextBlock { Text = "判断が必要な画面では入力を止め、ここに理由を表示します。\n停止後は画面を確認してから再開してください。Game Operatorやアプリを閉じた時もBotを停止します。",
+        root.Children.Add(new TextBlock { Text = "確認事項があっても、通常の操作規則と回復監視を続けます。回答が必要な選択だけを待ちます。\n停止表示がある時は入力しません。Game Operatorやアプリを閉じた時もBotを停止します。",
             Foreground = Theme.Muted, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 18, 0, 0) });
         Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         Refresh();
@@ -74,10 +74,10 @@ public sealed class BotScriptPanel : UserControl
     public void Refresh()
     {
         var current = intents.Current();
-        var busy = current.Phase is BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.Stopping or BotScriptPhase.ReviewMonitoring;
+        var busy = current.Phase is BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.Stopping or BotScriptPhase.ReviewMonitoring or BotScriptPhase.UserPaused;
         scripts.IsEnabled = !busy;
         start.IsEnabled = !busy && scripts.SelectedItem is not null;
-        stop.IsEnabled = current.Phase is BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.ReviewMonitoring;
+        stop.IsEnabled = current.Phase is BotScriptPhase.Starting or BotScriptPhase.Running or BotScriptPhase.ReviewMonitoring or BotScriptPhase.UserPaused;
         evidence.IsEnabled = current.EvidenceDirectory is not null;
         status.Text = current.Phase switch
         {
@@ -85,7 +85,8 @@ public sealed class BotScriptPanel : UserControl
             BotScriptPhase.Running => "実行中",
             BotScriptPhase.Stopping => "停止しています",
             BotScriptPhase.AwaitingReview => "画面の確認が必要です",
-            BotScriptPhase.ReviewMonitoring => "確認待ち・監視継続中",
+            BotScriptPhase.ReviewMonitoring => "確認事項あり・動作継続中",
+            BotScriptPhase.UserPaused => "手入力で一時停止中",
             BotScriptPhase.Faulted => "エラーで停止しました",
             _ => "停止済み"
         };
@@ -93,7 +94,7 @@ public sealed class BotScriptPanel : UserControl
         {
             BotScriptPhase.Running => Theme.Ok,
             BotScriptPhase.Faulted => Theme.Danger,
-            BotScriptPhase.AwaitingReview or BotScriptPhase.ReviewMonitoring => Theme.Warn,
+            BotScriptPhase.AwaitingReview or BotScriptPhase.ReviewMonitoring or BotScriptPhase.UserPaused => Theme.Warn,
             _ => Theme.Text
         };
         detail.Text = current.Detail;

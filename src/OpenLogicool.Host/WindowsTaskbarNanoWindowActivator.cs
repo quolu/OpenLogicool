@@ -36,6 +36,22 @@ public static class WindowsTaskbarNanoWindowActivator
         SerialHidProtocolSession session,
         SerialHidEmitter emitter) => ActivateFromTaskbar(target, session, emitter);
 
+    public static bool TryEnsureForeground(WindowsGameTarget target, SerialHidProtocolSession session,
+        SerialHidEmitter emitter, Func<bool> canSend) =>
+        TryEnsureForeground(() => GetForegroundWindow() == target.Window,
+            () => PrepareTaskbarActivation(target, session, emitter), canSend);
+
+    internal static bool TryEnsureForeground(Func<bool> isForeground,
+        Func<Func<WindowsNanoWindowActivationResult>> prepareActivation, Func<bool> canSend)
+    {
+        if (!canSend()) return false;
+        if (isForeground()) return true;
+        var activate = prepareActivation();
+        if (!canSend()) return false;
+        if (!isForeground()) activate();
+        return canSend();
+    }
+
     public static WindowsNanoWindowActivationResult ActivateFromTaskbar(
         WindowsGameTarget target,
         SerialHidProtocolSession session,

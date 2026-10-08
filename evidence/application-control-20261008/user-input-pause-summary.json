@@ -1,0 +1,121 @@
+{
+  "InputsDuringPauses": 0.0,
+  "SourceRun": "20261008-230708-312-b45fd0ca",
+  "Intervals": [
+    {
+      "PauseAtMs": 375,
+      "ResumeAtMs": 43589,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 55838,
+      "ResumeAtMs": 83352,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 104087,
+      "ResumeAtMs": 111501,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 149589,
+      "ResumeAtMs": 162341,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 421336,
+      "ResumeAtMs": 428084,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 444588,
+      "ResumeAtMs": 578092,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 590590,
+      "ResumeAtMs": 662339,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 663835,
+      "ResumeAtMs": 670342,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 671836,
+      "ResumeAtMs": 678589,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 733844,
+      "ResumeAtMs": 753590,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 755754,
+      "ResumeAtMs": 829593,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 882131,
+      "ResumeAtMs": 923843,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 932339,
+      "ResumeAtMs": 965836,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 966340,
+      "ResumeAtMs": 1000525,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 1001091,
+      "ResumeAtMs": 1018595,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 1021092,
+      "ResumeAtMs": 1103768,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 1575590,
+      "ResumeAtMs": 1579851,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 1580603,
+      "ResumeAtMs": 1591585,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 1847591,
+      "ResumeAtMs": 1855583,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 1864344,
+      "ResumeAtMs": 1871338,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 1871639,
+      "ResumeAtMs": 1879835,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 2032834,
+      "ResumeAtMs": 2037084,
+      "InputsDuringPause": 0
+    },
+    {
+      "PauseAtMs": 2273353,
+      "ResumeAtMs": 2277832,
+      "InputsDuringPause": 0
+    }
+  ]
+}

@@ -25,7 +25,12 @@ public sealed class BotScriptPanelTests
                 Assert.False(stop.IsEnabled);
                 intents.State = new(BotScriptPhase.ReviewMonitoring, "画面観測と回復監視を継続中です。");
                 panel.Refresh();
-                Assert.Contains("確認待ち・監視継続中", controls.OfType<TextBlock>().Select(text => text.Text));
+                Assert.Contains("確認事項あり・動作継続中", controls.OfType<TextBlock>().Select(text => text.Text));
+                Assert.False(start.IsEnabled);
+                Assert.True(stop.IsEnabled);
+                intents.State = new(BotScriptPhase.UserPaused, "手入力がなくなって3秒で再開");
+                panel.Refresh();
+                Assert.Contains("手入力で一時停止中", controls.OfType<TextBlock>().Select(text => text.Text));
                 Assert.False(start.IsEnabled);
                 Assert.True(stop.IsEnabled);
                 start.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

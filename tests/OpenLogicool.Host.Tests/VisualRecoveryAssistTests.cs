@@ -390,6 +390,45 @@ public sealed class VisualRecoveryAssistTests
             Pixels: new FramePixels(bytes, bitmap.PixelWidth * 4));
     }
 
+    [Fact]
+    public void 食事結果待ちや効果未確認でもポーション判定を続け食事だけ保留する()
+    {
+        var now = DateTimeOffset.UnixEpoch;
+        var schedule = new VisualRecoverySchedule(Profile());
+        var ready = new VisualRecoveryObservation(true, 1, 132, VisualFoodState.Ready, null);
+        schedule.RecordAttempt(VisualRecoveryAction.Food, now, ready);
+        var low = ready with { HealthFraction = 0.5 };
+        Assert.Equal(VisualRecoveryAction.Potion, schedule.Decide(now.AddSeconds(1), low, false, true).Action);
+        schedule.RecordAttempt(VisualRecoveryAction.Potion, now.AddSeconds(1), low);
+        Assert.Equal(VisualRecoveryAction.Food, schedule.State.Pending);
+        Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(now.AddSeconds(8), low, false, true).Action);
+        schedule.ContinueAfterReview();
+        var restored = new VisualRecoverySchedule(Profile(), schedule.State);
+        Assert.True(restored.State.FoodUnverified);
+        Assert.Equal(VisualRecoveryAction.None, restored.Decide(now.AddSeconds(9), low, false, true).Action);
+        Assert.Equal(VisualRecoveryAction.Potion, restored.Decide(now.AddSeconds(11), low, false, true).Action);
+        Assert.Equal(VisualRecoveryAction.None, restored.Decide(now.AddHours(1), ready, false, true).Action);
+        _ = restored.Decide(now.AddHours(1), ready with { Food = VisualFoodState.Active, BarWidth = 198 }, false, true);
+        Assert.False(restored.State.FoodUnverified);
+    }
+
+    [Fact]
+    public void 包帯結果待ちや未確認でもポーションを止めず包帯だけ保留する()
+    {
+        var now = DateTimeOffset.UnixEpoch;
+        var schedule = new VisualRecoverySchedule(Profile());
+        var low = new VisualRecoveryObservation(true, 0.5, 198, VisualFoodState.Active, null, 0.25);
+        schedule.RecordAttempt(VisualRecoveryAction.Bandage, now, low);
+        Assert.Equal(VisualRecoveryAction.Potion, schedule.Decide(now.AddSeconds(1), low, false, true).Action);
+        Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(now.AddSeconds(3), low, false, true).Action);
+        schedule.ContinueAfterReview();
+        var restored = new VisualRecoverySchedule(Profile(), schedule.State);
+        Assert.True(restored.State.BandageUnverified);
+        Assert.Equal(VisualRecoveryAction.Potion, restored.Decide(now.AddSeconds(6), low, false, true).Action);
+        _ = restored.Decide(now.AddSeconds(7), low with { WhiteFraction = 0.1 }, false, true);
+        Assert.False(restored.State.BandageUnverified);
+    }
+
     private static string LocateFixture()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
