@@ -1,5 +1,7 @@
 # OpenLogicool knowledge index
 
+- [マビノギモバイルの回復・食事調査](openlogicool/mabinogi-recovery-food-2026-10-08.md) — 日本版の通常・自動回復ポーション、包帯、ランチ説明と公式ガイドの照合。既存画像のHP検出の限界。取得日: 2026-10-08、確度: 説明表示は確認済み／使用結果と新判定は未確認
+
 - [Codex App ServerのGUI起動とUTF-8 stdio](openlogicool/codex-gui-stdio-encoding-2026-10-03.md) — コンソールなしのCP932誤読、BOMなしUTF-8明示、修理前後と導入後GUIの実測。取得日: 2026-10-03、確度: 確認済み（Microsoft一次資料＋Windows native）
 
 - [Foundry Local 0.10.3 vision wire contract](openlogicool/foundry-local-vision-wire-2026-08-24.md) — Responses APIの`message`＋`image_data`＋`media_type`＋SSE契約、誤経路の実測、不明時no-fallback境界。取得日: 2026-08-24、確度: 高（Microsoft公式sample＋Windows実機）
