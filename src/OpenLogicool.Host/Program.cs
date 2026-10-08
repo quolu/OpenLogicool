@@ -76,6 +76,10 @@ using OpenLogicool.Playbooks;
 //       hostResident 判定が fake 側と食い違うため）。不一致があれば exit code 1。
 //   game-index <discover|execute|back|inspect> --process <name> --db <path> --allow-explore [--goal <目的>] [--foundry-endpoint <uri>] [--action <id>]
 //       初回discoverは必要な一つのcontrolだけを索引へ追記し、executeは保存済みactionをAIなしで実行する。
+//   game-index key-tap --process <name> --db <path> --keys <Key:名前[,Key:名前]>
+//       現在frameへ束縛してNanoで1回だけdown/upする。結果の判定待ちや再送は行わない。
+//   game-index key-assist --process <name> --db <path> --inhibit-image <png> --cue-text <文字列> --keys <Key:名前> --duration-ms N --evidence <dir>
+//       停止画像を優先し、表示条件または8〜12秒の間隔でNanoキー入力する。通常入力で画面変化がない場合は確認用画像を保存して停止する。
 //   macro list [--db <path>]
 //       保存済みmacroのgoal・route・版・step数をread-onlyで一覧表示する。
 //   serial-hid-test [--device-id <PnP instance id>] [--repeat N]

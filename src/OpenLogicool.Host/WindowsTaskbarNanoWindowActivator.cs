@@ -26,6 +26,8 @@ public static class WindowsTaskbarNanoWindowActivator
         {
             Utc = DateTimeOffset.UtcNow, Phase = phase, TargetWindow = (long)target.Window,
             ForegroundWindow = (long)GetForegroundWindow(), TargetMinimized = IsIconic(target.Window),
+            ForegroundIdentity = ForegroundAppTracker.GetForegroundIdentity(),
+            ForegroundTitle = ForegroundAppTracker.GetForegroundWindowTitle(),
             Point = point, Receipt = receipt,
         }) + Environment.NewLine);
     }

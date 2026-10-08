@@ -42,7 +42,7 @@ public static class HostGameIndexCommand
         new SqliteMigrationRunner(InitialSqliteMigrations.All).Apply(connection);
         var profiles = new SqliteLearnedSceneProfileStore(connection);
         var target = WindowsGameTargetLocator.Locate(processName);
-        if (mode is not ("focus-nano" or "focus-taskbar")) WindowsGameWindowActivator.Activate(target.Window);
+        if (mode is not ("focus-nano" or "focus-taskbar" or "key-assist")) WindowsGameWindowActivator.Activate(target.Window);
         var discovery = new SerialHidDiscoveryService(
             new SetupApiSerialCandidateEnumerator(),
             new SerialPortExchangeFactory());
@@ -84,7 +84,11 @@ public static class HostGameIndexCommand
                 sourceId,
                 environment,
                 allowExplore),
-            "back" => await BackAsync(nano, emitter, target, sourceId),
+            "back" => await KeyTapAsync(nano, emitter, target, sourceId, ["Key:Esc"], "back"),
+            "key-tap" => await KeyTapAsync(nano, emitter, target, sourceId,
+                Required(arguments, "--keys").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries),
+                "key-tap"),
+            "key-assist" => await VisualKeyAssistRuntime.RunAsync(arguments, nano, emitter, target, sourceId),
             "point" => await PointAsync(arguments, nano, emitter, target, sourceId),
             "click-point" => await ClickPointAsync(arguments, nano, emitter, target, sourceId),
             "scroll-point" => await ScrollPointAsync(arguments, nano, emitter, target, sourceId),
@@ -93,7 +97,7 @@ public static class HostGameIndexCommand
             "focus-nano" => FocusWithNano(target, emitter),
             "focus-taskbar" => FocusWithTaskbar(target, nano.Protocol, emitter),
             "inspect" => Inspect(profiles, target.ProcessName, environment),
-            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、point、click-point、scroll-point、drag-points、capture、focus-nano、focus-taskbar、inspectです。"),
+            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、key-tap、key-assist、point、click-point、scroll-point、drag-points、capture、focus-nano、focus-taskbar、inspectです。"),
         };
         nano.Protocol.SendAllUp();
         var json = JsonSerializer.Serialize(result, Json);
@@ -581,11 +585,13 @@ public static class HostGameIndexCommand
         };
     }
 
-    private static async Task<object> BackAsync(
+    private static async Task<object> KeyTapAsync(
         SerialHidResidentOutputSession nano,
         SerialHidEmitter emitter,
         WindowsGameTarget target,
-        string sourceId)
+        string sourceId,
+        IReadOnlyList<string> keys,
+        string mode)
     {
         using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId, TimeSpan.FromSeconds(10));
         var frame = await frames.CaptureAsync();
@@ -605,7 +611,7 @@ public static class HostGameIndexCommand
             CaptureAvailability.Available,
             StateIdentityStatus.Novel,
             [],
-            "host-back-no-ai",
+            $"host-{mode}-no-ai",
             frame.FreshnessMs,
             null);
         var actions = new NanoGameInteractionActions(
@@ -618,9 +624,9 @@ public static class HostGameIndexCommand
                 observation.Frame.Sequence,
                 observation.Frame.TransformRevision,
                 observation.Frame.SourceId,
-                ["Key:Esc"]),
+                keys),
             observation);
-        return new { Mode = "back", ProductHostEntry = true, dispatch, AiCallCount = 0 };
+        return new { Mode = mode, ProductHostEntry = true, dispatch, AiCallCount = 0 };
     }
 
     private static async Task<object> PointAsync(

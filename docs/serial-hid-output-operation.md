@@ -23,6 +23,30 @@ dotnet run --project src/OpenLogicool.Host/OpenLogicool.Host.csproj -- ui --resi
 
 Serial HID v1は通常キー同時6個までである。relative pointer／wheelはfirmware 1.1.0以降の`MOUSE_DELTA`で扱う。firmware 1.1.3はCDC応答停止からのHello回復に加え、fail-closed releaseが1秒継続した場合と、USB／CDC処理からmain loopへ2秒戻らない場合にwatchdogでUSBを自己再列挙する。actionは自動再送しない。7個以上の同時押し、音量などのconsumer controlには対応しない。対応外の割り当ては部分送出せず、明示faultで停止する。
 
+## 1回のキー入力
+
+画面を確認しながらキーを1回だけ送る場合は、Hostの製品入口を使う。
+
+```powershell
+OpenLogicool.Host.exe game-index key-tap --process MabinogiMobile --db <記録用DBのパス> --keys Key:Space
+```
+
+現在の対象ウィンドウを取得して前面へ出し、取得したframeへキー操作を束縛してNanoの有限down/upを1回だけ送る。`Dispatch.Status=Dispatched`は送出結果だけを示し、ゲーム内の進行は次の実画面で確認する。AI、操作後10秒の判定待ち、自動再送は使わない。既存の`game-index back`は同じ入口でEscを送る。
+
+## 画像・文字条件によるキー入力
+
+`game-index key-assist`は、利用者指定の停止画像、文字表示、通常間隔の順でキー入力を判断する開発用の製品入口である。
+
+```powershell
+OpenLogicool.Host.exe game-index key-assist --process <対象プロセス> --db <記録用DB> --inhibit-image <停止画像.png> --cue-text Space --cue-text "画面を押してください" --keys Key:Space --duration-ms 60000 --evidence <記録フォルダ> --out <結果.json>
+```
+
+停止画像の一致を最優先し、一致中はキーを送らない。指定文字はWindows OCRの結果から空白を除いて照合する。文字表示がある場合はキーを送り、ない場合は送出時刻から8〜12秒の乱数による期限を設ける。実際の送出時刻には画面取得・照合・前面化の処理時間も含まれる。探索範囲は画面全体で、`--search-bounds x,y,width,height`で指定もできる。画像による入力条件は`--cue-image <png>`で指定できる。
+
+通常間隔で入力した場合は、1秒後の画面をOCRと画像特徴で比較する。変化が確認できなければ`NeedsReview=true`で終了し、`review-before.png`と`review-after.png`を残す。呼び出した操作者はそこで画面を確認し、判断できない場合はApproval Boxへ利用者の判断を申請する。比較結果はゲーム内の成功やページ遷移の確定を意味しない。自動戦闘やアニメーションの影響で変化が出ることがある。
+
+入力と前面化はNano経由で行い、AI・ネットワークによる判断は呼ばない。前面化やNanoの送出に失敗した場合はエラー終了し、別方式へ切り替えず、入力を再送しない。`--observe-only`ではキー入力・前面化をせず、条件の照合結果と`observation.png`を保存する。指定時間の終了はクエスト完了を意味しない。
+
 ## 正常終了
 
 Input Studioを閉じると、fast pathの所有出力を解放し、Serial HIDへ`ALL_UP`を送り、ACK後にserial transportを閉じる。G600を管理している場合は、起動時に適用したlegacy出力抑止を保存済みbaselineへ戻す。
