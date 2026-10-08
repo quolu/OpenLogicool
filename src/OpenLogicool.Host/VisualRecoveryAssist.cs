@@ -265,7 +265,7 @@ public sealed class VisualRecoverySchedule(VisualRecoveryProfile profile, Visual
         if (observation.Food == VisualFoodState.Ready)
             return State.LastFood is null || now - State.LastFood >= TimeSpan.FromMilliseconds(profile.FoodMinimumIntervalMs)
                 ? new(VisualRecoveryAction.Food, "食事ボタンがあり、食事効果がありません。")
-                : new(VisualRecoveryAction.Review, "食事の効果時間内に使用前の表示へ戻りました。追加消費せず確認します。");
+                : new(VisualRecoveryAction.None, "食事の再使用間隔内です。追加消費せずHPと包帯の監視を続けます。");
         return new(VisualRecoveryAction.None, "回復・食事の使用は不要です。");
     }
 

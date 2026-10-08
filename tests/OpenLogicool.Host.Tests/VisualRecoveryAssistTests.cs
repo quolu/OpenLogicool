@@ -149,8 +149,23 @@ public sealed class VisualRecoveryAssistTests
         Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(now.AddSeconds(8), ready, false).Action);
         var active = ready with { Food = VisualFoodState.Active, BarWidth = 198 };
         Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddSeconds(9), active, false).Action);
-        Assert.Equal(VisualRecoveryAction.Review, schedule.Decide(now.AddMinutes(1), ready, false).Action);
+        Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddMinutes(1), ready, false).Action);
         Assert.Equal(VisualRecoveryAction.Food, schedule.Decide(now.AddMinutes(20), ready, false).Action);
+    }
+
+    [Fact]
+    public void Food_ready_before_reuse_interval_does_not_end_health_monitoring_after_restart()
+    {
+        var now = DateTimeOffset.UnixEpoch;
+        var schedule = new VisualRecoverySchedule(Profile(), new(LastFood: now));
+        var ready = new VisualRecoveryObservation(true, 0.917910447761194, 134, VisualFoodState.Ready, null, 0.04477611940298507);
+        Assert.Equal(VisualRecoveryAction.None, schedule.Decide(now.AddSeconds(1189), ready, false).Action);
+        Assert.Equal(VisualRecoveryAction.Potion, schedule.Decide(now.AddSeconds(1190),
+            ready with { HealthFraction = 0.4 }, false).Action);
+        Assert.Equal(VisualRecoveryAction.Bandage, schedule.Decide(now.AddSeconds(1191),
+            ready with { WhiteFraction = 0.25 }, false).Action);
+        Assert.Null(schedule.State.LastPotion);
+        Assert.Equal(now, schedule.State.LastFood);
     }
 
     [Theory]
