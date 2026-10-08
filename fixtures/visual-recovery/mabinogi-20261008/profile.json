@@ -16,7 +16,7 @@
   "MinimumBarWidth": 80,
   "FoodKey": "Key:B",
   "PotionKey": "Key:F1",
-  "PotionThreshold": 0.5,
+  "PotionThreshold": 0.7,
   "PotionCooldownMs": 10000,
   "FoodMinimumIntervalMs": 1200000,
   "Viewport": [1, 31, 2201, 1287],
