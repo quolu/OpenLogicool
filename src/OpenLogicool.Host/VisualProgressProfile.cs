@@ -9,7 +9,8 @@ public sealed record VisualProgressText(string Text, double[] Bounds, double[][]
 public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
-    bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false);
+    bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false,
+    int MinimumVisibleMs = 600);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
@@ -26,6 +27,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null || (rule.When.Length == 0 && rule.Image is null)
                 || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) != 1)
                 throw new InvalidDataException("進行規則には条件と、キー・クリック・待機のいずれか一つが必要です。");
+            if (rule.MinimumVisibleMs < 0)
+                throw new InvalidDataException("表示待ち時間が不正です。");
             if (rule.Key is not null) OpenLogicool.Input.OutputTokens.Parse(rule.Key);
             if (rule.Image is not null && (rule.ImageBounds is null || rule.ImageClientWidth <= 0))
                 throw new InvalidDataException("進行規則の画像には探索範囲と基準描画幅が必要です。");
@@ -231,7 +234,8 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
         }
         ResetUnresolved();
         if (stableSignature != candidate.Signature) { stableSignature = candidate.Signature; stableAt = now; }
-        return now - stableAt >= 600 && due ? candidate : new(VisualProgressAction.Wait);
+        var minimumVisible = profile.Rules.SingleOrDefault(rule => rule.Id == candidate.RuleId)?.MinimumVisibleMs ?? 600;
+        return now - stableAt >= minimumVisible && due ? candidate : new(VisualProgressAction.Wait);
     }
 
     public void RecordInput(long now, VisualProgressChoice choice)

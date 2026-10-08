@@ -21,3 +21,5 @@
 `dialogue-cue.jpg`は利用者提供の回転する会話待ちの印。`dialogue-ocr-broken.png`はOCRが崩れて停止した製品撮影原本。`ImageRotates`は回転形状の照合を選び、固有名や台詞を条件にしない。回転・倍率・位置変更、印を消した会話、HUD・選択画面の負例を試験する。実画面では異なる向き3種類を含む5枚すべてで検出した。詳細は[実測記録](../../../evidence/mabinogi-key-assist-20261008/progress-script-live.md)。
 
 `compass-space.png`は利用者提供の右下コンパス原本。`compass-screen.png`はBotが演出待ちと判定した実画面。原本の緑の外周4領域とSpaceラベルを`ImageStableRegions`で指定し、針・外周の淡い揺れ・背景を比較から除く。画像の基準描画幅は保存実画面に合わせる。縮小時は参照も描き直し、各領域それぞれが一致した場合だけ検出する。`Immediate`は文字認識と待ち時間を省く画像キー規則。針の6方向・倍率・位置、通常HUD・停止表示・ラベル欠落、同じ表示への再送抑止を`CompassSpaceTests`で確認する。
+
+`loot-reveal.png`はマス1Fエリア2の報酬表示で、Spaceを送らず待機していた製品撮影原本。実ログではSpace後に自動着用・退出へ進行した。`loot-continue`は見出しの10秒表示を条件にSpaceを1回送り、既存の自動着用・退出規則へつなぐ。`MinimumVisibleMs`は同じ条件の表示待ち時間。キャラや報酬の描画変化を表示条件の変化と扱わない。

@@ -11,6 +11,30 @@ namespace OpenLogicool.Host.Tests;
 public sealed class VisualProgressTests
 {
     [Fact]
+    public async Task 戦利品のSpaceは見出しを十秒確認して一回だけ送る()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, "loot-reveal.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var candidate = new VisualProgressRecognizer(profile).Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("loot-continue", candidate.RuleId);
+        Assert.Equal(VisualProgressAction.Key, candidate.Action);
+        Assert.Equal("Key:Space", candidate.Key);
+        Assert.Null(candidate.Point);
+        var schedule = new VisualProgressSchedule(profile);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, candidate, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(9999, candidate, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(10000, candidate, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(10000, candidate, true, false, true).Action);
+        schedule.RecordInput(10000, candidate);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(12000, candidate, false, false, true).Action);
+    }
+
+    [Fact]
     public void Rotating_dialogue_cue_recognizes_the_real_screen_with_broken_OCR()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
