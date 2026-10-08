@@ -1,0 +1,10 @@
+{
+  "ProductHostEntry": true,
+  "Operation": "serial-hid-test",
+  "Attempt": 1,
+  "Requested": 1,
+  "Success": false,
+  "StatusLine": "接続できません: CDC serial候補はありましたがprotocol v1 handshakeが成立しませんでした。\nSparkFun Pro Micro（現在 COM3）: Serial HID Hello sequence 1 の応答がtimeoutしました。自動再送しません。",
+  "InputSent": "AllUp only",
+  "AiCallCount": 0
+}

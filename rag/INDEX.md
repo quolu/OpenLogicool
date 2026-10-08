@@ -1,5 +1,7 @@
 # OpenLogicool knowledge index
 
+- [IMEモード状態の起動時押下誤認](openlogicool/ime-startup-held-20261009.md) — 0xF3がスキャンコードへ変換されてもIME状態を保持し、Bot再開を妨げた実測と修理。Windows SDKの定義を照合。
+
 - [Jevによる画面種類の分類](openlogicool/typesafe-screen-routing-2026-10-08.md) — テキスト専用仕様と実OCR3例の分類。OCR破損は不明で、画像からの再読取と製品接続は未実装。
 
 - [マビノギモバイルの回復・食事調査](openlogicool/mabinogi-recovery-food-2026-10-08.md) — 使用キー、食事前後のHUD比較、窓の移動・3サイズへの対応、白20％の包帯条件、未送出修理と再戦。取得日: 2026-10-08、確度: 食事効果・F1/F2送出・両スロット5→4は確認済み／白の意味と治療との因果・ポーション後のHP回復・クリアは未確認

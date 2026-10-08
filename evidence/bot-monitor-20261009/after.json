@@ -1,0 +1,26 @@
+{
+  "success": true,
+  "value": {
+    "id": "4b542ae8442b445fab7c729605994083",
+    "operation": "bot.current",
+    "state": "completed",
+    "progress": null,
+    "result": {
+      "phase": "Faulted",
+      "detail": "CDC serial候補はありましたがprotocol v1 handshakeが成立しませんでした。\nSparkFun Pro Micro（現在 COM3）: Serial HID Hello sequence 1 の応答がtimeoutしました。自動再送しません。",
+      "scriptId": "mabinogi-mobile",
+      "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-070415-189-290abd05",
+      "observationCount": 0,
+      "lastIntervalMs": 0,
+      "healthFraction": null,
+      "inputCount": 0,
+      "foodCount": 0,
+      "potionCount": 0,
+      "bandageCount": 0
+    },
+    "error": null,
+    "cancellationRequested": false
+  },
+  "error": null,
+  "version": 1
+}

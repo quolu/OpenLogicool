@@ -181,7 +181,10 @@ internal sealed class WindowsUserInputMonitor : IDisposable
         _ => vk
     };
 
-    internal static bool HasStartupPhysicalKey(int vk, uint scan) => vk is 1 or 2 or 4 or 5 or 6 || scan != 0;
+    // VK_DBE_*はIMEのモード指示。スキャンコードがあっても起動時の押下状態へ取り込まない。
+    // 起動後に届く実際のdown/upはRaw Inputで従来どおり追跡する。
+    internal static bool HasStartupPhysicalKey(int vk, uint scan) =>
+        vk is 1 or 2 or 4 or 5 or 6 || scan != 0 && vk is not (>= 0xF0 and <= 0xFB);
 
     private bool IsNano(nint device)
     {

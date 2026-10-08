@@ -5,6 +5,24 @@ namespace OpenLogicool.Host.Tests;
 
 public sealed class UserInputPauseStateTests
 {
+    [Theory]
+    [InlineData(0xF0)]
+    [InlineData(0xF1)]
+    [InlineData(0xF2)]
+    [InlineData(0xF3)]
+    [InlineData(0xF4)]
+    [InlineData(0xF5)]
+    [InlineData(0xF6)]
+    [InlineData(0xF7)]
+    [InlineData(0xF8)]
+    [InlineData(0xF9)]
+    [InlineData(0xFA)]
+    [InlineData(0xFB)]
+    public void 日本語入力のモード状態はスキャンコードがあっても初期押下へ取り込まない(int vk)
+    {
+        Assert.False(WindowsUserInputMonitor.HasStartupPhysicalKey(vk, 0x29));
+    }
+
     [Fact]
     public void スキャンコードに対応しないOS状態を起動前の実キー押下にしない()
     {
