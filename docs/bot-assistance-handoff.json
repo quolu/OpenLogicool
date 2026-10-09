@@ -83,22 +83,23 @@
     }
   },
   "pendingGameDecision": {
-    "decisionId": "K-JD2EZW",
-    "incidentId": "2c5329f0-97a1-4702-944d-1ff6bdcec2c4",
+    "decisionId": "K-R3UXYV",
+    "incidentId": "1d896642-9e25-441a-ace9-290fc4bfca9a",
     "status": "resolved",
-    "selectedChoice": "LUCK成長11段階（Elite）",
-    "userInstruction": "LUCK成長11段階（Elite）（option_id=luck11）",
-    "approvalBoxStatus": "回答済み・Nanoの選択とSpace確定を実施済み",
+    "selectedChoice": "技巧優先3段階",
+    "userInstruction": "技巧優先3段階を選ぶ（option_id=technique3）",
+    "approvalBoxStatus": "回答済み・Nanoで選択とSpace確定を実施済み",
     "choices": [
-      "DEX成長8段階（Rare・推奨）",
-      "LUCK成長11段階（Elite）",
-      "WILL成長1段階"
+      "防御優先3段階",
+      "速度優先1段階",
+      "技巧優先3段階"
     ],
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21\\review-002",
-    "replyThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
-    "afterAnswer": "実施済み。通常HUDのLv44を確認してBotを再開した。選択や確定を繰り返さない。",
-    "reviewEvidence": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21\\review-002\\progress-review.png",
-    "resolutionEvidence": "evidence/bot-bonus-dex8-20261009/level44-after-luck11.png"
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-205259-640-cffc533e\\review-001",
+    "replyThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+    "afterAnswer": "実施済み。通常HUDのLv46と劇薬の材料を確認してBotを再開した。選択や確定を繰り返さない。",
+    "resolutionEvidence": "evidence/bot-bonus-technique3-20261009/acceptance.md",
+    "assistanceOwnerThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+    "assistanceResolution": "現在の担当がこの操作証拠を確認して案件を閉じる。旧会話から担当の再登録や案件操作は行っていない。"
   },
   "deliveryVerification": {
     "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",

@@ -1,0 +1,34 @@
+[
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 3077,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3083,
+    "UserEvents": 0,
+    "NanoEvents": 0,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 6923,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:33",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T21:17:09.0972793+09:00",
+      "CompletedUtc": "2026-10-09T21:17:09.0998519+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]
