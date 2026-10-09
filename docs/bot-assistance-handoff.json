@@ -55,7 +55,7 @@
     "status": "claimed",
     "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-013254-494-7f995daa\\review-001",
     "detail": "長時間起動警告に重なったボーナス画面。前任がゲーム終了済み。通常起動を送ったがゲーム本体は未確認。旧画面を現在の選択肢として申請しない。",
-    "nextAction": "通常起動の結果を確認し、現在の画面を根拠にボーナス選択を扱いBotを再開する。"
+    "nextAction": "K-JANNVFの回答後、同じキャラクターの通常画面を製品game-index captureで確認し、Nano診断とBot再開・実進行を確認する。"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
@@ -135,7 +135,7 @@
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
-    "botState": "ゲームの通常再起動の完了確認待ちでBot停止中。Nanoは前任の二度目のPnP再起動後、READY 1.1.3と全解放25ms成功。",
+    "botState": "ゲームへのログイン復帰待ちでBot停止中。画面取得の入力依存を修理・導入済み。",
     "remaining": [
       "firmwareは未導入として保持する。現在、基板の操作箇所を特定できていない。RST待機は終了済みで、RST操作依頼は取り下げた。",
       "firmwareが更新できたらBotの接続を回収し、serial-hid-test --idle-ms 200 --repeat 5 と --idle-ms 1000 --repeat 2で旧再現条件を実機確認",
@@ -155,7 +155,7 @@
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-10T01:44:17.0536534+09:00",
+    "updatedUtc": "2026-10-09T22:57:10.7685905+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -167,11 +167,20 @@
       "379225d3-7ac8-4a7b-a293-55c09ab9f0ab",
       "e4367d3f-c5d1-4359-8f82-3ae8af00b24f"
     ],
-    "pendingDecisionIds": [],
+    "pendingDecisionIds": [
+      "K-JANNVF"
+    ],
     "botPhase": "Stopped",
-    "gameRestart": "長時間起動の警告から前任がNanoで終了済み。今回公式サイトのゲームスタートを一度実行しNexonLauncher64起動を確認。ゲーム本体とログイン後の画面は未確認。Computer Useが現在ブラウザURLの確定不能で停止したため追加入力せず。",
-    "nextAction": "通常起動の結果を新しい画面観測で確認してからBotを再開。現在のボーナスを確かめ人の選択が必要なら決裁箱へ出す。",
+    "gameRestart": "ゲーム本体の直接起動はERROR I.10121。Nanoクリックで通常終了済み。公式サイトの新規文書からの起動もゲーム本体の開始未確認。利用者はゲームのログアウトを観測。",
+    "nextAction": "K-JANNVFの回答後、同じキャラクターの通常画面を製品game-index captureで確認し、Nano診断とBot再開・実進行を確認する。",
     "firmware": "1.1.3のまま。手動リセット依頼は取り下げ済みで再依頼しない。",
-    "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。"
+    "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。",
+    "captureRepair": {
+      "status": "installed-and-live-tested",
+      "sourceCommit": "022728b",
+      "testsPassed": 560,
+      "evidence": "evidence/bot-resume-20261010/acceptance.md",
+      "behavior": "captureはDB・Nano・ALL_UP・前面化を使わずWGC画像だけを読む。"
+    }
   }
 }
