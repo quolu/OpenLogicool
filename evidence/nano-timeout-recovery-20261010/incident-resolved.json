@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "result": {
+    "id": "d11d9def-c784-4a6f-b0d0-b0556dbc70f3",
+    "status": "resolved",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-001553-759-222362cc",
+    "detail": "Nano\u5165\u529B\u306B\u5931\u6557\u3057\u307E\u3057\u305F: Serial HID session\u306F\u65E2\u767Afault\uFF08Timeout\uFF09\u5F8C\u306E\u305F\u3081\u518D\u5229\u7528\u3067\u304D\u307E\u305B\u3093\u3002\u518D\u63A5\u7D9A\u304C\u5FC5\u8981\u3067\u3059\u3002\u6700\u521D\u306E\u30A8\u30E9\u30FC: Serial HID Heartbeat sequence 11378 \u306E\u5FDC\u7B54\u304Ctimeout\u3057\u307E\u3057\u305F\uFF08The operation has timed out.\uFF09\u3002\u81EA\u52D5\u518D\u9001\u3057\u307E\u305B\u3093\u3002",
+    "deliveryState": "queued",
+    "targetThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+    "submissionId": "01a12146-ce02-7c93-917d-c27f8955dba8",
+    "ownerThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+    "error": null,
+    "resolution": "\u904B\u7528\u5FA9\u65E7\u6E08\u307F\u3002fresh HELLO\u3082\u7121\u5FDC\u7B54\u3060\u3063\u305F\u305F\u3081\u3001\u63A5\u7D9A\u3092\u56DE\u53CE\u3057exact Nano\u4E00\u53F0\u3092PnP\u518D\u8D77\u52D5\u3002READY\u30FB\u5168\u89E3\u653E24ms\u6210\u529F\u5F8CBot\u3092\u65B0\u898F\u5B9F\u884C\u3067\u518D\u958B\u3002\u6839\u672C\u539F\u56E0\u306F\u672A\u89E3\u660E\u3067\u3001\u9001\u53D7\u4FE1\u5DE5\u7A0B\u3068\u53D7\u4FE1\u30D0\u30A4\u30C8\u6570\u306E\u8A3A\u65AD\u3092\u5C0E\u5165\u3057\u305F\u3002\u901A\u77E5\u62C5\u5F53\u3082\u4EBA\u304C\u4F5C\u696D\u3092\u4F9D\u983C\u3057\u305F\u73FE\u5728\u306E\u4F1A\u8A71\u3078\u660E\u793A\u7684\u306B\u5F15\u304D\u7D99\u3044\u3060\u3002\u5931\u6557\u5165\u529B\u306E\u518D\u9001\u306A\u3057\u3002",
+    "observedCleared": false
+  }
+}

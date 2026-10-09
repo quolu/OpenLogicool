@@ -30,12 +30,13 @@ internal sealed class BotAssistanceStore(string databasePath)
 
     public BotAssistanceState Read() => Locked(state => (state, state));
 
-    public BotAssistanceState Bind(string threadId, string codexHome) => Locked(state =>
+    public BotAssistanceState Bind(string threadId, string codexHome, bool takeover = false) => Locked(state =>
     {
-        if (state.RetiredThreads.Contains(threadId, StringComparer.Ordinal))
+        if (!takeover && state.RetiredThreads.Contains(threadId, StringComparer.Ordinal))
             throw new InvalidOperationException("この会話からは既に引き継ぎ済みです。新しい担当会話で支援を続けてください。");
         if (state.Binding?.ThreadId == threadId) return (state, state);
-        var retired = state.Binding is null ? state.RetiredThreads : [.. state.RetiredThreads, state.Binding.ThreadId];
+        var retired = state.RetiredThreads.Where(id => id != threadId).ToArray();
+        if (state.Binding is not null) retired = [.. retired, state.Binding.ThreadId];
         var binding = new BotAssistantBinding(threadId, codexHome, (state.Binding?.Generation ?? 0) + 1, DateTimeOffset.UtcNow);
         var next = state with { Binding = binding, RetiredThreads = retired,
             Incidents = state.Incidents.Select(i => i.Status == "claimed"
@@ -226,11 +227,11 @@ internal sealed class BotAssistanceCoordinator(BotAssistanceStore store, IBotAss
         return new(store, new SteerBotAssistanceDispatcher(store.DirectoryPath));
     }
 
-    public async Task<BotAssistanceState> AttachAsync(string threadId, string codexHome, CancellationToken token)
+    public async Task<BotAssistanceState> AttachAsync(string threadId, string codexHome, CancellationToken token, bool takeover = false)
     {
         if (!Guid.TryParse(threadId, out _)) throw new ArgumentException("現在の会話IDの形式が不正です。");
         await dispatcher.VerifyAsync(new(threadId, codexHome, 0, DateTimeOffset.UtcNow), token);
-        return store.Bind(threadId, codexHome);
+        return store.Bind(threadId, codexHome, takeover);
     }
 
     public async Task<string> ReportAsync(string evidenceDirectory, JsonElement result, CancellationToken token)

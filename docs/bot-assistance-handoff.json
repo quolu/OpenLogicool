@@ -14,8 +14,8 @@
       "memberName": "ルピー",
       "memberId": "bot-ca9fed97",
       "role": "マビモバ攻略ポータル更新担当",
-      "sessionId": "0f2122a8-9bc2-49cf-b872-93d2a4f408a1",
-      "localId": "codex:01a11f31-b036-7653-bcd0-de02f96eddac",
+      "sessionId": "671e840a-16f9-403a-af2b-41621b06facb",
+      "localId": "codex:01a12189-3064-70c3-85fc-ea19c17fea2e",
       "lastSentSequence": 1,
       "lastReceivedSequence": 0,
       "delivery": "BellTeam accepted",
@@ -47,17 +47,15 @@
         "サキュバス討伐とクエスト完了時の表示名"
       ],
       "handoffAction": "新しい会話でcall_openし、旧通話へ移動先を知らせ、新通話へ返答待ちを引き継いで旧通話を閉じる。返信のポーリングは行わない",
-      "replyThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac"
+      "replyThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e"
     }
   ],
   "currentAssistance": {
-    "incidentId": "2c5329f0-97a1-4702-944d-1ff6bdcec2c4",
-    "status": "resolved",
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21\\review-002",
-    "detail": "K-JD2EZWの回答どおりLUCK成長11（Elite）をNanoで選択し、拡大表示と決定Spaceを確認して確定。通常HUDのLv44とコレンへの移動目標を確認してBotを再開した。",
-    "nextAction": "Botを継続し、次の支援通知を待つ。今回のボーナスは確定済みなので再操作しない。次の自然な待機中通知で受付時刻と会話開始時刻を照合する。",
-    "resolutionEvidence": "evidence/bot-bonus-dex8-20261009/level44-after-luck11.png",
-    "repairEvidence": "evidence/bot-bonus-attack11-20261009/acceptance.md"
+    "incidentId": "e4367d3f-c5d1-4359-8f82-3ae8af00b24f",
+    "status": "claimed",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-013254-494-7f995daa\\review-001",
+    "detail": "長時間起動警告に重なったボーナス画面。前任がゲーム終了済み。通常起動を送ったがゲーム本体は未確認。旧画面を現在の選択肢として申請しない。",
+    "nextAction": "通常起動の結果を確認し、現在の画面を根拠にボーナス選択を扱いBotを再開する。"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
@@ -137,7 +135,7 @@
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
-    "botState": "Host修理版でBotを再開済み。接続診断23ms成功、実行20261010-001553-759-222362cc",
+    "botState": "ゲームの通常再起動の完了確認待ちでBot停止中。Nanoは前任の二度目のPnP再起動後、READY 1.1.3と全解放25ms成功。",
     "remaining": [
       "firmwareは未導入として保持する。現在、基板の操作箇所を特定できていない。RST待機は終了済みで、RST操作依頼は取り下げた。",
       "firmwareが更新できたらBotの接続を回収し、serial-hid-test --idle-ms 200 --repeat 5 と --idle-ms 1000 --repeat 2で旧再現条件を実機確認",
@@ -154,5 +152,26 @@
       "sourceCommit": "3c0682d"
     },
     "readinessDecisionId": "K-3UKN4D"
+  },
+  "continuation": {
+    "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
+    "updatedUtc": "2026-10-10T01:44:17.0536534+09:00",
+    "assistanceGeneration": 5,
+    "openIncidentIds": [
+      "d4442ccd-e082-4779-90a8-c5a4e8328135",
+      "842bfff3-1588-44f9-88ab-8b0fe08c2610",
+      "f3200754-a3bf-48ae-9258-0fe2f13ef786",
+      "29d93e1a-a45c-44f9-97a8-1e454277b2c8",
+      "2417c9af-5a61-4011-8f3d-6bc4c9da5482",
+      "96ecd868-6107-41de-acec-ca8fdb476833",
+      "379225d3-7ac8-4a7b-a293-55c09ab9f0ab",
+      "e4367d3f-c5d1-4359-8f82-3ae8af00b24f"
+    ],
+    "pendingDecisionIds": [],
+    "botPhase": "Stopped",
+    "gameRestart": "長時間起動の警告から前任がNanoで終了済み。今回公式サイトのゲームスタートを一度実行しNexonLauncher64起動を確認。ゲーム本体とログイン後の画面は未確認。Computer Useが現在ブラウザURLの確定不能で停止したため追加入力せず。",
+    "nextAction": "通常起動の結果を新しい画面観測で確認してからBotを再開。現在のボーナスを確かめ人の選択が必要なら決裁箱へ出す。",
+    "firmware": "1.1.3のまま。手動リセット依頼は取り下げ済みで再依頼しない。",
+    "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。"
   }
 }

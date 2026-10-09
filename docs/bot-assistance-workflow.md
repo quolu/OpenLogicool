@@ -41,6 +41,8 @@ $cli = './artifacts/development/OpenLogicool/OpenLogicool.Host.exe'
 
 `attach`は`CODEX_THREAD_ID`の会話を公開`aiterm-steer-delivery`で検証して登録する。一つの操作で未処理案件と担当を返し、引き継ぎ前の会話を退役させる。新しい会話は返された未処理案件を引き受ける。旧会話から再登録・claim・resolveすることはできない。Botを再起動せず、以後の詰まりの通知先が切り替わる。
 
+利用者が以前の会話へ直接戻って新しい作業を依頼した場合だけ、`assistant attach --takeover`で現在の担当を明示的に引き継ぐ。未処理案件と根拠は保持する。古い自動通知を受け取っただけの会話はこの指定を使わず、通常の退役拒否を守る。
+
 配達はAiterm 0.56.0以上の正規入口`aiterm-parent-delivery`を使う。導入・設定は公式の`npm install --global aiterm-mcp`と`aiterm-setup`で行う。`assistant attach`と送信前に、宛先とAitermのCodex差し込みが有効であることを検証する。未導入・宛先検証失敗・差し込み無効は明示エラーになり、キューだけの配達へ切り替えない。フックとCodexとの配達方言はAitermが所有し、OpenLogicoolは公開入口だけを呼ぶ。独自の定期起動は行わない。動作中の会話への通知は同じターンへ入り、待機中なら同じ会話の新しいターンになる。受付と実際の受信は分けて確認する。
 
 状態は選択DBの隣の`.bot-assistance/state.json`に製品が保存する。案件ID、根拠の場所、担当、配達受付ID、対処結果を保持する。`open`は未処理、`claimed`は担当が対応中、`resolved`は対処済み。配達の`queued`は受付済み、`failed`は失敗、`unknown`は結果不明であり、読了や修理完了を意味しない。`sending`のままprocessが終了した場合も状態を確認し、自動再送しない。

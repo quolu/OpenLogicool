@@ -21,6 +21,8 @@ public sealed class SerialPortFrameExchange : ISerialHidFrameExchange
     private readonly SerialPort _port;
     private readonly int _responseReadPauseMilliseconds;
     private bool _disposed;
+    private int _receivedBytes;
+    private int _lastReadAvailableBytes;
 
     public SerialPortFrameExchange(string portName, int responseReadPauseMilliseconds = 0)
     {
@@ -59,16 +61,21 @@ public sealed class SerialPortFrameExchange : ISerialHidFrameExchange
         }
 
         var timeoutMilliseconds = Math.Max(1, (int)Math.Ceiling(timeout.TotalMilliseconds));
+        var clock = Stopwatch.StartNew();
+        var stage = "送信";
+        _receivedBytes = 0;
+        _lastReadAvailableBytes = 0;
         try
         {
             _port.WriteTimeout = timeoutMilliseconds;
             var request = requestFrame.ToArray();
             _port.Write(request, 0, request.Length);
+            stage = "受信";
             return ReadFrame(timeout);
         }
-        catch (TimeoutException)
+        catch (TimeoutException error)
         {
-            throw;
+            throw new TimeoutException($"serial {_port.PortName}の{stage}で時間切れ（経過={clock.Elapsed.TotalMilliseconds:F1}ms, 読取済み={_receivedBytes} bytes, 直前buffer={_lastReadAvailableBytes} bytes）。元のエラー: {error.Message}", error);
         }
         catch (SerialHidProtocolException)
         {
@@ -109,13 +116,15 @@ public sealed class SerialPortFrameExchange : ISerialHidFrameExchange
 
     private byte ReadByte(Stopwatch clock, SerialHidReadDeadline deadline)
     {
-        _port.ReadTimeout = deadline.ReadTimeoutMilliseconds(clock.Elapsed, _port.BytesToRead);
+        _lastReadAvailableBytes = _port.BytesToRead;
+        _port.ReadTimeout = deadline.ReadTimeoutMilliseconds(clock.Elapsed, _lastReadAvailableBytes);
         var value = _port.ReadByte();
         if (value < 0)
         {
             throw new SerialHidTransportException("serial portがresponse frameの途中で閉じました。");
         }
 
+        _receivedBytes++;
         return (byte)value;
     }
 

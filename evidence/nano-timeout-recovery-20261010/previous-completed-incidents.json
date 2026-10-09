@@ -1,0 +1,41 @@
+[
+  {
+    "id": "1d896642-9e25-441a-ace9-290fc4bfca9a",
+    "status": "resolved",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-205259-640-cffc533e\\review-001",
+    "detail": "利用者の判断が必要な表示: ボーナスを選択してください",
+    "deliveryState": "queued",
+    "targetThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+    "submissionId": "01a1208a-7b58-7e32-b00b-5b18bc1e5ee3",
+    "ownerThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
+    "error": null,
+    "resolution": "K-R3UXYVの技巧優先3段階は前任がNanoで選択・確定済み。evidence/bot-bonus-technique3-20261009/acceptance.mdの実送出・通常HUD Lv46復帰・Bot再開証拠を確認。今回の再操作なし。",
+    "observedCleared": false
+  },
+  {
+    "id": "b2f4c507-2962-4e81-aa05-21a626a36da2",
+    "status": "resolved",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-211702-126-d3580f0b\\review-001",
+    "detail": "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。",
+    "deliveryState": "queued",
+    "targetThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+    "submissionId": "01a1209a-603c-7813-98be-b2fa9619dfa2",
+    "ownerThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
+    "error": null,
+    "resolution": "K-WMQ75B承認後の最上級自動回復10個購入・登録は前任が完了済み。evidence/bot-potion-refill-20261009/acceptance.mdで27000ゴールド差分・スロット5とバッグ5・Bot再開の実測を確認。再購入なし。",
+    "observedCleared": false
+  },
+  {
+    "id": "c4855342-167a-4cf4-9e03-d8a85c2632b9",
+    "status": "resolved",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-212733-328-a88ac488\\review-001",
+    "detail": "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。",
+    "deliveryState": "queued",
+    "targetThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+    "submissionId": "01a120a3-2b11-76d1-9dce-631adf79f8ec",
+    "ownerThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
+    "error": null,
+    "resolution": "実価格27000ゴールドの購入判断待ちはK-WMQ75B回答と前任の購入・登録で解消済み。evidence/bot-potion-refill-20261009/acceptance.mdの完了記録を確認。追加操作なし。",
+    "observedCleared": false
+  }
+]

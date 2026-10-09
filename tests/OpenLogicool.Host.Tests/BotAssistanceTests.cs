@@ -15,6 +15,27 @@ public sealed class BotAssistanceTests : IDisposable
     private static JsonElement Review(string detail) => JsonSerializer.SerializeToElement(new { Detail = detail });
 
     [Fact]
+    public async Task 人が以前の会話へ戻って作業を依頼した時だけ明示して担当を引き継げる()
+    {
+        var store = new BotAssistanceStore(Database);
+        var coordinator = new BotAssistanceCoordinator(store, new Dispatcher());
+        await coordinator.AttachAsync(OldThread, root, default);
+        var id = await coordinator.ReportAsync("元の根拠", Review("未処理"), default);
+        await coordinator.AttachAsync(NewThread, root, default);
+        store.Claim(id, NewThread);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => coordinator.AttachAsync(OldThread, root, default));
+        var returned = await coordinator.AttachAsync(OldThread, root, default, takeover: true);
+        Assert.Equal(3, returned.Binding!.Generation);
+        Assert.Equal(OldThread, returned.Binding.ThreadId);
+        Assert.Contains(NewThread, returned.RetiredThreads);
+        Assert.DoesNotContain(OldThread, returned.RetiredThreads);
+        Assert.Equal("open", Assert.Single(returned.Incidents).Status);
+        Assert.Equal("元の根拠", returned.Incidents[0].EvidenceDirectory);
+        store.Claim(id, OldThread);
+        Assert.Throws<InvalidOperationException>(() => store.Claim(id, NewThread));
+    }
+
+    [Fact]
     public async Task 同じ未処理案件は一度だけ配達し再起動後も根拠を保持する()
     {
         var dispatcher = new Dispatcher();

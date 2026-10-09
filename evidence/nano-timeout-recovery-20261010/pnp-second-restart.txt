@@ -1,0 +1,4 @@
+Microsoft PnP Utility
+
+Restarting device:         USB\VID_1B4F&PID_9206\HIDFG
+Device restarted successfully.

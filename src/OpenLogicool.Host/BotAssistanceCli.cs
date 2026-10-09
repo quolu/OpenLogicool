@@ -39,7 +39,8 @@ internal static class BotAssistanceCli
             case "attach":
                 var home = Path.GetFullPath(Environment.GetEnvironmentVariable("CODEX_HOME")
                     ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex"));
-                result = await BotAssistanceCoordinator.Create(database).AttachAsync(Caller(), home, CancellationToken.None);
+                result = await BotAssistanceCoordinator.Create(database).AttachAsync(Caller(), home, CancellationToken.None,
+                    takeover: arguments.Contains("--takeover", StringComparer.Ordinal));
                 break;
             case "status":
                 result = store.Read();
