@@ -1,0 +1,112 @@
+[
+  {
+    "Event": "user-input-paused",
+    "AtMs": 115,
+    "HeldCount": 0,
+    "IdleMilliseconds": 121,
+    "UserEvents": 0,
+    "NanoEvents": 0,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  },
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 3111,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3118,
+    "UserEvents": 0,
+    "NanoEvents": 0,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 3774,
+    "RuleId": "space-confirm",
+    "Signature": "space-confirm:SPACE|確認",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:13",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T08:09:00.683488+09:00",
+      "CompletedUtc": "2026-10-10T08:09:00.6861283+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 5429,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:18",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T08:09:02.3372508+09:00",
+      "CompletedUtc": "2026-10-10T08:09:02.3413014+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 11804,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:くおりゅんさん大丈夫ですか急に倒れたから心配したんですよ0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:31",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T08:09:08.7132588+09:00",
+      "CompletedUtc": "2026-10-10T08:09:08.7164851+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 17595,
+    "RuleId": "dialogue-space-confirm",
+    "Signature": "dialogue-space-confirm:ああ心配したぞもしやこのトルクと関係があるのか0|SPACE",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:46",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T08:09:14.5040663+09:00",
+      "CompletedUtc": "2026-10-10T08:09:14.5077344+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]

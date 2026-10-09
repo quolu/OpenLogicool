@@ -1,0 +1,293 @@
+[
+  {
+    "Event": "recovery",
+    "AtMs": 543537,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 543781,
+    "IntervalMs": 245,
+    "FrameFreshnessMs": 10,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 543781,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "user-input-state",
+    "AtMs": 543799,
+    "Paused": false,
+    "HeldCount": 0,
+    "IdleMilliseconds": 543810,
+    "UserEvents": 0,
+    "NanoEvents": 125
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 544035,
+    "IntervalMs": 254,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 544036,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 544208,
+    "Changed": false,
+    "Difference": 0.25,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 544279,
+    "IntervalMs": 244,
+    "FrameFreshnessMs": 9,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 544279,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 544543,
+    "IntervalMs": 264,
+    "FrameFreshnessMs": 6,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 544544,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 544797,
+    "IntervalMs": 254,
+    "FrameFreshnessMs": 7,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 544805,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 544888,
+    "Changed": false,
+    "Difference": 5.8125,
+    "Candidate": "Key",
+    "RuleId": "space-confirm",
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "condition",
+    "Decision": "Cue",
+    "AtMs": 544889,
+    "InhibitDifference": 255,
+    "CueDifference": null,
+    "MatchedTexts": [
+      "Space"
+    ]
+  },
+  {
+    "Event": "user-input-state",
+    "AtMs": 544942,
+    "Paused": false,
+    "HeldCount": 0,
+    "IdleMilliseconds": 544953,
+    "UserEvents": 0,
+    "NanoEvents": 125
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 545037,
+    "IntervalMs": 240,
+    "FrameFreshnessMs": 5,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 545037,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 545292,
+    "IntervalMs": 255,
+    "FrameFreshnessMs": 212,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 545293,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 545550,
+    "IntervalMs": 258,
+    "FrameFreshnessMs": 6,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 545550,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 545603,
+    "Changed": false,
+    "Difference": 5.8125,
+    "Candidate": "Key",
+    "RuleId": "space-confirm",
+    "Immediate": false,
+    "Decision": "Key"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 545800,
+    "IntervalMs": 250,
+    "FrameFreshnessMs": 5,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 545801,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "user-input-state",
+    "AtMs": 545942,
+    "Paused": false,
+    "HeldCount": 0,
+    "IdleMilliseconds": 545953,
+    "UserEvents": 0,
+    "NanoEvents": 125
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 546054,
+    "IntervalMs": 254,
+    "FrameFreshnessMs": 5,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 546054,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  }
+]

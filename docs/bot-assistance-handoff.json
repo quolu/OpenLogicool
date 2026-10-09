@@ -51,18 +51,18 @@
     }
   ],
   "currentAssistance": {
-    "incidentId": "1407474c-837a-41c0-86a3-104a372dd017",
+    "incidentId": "c5b7d3f5-9a7d-49d0-b482-d57cddc2ae22",
     "status": "resolved",
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410\\review-001",
-    "detail": "受信時に自動復帰済み。compass-space、progress-resumed、灰色の迷路の戦闘を確認。追加操作なし。",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410",
+    "detail": "SequenceViolationから運用復旧。fresh診断24ms成功後、新規Bot実行とNano入力・ナオの会話への進行を確認。根因未解明・firmware未導入を保持。",
     "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。",
-    "resolutionEvidence": "evidence/bot-assistance-20261010/1407474c/acceptance.md"
+    "resolutionEvidence": "evidence/bot-assistance-20261010/c5b7d3f5/acceptance.md"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv50、誰かの頼み／灰色の迷路の探索で戦闘へ進行済み。Bot継続。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410",
+    "nextCheck": "Lv50、ナオとの会話へ進行。Bot継続。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-080856-858-f8462f3d",
     "levelProgression": {
       "currentLevel": 50,
       "targetLevel": 42,
@@ -136,7 +136,7 @@
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
-    "botState": "Bot再開済み。実行C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410。firmware未導入とNano無応答の未解明は保持。",
+    "botState": "SequenceViolation後のfresh診断24ms成功、新規Bot実行C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-080856-858-f8462f3dで運用復旧済み。今回のfirmware内部の失効理由は未解明。",
     "remaining": [
       "firmwareは未導入として保持する。現在、基板の操作箇所を特定できていない。RST待機は終了済みで、RST操作依頼は取り下げた。",
       "firmwareが更新できたらBotの接続を回収し、serial-hid-test --idle-ms 200 --repeat 5 と --idle-ms 1000 --repeat 2で旧再現条件を実機確認",
@@ -156,7 +156,7 @@
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-09T23:03:11.9213921+00:00",
+    "updatedUtc": "2026-10-09T23:09:53.5634769+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",

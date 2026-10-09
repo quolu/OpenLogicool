@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-assistance-20261010\\c5b7d3f5\\after-game.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "12ef093e763b003249b5b9a5e62264f9fc338af34203bdbe8071360c22a1ad74",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
