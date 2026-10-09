@@ -72,3 +72,11 @@ Botは手元のキーボード・マウスとリモート操作を検出する�
 ## Botから担当AIへの支援依頼
 
 `assistant attach|status|claim|resolve`で現在の会話を登録し、詰まりと異常終了の案件を引き継ぐ。[Bot支援の運用](bot-assistance-workflow.md)に接続条件・配達状態・Throughline後の手順を記載している。定期監視は使わず、Botから詰まりイベントで通知する。
+
+## ゲーム画面の読取り
+
+```powershell
+& $cli game-index capture --process MabinogiMobile --image ./game.png --out ./game-frame.json
+```
+
+`capture`は対象ウィンドウのWGC画像と画像情報だけを保存する。DBとNanoへ接続せず、全キー解放や前面切替を行わない。BotがNanoを使用中でも画面を読める。入力は従来の`game-index key-tap`や`click-point`で行い、画像の読取りと分ける。

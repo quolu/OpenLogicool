@@ -33,6 +33,13 @@ public static class HostGameIndexCommand
     private static async Task<int> RunAsync(string mode, string[] arguments)
     {
         var processName = Required(arguments, "--process");
+        if (mode == "capture")
+        {
+            var captureTarget = WindowsGameTargetLocator.Locate(processName);
+            var capture = await CaptureAsync(arguments, captureTarget, $"window:game-index:{captureTarget.ProcessId}");
+            return WriteResult(arguments, capture);
+        }
+
         var databasePath = Path.GetFullPath(Required(arguments, "--db"));
         var deviceId = Optional(arguments, "--device-id");
         var allowExplore = arguments.Contains("--allow-explore", StringComparer.Ordinal);
@@ -93,13 +100,17 @@ public static class HostGameIndexCommand
             "click-point" => await ClickPointAsync(arguments, nano, emitter, target, sourceId),
             "scroll-point" => await ScrollPointAsync(arguments, nano, emitter, target, sourceId),
             "drag-points" => await DragPointsAsync(arguments, nano, emitter, target, sourceId),
-            "capture" => await CaptureAsync(arguments, target, sourceId),
             "focus-nano" => FocusWithNano(target, emitter),
             "focus-taskbar" => FocusWithTaskbar(target, nano.Protocol, emitter),
             "inspect" => Inspect(profiles, target.ProcessName, environment),
             _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、key-tap、key-assist、point、click-point、scroll-point、drag-points、capture、focus-nano、focus-taskbar、inspectです。"),
         };
         nano.Protocol.SendAllUp();
+        return WriteResult(arguments, result);
+    }
+
+    private static int WriteResult(string[] arguments, object result)
+    {
         var json = JsonSerializer.Serialize(result, Json);
         var outputPath = Optional(arguments, "--out");
         if (outputPath is not null)

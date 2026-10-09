@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-resume-20261010\\capture-after.png",
+  "Width": 1346,
+  "Height": 833,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1344,
+    "Height": 801
+  },
+  "Sha256": "77ceef458d61fef23c8c74f941f092814bb59e5512bd3ff5b7bae4419460a8d7",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
