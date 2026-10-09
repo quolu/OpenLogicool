@@ -81,6 +81,41 @@ function Get-EnumerationSnapshot {
     }
 }
 
+function Enter-LegacyWatchdogBootloader {
+    # 旧firmwareのwatchdog給餌を、Nano一台のHID解放失敗経路で止める。
+    $locations = @((Get-PnpDeviceProperty -InstanceId $ExpectedDeviceInstanceId -KeyName 'DEVPKEY_Device_LocationPaths').Data)
+    $hid = @(Get-TargetDescendants | Where-Object { $_.Class -eq 'HIDClass' -and $_.InstanceId -like 'USB\*' })
+    if ($hid.Count -ne 1) { throw 'NanoのHID interfaceを一意に選べません。' }
+    $script:legacyHidInterface = $hid[0].InstanceId
+    & pnputil.exe /disable-device $script:legacyHidInterface | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw 'NanoのHID interfaceを一時停止できません。' }
+    $vectors = Get-Content -Raw (Join-Path $sketchPath 'protocol-v1-golden-vectors.json') | ConvertFrom-Json
+    $helloHex = ($vectors.vectors | Where-Object name -eq 'hello-baseline-capabilities').frameHex -replace '\s', ''
+    $hello = [Convert]::FromHexString($helloHex)
+    $port = [IO.Ports.SerialPort]::new($runtimePort, 1200, [IO.Ports.Parity]::None, 8, [IO.Ports.StopBits]::One)
+    $port.DtrEnable = $true
+    $port.WriteTimeout = 1000
+    try {
+        $port.Open()
+        $port.Write($hello, 0, $hello.Length)
+        Start-Sleep -Milliseconds 50
+    }
+    finally { $port.Dispose() }
+    $deadline = [DateTime]::UtcNow.AddSeconds(15)
+    do {
+        $bootPorts = @(Get-PnpDevice -PresentOnly -Class Ports | Where-Object {
+            $_.InstanceId -like 'USB\VID_1B4F&PID_9205\*' -and $_.Status -eq 'OK'
+        } | Where-Object {
+            $bootLocations = @((Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName 'DEVPKEY_Device_LocationPaths').Data)
+            @($bootLocations | Where-Object { $_ -in $locations }).Count -gt 0
+        })
+        if ($bootPorts.Count -gt 1) { throw '同じ物理接続のbootloaderが複数あります。' }
+        if ($bootPorts.Count -eq 1 -and $bootPorts[0].FriendlyName -match '\((COM\d+)\)$') { return $Matches[1] }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw '同じNanoのbootloaderをソフトから起動できませんでした。書き込んでいません。'
+}
+
 $before = Get-EnumerationSnapshot
 $runtimePort = Get-TargetPort
 
@@ -93,14 +128,32 @@ if (-not (Test-Path -LiteralPath $hexPath)) {
 }
 $hexSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $hexPath).Hash.ToLowerInvariant()
 
-& $cli upload `
-    --fqbn $fqbn `
-    --port $runtimePort `
-    --build-path $buildPath `
-    --verify `
-    --config-file $configFile `
-    $sketchPath
-if ($LASTEXITCODE -ne 0) { throw 'Serial HID firmware upload failed.' }
+$bootloaderEntry = 'standard-1200-baud'
+$runtimeVersion = $null
+$hostExecutable = Join-Path $repositoryRoot 'artifacts\development\OpenLogicool\OpenLogicool.Host.exe'
+if (Test-Path -LiteralPath $hostExecutable) {
+    $connectionJson = & $hostExecutable serial-hid-test --device-id $before.cdc[0].instanceId --repeat 1
+    if ($LASTEXITCODE -eq 0) { $runtimeVersion = ($connectionJson | ConvertFrom-Json).FirmwareVersion }
+}
+$script:legacyHidInterface = $null
+try {
+    $uploadPort = $runtimePort
+    $uploadProperties = @()
+    if ($runtimeVersion -eq '1.1.3') {
+        $bootloaderEntry = 'legacy-watchdog-release-reset'
+        Write-Output '旧firmware 1.1.3のwatchdogと1200-baud resetの衝突を回復します。Nano一台のHIDを一時停止し、書込み後に戻します。'
+        $uploadPort = Enter-LegacyWatchdogBootloader
+        $uploadProperties = @('--upload-property', 'upload.use_1200bps_touch=false', '--upload-property', 'upload.wait_for_upload_port=false')
+    }
+    & $cli upload --verbose --fqbn $fqbn --port $uploadPort --build-path $buildPath --verify --config-file $configFile @uploadProperties $sketchPath
+    if ($LASTEXITCODE -ne 0) { throw 'Serial HID firmware upload failed.' }
+}
+finally {
+    if ($script:legacyHidInterface) {
+        & pnputil.exe /enable-device $script:legacyHidInterface | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw 'NanoのHID interfaceを有効へ戻せませんでした。' }
+    }
+}
 
 $deadline = [DateTime]::UtcNow.AddSeconds(20)
 $after = $null
@@ -129,6 +182,8 @@ $result = [ordered]@{
     fqbn = $fqbn
     transientRuntimePort = $runtimePort
     firmwareHexSha256 = $hexSha256
+    bootloaderEntry = $bootloaderEntry
+    runtimeFirmwareVersionBefore = $runtimeVersion
     before = $before
     uploadVerified = $true
     after = $after

@@ -321,6 +321,8 @@ void setup() {
 }
 
 void loop() {
+  // Arduino coreが1200-baud closeで要求したbootloader resetを妨げない。
+  if (Serial.baud() == 1200 && !Serial.dtr()) return;
   wdt_reset();
   PollUsbConfiguration();
   while (Serial.available() > 0) {

@@ -5,6 +5,7 @@
 
 uint32_t firmwareTestMillis = 1000;
 uint8_t MCUSR = 0;
+int firmwareTestWatchdogFeeds = 0;
 FirmwareTestSerial Serial;
 FirmwareTestUsb USBDevice;
 static int releases = 0;
@@ -90,5 +91,10 @@ int main() {
   USBDevice.connected = true;
   loop();
   Check(Send(MessageKind::Heartbeat, 6).kind == MessageKind::Fault, "USB再接続後の旧sessionを受理した");
+  Serial.baudRate = 1200;
+  Serial.portOpen = false;
+  const auto feeds = firmwareTestWatchdogFeeds;
+  loop();
+  Check(firmwareTestWatchdogFeeds == feeds, "書込み用resetをwatchdog給餌で妨げた");
   std::printf("session|ok|idle200|idle1000|held150|sequence|usb-reset|no-replay\n");
 }
