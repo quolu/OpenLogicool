@@ -87,8 +87,9 @@ function Enter-LegacyWatchdogBootloader {
     $hid = @(Get-TargetDescendants | Where-Object { $_.Class -eq 'HIDClass' -and $_.InstanceId -like 'USB\*' })
     if ($hid.Count -ne 1) { throw 'NanoのHID interfaceを一意に選べません。' }
     $script:legacyHidInterface = $hid[0].InstanceId
-    & pnputil.exe /disable-device $script:legacyHidInterface | Out-Host
+    & pnputil.exe /disable-device $script:legacyHidInterface /force | Out-Host
     if ($LASTEXITCODE -ne 0) { throw 'NanoのHID interfaceを一時停止できません。' }
+    $script:legacyHidDisabled = $true
     $vectors = Get-Content -Raw (Join-Path $sketchPath 'protocol-v1-golden-vectors.json') | ConvertFrom-Json
     $helloHex = ($vectors.vectors | Where-Object name -eq 'hello-baseline-capabilities').frameHex -replace '\s', ''
     $hello = [Convert]::FromHexString($helloHex)
@@ -136,6 +137,7 @@ if (Test-Path -LiteralPath $hostExecutable) {
     if ($LASTEXITCODE -eq 0) { $runtimeVersion = ($connectionJson | ConvertFrom-Json).FirmwareVersion }
 }
 $script:legacyHidInterface = $null
+$script:legacyHidDisabled = $false
 try {
     $uploadPort = $runtimePort
     $uploadProperties = @()
@@ -149,9 +151,11 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Serial HID firmware upload failed.' }
 }
 finally {
-    if ($script:legacyHidInterface) {
+    if ($script:legacyHidDisabled) {
         & pnputil.exe /enable-device $script:legacyHidInterface | Out-Host
-        if ($LASTEXITCODE -ne 0) { throw 'NanoのHID interfaceを有効へ戻せませんでした。' }
+        if ($LASTEXITCODE -ne 0 -and (Get-PnpDevice -InstanceId $script:legacyHidInterface).Status -ne 'OK') {
+            throw 'NanoのHID interfaceを有効へ戻せませんでした。'
+        }
     }
 }
 
