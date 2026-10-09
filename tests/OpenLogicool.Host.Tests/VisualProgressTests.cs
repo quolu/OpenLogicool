@@ -86,6 +86,33 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public async Task 会話の選択肢が表示されている間はSpaceを送らず待機する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var frame = ReadFrame(Path.Combine(fixture, "dialogue-topic-choices.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var recognizer = new VisualProgressRecognizer(profile);
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("dialogue-choice-wait", choice.RuleId);
+        Assert.Equal(VisualProgressAction.Wait, choice.Action);
+        Assert.Null(choice.Key);
+        Assert.Null(choice.Point);
+        var renamed = new WindowsGameOcrResult("", "ja", 0, ocr.Words.Where(word => word.Y < 1000)
+            .Concat([new("別の話題A", 625, 1032, 160, 26), new("別の話題B", 850, 1032, 200, 26)]).ToArray());
+        Assert.Equal(VisualProgressAction.Wait, recognizer.Recognize(renamed, frame.Width, frame.Height, viewport, frame).Action);
+        var noChoices = new WindowsGameOcrResult("", "ja", 0, ocr.Words.Where(word => word.Y < 1000).ToArray());
+        Assert.Equal(VisualProgressAction.Key, recognizer.Recognize(noChoices, frame.Width, frame.Height, viewport, frame).Action);
+        var schedule = new VisualProgressSchedule(profile);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, choice, false, false, false).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(5000, choice, false, false, false).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(10001, choice, false, false, false).Action);
+    }
+
+    [Fact]
     public async Task 商人メニューは通常会話のSpaceよりEsc終了を優先する()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
