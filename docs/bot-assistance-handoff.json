@@ -132,14 +132,14 @@
     "objective": "Nanoの通信停止を修理してBotを動かす",
     "sourceCommit": "9f53d60",
     "rootCauseReproduced": "旧firmwareで全解放後200ms通信を空けるとSequenceViolation。修正版とnative試験・AVR build済み",
-    "firmwareInstallation": "手動double-reset待ち。自動resetを旧firmwareのwatchdogが妨げる。HID停止はWindowsの再起動予約になるため取り消し、ConfigFlags0・ProblemCode0を確認済み",
+    "firmwareInstallation": "手動reset待機は時間切れで終了し、書込みなし。PC側Host修理で同じBot実行が約44分継続した。K-3UKN4Dは、操作準備後に待機を合わせる依頼へ変更済み。今RSTを操作しない。",
     "manualDecisionId": "K-3UKN4D",
-    "waitingShellSessionId": 68756,
+    "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
     "botState": "Host修理を開発版へ導入済み。Botの実観測とNano入力を確認済み",
     "remaining": [
-      "K-3UKN4Dの手動double-reset後、待機shell68756とflash.jsonを確認。書込みを重複しない",
+      "K-3UKN4Dで準備の回答が来たら正規flash script -WaitForResetを再開し、待機開始を伝えてからRSTを2回操作してもらう。古いshell68756は終了済み。",
       "firmwareが更新できたらBotの接続を回収し、serial-hid-test --idle-ms 200 --repeat 5 と --idle-ms 1000 --repeat 2で旧再現条件を実機確認",
       "firmware更新後にBotを再開し実画面と進行を確認。raw原本・macro・割当は変更しない",
       "firmware導入の受入証拠を追記しcommit/pushして閉じる"
