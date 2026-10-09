@@ -86,7 +86,7 @@ function Get-EnumerationSnapshot {
 function Wait-TargetBootloader {
     $locations = @((Get-PnpDeviceProperty -InstanceId $ExpectedDeviceInstanceId -KeyName 'DEVPKEY_Device_LocationPaths').Data)
     Write-Host '同じNanoのdouble-resetを待っています。USBを抜かず、RSTを2回リセットしてください。'
-    $deadline = [DateTime]::UtcNow.AddMinutes(5)
+    $deadline = [DateTime]::UtcNow.AddMinutes(30)
     do {
         $bootPorts = @(Get-PnpDevice -PresentOnly -Class Ports | Where-Object {
             $_.InstanceId -like 'USB\VID_1B4F&PID_9205\*' -and $_.Status -eq 'OK'
