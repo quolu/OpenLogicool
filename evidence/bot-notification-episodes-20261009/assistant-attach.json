@@ -1,0 +1,161 @@
+{
+  "success": true,
+  "result": {
+    "schemaVersion": 1,
+    "binding": {
+      "threadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+      "codexHome": "C:\\Users\\kite_\\.codex",
+      "generation": 3,
+      "boundUtc": "2026-10-09T17:39:44.4886374+09:00"
+    },
+    "retiredThreads": [
+      "01a11dea-b105-7b21-b580-ca5e41a2f302",
+      "01a11e07-9999-7b50-ba3b-084b37257beb"
+    ],
+    "incidents": [
+      {
+        "id": "429f6f41-6ab3-4919-b62d-205f4b5d6946",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-085526-274-0dc596b7\\review-001",
+        "detail": "item-handover-wait の待機中、複数回観測して画面の変化が止まったままです。追加入力はしていません。",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+        "submissionId": "01a11dee-db19-7530-a72c-82f7e4bb9870",
+        "ownerThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+        "error": null,
+        "resolution": "納品の未登録を汎用画像クリックと数量OCRで修理。Nanoで自動登録→卵1/1・ハーブ1/1・水瓶2/2を確認→渡す。ファーガスの金属の光沢剤完成会話と後続Space・通常HUDへの復帰を実測。原本と通知履歴を保持。",
+        "observedCleared": false
+      },
+      {
+        "id": "82b5ed6f-466f-4353-a29c-b786364e160e",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-085749-204-58e57cb1\\review-001",
+        "detail": "npc-dialogue-cue の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+        "submissionId": "01a11df5-f63a-7200-93d4-e9632c952d32",
+        "ownerThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+        "error": null,
+        "resolution": "会話後の追体験確認で一時停滞したが、通知後に既存規則で自動復帰済み。progress-resumedと後続コンパスSpace、Running・HP100％・UserEvents0を確認。追加入力や個別イベント分岐は不要で、通知済み案件の状態確認のみで閉じる。",
+        "observedCleared": true
+      },
+      {
+        "id": "e316de8a-26dc-42fa-84f4-bf9ab96ca627",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-092415-220-4aa58146\\review-001",
+        "detail": "npc-dialogue-cue の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+        "submissionId": "01a11df9-084d-7530-9ce7-1a117eefa724",
+        "ownerThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "error": null,
+        "resolution": "利用者の直接回答に従いDEX成長7段階レアをNanoで選択・Spaceで確定。Lv39と通常HUD復帰を目視確認。Botを再開し、コンパスSpaceのNano送出と次のNPC会話への移動を確認。Approval Boxの回答待ちは取り下げ済み。",
+        "observedCleared": false
+      },
+      {
+        "id": "82712f3d-12ca-46a7-a225-07f07de9b7dc",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-093026-078-a6316ac8\\review-012",
+        "detail": "npc-dialogue-cue の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "submissionId": "01a11e14-d209-7770-99b4-af1e3308251a",
+        "ownerThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "error": null,
+        "resolution": "決裁箱K-C8MMN9の回答どおりダンバートンのサキュバスをNanoで選択し、ナオの返答への遷移を確認。会話の送り印と下部選択文字が揃う時はSpaceを送らず待機する汎用規則を追加し、実録画像・話題名変更・選択なし・待機後の支援通知を含む44件成功。開発版へ導入し規則JSONのSHA-256一致、Bot再開後の通常会話Spaceと元案件observedClearedを確認した。",
+        "observedCleared": true
+      },
+      {
+        "id": "522b20fd-fd33-4bc2-84d4-4fc7549a31d3",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-095512-158-69f8ca6f\\review-001",
+        "detail": "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "submissionId": "01a11e29-bb46-7610-8041-141cf5681551",
+        "ownerThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "error": null,
+        "resolution": "ダンジョン進入画面の一時待機。受信後の最新案件がobservedCleared=trueで、実画面は『サキュバスを探して・ラビダンジョンを調査』のダンジョン内通路へ移動済みだった。追加入力・再送・製品変更はせず、既存規則による自動復帰を確認して完了する。",
+        "observedCleared": true
+      },
+      {
+        "id": "fbf362ce-a6af-4a05-9c14-80fd0e9d42c0",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-100631-268-fd5ec092\\review-001",
+        "detail": "利用者の判断が必要な表示: ボーナスを選択してください",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "submissionId": "01a11e2c-e33c-7b80-bf67-3c5f90fa2280",
+        "ownerThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "error": null,
+        "resolution": "決裁箱K-JH2JXQの回答どおり抵抗の意志1段階を選択。現2択を確認してNanoで右カードをクリックし、拡大された抵抗の意志と決定Spaceを確認して確定。選択画面が閉じLv40・通常HUD・黒いバラの記憶／クリステルと会話の表示を確認。指定時間終了で停止していたBotを再開し観測と進行入力を確認。単独Space規則の実機未確認は維持し、今回の承認済み選択と混同しない。",
+        "observedCleared": false
+      },
+      {
+        "id": "95b22502-5095-4a55-bb90-c212fe13dca4",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-120833-416-db5890c7\\review-001",
+        "detail": "npc-dialogue-cue の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "submissionId": "01a11ea4-7b0d-7393-806a-39dd5349f337",
+        "ownerThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "error": null,
+        "resolution": "受信時には既存規則で復帰済み。最新案件のobservedCleared=true、実行ログのprogress-resumedと後続のコンパスSpace・会話Space、Runningを確認。実画面は元のクリステルの会話から別の場面へ進んでいた。追加の入力・再送・製品変更はせず、自動復帰の確認で完了する。",
+        "observedCleared": true
+      },
+      {
+        "id": "77030350-b5a3-4bab-aa2c-0b179cfb0838",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-120833-416-db5890c7\\review-002",
+        "detail": "npc-dialogue-cue の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "submissionId": "01a11ea9-b4c5-7801-b58f-28e1edf9e10f",
+        "ownerThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "error": null,
+        "resolution": "台詞が同じままアイテムと下部の白い送り印が現れる段階を元の会話と同一視していた。位置と色を設定し既存の印の形で照合する汎用規則dialogue-lower-cueを追加。実録と下部印を除いた負例、pending中の段階切替、一度送出後の自動再送禁止を含む関連105件成功。正規開発版へ導入してHost DLLと規則JSONのSHA-256一致を確認。同じ実画面からBot自身が7.252秒にNanoで新規則を1回送出し、後続会話と別の場面へ進んだことをログと実画面で確認した。",
+        "observedCleared": false
+      },
+      {
+        "id": "db61b39f-c442-4d4b-90b3-491c42ec4a4a",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-125925-618-faf6d087\\review-001",
+        "detail": "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "submissionId": "01a11eb2-9138-7cc1-b2c6-ad5a41c9879f",
+        "ownerThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "error": null,
+        "resolution": "Lv42条件に対しLv40で開いたレベルガイドを認識し、利用者の回答と一意な推奨を使う方針を製品規則へ反映。エリア1 HARDへのBot自身の推奨クリック、HARD選択の入場画面と入場を確認。達成度17％とエリア2 HARDへの推奨更新後、小さい推奨文字のOCR欠落を実録で再現し、一推し見出しで認識するよう修正。関連49件成功・正規開発版導入。エリア2の推奨を新規則で1回クリックし、移動を実画面で確認。続く入場画面の一時待機もobservedCleared=trueで解消。Lv42到達は未確認で、Botのレベル上げ目標は継続中として保存する。",
+        "observedCleared": true
+      },
+      {
+        "id": "d540ba42-2937-41fb-a498-aa4011da9194",
+        "status": "resolved",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-130826-791-657a57e2\\review-001",
+        "detail": "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "submissionId": "01a11ed4-3a7e-7c43-9b55-6b7c7e2c6c39",
+        "ownerThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "error": null,
+        "resolution": "攻撃優先10・防御優先3・HP優先3の現在画面を確認。同じ組合せでの過去の利用者回答（攻撃優先8・9）と画面の推奨を根拠に今回も攻撃優先10で進めると伝え、Nanoで選択・拡大表示確認・Space確定。通常HUDでLv41とLv42条件を確認しBotを再開した。今回の10段階に新しい決裁回答があったとは扱わない。追加された入場画面の待機も最新のobservedCleared=trueを確認。Lv42の目標は継続中。",
+        "observedCleared": true
+      },
+      {
+        "id": "03dab920-b44e-44b5-a825-89abb9e30c97",
+        "status": "open",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-155600-037-02e8d16f\\review-010",
+        "detail": "利用者の判断が必要な表示: ボーナスを選択してください",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
+        "submissionId": "01a11edc-f963-7d00-9383-28f43e369e6f",
+        "ownerThreadId": null,
+        "error": null,
+        "resolution": null,
+        "observedCleared": false
+      }
+    ]
+  }
+}

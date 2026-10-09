@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-notification-episodes-20261009\\story-after-skip.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "3a51d2e956d289eae4c468102375a8f2123ce437fbb10f261d06e9e546dd8c44",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

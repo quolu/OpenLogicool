@@ -1,0 +1,169 @@
+[
+  {
+    "Event": "run-started",
+    "DurationMs": null,
+    "AutomaticRulesContinue": true,
+    "NotificationGraceMs": 60000
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 3245,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:19",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T17:49:17.831843+09:00",
+      "CompletedUtc": "2026-10-09T17:49:17.8342702+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 9613,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:え師匠の記億を見た急に反応が鈍くなったと思ったらそんなことが0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:37",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T17:49:24.1992098+09:00",
+      "CompletedUtc": "2026-10-09T17:49:24.2016344+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 12382,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:物に宿る記憶を読めるんですねあなたは本当に特別な人なのでしよう0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:46",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T17:49:26.9677693+09:00",
+      "CompletedUtc": "2026-10-09T17:49:26.9708197+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 22007,
+    "RuleId": "dialogue-space-confirm",
+    "Signature": "dialogue-space-confirm:記億の中の師匠はどうでしたか何を見たのか気になります0|SPACE",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:75",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T17:49:36.5939772+09:00",
+      "CompletedUtc": "2026-10-09T17:49:36.5963026+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 24183,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:ルラーそれで師匠が魔族の側に私が聞いた声もあの方の声だったんですね0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:82",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T17:49:38.7689689+09:00",
+      "CompletedUtc": "2026-10-09T17:49:38.7723477+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 28103,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:ルラーそれより本当ですか私が見た怪物グラスギブネンを師匠が0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:93",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T17:49:42.689846+09:00",
+      "CompletedUtc": "2026-10-09T17:49:42.6925066+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 32214,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:魂の振けた肉体と異界の魂でできた怪物その力は次元を引き裂くほどだとか0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:104",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T17:49:46.8000911+09:00",
+      "CompletedUtc": "2026-10-09T17:49:46.8026984+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]

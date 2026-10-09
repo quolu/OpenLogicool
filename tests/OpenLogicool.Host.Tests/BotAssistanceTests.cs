@@ -23,13 +23,52 @@ public sealed class BotAssistanceTests : IDisposable
         await coordinator.AttachAsync(OldThread, root, default);
         var id = await coordinator.ReportAsync("実行A", Review("必要品が不足"), default);
         Assert.Equal(id, await new BotAssistanceCoordinator(new(Database), dispatcher)
-            .ReportAsync("実行B", Review("最新の根拠"), default));
+            .ReportAsync("実行A", Review("最新の根拠"), default));
         Assert.Single(dispatcher.Sent);
         var incident = Assert.Single(new BotAssistanceStore(Database).Read().Incidents);
         Assert.Equal("queued", incident.DeliveryState);
-        Assert.Equal("実行B", incident.EvidenceDirectory);
+        Assert.Equal("実行A", incident.EvidenceDirectory);
         Assert.Equal("最新の根拠", incident.Detail);
         Assert.Equal("open", incident.Status);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task 古い案件が未処理でも別の詰まりは新しい案件として一回配達する(bool claimed)
+    {
+        var dispatcher = new Dispatcher();
+        var store = new BotAssistanceStore(Database);
+        var coordinator = new BotAssistanceCoordinator(store, dispatcher);
+        await coordinator.AttachAsync(OldThread, root, default);
+        var first = await coordinator.ReportAsync("review-001", Review("一時的な移動待ち"), default);
+        if (claimed) store.Claim(first, OldThread);
+        var second = await coordinator.ReportAsync("review-002", Review("新しいボーナス選択"), default);
+        Assert.NotEqual(first, second);
+        Assert.Equal(second, await coordinator.ReportAsync("review-002", Review("最新の選択肢"), default));
+        Assert.Equal(2, dispatcher.Sent.Count);
+        var incidents = new BotAssistanceStore(Database).Read().Incidents;
+        Assert.Equal(2, incidents.Length);
+        Assert.Equal("review-001", incidents[0].EvidenceDirectory);
+        Assert.Equal("一時的な移動待ち", incidents[0].Detail);
+        Assert.Equal(claimed ? "claimed" : "open", incidents[0].Status);
+        Assert.Equal("最新の選択肢", incidents[1].Detail);
+    }
+
+    [Fact]
+    public async Task 画面が復帰した案件を担当が閉じていなくても次の詰まりを配達する()
+    {
+        var dispatcher = new Dispatcher();
+        var store = new BotAssistanceStore(Database);
+        var coordinator = new BotAssistanceCoordinator(store, dispatcher);
+        await coordinator.AttachAsync(OldThread, root, default);
+        var first = await coordinator.ReportAsync("review-001", Review("移動待ち"), default);
+        store.ObservedClear(first);
+        var second = await coordinator.ReportAsync("review-001", Review("復帰後の新しい詰まり"), default);
+        Assert.NotEqual(first, second);
+        Assert.Equal(2, dispatcher.Sent.Count);
+        Assert.True(store.Read().Incidents[0].ObservedCleared);
+        Assert.Equal("open", store.Read().Incidents[0].Status);
     }
 
     [Fact]
@@ -72,7 +111,7 @@ public sealed class BotAssistanceTests : IDisposable
         var incident = Assert.Single(store.Read().Incidents);
         Assert.Equal(state, incident.DeliveryState);
         Assert.Contains("通信エラー", incident.Error);
-        Assert.Equal(incident.Id, await coordinator.ReportAsync("新しい観測", Review("継続"), default));
+        Assert.Equal(incident.Id, await coordinator.ReportAsync("根拠", Review("継続"), default));
         Assert.Single(dispatcher.Sent);
     }
 

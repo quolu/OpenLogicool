@@ -46,7 +46,8 @@ internal sealed class BotAssistanceStore(string databasePath)
     public BotAssistancePlan Report(string evidenceDirectory, string detail) => Locked(state =>
     {
         var binding = state.Binding ?? throw new InvalidOperationException("担当AIが未登録です。assistant attachを実行してください。");
-        var active = state.Incidents.LastOrDefault(i => i.Status is "open" or "claimed");
+        var active = state.Incidents.LastOrDefault(i => i.Status is "open" or "claimed"
+            && !i.ObservedCleared && SameEvidenceDirectory(i.EvidenceDirectory, evidenceDirectory));
         if (active is not null)
         {
             var updated = active with { EvidenceDirectory = evidenceDirectory, Detail = detail, ObservedCleared = false };
@@ -87,6 +88,9 @@ internal sealed class BotAssistanceStore(string databasePath)
         state.Incidents.SingleOrDefault(i => i.Id == id) ?? throw new KeyNotFoundException("支援案件がありません: " + id);
     private static BotAssistanceState Replace(BotAssistanceState state, BotAssistanceIncident updated) =>
         state with { Incidents = state.Incidents.Select(i => i.Id == updated.Id ? updated : i).ToArray() };
+    private static bool SameEvidenceDirectory(string first, string second) => string.Equals(
+        Path.TrimEndingDirectorySeparator(Path.GetFullPath(first)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(second)),
+        OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
     private static void RequireCurrent(BotAssistanceState state, string threadId)
     {
         if (state.Binding?.ThreadId != threadId) throw new InvalidOperationException("この会話は現在の担当ではありません。旧会話では操作を再開しないでください。");
