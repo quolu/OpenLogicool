@@ -1,5 +1,7 @@
 {
   "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",
   "threadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
-  "status": "submitted"
+  "status": "received",
+  "receivedAtUtc": "2026-10-09T08:52:23.9572970+00:00",
+  "receptionEvidence": "送信ターン終了後、同じ会話の新しい入力として検証ID20e80029-1aa0-4da4-9d81-8e4a5a4743adを受信し、自動で応答を開始した。"
 }

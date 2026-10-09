@@ -55,7 +55,7 @@
     "status": "resolved",
     "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-174415-734-4f354d00\\review-001",
     "detail": "移動操作を要するストーリー画面で通常Spaceでは進まなかった。表示中のストーリースキップをNanoで選び、確認画面のSpaceで確定。雪景色の通常HUD・Lv42・タルラークとの会話目標へ戻ったことを実画面で確認し、Botを再開した。",
-    "nextAction": "Botを継続し、1分続く詰まりだけ対応する。別の詰まりは旧案件が未処理でも別件として通知する。検証通知の同会話受信は受付と分けて確認する。",
+    "nextAction": "Botを継続し、1分続く詰まりだけ対応する。別の詰まりは旧案件が未処理でも別件として通知する。現在会話への配達と、待機中の会話が通知で再開することは確認済み。",
     "resolutionEvidence": "evidence/bot-notification-episodes-20261009/acceptance.md",
     "repairEvidence": "evidence/bot-notification-episodes-20261009/acceptance.md"
   },
@@ -104,7 +104,7 @@
     "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",
     "threadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
     "queuedSubmissionId": "01a11fd4-ece7-7f21-9cf4-c4707440fff7",
-    "receptionConfirmed": false,
+    "receptionConfirmed": true,
     "evidence": "evidence/bot-notification-episodes-20261009/delivery-verification.json"
   }
 }
