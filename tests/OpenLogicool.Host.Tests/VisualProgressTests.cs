@@ -171,6 +171,58 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public async Task 推奨の見出しを読めないレベルガイドでは活動を自動選択せず待機する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var frame = ReadFrame(Path.Combine(fixture, "level-guide.png"));
+        var recognized = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var ocr = new WindowsGameOcrResult("", "ja", 0,
+            recognized.Words.Where(word => word.Y < 395 || word.Y > 492).ToArray());
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var recognizer = new VisualProgressRecognizer(profile);
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("level-guide-wait", choice.RuleId);
+        Assert.Equal(VisualProgressAction.Wait, choice.Action);
+        Assert.Null(choice.Key);
+        Assert.Null(choice.Point);
+        var renamed = new WindowsGameOcrResult("", "ja", 0, ocr.Words.Where(word => word.Y < 190)
+            .Append(new("Lv.55 別の活動", 400, 500, 250, 30)).ToArray());
+        Assert.Equal(VisualProgressAction.Wait, recognizer.Recognize(renamed, frame.Width, frame.Height, viewport, frame).Action);
+        var noTitle = new WindowsGameOcrResult("", "ja", 0, ocr.Words.Where(word => word.Y > 100).ToArray());
+        Assert.NotEqual("level-guide-wait", recognizer.Recognize(noTitle, frame.Width, frame.Height, viewport, frame).RuleId);
+        var schedule = new VisualProgressSchedule(profile);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, choice, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(5000, choice, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(10001, choice, false, false, true).Action);
+    }
+
+    [Theory]
+    [InlineData("level-guide.png")]
+    [InlineData("level-guide-area2.png")]
+    public async Task レベルガイドの明確な推奨と一意な移動先がある時だけ選ぶ(string filename)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var frame = ReadFrame(Path.Combine(fixture, filename));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("level-guide-recommended", choice.RuleId);
+        Assert.Equal(VisualProgressAction.Click, choice.Action);
+        Assert.InRange(choice.Point![0], 0.4, 0.55);
+        Assert.InRange(choice.Point[1], 0.54, 0.64);
+        var multiple = new WindowsGameOcrResult("", "ja", 0,
+            ocr.Words.Append(new("今すぐ移動", 1200, 640, 120, 25)).ToArray());
+        Assert.Equal(VisualProgressAction.Review, recognizer.Recognize(multiple,
+            frame.Width, frame.Height, viewport, frame).Action);
+    }
+
+    [Fact]
     public async Task 商人メニューは通常会話のSpaceよりEsc終了を優先する()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

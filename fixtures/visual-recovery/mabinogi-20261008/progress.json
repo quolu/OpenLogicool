@@ -9,6 +9,22 @@
   ],
   "Rules": [
     {
+      "Id": "level-guide-recommended", "Priority": 55,
+      "When": [
+        { "Text": "レベルガイド", "Bounds": [0, 0, 0.4, 0.12] },
+        { "Text": "キャラクターを成長させるためのポイント", "Bounds": [0.05, 0.04, 0.7, 0.1] },
+        { "Text": "一推しアクティビティ", "Bounds": [0.15, 0.32, 0.8, 0.07] }
+      ],
+      "Click": { "Text": "今すぐ移動", "Bounds": [0.15, 0.48, 0.8, 0.18] }
+    },
+    {
+      "Id": "level-guide-wait", "WaitForChange": true, "Priority": 50,
+      "When": [
+        { "Text": "レベルガイド", "Bounds": [0, 0, 0.4, 0.12] },
+        { "Text": "キャラクターを成長させるためのポイント", "Bounds": [0.05, 0.04, 0.7, 0.1] }
+      ]
+    },
+    {
       "Id": "item-handover-complete", "Priority": 50,
       "When": [ { "Text": "渡す", "Bounds": [0, 0, 0.2, 0.1] }, { "Text": "自動登録", "Bounds": [0.1, 0.5, 0.3, 0.2] } ],
       "FilledQuantitiesBounds": [0.2, 0.29, 0.23, 0.04],

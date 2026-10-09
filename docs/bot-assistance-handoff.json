@@ -16,8 +16,8 @@
       "role": "マビモバ攻略ポータル更新担当",
       "sessionId": "571e5cb2-2e60-4d3d-a6b2-c05da94d3964",
       "localId": "codex:01a11e07-9999-7b50-ba3b-084b37257beb",
-      "lastSentSequence": 6,
-      "lastReceivedSequence": 3,
+      "lastSentSequence": 9,
+      "lastReceivedSequence": 8,
       "delivery": "BellTeam accepted",
       "publishedArticle": "https://mabimoba.kitepon.dev/guides/water-bottle/",
       "publishedCommit": "5e95e9d",
@@ -27,6 +27,12 @@
           "url": "https://mabimoba.kitepon.dev/guides/succubus-quest/",
           "commit": "57538ed",
           "verification": "公開ページHTTP 200と本文の確認済み。実機の確認範囲と、韓国版の外部記事・日本版未確認の区別を確認。"
+        },
+        {
+          "url": "https://mabimoba.kitepon.dev/guides/level-42-gate/",
+          "commit": "8430363",
+          "publicationRecordCommit": "20a70da",
+          "verification": "公開ページHTTP 200とタイトルを確認。commitと本文の掲載範囲はルピーの報告。"
         }
       ],
       "pendingLiveValidation": [
@@ -45,35 +51,53 @@
     }
   ],
   "currentAssistance": {
-    "incidentId": "77030350-b5a3-4bab-aa2c-0b179cfb0838",
+    "incidentId": "d540ba42-2937-41fb-a498-aa4011da9194",
     "status": "resolved",
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-120833-416-db5890c7\\review-002",
-    "detail": "下部領域と白色を設定して既存の送り印の形を照合する汎用規則dialogue-lower-cueを追加。関連105件成功・開発版導入とSHA-256一致。同じ実画面からBot自身が7.252秒にNanoで1回送出し、後続会話と別の場面へ進行したことを確認してresolveした。",
-    "nextAction": "Botは再開済み。解決済みの操作を繰り返さず、次の詰まり通知に対応する。単独ラベル＋Space規則の実機送出の未確認は、今回の下部送り印の実機成立と区別して維持する。",
-    "resolutionEvidence": "evidence/bot-assistance-20261009/dialogue-lower-cue-acceptance.md",
-    "repairEvidence": "evidence/bot-assistance-20261009/dialogue-lower-cue-acceptance.md"
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-130826-791-657a57e2\\review-001",
+    "detail": "推奨活動の汎用選択を実機成立。エリア1と次のエリア2 HARDへの移動・選択画面を確認。小さい推奨文字のOCR取り落としを大きな一推し見出しで修理し関連49件成功。追加ボーナスは過去の同種回答と推奨を根拠に攻撃優先10を選び、通常HUDのLv41を確認してBot再開。追加の一時待機も復帰済み。",
+    "nextAction": "Lv42の目標は継続中。明確な一推しと一意な移動先なら活動名を固定せず進める。複数や判断できない候補だけ決裁箱へ。過去の完了操作を繰り返さない。単独ラベル＋Space規則の実機送出は未確認を維持。",
+    "resolutionEvidence": "evidence/bot-assistance-20261009/level-guide-acceptance.md",
+    "repairEvidence": "evidence/bot-assistance-20261009/level-guide-acceptance.md"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv40・黒いバラの記憶を進行中。台詞が同じまま証と下部の白い送り印が出る段階を汎用修理し、Bot自身の1回のNano送出と後続会話・場面遷移を実機確認済み。現在は再開済みで次の詰まり通知に対応する。討伐・ソロ・完了名、単独ラベル＋Space規則の実機送出は未確認を維持。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-122455-843-50fdf34b"
+    "nextCheck": "最後に通常HUDで確認したレベルは41。生き残りし者へのLv42条件を満たすため、推奨活動に従ってBotを継続中。推薦の見出しと一意な移動先を使う汎用規則は導入・実機成立済み。レベルガイドの名称、HARD入場表示とLv41はルピーへ共有済み。Lv42到達と実行回数、達成度の分母は未確認。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-130826-791-657a57e2",
+    "levelProgression": {
+      "currentLevel": 41,
+      "targetLevel": 42,
+      "quest": "生き残りし者へ",
+      "activityPolicy": "明確なゲーム内推奨と一意な移動先",
+      "approvedActivity": "ラビ1Fエリア1 HARD",
+      "status": "in-progress",
+      "decisionId": "K-X6FCVM",
+      "currentActivity": "推奨に従い進行中。エリア2 HARDの後、エリア3 HARDの入場待機の自動復帰を確認。",
+      "lastGuideCompletionPercent": 17
+    },
+    "lastBonusChoice": {
+      "choice": "攻撃優先10段階",
+      "basis": "同じ攻撃／防御／HPの過去回答（攻撃優先8・9）と画面の推奨を根拠に今回判断。新しい決裁回答があったとは扱わない。",
+      "status": "executed",
+      "evidence": "evidence/bot-assistance-20261009/attack10-confirmed.jpg"
+    }
   },
   "pendingGameDecision": {
-    "decisionId": "K-JH2JXQ",
-    "incidentId": "fbf362ce-a6af-4a05-9c14-80fd0e9d42c0",
+    "decisionId": "K-X6FCVM",
+    "incidentId": "db61b39f-c442-4d4b-90b3-491c42ec4a4a",
     "status": "resolved",
-    "selectedChoice": "抵抗の意志1段階",
-    "userInstruction": "抵抗の意志1段階を選ぶ（option_id=resistance）",
-    "approvalBoxStatus": "回答済み・Nanoで選択と確定を実行済み",
+    "selectedChoice": "ラビ1Fエリア1 HARDへ進む",
+    "userInstruction": "ラビ1Fエリア1 HARDへ進む（option_id=rabbie_hard）。推奨マークついてるよ",
+    "approvalBoxStatus": "回答済み・ラビ1Fエリア1 HARDへの移動と入場は実行済み",
     "choices": [
-      "回復の意志1段階（Epic・画面の推奨）",
-      "抵抗の意志1段階（Epic）"
+      "ラビ1Fエリア1 HARD",
+      "女神の庭 NORMAL",
+      "マス1Fエリア1 NORMAL"
     ],
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-100631-268-fd5ec092\\review-001",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-122455-843-50fdf34b\\review-002",
     "replyThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
-    "afterAnswer": "抵抗の意志の選択・確定、通常HUD復帰、Bot再開とクリステルの会話までの進行、案件resolveは完了済み。選択を繰り返さない。",
-    "reviewEvidence": "evidence/bot-assistance-20261009/bonus-epic-two.png",
-    "resolutionEvidence": "evidence/bot-assistance-20261009/resistance-acceptance.md"
+    "afterAnswer": "回答した活動への移動と入場は完了済み。現在はLv41を確認し、明確な推奨を基準に次の活動へ継続中。Lv42到達は未確認で、以前の選択をやり直さない。",
+    "reviewEvidence": "fixtures/visual-recovery/mabinogi-20261008/level-guide.png",
+    "resolutionEvidence": "evidence/bot-assistance-20261009/level-guide-acceptance.md"
   }
 }
