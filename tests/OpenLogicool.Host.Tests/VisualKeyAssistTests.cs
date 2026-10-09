@@ -8,6 +8,27 @@ namespace OpenLogicool.Host.Tests;
 public sealed class VisualKeyAssistTests
 {
     [Fact]
+    public void 実行時間を指定しなければ期限を作らない()
+    {
+        Assert.Null(VisualKeyAssistRuntime.ReadDuration(["--continue-on-review", "--pause-on-user-input"]));
+    }
+
+    [Fact]
+    public void 明示した計測時間だけを実行期限にする()
+    {
+        Assert.Equal(500, VisualKeyAssistRuntime.ReadDuration(["--measure-only", "--duration-ms", "500"]));
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public void 不正な実行時間は無制限に読み替えず拒否する(string milliseconds)
+    {
+        Assert.Throws<ArgumentException>(() => VisualKeyAssistRuntime.ReadDuration(["--duration-ms", milliseconds]));
+        Assert.Throws<ArgumentException>(() => VisualKeyAssistRuntime.ReadDuration(["--duration-ms"]));
+    }
+
+    [Fact]
     public void Inhibit_image_wins_over_both_the_key_cue_and_an_expired_timer()
     {
         var schedule = new VisualKeyAssistSchedule(0, () => 9_100);

@@ -250,6 +250,16 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
 
 public static class VisualKeyAssistRuntime
 {
+    internal static int? ReadDuration(string[] arguments)
+    {
+        var index = Array.IndexOf(arguments, "--duration-ms");
+        if (index < 0) return null;
+        if (index + 1 == arguments.Length) throw new ArgumentException("--duration-ms に実行時間が必要です。");
+        var duration = int.Parse(arguments[index + 1], System.Globalization.CultureInfo.InvariantCulture);
+        if (duration <= 0) throw new ArgumentException("実行時間は正のミリ秒です。");
+        return duration;
+    }
+
     public static async Task<object> RunAsync(
         string[] arguments, SerialHidResidentOutputSession nano, SerialHidEmitter emitter,
         WindowsGameTarget target, string sourceId, CancellationToken cancellationToken = default,
@@ -284,8 +294,7 @@ public static class VisualKeyAssistRuntime
         if (region.Length != 4 || region.Any(value => !double.IsFinite(value) || value < 0 || value > 1)
             || region[2] <= 0 || region[3] <= 0 || region[0] + region[2] > 1 || region[1] + region[3] > 1)
             throw new ArgumentException("画像条件の探索範囲が不正です。");
-        var duration = int.Parse(Required("--duration-ms"), System.Globalization.CultureInfo.InvariantCulture);
-        if (duration <= 0) throw new ArgumentException("実行時間は正のミリ秒です。");
+        var duration = ReadDuration(arguments);
         // 計測では撮影と判定だけを実行し、前面化・Space・回復品を送出しない。
         var measureOnly = arguments.Contains("--measure-only", StringComparer.Ordinal);
         var continueRules = arguments.Contains("--continue-on-review", StringComparer.Ordinal);
@@ -336,9 +345,12 @@ public static class VisualKeyAssistRuntime
             bool? userPaused = null;
             long lastUserSample = -1000;
             var reviewMonitor = new VisualProgressReviewMonitor();
+            Action<CapturedFrame, string?>? pendingReviewNotification = null;
             Task notificationWork = Task.CompletedTask;
             VisualAssistNotice? reviewDecisionId = null;
             var reviewNumber = 0;
+            Emit(new { Event = "run-started", DurationMs = duration, AutomaticRulesContinue = continueRules,
+                NotificationGraceMs = VisualProgressReviewMonitor.NotificationGraceMs });
             var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)
                 ? await RunProgressAsync(stop.Token)
                 : await VisualKeyAssistWorkers.RunAsync(RunRecoveryAsync, RunProgressAsync, stop.Token, recoveryOnly);
@@ -363,7 +375,7 @@ public static class VisualKeyAssistRuntime
                 VisualKeyAssistDecision? previous = null;
                 try
                 {
-                while (clock.ElapsedMilliseconds < duration)
+                while (duration is null || clock.ElapsedMilliseconds < duration.Value)
                 {
                     token.ThrowIfCancellationRequested();
                     var frame = await frames.CaptureAsync(token);
@@ -393,6 +405,8 @@ public static class VisualKeyAssistRuntime
                         {
                             Emit(new { Event = "progress-monitoring", AtMs = clock.ElapsedMilliseconds,
                                 Candidate = candidate.Action.ToString(), candidate.RuleId });
+                            if (reviewMonitor.TryTakeNotification(clock.ElapsedMilliseconds))
+                                pendingReviewNotification!(frame, ocr?.Text);
                             if (!continueRules)
                             {
                                 await Task.Delay(250, token);
@@ -401,6 +415,7 @@ public static class VisualKeyAssistRuntime
                         }
                         else
                         {
+                            pendingReviewNotification = null;
                             progress.Resume();
                             if (!continueRules)
                             {
@@ -657,8 +672,9 @@ public static class VisualKeyAssistRuntime
                 VisualProgressOption[]? options, string? ocrText, CancellationToken token)
             {
                 if (reviewMonitor.IsHolding) return;
+                var detectedAt = clock.ElapsedMilliseconds;
                 reviewMonitor.Hold(candidate, recoveryRecognizer?.Observe(frame,
-                    WindowsGameTargetLocator.CaptureClientBounds(target.Window)).HudVisible == true);
+                    WindowsGameTargetLocator.CaptureClientBounds(target.Window)).HudVisible == true, detectedAt);
                 if (!continueRules) progress.Pause();
                 var folder = Path.Combine(evidenceDirectory, $"review-{++reviewNumber:D3}");
                 Directory.CreateDirectory(folder);
@@ -668,15 +684,28 @@ public static class VisualKeyAssistRuntime
                     NeedsReview = true, MonitoringContinues = true, AutomaticRulesContinue = continueRules, Detail = detail, ReviewOptions = options,
                     OcrText = ocrText, Image = image, AiCallCount = 0 });
                 File.WriteAllText(Path.Combine(folder, "review.json"), review.GetRawText());
-                Emit(new { Event = "progress-review-monitoring", AtMs = clock.ElapsedMilliseconds,
-                    Detail = detail, AutomaticRulesContinue = continueRules, EvidenceDirectory = folder });
-                QueueNotification(async () =>
+                Emit(new { Event = "progress-review-grace", AtMs = detectedAt,
+                    Detail = detail, GracePeriodMs = VisualProgressReviewMonitor.NotificationGraceMs,
+                    AutomaticRulesContinue = continueRules, EvidenceDirectory = folder });
+                pendingReviewNotification = (latestFrame, latestOcr) =>
                 {
-                    if (reviewNotifier is null) return;
-                    reviewDecisionId = await reviewNotifier.NotifyAsync(folder, review, token);
-                    File.WriteAllText(Path.Combine(folder, "notification.json"), JsonSerializer.Serialize(new { DecisionId = reviewDecisionId }));
-                    Emit(new { Event = "review-notified", DecisionId = reviewDecisionId, MonitoringContinues = true });
-                }, token);
+                    File.WriteAllBytes(image, new WindowsGameFramePngEncoder().Encode(latestFrame).Bytes.ToArray());
+                    var latestReview = JsonSerializer.SerializeToElement(new { Mode = "key-assist", ProductHostEntry = true,
+                        NeedsReview = true, MonitoringContinues = true, AutomaticRulesContinue = continueRules,
+                        Detail = detail, ReviewOptions = options, OcrText = latestOcr, Image = image, AiCallCount = 0,
+                        DetectedAtMs = detectedAt, ObservedAtMs = clock.ElapsedMilliseconds,
+                        GracePeriodMs = VisualProgressReviewMonitor.NotificationGraceMs });
+                    File.WriteAllText(Path.Combine(folder, "review.json"), latestReview.GetRawText());
+                    Emit(new { Event = "progress-review-monitoring", AtMs = clock.ElapsedMilliseconds,
+                        Detail = detail, AutomaticRulesContinue = continueRules, EvidenceDirectory = folder });
+                    QueueNotification(async () =>
+                    {
+                        if (reviewNotifier is null) return;
+                        reviewDecisionId = await reviewNotifier.NotifyAsync(folder, latestReview, token);
+                        File.WriteAllText(Path.Combine(folder, "notification.json"), JsonSerializer.Serialize(new { DecisionId = reviewDecisionId }));
+                        Emit(new { Event = "review-notified", DecisionId = reviewDecisionId, MonitoringContinues = true });
+                    }, token);
+                };
             }
 
             void QueueNotification(Func<Task> operation, CancellationToken token)
@@ -740,7 +769,7 @@ public static class VisualKeyAssistRuntime
                 var first = true;
                 try
                 {
-                    while (clock.ElapsedMilliseconds < duration)
+                    while (duration is null || clock.ElapsedMilliseconds < duration.Value)
                     {
                         if (!first && !await timer.WaitForNextTickAsync(token)) break;
                         first = false;

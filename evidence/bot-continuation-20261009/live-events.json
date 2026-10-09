@@ -1,0 +1,6 @@
+{
+  "Event": "run-started",
+  "DurationMs": null,
+  "AutomaticRulesContinue": true,
+  "NotificationGraceMs": 60000
+}

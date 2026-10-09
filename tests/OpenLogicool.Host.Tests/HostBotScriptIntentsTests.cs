@@ -76,9 +76,37 @@ public sealed class HostBotScriptIntentsTests
         _ = VisualProgressProfile.Load(package.File("progress.json"));
         Assert.Equal(0.7, recovery.PotionThreshold);
         Assert.Equal(0.2, recovery.BandageThreshold);
-        Assert.Equal(3600000, package.DurationMs);
+        Assert.Equal("MabinogiMobile", package.ProcessName);
+        using var settings = JsonDocument.Parse(File.ReadAllText(package.File("bot.json")));
+        Assert.False(settings.RootElement.TryGetProperty("DurationMs", out _));
         foreach (var file in new[] { "stop.png", "hud.png", "food-ready.png", "food-active.png", "dialogue-tail.png", "dialogue-cue.jpg", "compass-space.png", "quest-marker.png" })
             Assert.True(File.Exists(package.File(file)), file);
+    }
+
+    [Fact]
+    public async Task 詰まりの一分待機は実行を終了せず回復観測も続ける()
+    {
+        Action<JsonElement>? report = null;
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var intents = Create(new(), async (_, _, emit, token) =>
+        {
+            report = emit;
+            emit(JsonSerializer.SerializeToElement(new { Event = "progress-review-grace", Detail = "移動待ち" }));
+            entered.SetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            return new(false, "終了");
+        });
+        intents.Start("test");
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(BotScriptPhase.Running, intents.Current().Phase);
+        Assert.Contains("1分間は通知せず", intents.Current().Detail);
+        report!(JsonSerializer.SerializeToElement(new { Event = "recovery-sample", IntervalMs = 250 }));
+        Assert.Equal(1, intents.Current().ObservationCount);
+        Assert.Equal(BotScriptPhase.Running, intents.Current().Phase);
+        report(JsonSerializer.SerializeToElement(new { Event = "progress-resumed", Detail = "復帰" }));
+        Assert.Equal(BotScriptPhase.Running, intents.Current().Phase);
+        await intents.StopAsync();
+        Assert.Equal(BotScriptPhase.Stopped, intents.Current().Phase);
     }
 
     [Fact]

@@ -7,7 +7,7 @@ using OpenLogicool.Playbooks;
 
 namespace OpenLogicool.Host;
 
-internal sealed record BotScriptPackage(string Id, string Name, string ProcessName, int DurationMs)
+internal sealed record BotScriptPackage(string Id, string Name, string ProcessName)
 {
     public string Directory { get; init; } = "";
     public string File(string name) => Path.Combine(Directory, name);
@@ -16,8 +16,8 @@ internal sealed record BotScriptPackage(string Id, string Name, string ProcessNa
         var package = JsonSerializer.Deserialize<BotScriptPackage>(System.IO.File.ReadAllText(path))
             ?? throw new InvalidDataException("Bot設定が空です。");
         if (string.IsNullOrWhiteSpace(package.Id) || string.IsNullOrWhiteSpace(package.Name)
-            || string.IsNullOrWhiteSpace(package.ProcessName) || package.DurationMs <= 0)
-            throw new InvalidDataException("Bot設定の名前・対象・実行時間が不正です。");
+            || string.IsNullOrWhiteSpace(package.ProcessName))
+            throw new InvalidDataException("Bot設定の名前・対象が不正です。");
         return package with { Directory = Path.GetDirectoryName(Path.GetFullPath(path))! };
     }
 }
@@ -63,7 +63,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
             var recovery = VisualRecoveryProfile.Load(package.File("profile.json"));
             _ = VisualProgressProfile.Load(package.File("progress.json"));
             return new BotScriptItem(package.Id, package.Name,
-                $"Nanoで入力・会話は表示の安定後に送る・通常Spaceは8〜12秒間隔\n回復監視は毎秒4回 ／ ポーション: HP {recovery.PotionThreshold:P0}以下 ／ 包帯: 白 {recovery.BandageThreshold:P0}以上 ／ 最長{package.DurationMs / 60000}分");
+                $"Nanoで入力・会話は表示の安定後に送る・通常Spaceは8〜12秒間隔\n回復監視は毎秒4回 ／ ポーション: HP {recovery.PotionThreshold:P0}以下 ／ 包帯: 白 {recovery.BandageThreshold:P0}以上 ／ 時間制限なし");
         }).ToArray();
         var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-runs");
         var reviewSettings = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-review-mcp.json");
@@ -88,7 +88,6 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                 var arguments = new List<string> { "--db", Path.Combine(dataDirectory, id + ".db"),
                     "--inhibit-image", package.File("stop.png"), "--cue-text", "Space",
                     "--cue-text", "画面を押してください", "--keys", "Key:Space",
-                    "--duration-ms", package.DurationMs.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     "--recovery-profile", package.File("profile.json"), "--progress-profile", package.File("progress.json"),
                     "--evidence", evidence, "--continue-on-review", "--pause-on-user-input", "--assistance-db", databasePath };
                 if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
@@ -193,6 +192,10 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                     var health = entry.GetProperty("Observation").GetProperty("HealthFraction");
                     state = state with { HealthFraction = health.ValueKind == JsonValueKind.Number ? health.GetDouble() : null,
                         Detail = state.Phase == BotScriptPhase.ReviewMonitoring ? state.Detail : entry.GetProperty("Detail").GetString()! };
+                    break;
+                case "progress-review-grace":
+                    state = state with { Detail = "詰まりを観測しました。1分間は通知せず、観測と既存の操作を継続します。 "
+                        + entry.GetProperty("Detail").GetString() };
                     break;
                 case "progress-review-monitoring":
                     state = state with { Phase = BotScriptPhase.ReviewMonitoring,

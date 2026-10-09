@@ -6,6 +6,33 @@ namespace OpenLogicool.Host.Tests;
 public sealed class VisualProgressReviewMonitorTests
 {
     [Fact]
+    public void 詰まり検出から一分未満は通知せず一分後も残る時だけ一度通知する()
+    {
+        var monitor = new VisualProgressReviewMonitor();
+        var blocked = new VisualProgressChoice(VisualProgressAction.Review, Detail: "移動待ち");
+        monitor.Hold(blocked, now: 120_000);
+        Assert.False(monitor.TryTakeNotification(120_000));
+        Assert.False(monitor.TryTakeNotification(179_999));
+        Assert.True(monitor.TryTakeNotification(180_000));
+        Assert.False(monitor.TryTakeNotification(240_000));
+    }
+
+    [Fact]
+    public void 一分以内に復帰したら通知を破棄し次の詰まりを検出した時から数え直す()
+    {
+        var monitor = new VisualProgressReviewMonitor();
+        monitor.Hold(new(VisualProgressAction.Normal), now: 10_000);
+        Assert.False(monitor.TryTakeNotification(69_399));
+        Assert.False(monitor.TryResume(69_400, new(VisualProgressAction.Normal), false, true));
+        Assert.True(monitor.TryResume(70_000, new(VisualProgressAction.Normal), false, true));
+        Assert.False(monitor.TryTakeNotification(70_000));
+        Assert.False(monitor.TryTakeNotification(100_000));
+        monitor.Hold(new(VisualProgressAction.Review), now: 110_000);
+        Assert.False(monitor.TryTakeNotification(169_999));
+        Assert.True(monitor.TryTakeNotification(170_000));
+    }
+
+    [Fact]
     public void 同じ未知画面や同じ未確認操作では監視を続け再送を許可しない()
     {
         var monitor = new VisualProgressReviewMonitor();
