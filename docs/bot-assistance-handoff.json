@@ -52,25 +52,25 @@
   ],
   "currentAssistance": {
     "incidentId": "e4367d3f-c5d1-4359-8f82-3ae8af00b24f",
-    "status": "claimed",
+    "status": "resolved",
     "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-013254-494-7f995daa\\review-001",
-    "detail": "長時間起動警告に重なったボーナス画面。前任がゲーム終了済み。通常起動を送ったがゲーム本体は未確認。旧画面を現在の選択肢として申請しない。",
-    "nextAction": "K-JANNVFの回答後、同じキャラクターの通常画面を製品game-index captureで確認し、Nano診断とBot再開・実進行を確認する。"
+    "detail": "ゲームのログイン復帰後、Lv50通常画面とBotの実入力・移動を確認。旧ボーナスは再選択していない。",
+    "nextAction": "Botを継続。定期巡回はせず、新しい詰まり通知だけを受けて対応する。"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "LUCK成長11の確定後、通常HUDでLv44を確認した。次の目標は「コレンへ／コレンに移動」。Botを再開済み。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-202457-685-56575d1b",
+    "nextCheck": "Lv50通常画面からティルコネイルへ移動中。Botを継続し、新しい詰まり通知時だけ調査する。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410",
     "levelProgression": {
-      "currentLevel": 44,
+      "currentLevel": 50,
       "targetLevel": 42,
       "quest": "生き残りし者へ",
       "activityPolicy": "明確なゲーム内推奨と一意な移動先",
       "approvedActivity": "ラビ1Fエリア1 HARD",
       "status": "achieved",
       "decisionId": "K-X6FCVM",
-      "currentActivity": "Lv44。コレンへの移動へ継続中。",
+      "currentActivity": "Lv50。誰かの頼み／ダンカンと会話への移動を確認。",
       "lastGuideCompletionPercent": 67
     },
     "lastBonusChoice": {
@@ -135,7 +135,7 @@
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
-    "botState": "ゲームへのログイン復帰待ちでBot停止中。画面取得の入力依存を修理・導入済み。",
+    "botState": "Bot再開済み。実行C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410。firmware未導入とNano無応答の未解明は保持。",
     "remaining": [
       "firmwareは未導入として保持する。現在、基板の操作箇所を特定できていない。RST待機は終了済みで、RST操作依頼は取り下げた。",
       "firmwareが更新できたらBotの接続を回収し、serial-hid-test --idle-ms 200 --repeat 5 と --idle-ms 1000 --repeat 2で旧再現条件を実機確認",
@@ -155,7 +155,7 @@
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-09T22:57:10.7685905+00:00",
+    "updatedUtc": "2026-10-09T23:00:05.2688631+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -167,12 +167,10 @@
       "379225d3-7ac8-4a7b-a293-55c09ab9f0ab",
       "e4367d3f-c5d1-4359-8f82-3ae8af00b24f"
     ],
-    "pendingDecisionIds": [
-      "K-JANNVF"
-    ],
-    "botPhase": "Stopped",
-    "gameRestart": "ゲーム本体の直接起動はERROR I.10121。Nanoクリックで通常終了済み。公式サイトの新規文書からの起動もゲーム本体の開始未確認。利用者はゲームのログアウトを観測。",
-    "nextAction": "K-JANNVFの回答後、同じキャラクターの通常画面を製品game-index captureで確認し、Nano診断とBot再開・実進行を確認する。",
+    "pendingDecisionIds": [],
+    "botPhase": "Running",
+    "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
+    "nextAction": "Botを継続。定期巡回はせず、新しい詰まり通知だけを受けて対応する。",
     "firmware": "1.1.3のまま。手動リセット依頼は取り下げ済みで再依頼しない。",
     "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。",
     "captureRepair": {

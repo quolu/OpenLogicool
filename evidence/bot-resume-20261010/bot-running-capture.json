@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-resume-20261010\\bot-running-game.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "e5bd06b38a4f74fb2c945c199247b8bf0f052389fdfeb37641fe01e0c434c6cc",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

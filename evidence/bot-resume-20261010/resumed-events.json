@@ -1,0 +1,776 @@
+[
+  {
+    "Event": "recovery",
+    "AtMs": 19825,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 20052,
+    "IntervalMs": 228,
+    "FrameFreshnessMs": 191,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 20053,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "user-input-state",
+    "AtMs": 20186,
+    "Paused": false,
+    "HeldCount": 0,
+    "IdleMilliseconds": 20197,
+    "UserEvents": 0,
+    "NanoEvents": 12
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 20317,
+    "IntervalMs": 265,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 20317,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 20320,
+    "Changed": true,
+    "Difference": 12.125,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 20558,
+    "IntervalMs": 241,
+    "FrameFreshnessMs": 9,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 20559,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 20814,
+    "IntervalMs": 256,
+    "FrameFreshnessMs": 10,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 20815,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 20861,
+    "Changed": true,
+    "Difference": 9.1875,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 21046,
+    "IntervalMs": 232,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 21046,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 21313,
+    "IntervalMs": 267,
+    "FrameFreshnessMs": 210,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 21314,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 21401,
+    "Changed": false,
+    "Difference": 2.46875,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "user-input-state",
+    "AtMs": 21440,
+    "Paused": false,
+    "HeldCount": 0,
+    "IdleMilliseconds": 21451,
+    "UserEvents": 0,
+    "NanoEvents": 12
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 21569,
+    "IntervalMs": 256,
+    "FrameFreshnessMs": 2,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 21570,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 21819,
+    "IntervalMs": 250,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 21820,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 21983,
+    "Changed": true,
+    "Difference": 13.359375,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 22060,
+    "IntervalMs": 241,
+    "FrameFreshnessMs": 209,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 22061,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 22318,
+    "IntervalMs": 258,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 22318,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 22551,
+    "Changed": true,
+    "Difference": 12.40625,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 22558,
+    "IntervalMs": 240,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 22558,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "user-input-state",
+    "AtMs": 22681,
+    "Paused": false,
+    "HeldCount": 0,
+    "IdleMilliseconds": 22692,
+    "UserEvents": 0,
+    "NanoEvents": 12
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 22796,
+    "IntervalMs": 238,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 22797,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 23059,
+    "IntervalMs": 263,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 23059,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 23127,
+    "Changed": true,
+    "Difference": 11.109375,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 23295,
+    "IntervalMs": 236,
+    "FrameFreshnessMs": 7,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 23295,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 23556,
+    "IntervalMs": 261,
+    "FrameFreshnessMs": 5,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 23556,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "user-input-state",
+    "AtMs": 23693,
+    "Paused": false,
+    "HeldCount": 0,
+    "IdleMilliseconds": 23704,
+    "UserEvents": 0,
+    "NanoEvents": 12
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 23703,
+    "Changed": true,
+    "Difference": 14.859375,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 23819,
+    "IntervalMs": 263,
+    "FrameFreshnessMs": 4,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 23819,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 24066,
+    "IntervalMs": 247,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 24067,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 24294,
+    "Changed": true,
+    "Difference": 14.875,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 24330,
+    "IntervalMs": 264,
+    "FrameFreshnessMs": 1,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 24331,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 24560,
+    "IntervalMs": 230,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 24561,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 24809,
+    "IntervalMs": 249,
+    "FrameFreshnessMs": 7,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 24810,
+    "Observation": {
+      "HudVisible": true,
+      "HealthFraction": 1,
+      "BarWidth": 198,
+      "Food": 1,
+      "Problem": null,
+      "WhiteFraction": 0
+    },
+    "Action": "None",
+    "Detail": "停止画像を優先します。"
+  },
+  {
+    "Event": "user-input-state",
+    "AtMs": 24929,
+    "Paused": false,
+    "HeldCount": 0,
+    "IdleMilliseconds": 24940,
+    "UserEvents": 0,
+    "NanoEvents": 12
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 25011,
+    "Changed": true,
+    "Difference": 13.828125,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 25035,
+    "IntervalMs": 226,
+    "FrameFreshnessMs": 8,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 25035,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 25291,
+    "IntervalMs": 256,
+    "FrameFreshnessMs": 3,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 25292,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 25544,
+    "IntervalMs": 253,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 25544,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 25808,
+    "IntervalMs": 264,
+    "FrameFreshnessMs": 2,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 25809,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 25846,
+    "Changed": true,
+    "Difference": 17.0625,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "condition",
+    "Decision": "Timed",
+    "AtMs": 25846,
+    "InhibitDifference": 255,
+    "CueDifference": null,
+    "MatchedTexts": []
+  },
+  {
+    "Event": "user-input-state",
+    "AtMs": 25937,
+    "Paused": false,
+    "HeldCount": 0,
+    "IdleMilliseconds": 25948,
+    "UserEvents": 0,
+    "NanoEvents": 12
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 26045,
+    "IntervalMs": 237,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 26045,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 26299,
+    "IntervalMs": 254,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 26300,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 26515,
+    "IntervalMs": 216,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 26516,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  },
+  {
+    "Event": "progress-observation",
+    "AtMs": 26650,
+    "Changed": true,
+    "Difference": 9.625,
+    "Candidate": "Normal",
+    "RuleId": null,
+    "Immediate": false,
+    "Decision": "Wait"
+  },
+  {
+    "Event": "recovery-sample",
+    "AtMs": 26754,
+    "IntervalMs": 239,
+    "FrameFreshnessMs": 0,
+    "TargetIntervalMs": 250
+  },
+  {
+    "Event": "recovery",
+    "AtMs": 26755,
+    "Observation": {
+      "HudVisible": false,
+      "HealthFraction": null,
+      "BarWidth": null,
+      "Food": 2,
+      "Problem": null,
+      "WhiteFraction": null
+    },
+    "Action": "None",
+    "Detail": "HUD非表示中は消費しません。"
+  }
+]

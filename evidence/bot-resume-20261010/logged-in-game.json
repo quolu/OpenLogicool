@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-resume-20261010\\logged-in-game.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "ac3a35ec459bdb2a544a1fe3f47af22f05ef827b50c20dac4ab08245d6a3819b",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
