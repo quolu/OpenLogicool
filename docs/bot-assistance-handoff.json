@@ -132,14 +132,14 @@
     "objective": "Nanoの通信停止を修理してBotを動かす",
     "sourceCommit": "9f53d60",
     "rootCauseReproduced": "旧firmwareで全解放後200ms通信を空けるとSequenceViolation。修正版とnative試験・AVR build済み",
-    "firmwareInstallation": "2026-10-10、準備の回答を受け、同じNanoの正規flash -WaitForResetを起動。ビルドと待機開始を確認してRSTを2回操作するタイミングを伝えた。物理操作の通知は別決裁で申請済み。",
+    "firmwareInstallation": "2026-10-10、RSTの意味と操作箇所が利用者に伝わっていなかったためタイミング通知K-4NWSMKを取り下げた。書込み未開始の待機だけ終了。firmwareは未導入で、正規診断は1.1.3 READY・全解放成功。操作箇所の確認が取れるまで基板の操作を依頼しない。",
     "manualDecisionId": "K-4NWSMK",
-    "waitingShellSessionId": 47427,
+    "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
-    "botState": "firmware書込み準備でアプリを通常終了しNano接続を回収済み。書込み後に接続診断とBot再開を行う",
+    "botState": "Host修理版でBotを再開済み。接続診断23ms成功、実行20261010-001553-759-222362cc",
     "remaining": [
-      "RSTを2回操作した回答を受けたらshell47427とflash.jsonを先に確認。重複書込みせずupload verifyと再列挙を確認する。",
+      "firmwareは未導入として保持する。現在、基板の操作箇所を特定できていない。RST待機は終了済みで、RST操作依頼は取り下げた。",
       "firmwareが更新できたらBotの接続を回収し、serial-hid-test --idle-ms 200 --repeat 5 と --idle-ms 1000 --repeat 2で旧再現条件を実機確認",
       "firmware更新後にBotを再開し実画面と進行を確認。raw原本・macro・割当は変更しない",
       "firmware導入の受入証拠を追記しcommit/pushして閉じる"
