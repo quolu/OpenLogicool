@@ -1,0 +1,11 @@
+{
+  "incidentId": "39e410a0-ef9d-4b4c-9194-102e1746f8d8",
+  "threadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+  "receivedAtUtc": "2026-10-09T08:53:52.2762284+00:00",
+  "incidentStatusAtReception": "resolved",
+  "observedCleared": true,
+  "extraInputCount": 0,
+  "botPhase": "Running",
+  "botInputCount": 27,
+  "verification": "実際のBot支援通知がこの会話の新しい入力として届き、自動で状態確認を開始した。既に処理済みだったためゲーム操作を繰り返さなかった。"
+}
