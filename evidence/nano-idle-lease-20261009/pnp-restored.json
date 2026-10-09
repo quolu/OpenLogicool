@@ -1,0 +1,10 @@
+[
+  {
+    "KeyName": "DEVPKEY_Device_ConfigFlags",
+    "Data": 0
+  },
+  {
+    "KeyName": "DEVPKEY_Device_ProblemCode",
+    "Data": 0
+  }
+]

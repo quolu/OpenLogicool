@@ -27,3 +27,9 @@ Hostの診断入口、故障済みprotocolの終了時の再送禁止、次回fa
 NanoのHIDだけを一時停止する試行はWindowsの再起動予約になり、即時停止できなかった。予約を取り消してConfigFlags=0・ProblemCode=0・Status=OKを確認した。この方式は正規scriptから撤去した。PC再起動・USB抜き挿しは行っていない。
 
 K-3UKN4Dへ基板の手動double-resetを依頼し、`-WaitForReset`で同じ物理USB接続のbootloaderを待つ。firmwareの実機導入と修理後のidle200ms／1000ms試験は手動操作後の工程であり、まだ完了として扱わない。元のBot停止時の遅延量が未記録であることと、二つの実機再現条件が確認済みであることを区別する。
+
+## Hostの導入後
+
+正規開発版installerでHost/Inputの修理を導入し、両DLLがRelease成果物と一致することを確認した。Botは実観測とNano入力を再開。現在の実画面でLv48、「北の廃墟ダンジョン1F エリア3をクリア」の攻略へ進んでいることを確認した。初期のLv46・氷の峡谷の報酬画面から進行している。該当クエスト全体の完了とは扱わない。
+
+手動reset待機は30分へ延長し、shell session 68756で継続中。回答の受信先をK-3UKN4Dのresumeでこの会話へ登録し直した。firmwareが書き込まれたら、その完了と新しいREADYの版を確認してから残る受入を行う。旧sessionを再利用したり、失敗入力を再送したりしない。

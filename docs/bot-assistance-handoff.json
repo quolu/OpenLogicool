@@ -127,5 +127,31 @@
     "resolutionEvidence": "evidence/bot-bonus-technique3-20261009/acceptance.md",
     "assistanceOwnerThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
     "assistanceResolution": "現在の担当がこの操作証拠を確認して案件を閉じる。旧会話から担当の再登録や案件操作は行っていない。"
+  },
+  "activeRepair": {
+    "objective": "Nanoの通信停止を修理してBotを動かす",
+    "sourceCommit": "9f53d60",
+    "rootCauseReproduced": "旧firmwareで全解放後200ms通信を空けるとSequenceViolation。修正版とnative試験・AVR build済み",
+    "firmwareInstallation": "手動double-reset待ち。自動resetを旧firmwareのwatchdogが妨げる。HID停止はWindowsの再起動予約になるため取り消し、ConfigFlags0・ProblemCode0を確認済み",
+    "manualDecisionId": "K-3UKN4D",
+    "waitingShellSessionId": 68756,
+    "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
+    "evidenceDirectory": "evidence/nano-idle-lease-20261009",
+    "botState": "Host修理を開発版へ導入済み。Botの実観測とNano入力を確認済み",
+    "remaining": [
+      "K-3UKN4Dの手動double-reset後、待機shell68756とflash.jsonを確認。書込みを重複しない",
+      "firmwareが更新できたらBotの接続を回収し、serial-hid-test --idle-ms 200 --repeat 5 と --idle-ms 1000 --repeat 2で旧再現条件を実機確認",
+      "firmware更新後にBotを再開し実画面と進行を確認。raw原本・macro・割当は変更しない",
+      "firmware導入の受入証拠を追記しcommit/pushして閉じる"
+    ],
+    "hostReadTimeoutRepair": {
+      "reproductionBefore": "read-pause100で受信済み10バイトを捨てTimeout",
+      "testsPassed": 1655,
+      "status": "installed-and-live-tested",
+      "dllHashesVerified": true,
+      "reproductionAfter": "同じ実機のread-pause100を5回成功",
+      "testProjects": 22,
+      "sourceCommit": "3c0682d"
+    }
   }
 }

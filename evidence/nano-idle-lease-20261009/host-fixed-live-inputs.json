@@ -1,0 +1,297 @@
+[
+  {
+    "Event": "progress-resumed",
+    "AtMs": 152370,
+    "Detail": "確認済みの画面に戻りました。操作規則は継続しています。"
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 170257,
+    "RuleId": "loot-continue",
+    "Signature": "loot-continue:発見した戦利品",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:372",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:24:05.6009327+09:00",
+      "CompletedUtc": "2026-10-09T22:24:05.6041742+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 175171,
+    "RuleId": "loot-auto-equip",
+    "Signature": "loot-auto-equip:発見した戦利品",
+    "Key": null,
+    "Point": [
+      0.7256275539988324,
+      0.9435989256938228
+    ],
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:384",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:24:10.1011839+09:00",
+      "CompletedUtc": "2026-10-09T22:24:10.5185852+09:00",
+      "CandidateId": "loot-auto-equip",
+      "TransportReceiptId": "pointer:2651,239->2420,1059;deltas:25;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 176869,
+    "RuleId": "auto-equip-confirm",
+    "Signature": "auto-equip-confirm:より良い装備|以下の装備を着用",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:390",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:24:12.2132018+09:00",
+      "CompletedUtc": "2026-10-09T22:24:12.2166585+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 179407,
+    "RuleId": "loot-auto-equip",
+    "Signature": "loot-auto-equip:発見した戦利品",
+    "Key": null,
+    "Point": [
+      0.5703444249854057,
+      0.9055505819158459
+    ],
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:398",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:24:14.4086677+09:00",
+      "CompletedUtc": "2026-10-09T22:24:14.7547436+09:00",
+      "CandidateId": "loot-auto-equip",
+      "TransportReceiptId": "pointer:2420,1059->2154,1018;deltas:21;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 182031,
+    "RuleId": "dungeon-exit",
+    "Signature": "dungeon-exit:発見した戦利品",
+    "Key": null,
+    "Point": [
+      0.39302393461762986,
+      0.943822739480752
+    ],
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:403",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:24:17.0527101+09:00",
+      "CompletedUtc": "2026-10-09T22:24:17.3787848+09:00",
+      "CandidateId": "dungeon-exit",
+      "TransportReceiptId": "pointer:2154,1018->1848,1061;deltas:20;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 189060,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:423",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:24:24.4036711+09:00",
+      "CompletedUtc": "2026-10-09T22:24:24.4070886+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 224396,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:510",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:24:59.7411348+09:00",
+      "CompletedUtc": "2026-10-09T22:24:59.7435529+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-resumed",
+    "AtMs": 224937,
+    "Detail": "確認済みの画面に戻りました。操作規則は継続しています。"
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 308455,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:こんニャちは0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:691",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:26:23.7988055+09:00",
+      "CompletedUtc": "2026-10-09T22:26:23.8024609+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 315109,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:ネコワシは珍しいものを売るネコ商人ニャ0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:706",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:26:30.4535714+09:00",
+      "CompletedUtc": "2026-10-09T22:26:30.4567085+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 319073,
+    "RuleId": "merchant-exit",
+    "Signature": "merchant-exit:商店|世間話|会話終了|ESC",
+    "Key": "Key:Esc",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:713",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:26:34.4177231+09:00",
+      "CompletedUtc": "2026-10-09T22:26:34.4208492+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Esc:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 329387,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:ーヤ0また一",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:734",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:26:44.7312589+09:00",
+      "CompletedUtc": "2026-10-09T22:26:44.734381+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 332246,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:741",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T22:26:47.5893564+09:00",
+      "CompletedUtc": "2026-10-09T22:26:47.5936123+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]

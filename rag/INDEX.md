@@ -1,5 +1,7 @@
 # OpenLogicool knowledge index
 
+- [Nanoの無入力leaseと受信済み応答の時間切れ](openlogicool/nano-idle-lease-and-response-20261009.md) — 二つの停止条件を実機再現。Host修理は導入・実機確認済み、firmware修理は基板のdouble-resetによる書込み待ち。取得日: 2026-10-09、確度: 記載条件ごとに区別。
+
 - [Bot通知の共通配達口と作業中への差し込み](openlogicool/codex-bot-delivery-provider-20261009.md) — キュー受付と同じターンへの差し込みの違い、Aitermの正規API、約30分の遅延と作業中の即時受信の実測。取得日: 2026-10-09、確度: 作業中は確認済み／変更後の待機中の遅延は未確認。
 
 - [Botの詰まりの配達と納品画面の数量OCR](openlogicool/bot-assistance-delivery-20261009.md) — 公開配達CLI・公式受付と読了の区別、会話引き継ぎ、数量の領域OCR、自動登録と消費の区別。取得日: 2026-10-09、確度: 受付・引き継ぎ・待機中会話の自動起動・Nano納品は確認済み。

@@ -1,0 +1,18 @@
+[
+  {
+    "Path": "C:\\Users\\kite_\\Developer\\OpenLogicool\\src\\OpenLogicool.Host\\bin\\Release\\net10.0-windows10.0.22621.0\\OpenLogicool.Host.dll",
+    "Hash": "48CCB5B86BA4200B517948397AEEE91867E7B25EF57E83FFB796082478E47E12"
+  },
+  {
+    "Path": "C:\\Users\\kite_\\Developer\\OpenLogicool\\artifacts\\development\\OpenLogicool\\OpenLogicool.Host.dll",
+    "Hash": "48CCB5B86BA4200B517948397AEEE91867E7B25EF57E83FFB796082478E47E12"
+  },
+  {
+    "Path": "C:\\Users\\kite_\\Developer\\OpenLogicool\\src\\OpenLogicool.Input\\bin\\Release\\net10.0-windows\\OpenLogicool.Input.dll",
+    "Hash": "CCEA1CC32D59A6F76BB5912FD13D41D20A80793E686833B26C12AD2BEEC0E60D"
+  },
+  {
+    "Path": "C:\\Users\\kite_\\Developer\\OpenLogicool\\artifacts\\development\\OpenLogicool\\OpenLogicool.Input.dll",
+    "Hash": "CCEA1CC32D59A6F76BB5912FD13D41D20A80793E686833B26C12AD2BEEC0E60D"
+  }
+]
