@@ -86,18 +86,15 @@
     "decisionId": "K-WMQ75B",
     "priorDecisionId": "K-SY99CD",
     "incidentId": "b2f4c507-2962-4e81-aa05-21a626a36da2",
-    "status": "awaiting-human-price-choice",
-    "userInstruction": "自動回復10個を選び6,000ゴールド以内なら購入・登録",
-    "execution": "自動回復品をNanoで選択し価格27,000を確認。上限超過のため購入なし。Botの観測を再開済み",
-    "choices": [
-      "自動回復10個を27,000ゴールドで購入・登録",
-      "通常回復10個を6,000ゴールドで購入・登録",
-      "購入せず閉じる"
-    ],
+    "status": "resolved",
+    "selectedChoice": "最上級自動回復ポーション10個を27,000ゴールドで購入・登録",
+    "userInstruction": "自動回復10個を27,000ゴールドで購入・登録（option_id=auto27000）",
+    "execution": "Nanoで購入を一回実行。所持金704747→677747、購入品10個を確認。購入時は旧回復品の登録が残っていたため所持品の最上級自動回復から登録を実行し、回復スロット5個・バッグ5個を確認。旧品はバッグへ戻り破棄していない。",
     "evidenceDirectory": "evidence/bot-potion-refill-20261009",
     "replyThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
     "assistanceOwnerThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
-    "afterAnswer": "現在の窓で回答された品名・数量・実価格を再確認しNanoで一回購入または閉じる。購入した場合は所持金差分と登録結果を確認してBotの進行を再開する。"
+    "afterAnswer": "実施済み。通常画面に戻してBotを再開済み。購入や登録を繰り返さない。",
+    "assistanceResolution": "現在の担当が購入・登録の証拠を確認して支援案件を閉じる。担当登録や旧会話の復活は行っていない。"
   },
   "deliveryVerification": {
     "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",

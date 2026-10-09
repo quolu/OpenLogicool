@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-potion-refill-20261009\\quickslot-registered.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "a84f0ff13549a58e94793fb3ef8ea8a7e09bff75731c88fb22dc77f3eeace382",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

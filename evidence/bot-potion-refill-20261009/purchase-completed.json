@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-potion-refill-20261009\\purchase-completed.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "2a990e7052bf63a7a4983ca6a284b0dc8fccadb98fa817a5cd9e7d38f01c4b76",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
