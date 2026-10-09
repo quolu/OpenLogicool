@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "periodicAiMonitoring": "paused",
-  "assistanceDeliveryImplementation": "implemented-queue-and-handoff-verified",
+  "assistanceDeliveryImplementation": "implemented-and-live-wake-verified",
   "activeWork": "Botを継続。詰まり時だけ担当AIへ配達する。新会話はassistant attachで未処理案件とルピーの通話を引き継ぐ",
   "approvedSources": [
     "https://mabimoba.kitepon.dev/",

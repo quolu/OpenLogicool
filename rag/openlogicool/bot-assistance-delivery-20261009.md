@@ -1,12 +1,14 @@
 # Botの詰まりの配達と数量OCR
 
-出典: [aiterm-steer-deliveryの公開README](https://github.com/kitepon/aiterm-steer-delivery)と導入済みパッケージのCLI・receiverソース、Windows native実測。取得日: 2026-10-09。確度: 配達受付・引き継ぎ・Nano納品は確認済み。待機中の担当会話を起こす一巡は未確認。
+出典: [aiterm-steer-deliveryの公開README](https://github.com/kitepon/aiterm-steer-delivery)と導入済みパッケージのCLI・receiverソース、Windows native実測。取得日: 2026-10-09。確度: 配達受付・引き継ぎ・待機中の担当会話の自動起動・Nano納品は確認済み。
 
 ## 配達
 
 Node以外の製品も、JSONの製品設定を渡して公開CLIの`codex verify|submit|state`を使える。Codexの方言とOS適合を利用製品へ複製しない。一次資料の抜粋は[raw](raw/aiterm-steer-delivery-cli-20261009.md)。
 
 Codexの`thread/read`で宛先を検証し、`thread/queue/add`の受付IDを保存した。受付は読了や修理完了ではない。結果不明の送信を自動再送しない。OpenLogicoolでは、未処理案件と担当の保存を配達機構と分け、新しい担当が`attach`で案件を引き継ぐ。旧会話の再登録と案件操作を拒否する。
+
+前ターン終了後、保存した案件の通知が同じ会話の新規user turnとして到着し、実際に作業が再開した。到着時点で解決済みの案件は再実行せず、最新状態を確認する。
 
 ## 納品画面
 

@@ -1,0 +1,106 @@
+[
+  {
+    "Event": "progress-input",
+    "AtMs": 139563,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:他の魔族の証も確認してみましよう先日変わったゴブリンを見かけたんですが0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:465",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T09:00:08.9211349+09:00",
+      "CompletedUtc": "2026-10-09T09:00:08.9248856+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-review-monitoring",
+    "AtMs": 150815,
+    "Detail": "npc-dialogue-cue の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。",
+    "AutomaticRulesContinue": true,
+    "EvidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-085749-204-58e57cb1\\review-001"
+  },
+  {
+    "Event": "progress-resumed",
+    "AtMs": 156920,
+    "Detail": "確認済みの画面に戻りました。操作規則は継続しています。"
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 160690,
+    "RuleId": "npc-dialogue-skip",
+    "Signature": "npc-dialogue-skip:スキップ|EMBER輝くタルラーク",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:530",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T09:00:30.0489813+09:00",
+      "CompletedUtc": "2026-10-09T09:00:30.0518205+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 162453,
+    "RuleId": "npc-dialogue-skip",
+    "Signature": "npc-dialogue-skip:スキップ|タルラークくおりゅんさんは上手くやっているかうっ",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:536",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T09:00:31.8114571+09:00",
+      "CompletedUtc": "2026-10-09T09:00:31.8150079+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 166848,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:552",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T09:00:36.2071929+09:00",
+      "CompletedUtc": "2026-10-09T09:00:36.2101159+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]

@@ -1,6 +1,6 @@
 # OpenLogicool knowledge index
 
-- [Botの詰まりの配達と納品画面の数量OCR](openlogicool/bot-assistance-delivery-20261009.md) — 公開配達CLI・公式受付と読了の区別、会話引き継ぎ、数量の領域OCR、自動登録と消費の区別。取得日: 2026-10-09、確度: 受付・引き継ぎ・Nano納品は確認済み／待機中会話の自動起動は未確認。
+- [Botの詰まりの配達と納品画面の数量OCR](openlogicool/bot-assistance-delivery-20261009.md) — 公開配達CLI・公式受付と読了の区別、会話引き継ぎ、数量の領域OCR、自動登録と消費の区別。取得日: 2026-10-09、確度: 受付・引き継ぎ・待機中会話の自動起動・Nano納品は確認済み。
 
 - [IMEモード状態の起動時押下誤認](openlogicool/ime-startup-held-20261009.md) — 0xF3がスキャンコードへ変換されてもIME状態を保持し、Bot再開を妨げた実測と修理。Windows SDKの定義を照合。
 

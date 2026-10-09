@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "incidentId": "429f6f41-6ab3-4919-b62d-205f4b5d6946",
+  "submissionId": "01a11dee-db19-7530-a72c-82f7e4bb9870",
+  "threadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+  "verifiedUtc": "2026-10-09T00:03:01.1980483+00:00",
+  "result": "前ターン終了後にBotの公式キュー通知が同じ会話の新規user turnとして届き、自動作業を再開。定期監視なし。案件は解決済みだったため再入力せず状態確認した。"
+}
