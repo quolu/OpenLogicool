@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "result": {
+    "id": "1407474c-837a-41c0-86a3-104a372dd017",
+    "status": "resolved",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410\\review-001",
+    "detail": "dialogue-lower-cue \u306E\u64CD\u4F5C\u5F8C\u3001\u8907\u6570\u56DE\u89B3\u6E2C\u3057\u3066\u753B\u9762\u306E\u5909\u5316\u304C\u6B62\u307E\u3063\u305F\u307E\u307E\u7D50\u679C\u3092\u78BA\u8A8D\u3067\u304D\u307E\u305B\u3093\u3002\u518D\u9001\u3057\u3066\u3044\u307E\u305B\u3093\u3002",
+    "deliveryState": "queued",
+    "targetThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
+    "submissionId": "01a122e6-f4a8-7bf3-b0d8-f911b0442803",
+    "ownerThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
+    "error": null,
+    "resolution": "\u53D7\u4FE1\u6642\u306BobservedCleared=true\u3002\u30ED\u30B0\u3067184485ms\u306Ecompass-space\u3068185763ms\u306Eprogress-resumed\u3092\u78BA\u8A8D\u3057\u3001\u5B9F\u753B\u9762\u306F\u7070\u8272\u306E\u8FF7\u8DEF\u306E\u6226\u95D8\u3078\u9032\u884C\u6E08\u307F\u3060\u3063\u305F\u3002Bot\u306F\u540C\u3058\u5B9F\u884C\u3067Running\u30FB\u56DE\u5FA9\u89B3\u6E2C\u7D99\u7D9A\u3002\u8FFD\u52A0\u306E\u30B2\u30FC\u30E0\u64CD\u4F5C\u30FB\u5165\u529B\u518D\u9001\u30FB\u88FD\u54C1\u5909\u66F4\u306F\u3057\u3066\u3044\u306A\u3044\u3002",
+    "observedCleared": true
+  }
+}

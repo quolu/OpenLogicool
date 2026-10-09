@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-assistance-20261010\\1407474c\\current-game.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "c2630e0e46abed37c769cbf16030c862c752d4031f52f15628ca405436c00ace",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

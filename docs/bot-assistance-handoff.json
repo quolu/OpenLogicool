@@ -51,16 +51,17 @@
     }
   ],
   "currentAssistance": {
-    "incidentId": "e4367d3f-c5d1-4359-8f82-3ae8af00b24f",
+    "incidentId": "1407474c-837a-41c0-86a3-104a372dd017",
     "status": "resolved",
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-013254-494-7f995daa\\review-001",
-    "detail": "ゲームのログイン復帰後、Lv50通常画面とBotの実入力・移動を確認。旧ボーナスは再選択していない。",
-    "nextAction": "Botを継続。定期巡回はせず、新しい詰まり通知だけを受けて対応する。"
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410\\review-001",
+    "detail": "受信時に自動復帰済み。compass-space、progress-resumed、灰色の迷路の戦闘を確認。追加操作なし。",
+    "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。",
+    "resolutionEvidence": "evidence/bot-assistance-20261010/1407474c/acceptance.md"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv50通常画面からティルコネイルへ移動中。Botを継続し、新しい詰まり通知時だけ調査する。",
+    "nextCheck": "Lv50、誰かの頼み／灰色の迷路の探索で戦闘へ進行済み。Bot継続。",
     "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410",
     "levelProgression": {
       "currentLevel": 50,
@@ -155,7 +156,7 @@
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-09T23:00:05.2688631+00:00",
+    "updatedUtc": "2026-10-09T23:03:11.9213921+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
