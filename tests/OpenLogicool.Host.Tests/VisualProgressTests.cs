@@ -139,6 +139,38 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public async Task 台詞が同じでも下部の送り印が現れたら別の確認段階として一度送る()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var frame = ReadFrame(Path.Combine(fixture, "dialogue-item-reveal.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var recognizer = new VisualProgressRecognizer(profile);
+        var revealed = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("dialogue-lower-cue", revealed.RuleId);
+        Assert.Equal("Key:Space", revealed.Key);
+        var bytes = frame.Pixels!.Bgra8.ToArray();
+        var color = bytes.AsSpan(1025 * frame.Pixels.Stride + 820 * 4, 4).ToArray();
+        for (var y = 1010; y < 1050; y++)
+            for (var x = 835; x < 875; x++) color.CopyTo(bytes.AsSpan(y * frame.Pixels.Stride + x * 4));
+        var beforeFrame = frame with { Pixels = new FramePixels(bytes, frame.Pixels.Stride) };
+        var before = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, beforeFrame);
+        Assert.Equal("npc-dialogue-cue", before.RuleId);
+        Assert.NotEqual(before.Signature, revealed.Signature);
+        var schedule = new VisualProgressSchedule(profile);
+        schedule.RecordInput(0, before);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1000, revealed, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(1700, revealed, false, false, true).Action);
+        schedule.RecordInput(1700, revealed);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2000, revealed, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(4000, revealed, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(6701, revealed, false, false, true).Action);
+    }
+
+    [Fact]
     public async Task 商人メニューは通常会話のSpaceよりEsc終了を優先する()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

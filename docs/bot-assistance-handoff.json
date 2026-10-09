@@ -45,19 +45,19 @@
     }
   ],
   "currentAssistance": {
-    "incidentId": "95b22502-5095-4a55-bb90-c212fe13dca4",
+    "incidentId": "77030350-b5a3-4bab-aa2c-0b179cfb0838",
     "status": "resolved",
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-120833-416-db5890c7\\review-001",
-    "detail": "クリステルの会話の一時停滞は通知受信時に自動復帰済み。最新根拠の自動復帰フラグ、復帰ログと後続入力、別場面への進行を確認。追加のゲーム入力や製品変更をせずresolveした。",
-    "nextAction": "次の詰まり通知に対応する。過去の選択・解決済み操作を繰り返さない。単独Space新規則の実機送出の未確認は別項目として維持する。",
-    "resolutionEvidence": "evidence/bot-assistance-20261009/auto-recovered-95b22502.json",
-    "repairEvidence": "evidence/bot-assistance-20261009/dialogue-single-space-acceptance.md"
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-120833-416-db5890c7\\review-002",
+    "detail": "下部領域と白色を設定して既存の送り印の形を照合する汎用規則dialogue-lower-cueを追加。関連105件成功・開発版導入とSHA-256一致。同じ実画面からBot自身が7.252秒にNanoで1回送出し、後続会話と別の場面へ進行したことを確認してresolveした。",
+    "nextAction": "Botは再開済み。解決済みの操作を繰り返さず、次の詰まり通知に対応する。単独ラベル＋Space規則の実機送出の未確認は、今回の下部送り印の実機成立と区別して維持する。",
+    "resolutionEvidence": "evidence/bot-assistance-20261009/dialogue-lower-cue-acceptance.md",
+    "repairEvidence": "evidence/bot-assistance-20261009/dialogue-lower-cue-acceptance.md"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "抵抗の意志確定後、Lv40・黒いバラの記憶を進行中。クリステルの会話の一時停滞は自動復帰し、黒い翼を持つ姿のクリステルと男性の会話場面へ進行済み。実画面をルピーへ共有済み・返信不要。討伐・ソロ・完了名、単独Space新規則の実機送出は未確認を維持。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-120833-416-db5890c7"
+    "nextCheck": "Lv40・黒いバラの記憶を進行中。台詞が同じまま証と下部の白い送り印が出る段階を汎用修理し、Bot自身の1回のNano送出と後続会話・場面遷移を実機確認済み。現在は再開済みで次の詰まり通知に対応する。討伐・ソロ・完了名、単独ラベル＋Space規則の実機送出は未確認を維持。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-122455-843-50fdf34b"
   },
   "pendingGameDecision": {
     "decisionId": "K-JH2JXQ",

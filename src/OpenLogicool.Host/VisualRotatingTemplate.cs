@@ -13,7 +13,7 @@ internal sealed class VisualRotatingTemplate
     private readonly bool[][] rotations;
     private readonly int diameter;
 
-    public VisualRotatingTemplate(string path)
+    public VisualRotatingTemplate(string path, int[]? foregroundRgb = null)
     {
         using var stream = File.OpenRead(path);
         var bitmap = new FormatConvertedBitmap(BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat,
@@ -60,6 +60,8 @@ internal sealed class VisualRotatingTemplate
             return Sample(rotated, side, x0, y0, occupied.Max(i => i % side) - x0 + 1,
                 occupied.Max(i => i / side) - y0 + 1);
         }).ToArray();
+        // 参照画像から得た形を保ち、画面上の印の色だけを設定から受け取る。
+        if (foregroundRgb is not null) color = [foregroundRgb[2], foregroundRgb[1], foregroundRgb[0]];
     }
 
     public VisualKeyTemplateMatch Find(CapturedFrame frame, IReadOnlyList<double> area, double scale)

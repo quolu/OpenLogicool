@@ -12,7 +12,7 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
     bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false,
     int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null,
-    double[]? SingleTextRunBounds = null);
+    double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
@@ -38,6 +38,9 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("画像のクリック先には参照画像が必要です。");
             if (rule.ImageRotates && (rule.Image is null || rule.ImageSilhouette))
                 throw new InvalidDataException("回転する印には単色画像を指定します。");
+            if (rule.ImageForegroundRgb is not null && (!rule.ImageRotates
+                || rule.ImageForegroundRgb.Length != 3 || rule.ImageForegroundRgb.Any(channel => channel is < 0 or > 255)))
+                throw new InvalidDataException("送り印の色は回転画像にRGBの3成分で指定します。");
             if (rule.ImageStableRegions is not null && (rule.Image is null || rule.ImageRotates || rule.ImageStableRegions.Length == 0))
                 throw new InvalidDataException("固定部分の照合には画像と一つ以上の領域が必要です。");
             if (rule.Immediate && (rule.Image is null || rule.When.Length != 0 || rule.Timed || rule.Key is null))
@@ -74,7 +77,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         .ToDictionary(rule => rule.Id, rule => VisualKeyTemplate.Load(rule.Image!, silhouette: rule.ImageSilhouette,
             stableRegions: rule.ImageStableRegions));
     private readonly Dictionary<string, VisualRotatingTemplate> rotatingTemplates = profile.Rules.Where(rule => rule.ImageRotates)
-        .ToDictionary(rule => rule.Id, rule => new VisualRotatingTemplate(rule.Image!));
+        .ToDictionary(rule => rule.Id, rule => new VisualRotatingTemplate(rule.Image!, rule.ImageForegroundRgb));
 
     public async ValueTask<WindowsGameOcrResult> ReadOcrAsync(CapturedFrame frame, FrameRect viewport, CancellationToken token = default)
     {
