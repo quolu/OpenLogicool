@@ -1,0 +1,10 @@
+{
+  "incidentId": "e8dbfc49-95d7-4cbe-a945-810ba2e6b437",
+  "acceptedAtUtc": "2026-10-09T09:07:53.7196707+00:00",
+  "turnId": "01a12007-1033-7590-8e62-e2a341a1799f",
+  "startedAtUtc": "2026-10-09T09:38:16.0000000+00:00",
+  "delaySeconds": 1822.2803293,
+  "oldEndpoint": "aiterm-steer-delivery with product profile",
+  "activeProviderSteer": "enabled",
+  "afterChangeIdleLatency": "未確認"
+}

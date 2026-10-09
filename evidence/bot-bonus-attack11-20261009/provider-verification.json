@@ -1,0 +1,11 @@
+{
+  "verificationId": "89a184cb-f54b-4c47-bb7e-2475e0031b89",
+  "threadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+  "sentAtUtc": "2026-10-09T18:49:21.5818848+09:00",
+  "receipt": {
+    "ok": true,
+    "schema": "aiterm.parent-delivery.v1",
+    "queued_submission_id": "01a12011-397f-7d73-9b42-700f63eee7c8"
+  },
+  "reception": "同じ作業ターンで、送信したtool callの返りと同時に検証通知を受信した。"
+}

@@ -11,12 +11,29 @@ namespace OpenLogicool.Host.Tests;
 public sealed class VisualProgressTests
 {
     [Fact]
+    public async Task 休憩の実録はSpaceのOCRが欠落しても退出できる()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, "rest-screen.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var withoutKeyLabel = ocr with { Words = ocr.Words.Where(word => !VisualKeyAssistRuntime.ContainsCue(word.Text, "Space")).ToArray() };
+        var choice = new VisualProgressRecognizer(profile).Recognize(withoutKeyLabel,
+            frame.Width, frame.Height, new(1, 31, frame.Width - 2, frame.Height - 32), frame, inhibited: true);
+        Assert.Equal("rest-exit", choice.RuleId);
+        Assert.Equal("Key:Space", choice.Key);
+        Assert.True(choice.AllowWhileInhibited);
+    }
+
+    [Fact]
     public void 休憩メニューの退出は停止表示中でも一回だけ許可し料理や食事は選ばない()
     {
         var profile = VisualProgressProfile.Load(Path.Combine(AppContext.BaseDirectory, "BotScripts", "MabinogiMobile", "progress.json"));
         var recognizer = new VisualProgressRecognizer(profile);
         var words = new[] { new WindowsGameOcrWord("料理", 740, 495, 35, 20),
-            new WindowsGameOcrWord("フードを食べる", 820, 495, 100, 20), new WindowsGameOcrWord("Space", 940, 565, 40, 20) };
+            new WindowsGameOcrWord("フードを食べる", 820, 495, 100, 20) };
         var choice = recognizer.Recognize(Ocr(words), 1000, 600, new(0, 0, 1000, 600), inhibited: true);
         Assert.Equal("rest-exit", choice.RuleId);
         Assert.Equal(VisualProgressAction.Key, choice.Action);

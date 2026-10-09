@@ -162,6 +162,29 @@ public sealed class BotAssistanceTests : IDisposable
     }
 
     [Fact]
+    public void Aitermの正式な配達結果だけを受け付け設定と送信受付を混同しない()
+    {
+        var response = SteerBotAssistanceDispatcher.ReadResponse(
+            """{"ok":true,"schema":"aiterm.parent-delivery.v1","verified":true,"steer":"enabled"}""", 0, false);
+        SteerBotAssistanceDispatcher.RequireReadyParent(response);
+        var queued = SteerBotAssistanceDispatcher.ReadResponse(
+            """{"ok":true,"schema":"aiterm.parent-delivery.v1","queued_submission_id":"受付ID"}""", 0, true);
+        Assert.Equal("受付ID", queued.GetProperty("queued_submission_id").GetString());
+        var invalid = Assert.Throws<BotAssistanceDeliveryException>(() => SteerBotAssistanceDispatcher.ReadResponse(
+            """{"ok":true,"queued_submission_id":"旧入口"}""", 0, true));
+        Assert.True(invalid.OutcomeUnknown);
+    }
+
+    [Fact]
+    public void 差し込みが無効ならキューだけへ切り替えず明示する()
+    {
+        var response = JsonSerializer.SerializeToElement(new { verified = true, steer = "disabled" });
+        var error = Assert.Throws<BotAssistanceDeliveryException>(() => SteerBotAssistanceDispatcher.RequireReadyParent(response));
+        Assert.Equal("delivery-steer-disabled", error.Code);
+        Assert.False(error.OutcomeUnknown);
+    }
+
+    [Fact]
     public async Task Bot異常と通知失敗を両方表示し実行を回収する()
     {
         var gate = new DemonstrationRecordingGate();

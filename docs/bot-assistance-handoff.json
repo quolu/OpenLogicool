@@ -51,54 +51,54 @@
     }
   ],
   "currentAssistance": {
-    "incidentId": "39e410a0-ef9d-4b4c-9194-102e1746f8d8",
+    "incidentId": "301c80c6-0e2c-4f21-9120-d60038bf012d",
     "status": "resolved",
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-174415-734-4f354d00\\review-001",
-    "detail": "移動操作を要するストーリー画面で通常Spaceでは進まなかった。表示中のストーリースキップをNanoで選び、確認画面のSpaceで確定。雪景色の通常HUD・Lv42・タルラークとの会話目標へ戻ったことを実画面で確認し、Botを再開した。",
-    "nextAction": "Botを継続し、1分続く詰まりだけ対応する。別の詰まりは旧案件が未処理でも別件として通知する。現在会話への配達と、待機中の会話が通知で再開することは確認済み。",
-    "resolutionEvidence": "evidence/bot-notification-episodes-20261009/acceptance.md",
-    "repairEvidence": "evidence/bot-notification-episodes-20261009/acceptance.md"
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-185628-991-0ea5230b\\review-001",
+    "detail": "休憩メニューからSpaceのOCR依存を外し、実録画像と欠落ケースで確認した。Aiterm共通配達口へ接続し、作業中の検証通知と実際のBot通知が同じターンへ届いた。",
+    "nextAction": "Botを継続。次の自然な支援通知で、待機中の受付時刻と会話開始時刻を照合する。作業中の即時受信と待機中の遅延を混同しない。",
+    "resolutionEvidence": "evidence/bot-bonus-attack11-20261009/acceptance.md",
+    "repairEvidence": "evidence/bot-bonus-attack11-20261009/acceptance.md"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv42確認済み。LUCK成長10の選択は実施済み。移動操作が必要なストーリーを表示中のスキップと確認Spaceで進め、雪景色の通常HUDとタルラークとの会話目標へ戻った。Botを再開し後続の進行入力を確認。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-174914-539-f74f290f",
+    "nextCheck": "Lv43確認済み。K-Z6UBT9の回答どおり攻撃優先11を選択・Space確定済み。休憩のOCR取り落としを修理しBotを再開、馬で「本の封印／クリステルと会話」へ移動する実画面を確認した。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21",
     "levelProgression": {
-      "currentLevel": 42,
+      "currentLevel": 43,
       "targetLevel": 42,
       "quest": "生き残りし者へ",
       "activityPolicy": "明確なゲーム内推奨と一意な移動先",
       "approvedActivity": "ラビ1Fエリア1 HARD",
       "status": "achieved",
       "decisionId": "K-X6FCVM",
-      "currentActivity": "Lv42到達後、ストーリーから通常HUDへ戻りタルラークとの会話へ継続中。",
+      "currentActivity": "Lv43。本の封印の会話相手へ移動中。",
       "lastGuideCompletionPercent": 67
     },
     "lastBonusChoice": {
-      "choice": "LUCK成長10段階（Elite）",
-      "basis": "決裁箱K-JW7DCVの利用者回答に従い実行。",
+      "choice": "攻撃優先11段階（Elite）",
+      "basis": "決裁箱K-Z6UBT9の利用者回答に従い実行。",
       "status": "executed",
-      "evidence": "evidence/bot-notification-episodes-20261009/level42-after-bonus.png"
+      "evidence": "evidence/bot-bonus-attack11-20261009/level43-after-bonus.png"
     }
   },
   "pendingGameDecision": {
-    "decisionId": "K-JW7DCV",
-    "incidentId": "03dab920-b44e-44b5-a825-89abb9e30c97",
+    "decisionId": "K-Z6UBT9",
+    "incidentId": "e8dbfc49-95d7-4cbe-a945-810ba2e6b437",
     "status": "resolved",
-    "selectedChoice": "LUCK成長10段階（Elite）",
-    "userInstruction": "LUCK成長10段階（Elite・ゲーム内推奨）（option_id=luck10）",
+    "selectedChoice": "攻撃優先11段階（Elite）",
+    "userInstruction": "攻撃優先11段階（Elite・ゲーム内推奨）（option_id=attack11）",
     "approvalBoxStatus": "回答済み・Nanoで選択とSpace確定を実施済み",
     "choices": [
-      "STR成長1段階",
-      "LUCK成長10段階（Elite）",
-      "WILL成長1段階"
+      "攻撃優先11段階（Elite）",
+      "速度優先1段階",
+      "技巧優先3段階"
     ],
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-155600-037-02e8d16f\\review-010",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-174914-539-f74f290f\\review-004",
     "replyThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
-    "afterAnswer": "選択と確定は完了済み。Lv42を確認してBotを再開した。操作を繰り返さない。",
-    "reviewEvidence": "evidence/bot-notification-episodes-20261009/level42-after-bonus.png",
-    "resolutionEvidence": "evidence/bot-notification-episodes-20261009/acceptance.md"
+    "afterAnswer": "攻撃優先11の選択と確定は完了済み。Lv43を確認してBotを再開した。操作を繰り返さない。",
+    "reviewEvidence": "evidence/bot-bonus-attack11-20261009/level43-after-bonus.png",
+    "resolutionEvidence": "evidence/bot-bonus-attack11-20261009/acceptance.md"
   },
   "deliveryVerification": {
     "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",
@@ -106,5 +106,11 @@
     "queuedSubmissionId": "01a11fd4-ece7-7f21-9cf4-c4707440fff7",
     "receptionConfirmed": true,
     "evidence": "evidence/bot-notification-episodes-20261009/delivery-verification.json"
+  },
+  "deliveryTransportVerification": {
+    "activeTurnReceptionConfirmed": true,
+    "idleLatencyConfirmed": false,
+    "evidence": "evidence/bot-bonus-attack11-20261009/acceptance.md",
+    "nextCheck": "次の自然なBot通知の受付時刻と会話開始時刻を照合する。"
   }
 }

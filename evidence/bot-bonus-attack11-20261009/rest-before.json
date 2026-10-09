@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\fixtures\\visual-recovery\\mabinogi-20261008\\rest-screen.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "8b164b00263d254bdc7e0a457328ffda7cf7eb3b8d621919e75ab82cfa03f916",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

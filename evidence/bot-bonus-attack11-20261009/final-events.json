@@ -1,0 +1,178 @@
+[
+  {
+    "Event": "run-started",
+    "DurationMs": null,
+    "AutomaticRulesContinue": true,
+    "NotificationGraceMs": 60000
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 9088,
+    "RuleId": "screen-prompt",
+    "Signature": "screen-prompt:画面を押してください",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:9",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T19:07:14.5977566+09:00",
+      "CompletedUtc": "2026-10-09T19:07:14.6035241+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 33383,
+    "RuleId": "loot-continue",
+    "Signature": "loot-continue:発見した戦利品",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:73",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T19:07:38.894475+09:00",
+      "CompletedUtc": "2026-10-09T19:07:38.8989472+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 37395,
+    "RuleId": "loot-auto-equip",
+    "Signature": "loot-auto-equip:発見した戦利品",
+    "Key": null,
+    "Point": [
+      0.7256275539988324,
+      0.9435989256938228
+    ],
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:85",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T19:07:42.4445612+09:00",
+      "CompletedUtc": "2026-10-09T19:07:42.910916+09:00",
+      "CandidateId": "loot-auto-equip",
+      "TransportReceiptId": "pointer:919,1416->2418,1061;deltas:29;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 38923,
+    "RuleId": "auto-equip-confirm",
+    "Signature": "auto-equip-confirm:より良い装備|以下の装備を着用",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:90",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T19:07:44.4360377+09:00",
+      "CompletedUtc": "2026-10-09T19:07:44.4390123+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 41940,
+    "RuleId": "loot-auto-equip",
+    "Signature": "loot-auto-equip:発見した戦利品",
+    "Key": null,
+    "Point": [
+      0.5703444249854057,
+      0.9055505819158459
+    ],
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:97",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T19:07:47.1322064+09:00",
+      "CompletedUtc": "2026-10-09T19:07:47.4561214+09:00",
+      "CandidateId": "loot-auto-equip",
+      "TransportReceiptId": "pointer:2418,1061->2154,1018;deltas:20;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 44517,
+    "RuleId": "dungeon-exit",
+    "Signature": "dungeon-exit:発見した戦利品",
+    "Key": null,
+    "Point": [
+      0.4195855224751897,
+      0.943822739480752
+    ],
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:105",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T19:07:49.7013655+09:00",
+      "CompletedUtc": "2026-10-09T19:07:50.0332447+09:00",
+      "CandidateId": "dungeon-exit",
+      "TransportReceiptId": "pointer:2154,1018->1894,1061;deltas:20;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 66174,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:159",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T19:08:11.687995+09:00",
+      "CompletedUtc": "2026-10-09T19:08:11.6902441+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]

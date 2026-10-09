@@ -131,37 +131,29 @@ internal interface IBotAssistanceDispatcher
     Task<string?> SubmitAsync(BotAssistantBinding binding, string deliveryId, string message, CancellationToken token);
 }
 
-/// <summary>OS・Codexの配達方言は公開aiterm-steer-deliveryの一箇所へ閉じ込める。</summary>
+/// <summary>OS・Codexの配達方言はAitermの正規配達口へ閉じ込める。</summary>
 internal sealed class SteerBotAssistanceDispatcher(string root) : IBotAssistanceDispatcher
 {
-    private string ProfilePath => Path.Combine(root, "delivery-profile.json");
-
-    private void Profile()
-    {
-        Directory.CreateDirectory(root);
-        var profile = new
-        {
-            id = "openlogicool", display_name = "OpenLogicool",
-            setup_command = "OpenLogicool.Host assistant attach", codex_steer_command = "OpenLogicool.Host assistant attach",
-            mcp_server = "openlogicool-assistance", dispatch_tools = new[] { "assistant_attach" },
-            state_root = Path.Combine(root, "delivery-state"), config_root = Path.Combine(root, "delivery-config"),
-            hooks = new { codex = "openlogicool-assistance-codex-hook.mjs", claude = "openlogicool-assistance-claude-hook.mjs", cursor = "openlogicool-assistance-cursor-hook.mjs" },
-            codex_client_name = "openlogicool_assistance_delivery", codex_hook_schema = "openlogicool.codex-assistance.v1",
-            backup_suffix = ".openlogicool-assistance-backup"
-        };
-        var temporary = ProfilePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
-        File.WriteAllText(temporary, JsonSerializer.Serialize(profile), new UTF8Encoding(false));
-        File.Move(temporary, ProfilePath, true);
-    }
-
     public async Task VerifyAsync(BotAssistantBinding binding, CancellationToken token)
     {
         var result = await Run(binding, ["verify"], false, token);
-        if (!result.GetProperty("verified").GetBoolean()) throw new BotAssistanceDeliveryException("parent-unverified", "担当会話の検証に失敗しました。");
+        RequireReadyParent(result);
+    }
+
+    internal static void RequireReadyParent(JsonElement result)
+    {
+        if (!result.TryGetProperty("verified", out var verified) || verified.ValueKind != JsonValueKind.True)
+            throw new BotAssistanceDeliveryException("parent-unverified", "担当会話の検証に失敗しました。");
+        if (!result.TryGetProperty("steer", out var steer) || steer.ValueKind != JsonValueKind.String
+            || steer.GetString() is not ("enabled" or "disabled"))
+            throw new BotAssistanceDeliveryException("delivery-invalid-receipt", "Aitermの差し込み設定を確認できません。");
+        if (steer.GetString() == "disabled")
+            throw new BotAssistanceDeliveryException("delivery-steer-disabled", "AitermのCodex差し込みが無効です。aiterm-setupで有効にしてください。キューだけの配達へ切り替えません。");
     }
 
     public async Task<string?> SubmitAsync(BotAssistantBinding binding, string deliveryId, string message, CancellationToken token)
     {
+        await VerifyAsync(binding, token);
         Directory.CreateDirectory(root);
         var path = Path.Combine(root, deliveryId + ".txt");
         File.WriteAllText(path, message, new UTF8Encoding(false));
@@ -173,18 +165,17 @@ internal sealed class SteerBotAssistanceDispatcher(string root) : IBotAssistance
 
     private async Task<JsonElement> Run(BotAssistantBinding binding, string[] command, bool sends, CancellationToken token)
     {
-        Profile();
-        var names = OperatingSystem.IsWindows() ? new[] { "aiterm-steer-delivery.ps1" } : ["aiterm-steer-delivery"];
+        var names = OperatingSystem.IsWindows() ? new[] { "aiterm-parent-delivery.ps1" } : ["aiterm-parent-delivery"];
         var executable = (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)
             .SelectMany(directory => names.Select(name => Path.Combine(directory, name))).FirstOrDefault(File.Exists)
-            ?? throw new BotAssistanceDeliveryException("delivery-unavailable", "公開配達ツールaiterm-steer-deliveryがありません。");
+            ?? throw new BotAssistanceDeliveryException("delivery-unavailable", "Aitermの正規配達口aiterm-parent-deliveryがありません。Aiterm 0.56.0以上を導入してください。");
         var start = new ProcessStartInfo(OperatingSystem.IsWindows() ? "pwsh.exe" : executable)
         {
             UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
             StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8
         };
         if (OperatingSystem.IsWindows()) foreach (var value in new[] { "-NoProfile", "-NonInteractive", "-File", executable }) start.ArgumentList.Add(value);
-        foreach (var value in new[] { "--profile", ProfilePath, "codex" }) start.ArgumentList.Add(value);
+        start.ArgumentList.Add("codex");
         foreach (var value in command) start.ArgumentList.Add(value);
         foreach (var value in new[] { "--thread", binding.ThreadId, "--codex-home", binding.CodexHome }) start.ArgumentList.Add(value);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -212,7 +203,9 @@ internal sealed class SteerBotAssistanceDispatcher(string root) : IBotAssistance
         JsonElement response;
         try { response = JsonSerializer.Deserialize<JsonElement>(output); }
         catch (JsonException) { throw new BotAssistanceDeliveryException("delivery-invalid-response", "配達ツールがJSONの結果を返しませんでした。", sends); }
-        if (response.ValueKind != JsonValueKind.Object || !response.TryGetProperty("ok", out var ok)
+        if (response.ValueKind != JsonValueKind.Object || !response.TryGetProperty("schema", out var schema)
+            || schema.ValueKind != JsonValueKind.String || schema.GetString() != "aiterm.parent-delivery.v1"
+            || !response.TryGetProperty("ok", out var ok)
             || ok.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
             throw new BotAssistanceDeliveryException("delivery-invalid-response", "配達ツールの結果形式が不正です。", sends);
         if (!ok.GetBoolean())

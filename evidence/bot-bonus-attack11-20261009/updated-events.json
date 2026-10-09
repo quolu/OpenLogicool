@@ -1,0 +1,31 @@
+[
+  {
+    "Event": "run-started",
+    "DurationMs": null,
+    "AutomaticRulesContinue": true,
+    "NotificationGraceMs": 60000
+  },
+  {
+    "Event": "progress-review-grace",
+    "AtMs": 11107,
+    "Detail": "停止表示のまま画面の変化が止まっています。停止表示を優先し、追加入力はしていません。",
+    "GracePeriodMs": 60000,
+    "AutomaticRulesContinue": true,
+    "EvidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-185628-991-0ea5230b\\review-001"
+  },
+  {
+    "Event": "progress-review-monitoring",
+    "AtMs": 71435,
+    "Detail": "停止表示のまま画面の変化が止まっています。停止表示を優先し、追加入力はしていません。",
+    "AutomaticRulesContinue": true,
+    "EvidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-185628-991-0ea5230b\\review-001"
+  },
+  {
+    "Event": "review-notified",
+    "DecisionId": {
+      "Kind": 1,
+      "Id": "301c80c6-0e2c-4f21-9120-d60038bf012d"
+    },
+    "MonitoringContinues": true
+  }
+]
