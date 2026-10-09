@@ -120,6 +120,7 @@ static int SerialHidTest(string[] arguments)
     string? deviceId = null;
     var repeat = 1;
     var idleMilliseconds = 0;
+    var readPauseMilliseconds = 0;
     for (var index = 0; index < arguments.Length; index++)
     {
         if (arguments[index] == "--device-id" && index + 1 < arguments.Length)
@@ -130,11 +131,14 @@ static int SerialHidTest(string[] arguments)
         else if (arguments[index] == "--idle-ms" && index + 1 < arguments.Length
             && int.TryParse(arguments[++index], out var idle) && idle is >= 0 and <= 10_000)
             idleMilliseconds = idle;
+        else if (arguments[index] == "--read-pause-ms" && index + 1 < arguments.Length
+            && int.TryParse(arguments[++index], out var pause) && pause is >= 0 and <= 10_000)
+            readPauseMilliseconds = pause;
         else
             return Fail($"unknown serial-hid-test option: {arguments[index]}");
     }
 
-    var discovery = CreateSerialHidDiscovery();
+    var discovery = CreateSerialHidDiscovery(readPauseMilliseconds);
     if (string.IsNullOrWhiteSpace(deviceId))
     {
         var candidates = discovery.ListCandidates();
@@ -157,6 +161,7 @@ static int SerialHidTest(string[] arguments)
                 Attempt = attempt,
                 Requested = repeat,
                 IdleMilliseconds = idleMilliseconds,
+                ReadPauseMilliseconds = readPauseMilliseconds,
                 Success = false,
                 last.StatusLine,
                 InputSent = "AllUp only",
@@ -172,6 +177,7 @@ static int SerialHidTest(string[] arguments)
         Operation = "serial-hid-test",
         Attempts = repeat,
         IdleMilliseconds = idleMilliseconds,
+        ReadPauseMilliseconds = readPauseMilliseconds,
         Success = true,
         DeviceInstanceId = deviceId,
         FirmwareVersion = last is null ? null : $"{last.ReadyInfo!.FirmwareVersion.Major}.{last.ReadyInfo.FirmwareVersion.Minor}.{last.ReadyInfo.FirmwareVersion.Patch}",
@@ -836,8 +842,8 @@ static int Ui(string[] arguments)
     return exitCode;
 }
 
-static SerialHidDiscoveryService CreateSerialHidDiscovery() =>
-    new(new SetupApiSerialCandidateEnumerator(), new SerialPortExchangeFactory());
+static SerialHidDiscoveryService CreateSerialHidDiscovery(int responseReadPauseMilliseconds = 0) =>
+    new(new SetupApiSerialCandidateEnumerator(), new SerialPortExchangeFactory(responseReadPauseMilliseconds));
 
 static Func<IResidentOutputSession> CreateOutputSessionFactory(string databasePath, string watchdogPath) =>
     ResidentOutputSessionFactory.Create(

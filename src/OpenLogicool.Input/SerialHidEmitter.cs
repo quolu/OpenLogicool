@@ -215,7 +215,7 @@ public sealed class SerialHidProtocolSession
         {
             throw Latch(new SerialHidSessionFaultException(
                 SerialHidSessionFaultKind.Timeout,
-                $"Serial HID {requestKind} sequence {sequence} の応答がtimeoutしました。自動再送しません。",
+                $"Serial HID {requestKind} sequence {sequence} の応答がtimeoutしました（{exception.Message}）。自動再送しません。",
                 sequence,
                 innerException: exception));
         }

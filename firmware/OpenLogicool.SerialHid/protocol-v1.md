@@ -20,6 +20,8 @@ readerは任意個のpartial readをbufferし、`4F 4C`まで破棄して再同�
 
 host request sequenceは`1..65535`。`65535`の次は`1`であり、`0`は相関不能FAULT専用。hostは同時に未決requestを1件だけ持つ。READY／ACK／FAULTは対象requestと同じsequenceをframe headerへ入れる。sequence不一致応答は成立扱いせずhost faultとし、自動再送しない。
 
+host側の処理が遅れて応答待ちの期限を過ぎた場合、期限到達時に受信バッファへ入っていたバイトだけを取り出す。完成した相関済みframeは正規の応答として扱い、不足分を期限後に追加で待ったり、後着バイトで期限を延長したりしない。
+
 ## Message kind
 
 | 値 | kind | payload |

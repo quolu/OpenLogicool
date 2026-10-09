@@ -91,6 +91,8 @@ baselineが無い、またはbyte一致を確認できない場合は成功扱�
 
 何も押していない時の心拍遅延は接続を失効させない。入力を保持中の150ms期限、全解放、期限切れsessionの拒否は維持する。`serial-hid-test --idle-ms 200`はゲーム入力を保持せず通信を空け、同じ接続で次のHEARTBEATが通るかを検査する。
 
+`serial-hid-test --read-pause-ms 100`は送信後のhost読取り処理を意図的に遅らせ、受信済みの正常応答が時間切れ扱いにならないことを検査する。未受信や不完全な応答を追加で待つ期限は変更しない。
+
 - Pro Microが未接続、複数候補、firmware／protocol不一致、ACK timeout、破損frame、sequence不一致になった場合はterminal faultで停止する。SendInputへ自動fallbackしない。
 - Pro Microを再接続しても同じsessionは再開しない。Input Studioを終了し、候補が1台だけ応答することを確認して明示的に再起動する。
 - hostがhard killされてもfirmware leaseが保持中出力を解放する。実機ではkill要求から148.6321msでkey-upを観測し、250ms予算内だった。
@@ -114,6 +116,8 @@ pwsh.exe -NoLogo -NoProfile -File scripts/flash-serial-hid.ps1 -ExpectedDeviceIn
 ```
 
 flash scriptはexact target identity、固定toolchain、upload verify、CDC＋keyboard＋mouseの再列挙を検証する。自動bootloader捕捉が失敗した場合だけ、Pro Microをdouble-resetしてCaterina bootloaderを開く。targetが一意に決まらない状態ではflashしない。
+
+旧firmwareのwatchdogが自動resetを妨げる場合は、同じ正規scriptへ`-WaitForReset`を付ける。scriptが同じ物理USB接続のbootloaderを待ち、手動double-reset後に自動で書き込む。USBを抜き挿しせず、HIDの無効化やPC再起動を代行手段にしない。書込み用1200-baud close中にwatchdogを給餌しない修理はfirmwareが所有する。
 
 以前の第三者firmwareへ戻すには、そのfirmwareの保持済みsketchまたはhexが別途必要である。OpenLogicool repoには第三者firmwareを同梱しない。
 

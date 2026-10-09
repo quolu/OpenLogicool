@@ -10,20 +10,22 @@ public interface ISerialHidExchangeFactory
     ISerialHidFrameExchange Open(SerialHidCandidate candidate);
 }
 
-public sealed class SerialPortExchangeFactory : ISerialHidExchangeFactory
+public sealed class SerialPortExchangeFactory(int responseReadPauseMilliseconds = 0) : ISerialHidExchangeFactory
 {
-    public ISerialHidFrameExchange Open(SerialHidCandidate candidate) => new SerialPortFrameExchange(candidate.PortName);
+    public ISerialHidFrameExchange Open(SerialHidCandidate candidate) => new SerialPortFrameExchange(candidate.PortName, responseReadPauseMilliseconds);
 }
 
 /// <summary>CDC serialをbinary frameとして同期一往復するtransport。任意のpartial readを完成frameへ組み立てる。</summary>
 public sealed class SerialPortFrameExchange : ISerialHidFrameExchange
 {
     private readonly SerialPort _port;
+    private readonly int _responseReadPauseMilliseconds;
     private bool _disposed;
 
-    public SerialPortFrameExchange(string portName)
+    public SerialPortFrameExchange(string portName, int responseReadPauseMilliseconds = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(portName);
+        _responseReadPauseMilliseconds = responseReadPauseMilliseconds;
         _port = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One)
         {
             Handshake = Handshake.None,
@@ -92,10 +94,12 @@ public sealed class SerialPortFrameExchange : ISerialHidFrameExchange
     private byte[] ReadFrame(TimeSpan timeout)
     {
         var clock = Stopwatch.StartNew();
+        if (_responseReadPauseMilliseconds > 0) Thread.Sleep(_responseReadPauseMilliseconds);
         var assembler = new SerialHidResponseFrameAssembler();
+        var deadline = new SerialHidReadDeadline(timeout);
         while (true)
         {
-            var value = ReadByte(clock, timeout);
+            var value = ReadByte(clock, deadline);
             if (assembler.Accept(value) is { } frame)
             {
                 return frame;
@@ -103,9 +107,9 @@ public sealed class SerialPortFrameExchange : ISerialHidFrameExchange
         }
     }
 
-    private byte ReadByte(Stopwatch clock, TimeSpan timeout)
+    private byte ReadByte(Stopwatch clock, SerialHidReadDeadline deadline)
     {
-        SetRemainingReadTimeout(clock, timeout);
+        _port.ReadTimeout = deadline.ReadTimeoutMilliseconds(clock.Elapsed, _port.BytesToRead);
         var value = _port.ReadByte();
         if (value < 0)
         {
@@ -115,14 +119,22 @@ public sealed class SerialPortFrameExchange : ISerialHidFrameExchange
         return (byte)value;
     }
 
-    private void SetRemainingReadTimeout(Stopwatch clock, TimeSpan timeout)
-    {
-        var remaining = timeout - clock.Elapsed;
-        if (remaining <= TimeSpan.Zero)
-        {
-            throw new TimeoutException("serial response frameの期限を超えました。");
-        }
+}
 
-        _port.ReadTimeout = Math.Max(1, (int)Math.Ceiling(remaining.TotalMilliseconds));
+/// <summary>期限に到達していたら、既に受信済みのバイトだけを一度取り出し、不足分を追加で待たない。</summary>
+internal sealed class SerialHidReadDeadline(TimeSpan timeout)
+{
+    private int? bufferedAtDeadline;
+
+    public int ReadTimeoutMilliseconds(TimeSpan elapsed, int availableBytes)
+    {
+        var remaining = timeout - elapsed;
+        if (bufferedAtDeadline is null && remaining > TimeSpan.Zero)
+            return Math.Max(1, (int)Math.Ceiling(remaining.TotalMilliseconds));
+        bufferedAtDeadline ??= availableBytes;
+        if (bufferedAtDeadline <= 0)
+            throw new TimeoutException("serial response frameの期限を超え、受信済みのバイトでもframeが完成しませんでした。");
+        bufferedAtDeadline--;
+        return 1;
     }
 }

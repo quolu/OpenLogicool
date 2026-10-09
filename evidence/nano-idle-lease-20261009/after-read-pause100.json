@@ -1,0 +1,13 @@
+{
+  "ProductHostEntry": true,
+  "Operation": "serial-hid-test",
+  "Attempts": 5,
+  "IdleMilliseconds": 0,
+  "ReadPauseMilliseconds": 100,
+  "Success": true,
+  "DeviceInstanceId": "USB\\VID_1B4F\u0026PID_9206\u0026MI_00\\A\u00263662A262\u00260\u00260000",
+  "FirmwareVersion": "1.1.3",
+  "ElapsedMilliseconds": 1104,
+  "InputSent": "AllUp only",
+  "AiCallCount": 0
+}

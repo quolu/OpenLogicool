@@ -1,0 +1,12 @@
+{
+  "ProductHostEntry": true,
+  "Operation": "serial-hid-test",
+  "Attempt": 1,
+  "Requested": 1,
+  "IdleMilliseconds": 0,
+  "ReadPauseMilliseconds": 100,
+  "Success": false,
+  "StatusLine": "\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093: Serial HID AllUp sequence 2 \u306E\u5FDC\u7B54\u304Ctimeout\u3057\u307E\u3057\u305F\uFF08serial response frame\u306E\u671F\u9650\u3092\u8D85\u3048\u307E\u3057\u305F\uFF08\u53D7\u4FE1\u6E08\u307F=10 bytes\uFF09\u3002\uFF09\u3002\u81EA\u52D5\u518D\u9001\u3057\u307E\u305B\u3093\u3002",
+  "InputSent": "AllUp only",
+  "AiCallCount": 0
+}
