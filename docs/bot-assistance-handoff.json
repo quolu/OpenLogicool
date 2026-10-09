@@ -83,6 +83,34 @@
     }
   },
   "pendingGameDecision": {
+    "decisionId": "K-SY99CD",
+    "incidentId": "b2f4c507-2962-4e81-aa05-21a626a36da2",
+    "status": "awaiting-human-choice",
+    "choices": [
+      "最上級自動回復10個を選び6,000ゴールド以内なら購入・登録",
+      "最上級回復10個を6,000ゴールドで購入・登録",
+      "購入せず閉じる"
+    ],
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-211702-126-d3580f0b\\review-001",
+    "replyThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+    "assistanceOwnerThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+    "afterAnswer": "同じ窓の品名・価格を実画面で確認してNanoで操作する。自動回復品の価格は未確認、6,000超なら購入せず確認する。実行後にBotの復帰を確認する。",
+    "observedState": "ポーション購入確認窓が通常画面を覆っており、Botは画面・回復監視を続けているが進行は保留中"
+  },
+  "deliveryVerification": {
+    "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",
+    "threadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
+    "queuedSubmissionId": "01a11fd4-ece7-7f21-9cf4-c4707440fff7",
+    "receptionConfirmed": true,
+    "evidence": "evidence/bot-notification-episodes-20261009/delivery-verification.json"
+  },
+  "deliveryTransportVerification": {
+    "activeTurnReceptionConfirmed": true,
+    "idleLatencyConfirmed": false,
+    "evidence": "evidence/bot-bonus-attack11-20261009/acceptance.md",
+    "nextCheck": "次の自然なBot通知の受付時刻と会話開始時刻を照合する。"
+  },
+  "lastCompletedGameDecision": {
     "decisionId": "K-R3UXYV",
     "incidentId": "1d896642-9e25-441a-ace9-290fc4bfca9a",
     "status": "resolved",
@@ -100,18 +128,5 @@
     "resolutionEvidence": "evidence/bot-bonus-technique3-20261009/acceptance.md",
     "assistanceOwnerThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
     "assistanceResolution": "現在の担当がこの操作証拠を確認して案件を閉じる。旧会話から担当の再登録や案件操作は行っていない。"
-  },
-  "deliveryVerification": {
-    "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",
-    "threadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
-    "queuedSubmissionId": "01a11fd4-ece7-7f21-9cf4-c4707440fff7",
-    "receptionConfirmed": true,
-    "evidence": "evidence/bot-notification-episodes-20261009/delivery-verification.json"
-  },
-  "deliveryTransportVerification": {
-    "activeTurnReceptionConfirmed": true,
-    "idleLatencyConfirmed": false,
-    "evidence": "evidence/bot-bonus-attack11-20261009/acceptance.md",
-    "nextCheck": "次の自然なBot通知の受付時刻と会話開始時刻を照合する。"
   }
 }
