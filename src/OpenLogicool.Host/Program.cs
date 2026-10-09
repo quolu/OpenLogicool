@@ -119,6 +119,7 @@ static int SerialHidTest(string[] arguments)
 {
     string? deviceId = null;
     var repeat = 1;
+    var idleMilliseconds = 0;
     for (var index = 0; index < arguments.Length; index++)
     {
         if (arguments[index] == "--device-id" && index + 1 < arguments.Length)
@@ -126,6 +127,9 @@ static int SerialHidTest(string[] arguments)
         else if (arguments[index] == "--repeat" && index + 1 < arguments.Length
             && int.TryParse(arguments[++index], out var parsed) && parsed is >= 1 and <= 1_000)
             repeat = parsed;
+        else if (arguments[index] == "--idle-ms" && index + 1 < arguments.Length
+            && int.TryParse(arguments[++index], out var idle) && idle is >= 0 and <= 10_000)
+            idleMilliseconds = idle;
         else
             return Fail($"unknown serial-hid-test option: {arguments[index]}");
     }
@@ -143,7 +147,7 @@ static int SerialHidTest(string[] arguments)
     SerialHidConnectionTestResult? last = null;
     for (var attempt = 1; attempt <= repeat; attempt++)
     {
-        last = discovery.Test(deviceId);
+        last = discovery.Test(deviceId, idleMilliseconds);
         if (!last.Success)
         {
             Console.WriteLine(JsonSerializer.Serialize(new
@@ -152,6 +156,7 @@ static int SerialHidTest(string[] arguments)
                 Operation = "serial-hid-test",
                 Attempt = attempt,
                 Requested = repeat,
+                IdleMilliseconds = idleMilliseconds,
                 Success = false,
                 last.StatusLine,
                 InputSent = "AllUp only",
@@ -166,6 +171,7 @@ static int SerialHidTest(string[] arguments)
         ProductHostEntry = true,
         Operation = "serial-hid-test",
         Attempts = repeat,
+        IdleMilliseconds = idleMilliseconds,
         Success = true,
         DeviceInstanceId = deviceId,
         FirmwareVersion = last is null ? null : $"{last.ReadyInfo!.FirmwareVersion.Major}.{last.ReadyInfo.FirmwareVersion.Minor}.{last.ReadyInfo.FirmwareVersion.Patch}",

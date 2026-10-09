@@ -91,6 +91,17 @@ public sealed class SerialHidDiscoveryTests
     }
 
     [Fact]
+    public void 無入力診断は全解放して心拍を空け同じ接続の応答を確認する()
+    {
+        var factory = new FakeExchangeFactory();
+        var service = new SerialHidDiscoveryService(new FakeCandidates([CandidateA]), factory);
+        var result = service.Test(CandidateA.DeviceInstanceId, idleMilliseconds: 1);
+        Assert.True(result.Success, result.StatusLine);
+        Assert.Equal(new[] { SerialHidMessageKind.Hello, SerialHidMessageKind.AllUp,
+            SerialHidMessageKind.Heartbeat, SerialHidMessageKind.AllUp }, Assert.Single(factory.Exchanges).RequestKinds);
+    }
+
+    [Fact]
     public void Response_frame_assembler_handles_partial_chunks_and_magic_resynchronization()
     {
         var frame = SerialHidProtocolV1.Encode(SerialHidMessageKind.Ack, 42, []);

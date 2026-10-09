@@ -114,6 +114,18 @@ public sealed class ResidentOutputSessionTests
             TimeSpan.FromMilliseconds(SerialHidProtocolV1.LeaseMilliseconds)));
     }
 
+    [Fact]
+    public void 呼出元で故障した接続も終了時に再送せず回収する()
+    {
+        var exchange = new FakeExchange { FailHeartbeat = true };
+        var protocol = SerialHidProtocolSession.Connect(exchange, new(1, 0, 0), TimeSpan.FromMilliseconds(80));
+        using var session = new SerialHidResidentOutputSession(exchange, protocol, TimeSpan.FromMilliseconds(50));
+        Assert.Throws<SerialHidSessionFaultException>(() => protocol.SendHeartbeat());
+        session.Stop();
+        Assert.Equal(new[] { SerialHidMessageKind.Hello, SerialHidMessageKind.Heartbeat }, exchange.RequestKinds());
+        Assert.Equal(1, exchange.DisposeCount);
+    }
+
     private static SerialHidResidentOutputSession CreateSession(
         FakeExchange exchange,
         TimeSpan? heartbeatInterval = null) =>

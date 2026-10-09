@@ -18,13 +18,14 @@ namespace {
 
 constexpr uint8_t kFirmwareVersionMajor = 1;
 constexpr uint8_t kFirmwareVersionMinor = 1;
-constexpr uint8_t kFirmwareVersionPatch = 3;
+constexpr uint8_t kFirmwareVersionPatch = 4;
 
 uint8_t inputFrame[kMaxFrameLength];
 uint16_t inputLength = 0;
 uint16_t expectedFrameLength = 0;
 bool protocolReady = false;
 bool releasePending = false;
+bool outputsHeld = false;
 bool usbWasConfigured = false;
 uint16_t lastAcceptedSequence = 0;
 FirmwareLease lease;
@@ -49,6 +50,7 @@ void ResetProtocolState() {
   protocolReady = false;
   lease.Reset();
   lastAcceptedSequence = 0;
+  outputsHeld = false;
   mouseState.Reset();
   ResetReader();
 }
@@ -142,6 +144,10 @@ void ProcessSetState(const FrameView& frame) {
     return;
   }
   mouseState.CommitButtons(frame.payload[7]);
+  outputsHeld = frame.payload[0] != 0 || frame.payload[7] != 0;
+  for (uint8_t index = 1; index <= 6; ++index) {
+    outputsHeld = outputsHeld || frame.payload[index] != 0;
+  }
   lastAcceptedSequence = frame.sequence;
   ArmLease();
   SendAck(frame.sequence);
@@ -176,6 +182,7 @@ void ProcessAllUp(const FrameView& frame) {
     return;
   }
   mouseState.Reset();
+  outputsHeld = false;
   lastAcceptedSequence = frame.sequence;
   ArmLease();
   SendAck(frame.sequence);
@@ -291,6 +298,11 @@ void ResetUsbIfReleaseStalled() {
 
 void ExpireLeaseIfNeeded() {
   if (!lease.IsExpired(millis())) {
+    return;
+  }
+  // 保持中の入力がなければ解放対象はない。接続と連番を保持する。
+  if (!outputsHeld) {
+    lease.Reset();
     return;
   }
   EnterFailClosedRelease();

@@ -1,6 +1,6 @@
 # OpenLogicool Serial HID firmware
 
-SparkFun Pro Micro（ATmega32U4、5V / 16 MHz）をCDC serialとUSB HID keyboard／mouseのbridgeとして動かすfirmwareである。firmware 1.1.3はbutton、relative pointer／wheelに加え、fail-closed release中もserialを先に処理し、Helloを明示回復要求として扱う。releaseが1秒継続した時に加え、USB／CDC処理からmain loopへ2秒戻らない時もhardware watchdogでUSBを自己再列挙する。hostとのwire契約は[protocol-v1.md](protocol-v1.md)を正とする。
+SparkFun Pro Micro（ATmega32U4、5V / 16 MHz）をCDC serialとUSB HID keyboard／mouseのbridgeとして動かすfirmwareである。button、relative pointer／wheelに加え、fail-closed release中もserialを先に処理し、Helloを明示回復要求として扱う。releaseが1秒継続した時に加え、USB／CDC処理からmain loopへ2秒戻らない時もhardware watchdogでUSBを自己再列挙する。入力保持中の150ms全解放を維持し、全解放済みの無入力区間では接続を維持する。hostとのwire契約は[protocol-v1.md](protocol-v1.md)を正とする。firmwareの版はsketchのversion tripletを参照する。
 
 Windows PowerShellから次を実行する。
 

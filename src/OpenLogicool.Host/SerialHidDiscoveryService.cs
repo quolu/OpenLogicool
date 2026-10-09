@@ -104,15 +104,22 @@ public sealed class SerialHidDiscoveryService(
         throw new SerialHidDiscoveryException(summary + detail);
     }
 
-    public SerialHidConnectionTestResult Test(string selectedDeviceInstanceId)
+    public SerialHidConnectionTestResult Test(string selectedDeviceInstanceId, int idleMilliseconds = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(selectedDeviceInstanceId);
+        if (idleMilliseconds is < 0 or > 10_000) throw new ArgumentOutOfRangeException(nameof(idleMilliseconds));
         try
         {
             var selection = Resolve(selectedDeviceInstanceId);
             using (selection.Session)
             {
-                selection.Session.Start();
+                if (idleMilliseconds > 0)
+                {
+                    selection.Session.Protocol.SendAllUp();
+                    Thread.Sleep(idleMilliseconds);
+                    selection.Session.Protocol.SendHeartbeat();
+                }
+                else selection.Session.Start();
                 selection.Session.Stop();
             }
 

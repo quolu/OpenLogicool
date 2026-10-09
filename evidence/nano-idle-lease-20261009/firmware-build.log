@@ -1,0 +1,60 @@
+Config file written to: C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\config\arduino-cli.yaml
+
+Downloading index: package_index.tar.bz2 0 B / 110.85 KiB    0.00%
+Downloading index: package_index.tar.bz2 downloaded
+
+Downloading index: package_sparkfun_index.json 0 B / 142.18 KiB    0.00%
+Downloading index: package_sparkfun_index.json downloaded
+Downloading packages...
+
+SparkFun:avr@1.1.13 0 B / 1.20 MiB    0.00%
+SparkFun:avr@1.1.13 downloaded
+Installing platform SparkFun:avr@1.1.13...
+Skipping platform configuration....
+Platform SparkFun:avr@1.1.13 installed
+Downloading packages...
+
+arduino:arduinoOTA@1.3.0 0 B / 2.64 MiB    0.00%
+arduino:arduinoOTA@1.3.0 downloaded
+
+arduino:avr-gcc@7.3.0-atmel3.6.1-arduino7 0 B / 50.09 MiB    0.00%
+arduino:avr-gcc@7.3.0-atmel3.6.1-arduino7 0 B / 50.09 MiB    0.00%
+arduino:avr-gcc@7.3.0-atmel3.6.1-arduino7 41.90 MiB / 50.09 MiB   83.65%
+arduino:avr-gcc@7.3.0-atmel3.6.1-arduino7 downloaded
+
+arduino:avrdude@8.0.0-arduino1 0 B / 1.80 MiB    0.00%
+arduino:avrdude@8.0.0-arduino1 downloaded
+
+arduino:avr@1.8.8 0 B / 6.83 MiB    0.00%
+arduino:avr@1.8.8 downloaded
+Installing arduino:arduinoOTA@1.3.0...
+Skipping tool configuration....
+arduino:arduinoOTA@1.3.0 installed
+Installing arduino:avr-gcc@7.3.0-atmel3.6.1-arduino7...
+Skipping tool configuration....
+arduino:avr-gcc@7.3.0-atmel3.6.1-arduino7 installed
+Installing arduino:avrdude@8.0.0-arduino1...
+Skipping tool configuration....
+arduino:avrdude@8.0.0-arduino1 installed
+Installing platform arduino:avr@1.8.8...
+Skipping platform configuration....
+Platform arduino:avr@1.8.8 installed
+C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\data\packages\arduino\hardware\avr\1.8.8\cores\arduino\new.cpp: In function 'void* operator new(std::size_t, std::nothrow_t)':
+C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\data\packages\arduino\hardware\avr\1.8.8\cores\arduino\new.cpp:59:60: warning: unused parameter 'tag' [-Wunused-parameter]
+ void * operator new(std::size_t size, const std::nothrow_t tag) noexcept {
+                                                            ^~~
+C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\data\packages\arduino\hardware\avr\1.8.8\cores\arduino\new.cpp: In function 'void* operator new [](std::size_t, const std::nothrow_t&)':
+C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\data\packages\arduino\hardware\avr\1.8.8\cores\arduino\new.cpp:68:63: warning: unused parameter 'tag' [-Wunused-parameter]
+ void * operator new[](std::size_t size, const std::nothrow_t& tag) noexcept {
+                                                               ^~~
+C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\data\packages\arduino\hardware\avr\1.8.8\cores\arduino\new.cpp: In function 'void operator delete(void*, const std::nothrow_t&)':
+C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\data\packages\arduino\hardware\avr\1.8.8\cores\arduino\new.cpp:103:55: warning: unused parameter 'tag' [-Wunused-parameter]
+ void operator delete(void* ptr, const std::nothrow_t& tag) noexcept {
+                                                       ^~~
+C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\data\packages\arduino\hardware\avr\1.8.8\cores\arduino\new.cpp: In function 'void operator delete [](void*, const std::nothrow_t&)':
+C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\data\packages\arduino\hardware\avr\1.8.8\cores\arduino\new.cpp:106:57: warning: unused parameter 'tag' [-Wunused-parameter]
+ void operator delete[](void* ptr, const std::nothrow_t& tag) noexcept {
+                                                         ^~~
+Sketch uses 6502 bytes (22%) of program storage space. Maximum is 28672 bytes.
+Global variables use 263 bytes (10%) of dynamic memory, leaving 2297 bytes for local variables. Maximum is 2560 bytes.
+Firmware build: C:\Users\kite_\AppData\Local\OpenLogicool\Arduino\build\OpenLogicool.SerialHid

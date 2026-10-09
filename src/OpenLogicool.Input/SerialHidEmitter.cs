@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Diagnostics;
 
 namespace OpenLogicool.Input;
 
@@ -66,6 +67,7 @@ public sealed class SerialHidProtocolSession
     private readonly TimeSpan _requestTimeout;
     private SerialHidSessionFaultException? _terminalFault;
     private ushort _lastIssuedSequence;
+    private long _lastResponseTimestamp;
 
     private SerialHidProtocolSession(ISerialHidFrameExchange exchange, TimeSpan requestTimeout)
     {
@@ -199,6 +201,8 @@ public sealed class SerialHidProtocolSession
         TimeSpan? timeout = null)
     {
         var sequence = SerialHidProtocolV1.NextRequestSequence(_lastIssuedSequence);
+        var responseGapMs = _lastResponseTimestamp == 0 ? (double?)null
+            : Stopwatch.GetElapsedTime(_lastResponseTimestamp).TotalMilliseconds;
         var request = SerialHidProtocolV1.Encode(requestKind, sequence, payload);
         _lastIssuedSequence = sequence;
 
@@ -260,7 +264,7 @@ public sealed class SerialHidProtocolSession
             var code = (SerialHidFaultCode)response.Payload[0];
             throw Latch(new SerialHidSessionFaultException(
                 SerialHidSessionFaultKind.FirmwareFault,
-                $"firmwareが{code}を返しました（request={requestKind}, sequence={sequence}, offending=0x{response.Payload[1]:X2}）。自動再送しません。",
+                $"firmwareが{code}を返しました（request={requestKind}, sequence={sequence}, offending=0x{response.Payload[1]:X2}, 前回正常応答から={responseGapMs?.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) ?? "なし"}ms）。自動再送しません。",
                 sequence,
                 code,
                 response.Payload[1]));
@@ -274,6 +278,7 @@ public sealed class SerialHidProtocolSession
                 sequence));
         }
 
+        _lastResponseTimestamp = Stopwatch.GetTimestamp();
         return response;
     }
 

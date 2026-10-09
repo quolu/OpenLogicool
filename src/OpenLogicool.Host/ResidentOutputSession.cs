@@ -213,7 +213,7 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
         // background fault後はprotocol sessionがterminalである。再送せずcloseし、firmware leaseへreleaseを委ねる。
         try
         {
-            if (_protocol is not null && BackgroundFailure is null)
+            if (_protocol is not null && _protocol.TerminalFault is null && BackgroundFailure is null)
             {
                 _protocol.SendAllUp();
             }

@@ -1,0 +1,11 @@
+{
+  "ProductHostEntry": true,
+  "Operation": "serial-hid-test",
+  "Attempt": 1,
+  "Requested": 1,
+  "IdleMilliseconds": 200,
+  "Success": false,
+  "StatusLine": "\u63A5\u7D9A\u3067\u304D\u307E\u305B\u3093: firmware\u304CSequenceViolation\u3092\u8FD4\u3057\u307E\u3057\u305F\uFF08request=Heartbeat, sequence=3, offending=0x05\uFF09\u3002\u81EA\u52D5\u518D\u9001\u3057\u307E\u305B\u3093\u3002",
+  "InputSent": "AllUp only",
+  "AiCallCount": 0
+}

@@ -29,7 +29,7 @@ try {
     $protocolSource = Join-Path $repositoryRoot 'firmware\OpenLogicool.SerialHid\ProtocolV1.cpp'
     $testInclude = Join-Path $repositoryRoot 'tests\OpenLogicool.SerialHid.FirmwareTests'
     $firmwareInclude = Join-Path $repositoryRoot 'firmware\OpenLogicool.SerialHid'
-    $compile = "cd /d `"$temporaryDirectory`" && call `"$vsDevCmd`" -arch=x64 -host_arch=x64 >nul && cl /nologo /std:c++17 /EHsc /W4 /WX /I`"$testInclude`" /I`"$firmwareInclude`" `"$testSource`" `"$protocolSource`" /Fe:`"$executable`""
+    $compile = "cd /d `"$temporaryDirectory`" && call `"$vsDevCmd`" -arch=x64 -host_arch=x64 >nul && cl /nologo /utf-8 /std:c++17 /EHsc /W4 /WX /I`"$testInclude`" /I`"$firmwareInclude`" `"$testSource`" `"$protocolSource`" /Fe:`"$executable`""
     & cmd.exe /d /c $compile
     if ($LASTEXITCODE -ne 0) { throw 'Serial HID firmware native test build failed.' }
 
@@ -65,6 +65,16 @@ try {
     if ($LASTEXITCODE -ne 0 -or $recovery -ne 'recovery|ok|1000') {
         throw "firmware recovery timer failed: $recovery"
     }
+    $sessionSource = Join-Path $testInclude 'FirmwareSessionTests.cpp'
+    $sessionExecutable = Join-Path $temporaryDirectory 'FirmwareSessionTests.exe'
+    $compileSession = "cd /d `"$temporaryDirectory`" && call `"$vsDevCmd`" -arch=x64 -host_arch=x64 >nul && cl /nologo /utf-8 /std:c++17 /EHsc /W4 /WX /I`"$testInclude`" /I`"$firmwareInclude`" `"$sessionSource`" `"$protocolSource`" /Fe:`"$sessionExecutable`""
+    & cmd.exe /d /c $compileSession
+    if ($LASTEXITCODE -ne 0) { throw 'Firmware session native test build failed.' }
+    $sessionResult = ((& $sessionExecutable) -join '').Trim()
+    if ($LASTEXITCODE -ne 0 -or $sessionResult -ne 'session|ok|idle200|idle1000|held150|sequence|usb-reset|no-replay') {
+        throw "Firmware session contract failed: $sessionResult"
+    }
+    Write-Output $sessionResult
     Write-Output "Firmware native tests: $($vectors.vectors.Count) golden vectors, checksum/version faults, lease 150ms, mouse delta negotiation, recovery reset 1000ms"
 }
 finally {

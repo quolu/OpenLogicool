@@ -1,0 +1,8 @@
+SerialHidFirmwareTests.cpp
+ProtocolV1.cpp
+コードを生成中...
+FirmwareSessionTests.cpp
+ProtocolV1.cpp
+コードを生成中...
+session|ok|idle200|idle1000|held150|sequence|usb-reset|no-replay
+Firmware native tests: 8 golden vectors, checksum/version faults, lease 150ms, mouse delta negotiation, recovery reset 1000ms

@@ -83,7 +83,9 @@ Game Operatorがrelative pointerを使うsessionはHELLOで`0x000F`を要求す�
 
 chordの同方向edge群は1 snapshot。有限sequenceはdown群とup群をcheckpointに分け、各checkpointを順番にSET_STATE→ACK→commitする。keyboardとmouseが同じcheckpointにあれば1 payloadで確定する。
 
-firmwareはboot、USB再列挙、protocol resetをall-upから始め、最終有効frameから150msでlease切れにしてkeyboard／mouseをall-upにする。hostは50ms間隔でHEARTBEATする。handled stopは新規down停止→所有output release→ALL_UP ACK→serial close。Windows watchdogはSerial HIDのrelease所有者ではない。
+firmwareはboot、USB再列挙、protocol resetをall-upから始める。key・modifier・mouse buttonを保持中は、最終有効frameから150msで全解放しprotocolを無効化する。全解放済みの時はlease満了だけで接続・連番を消さず、次の正しい連番のrequestを受け付ける。次の保持入力でleaseを新しくarmする。保持中lease失効後の旧sessionは引き続き拒否し、自動再送や暗黙再開をしない。
+
+hostは50ms間隔でHEARTBEATする。handled stopは新規down停止→所有output release→ALL_UP ACK→serial close。Windows watchdogはSerial HIDのrelease所有者ではない。
 
 ## Golden vectors
 

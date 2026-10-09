@@ -89,6 +89,8 @@ baselineが無い、またはbyte一致を確認できない場合は成功扱�
 
 ## fault・抜線・hard kill
 
+何も押していない時の心拍遅延は接続を失効させない。入力を保持中の150ms期限、全解放、期限切れsessionの拒否は維持する。`serial-hid-test --idle-ms 200`はゲーム入力を保持せず通信を空け、同じ接続で次のHEARTBEATが通るかを検査する。
+
 - Pro Microが未接続、複数候補、firmware／protocol不一致、ACK timeout、破損frame、sequence不一致になった場合はterminal faultで停止する。SendInputへ自動fallbackしない。
 - Pro Microを再接続しても同じsessionは再開しない。Input Studioを終了し、候補が1台だけ応答することを確認して明示的に再起動する。
 - hostがhard killされてもfirmware leaseが保持中出力を解放する。実機ではkill要求から148.6321msでkey-upを観測し、250ms予算内だった。
@@ -104,7 +106,7 @@ HELLOが時間切れでもNanoのUSB・CDCが列挙されている場合、管�
 
 ### 再flash手順
 
-repo内のfirmware 1.1.3を再flashする場合:
+repo内のfirmwareを再flashする場合:
 
 ```powershell
 pwsh.exe -NoLogo -NoProfile -File scripts/build-serial-hid.ps1
