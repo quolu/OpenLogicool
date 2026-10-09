@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-bonus-dex8-20261009\\level44-after-luck11.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "e6367aab07353ce5e25048710ed0fda90056e8df265a2b6143bae143456d89c7",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

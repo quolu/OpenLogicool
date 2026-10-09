@@ -5,10 +5,12 @@
   "observedAtMs": 474933,
   "graceMs": 60490,
   "decisionId": "K-JD2EZW",
-  "status": "awaiting-human-choice",
+  "status": "resolved",
   "oldCasesClosed": [
     "e66213b2-33bc-4a24-bc70-b791ed4226ef",
     "9bf01e78-b78f-4185-8e5a-798fe872e6a2"
   ],
-  "oldCasesExtraInputCount": 0
+  "oldCasesExtraInputCount": 0,
+  "selectedOption": "luck11",
+  "confirmedLevel": 44
 }

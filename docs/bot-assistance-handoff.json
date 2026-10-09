@@ -52,43 +52,43 @@
   ],
   "currentAssistance": {
     "incidentId": "2c5329f0-97a1-4702-944d-1ff6bdcec2c4",
-    "status": "claimed",
+    "status": "resolved",
     "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21\\review-002",
-    "detail": "新しいボーナス3択はDEX成長8（Rare・推奨）・LUCK成長11（Elite）・WILL成長1。決裁箱K-JD2EZWへ申請し回答待ち。古い休憩案件e66213b2と9bf01e78は旧実行終了・現行画面からの解消を確認して追加操作なく完了した。",
-    "nextAction": "決裁箱K-JD2EZWの回答に従い、現在の画面を再確認してNanoで選択・確定する。回答前はこの選択を保留し、Botの観測を継続する。",
-    "resolutionEvidence": "evidence/bot-bonus-dex8-20261009",
+    "detail": "K-JD2EZWの回答どおりLUCK成長11（Elite）をNanoで選択し、拡大表示と決定Spaceを確認して確定。通常HUDのLv44とコレンへの移動目標を確認してBotを再開した。",
+    "nextAction": "Botを継続し、次の支援通知を待つ。今回のボーナスは確定済みなので再操作しない。次の自然な待機中通知で受付時刻と会話開始時刻を照合する。",
+    "resolutionEvidence": "evidence/bot-bonus-dex8-20261009/level44-after-luck11.png",
     "repairEvidence": "evidence/bot-bonus-attack11-20261009/acceptance.md"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv43確認済み。K-Z6UBT9の回答どおり攻撃優先11を選択・Space確定済み。休憩のOCR取り落としを修理しBotを再開、馬で「本の封印／クリステルと会話」へ移動する実画面を確認した。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21",
+    "nextCheck": "LUCK成長11の確定後、通常HUDでLv44を確認した。次の目標は「コレンへ／コレンに移動」。Botを再開済み。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-202457-685-56575d1b",
     "levelProgression": {
-      "currentLevel": 43,
+      "currentLevel": 44,
       "targetLevel": 42,
       "quest": "生き残りし者へ",
       "activityPolicy": "明確なゲーム内推奨と一意な移動先",
       "approvedActivity": "ラビ1Fエリア1 HARD",
       "status": "achieved",
       "decisionId": "K-X6FCVM",
-      "currentActivity": "Lv43。本の封印の会話相手へ移動中。",
+      "currentActivity": "Lv44。コレンへの移動へ継続中。",
       "lastGuideCompletionPercent": 67
     },
     "lastBonusChoice": {
-      "choice": "攻撃優先11段階（Elite）",
-      "basis": "決裁箱K-Z6UBT9の利用者回答に従い実行。",
+      "choice": "LUCK成長11段階（Elite）",
+      "basis": "決裁箱K-JD2EZWの利用者回答に従い実行。ゲーム内推奨DEX8と異なる回答をそのまま守った。",
       "status": "executed",
-      "evidence": "evidence/bot-bonus-attack11-20261009/level43-after-bonus.png"
+      "evidence": "evidence/bot-bonus-dex8-20261009/level44-after-luck11.png"
     }
   },
   "pendingGameDecision": {
     "decisionId": "K-JD2EZW",
     "incidentId": "2c5329f0-97a1-4702-944d-1ff6bdcec2c4",
-    "status": "pending",
-    "selectedChoice": null,
-    "userInstruction": null,
-    "approvalBoxStatus": "回答待ち",
+    "status": "resolved",
+    "selectedChoice": "LUCK成長11段階（Elite）",
+    "userInstruction": "LUCK成長11段階（Elite）（option_id=luck11）",
+    "approvalBoxStatus": "回答済み・Nanoの選択とSpace確定を実施済み",
     "choices": [
       "DEX成長8段階（Rare・推奨）",
       "LUCK成長11段階（Elite）",
@@ -96,9 +96,9 @@
     ],
     "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21\\review-002",
     "replyThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
-    "afterAnswer": "未実行。回答に従い選択・確定し、結果画面を確認してBotを継続する。",
+    "afterAnswer": "実施済み。通常HUDのLv44を確認してBotを再開した。選択や確定を繰り返さない。",
     "reviewEvidence": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21\\review-002\\progress-review.png",
-    "resolutionEvidence": null
+    "resolutionEvidence": "evidence/bot-bonus-dex8-20261009/level44-after-luck11.png"
   },
   "deliveryVerification": {
     "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",
