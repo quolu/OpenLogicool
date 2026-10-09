@@ -62,8 +62,8 @@
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "最後に通常HUDで確認したレベルは41。生き残りし者へのLv42条件を満たすため、推奨活動に従ってBotを継続中。推薦の見出しと一意な移動先を使う汎用規則は導入・実機成立済み。レベルガイドの名称、HARD入場表示とLv41はルピーへ共有済み。Lv42到達と実行回数、達成度の分母は未確認。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-130826-791-657a57e2",
+    "nextCheck": "休憩画面の停止表示で入力0回の状態から、承認済みのNano Spaceで立ち上がり、Botによる進行入力とラビ2Fエリア1の戦闘を確認。レベルガイドはLv41・達成度67％・次の推奨はラビ2Fエリア2 HARD。休憩退出と停止表示中の詰まり通知を実装・開発版へ導入して再開。Lv42到達は未確認。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-155600-037-02e8d16f",
     "levelProgression": {
       "currentLevel": 41,
       "targetLevel": 42,
@@ -72,8 +72,8 @@
       "approvedActivity": "ラビ1Fエリア1 HARD",
       "status": "in-progress",
       "decisionId": "K-X6FCVM",
-      "currentActivity": "推奨に従い進行中。エリア2 HARDの後、エリア3 HARDの入場待機の自動復帰を確認。",
-      "lastGuideCompletionPercent": 17
+      "currentActivity": "ラビ2Fエリア1の戦闘を確認後、ラビ2Fエリア2 HARDの推奨を確認しBot継続中。",
+      "lastGuideCompletionPercent": 67
     },
     "lastBonusChoice": {
       "choice": "攻撃優先10段階",

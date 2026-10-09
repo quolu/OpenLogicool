@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-rest-resume-20261009\\progress-after-rest.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "419ffd83e9977b51a0e075bced5cdc28dc2c9f733a19121a024bc73d6d628439",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

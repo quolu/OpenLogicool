@@ -11,6 +11,52 @@ namespace OpenLogicool.Host.Tests;
 public sealed class VisualProgressTests
 {
     [Fact]
+    public void 休憩メニューの退出は停止表示中でも一回だけ許可し料理や食事は選ばない()
+    {
+        var profile = VisualProgressProfile.Load(Path.Combine(AppContext.BaseDirectory, "BotScripts", "MabinogiMobile", "progress.json"));
+        var recognizer = new VisualProgressRecognizer(profile);
+        var words = new[] { new WindowsGameOcrWord("料理", 740, 495, 35, 20),
+            new WindowsGameOcrWord("フードを食べる", 820, 495, 100, 20), new WindowsGameOcrWord("Space", 940, 565, 40, 20) };
+        var choice = recognizer.Recognize(Ocr(words), 1000, 600, new(0, 0, 1000, 600), inhibited: true);
+        Assert.Equal("rest-exit", choice.RuleId);
+        Assert.Equal(VisualProgressAction.Key, choice.Action);
+        Assert.Equal("Key:Space", choice.Key);
+        Assert.Null(choice.Point);
+        Assert.True(choice.AllowWhileInhibited);
+        var schedule = new VisualProgressSchedule(profile);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, choice, true, true, true).Action);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(600, choice, true, true, true).Action);
+        schedule.RecordInput(600, choice);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1200, choice, true, true, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(3000, choice, true, true, true).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(6000, choice, true, true, true).Action);
+        foreach (var missing in words)
+        {
+            var incomplete = recognizer.Recognize(Ocr(words.Where(word => word != missing).ToArray()),
+                1000, 600, new(0, 0, 1000, 600), inhibited: true);
+            Assert.NotEqual("rest-exit", incomplete.RuleId);
+            Assert.False(incomplete.AllowWhileInhibited);
+        }
+    }
+
+    [Fact]
+    public void 停止表示の静止も詰まりとして観測し通常のキーやクリックへ切り替えない()
+    {
+        var schedule = new VisualProgressSchedule(Profile());
+        var candidate = new VisualProgressChoice(VisualProgressAction.Key, "通常", "通常", "Key:Space");
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, candidate, true, true, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(9999, candidate, true, true, true).Action);
+        var choice = schedule.Decide(10000, candidate, true, true, true);
+        Assert.Equal(VisualProgressAction.Review, choice.Action);
+        Assert.Null(choice.Key);
+        Assert.Null(choice.Point);
+        Assert.Contains("停止表示", choice.Detail);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(20000, candidate, true, true, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(29999, candidate, true, true, true).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(30000, candidate, true, true, true).Action);
+    }
+
+    [Fact]
     public async Task クエストの必要アイテム不足では再入力をせず待機する()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

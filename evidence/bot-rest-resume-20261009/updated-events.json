@@ -1,0 +1,108 @@
+[
+  {
+    "Event": "run-started",
+    "DurationMs": null,
+    "AutomaticRulesContinue": true,
+    "NotificationGraceMs": 60000
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 7724,
+    "RuleId": "level-guide-recommended",
+    "Signature": "level-guide-recommended:レベルガイド|キャラクターを成長させるためのポイント|一推しアクティビティ",
+    "Key": null,
+    "Point": [
+      0.46511967308814944,
+      0.5816920322291854
+    ],
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:7",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T15:56:07.4776937+09:00",
+      "CompletedUtc": "2026-10-09T15:56:07.8884672+09:00",
+      "CandidateId": "level-guide-recommended",
+      "TransportReceiptId": "pointer:919,1416->1968,654;deltas:25;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-review-grace",
+    "AtMs": 22397,
+    "Detail": "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。",
+    "GracePeriodMs": 60000,
+    "AutomaticRulesContinue": true,
+    "EvidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-155600-037-02e8d16f\\review-001"
+  },
+  {
+    "Event": "input",
+    "Decision": "Cue",
+    "AtMs": 22646,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:43",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T15:56:22.8052959+09:00",
+      "CompletedUtc": "2026-10-09T15:56:22.8112169+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 26075,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:53",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T15:56:26.2376235+09:00",
+      "CompletedUtc": "2026-10-09T15:56:26.2404266+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-resumed",
+    "AtMs": 27803,
+    "Detail": "確認済みの画面に戻りました。操作規則は継続しています。"
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 38838,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:74192:progress:89",
+      "TargetWindowSourceId": "window:bot:74192:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-09T15:56:38.998937+09:00",
+      "CompletedUtc": "2026-10-09T15:56:39.0029047+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]

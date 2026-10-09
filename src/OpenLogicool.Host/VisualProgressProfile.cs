@@ -12,7 +12,7 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
     bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false,
     int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null,
-    double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null);
+    double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
@@ -68,7 +68,7 @@ public enum VisualProgressAction { Wait, Normal, Key, Click, Review }
 public sealed record VisualProgressOption(string Id, string Label);
 public sealed record VisualProgressChoice(VisualProgressAction Action, string? RuleId = null,
     string? Signature = null, string? Key = null, double[]? Point = null, string? Detail = null,
-    VisualProgressOption[]? Options = null, bool Immediate = false);
+    VisualProgressOption[]? Options = null, bool Immediate = false, bool AllowWhileInhibited = false);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
@@ -105,13 +105,13 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
     }
 
     public VisualProgressChoice Recognize(WindowsGameOcrResult ocr, int width, int height, FrameRect viewport,
-        CapturedFrame? frame = null)
+        CapturedFrame? frame = null, bool inhibited = false)
     {
-        if (frame is not null && RecognizeImmediateImage(frame, viewport) is { } immediate) return immediate;
+        if (!inhibited && frame is not null && RecognizeImmediateImage(frame, viewport) is { } immediate) return immediate;
         string Read(VisualProgressText area) => Normalize(string.Concat(ocr.Words
             .Where(word => Inside(word, area.Bounds, viewport))
             .Select(word => word.Text)));
-        foreach (var review in profile.ReviewWhen)
+        foreach (var review in inhibited ? [] : profile.ReviewWhen)
             if (Matches(Read(review), review.Text))
                 return new(VisualProgressAction.Review, Detail: $"利用者の判断が必要な表示: {review.Text}",
                     Options: review.ChoiceBounds?.Select((bounds, index) =>
@@ -123,6 +123,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         var candidates = new List<VisualProgressChoice>();
         foreach (var rule in profile.Rules)
         {
+            if (inhibited && !rule.AllowWhileInhibited) continue;
             double[]? point = null;
             if (rule.Image is not null)
             {
@@ -169,7 +170,8 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             candidates.Add(new(rule.WaitForChange ? VisualProgressAction.Wait
                 : rule.Click is null && !rule.ClickImage ? VisualProgressAction.Key : VisualProgressAction.Click,
                 rule.Id, rule.Id + ":" + string.Join("|", rule.When.Select((condition, i) =>
-                    string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text))), rule.Key, point));
+                    string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text))), rule.Key, point,
+                AllowWhileInhibited: rule.AllowWhileInhibited));
         }
         var priority = candidates.Count == 0 ? 0 : candidates.Max(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority);
         var preferred = candidates.Where(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority == priority).ToArray();
@@ -254,12 +256,21 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     private string? waitingSignature;
     private string? consumedImmediate;
     private long? immediateMissingAt;
+    private bool wasInhibited;
 
     public VisualProgressChoice Decide(long now, VisualProgressChoice candidate, bool inhibited,
         bool hudVisible, bool due, bool sceneChanged = false)
     {
-        if (inhibited) { pending = null; ResetUnresolved(); stableSignature = null; waitingSignature = null;
-            consumedImmediate = null; immediateMissingAt = null; return new(VisualProgressAction.Wait); }
+        if (inhibited && !candidate.AllowWhileInhibited)
+        {
+            pending = null; stableSignature = null; waitingSignature = null;
+            consumedImmediate = null; immediateMissingAt = null;
+            if (!wasInhibited) ResetUnresolved();
+            wasInhibited = true;
+            return ObserveUnresolved(now, sceneChanged, profile.UnknownTimeoutMs,
+                "停止表示のまま画面の変化が止まっています。停止表示を優先し、追加入力はしていません。");
+        }
+        if (wasInhibited) { wasInhibited = false; ResetUnresolved(); }
         if (candidate.Immediate)
         {
             immediateMissingAt = null;

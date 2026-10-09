@@ -6,6 +6,33 @@ namespace OpenLogicool.Host.Tests;
 public sealed class VisualProgressReviewMonitorTests
 {
     [Fact]
+    public void 停止表示の静止は同じ停止表示を復帰と扱わず一分後に通知する()
+    {
+        var monitor = new VisualProgressReviewMonitor();
+        var blocked = new VisualProgressChoice(VisualProgressAction.Normal);
+        monitor.Hold(blocked, hudVisible: true, now: 10000, inhibited: true);
+        foreach (var now in new[] { 10000, 10600, 69999 })
+        {
+            Assert.False(monitor.TryResume(now, blocked, true, true));
+            Assert.False(monitor.TryTakeNotification(now));
+        }
+        Assert.True(monitor.TryTakeNotification(70000));
+        Assert.False(monitor.TryResume(71000, blocked, false, true));
+        Assert.True(monitor.TryResume(71600, blocked, false, true));
+    }
+
+    [Fact]
+    public void 停止表示があっても画面が動き出したら未通知の詰まりを破棄する()
+    {
+        var monitor = new VisualProgressReviewMonitor();
+        var blocked = new VisualProgressChoice(VisualProgressAction.Normal);
+        monitor.Hold(blocked, now: 0, inhibited: true);
+        Assert.True(monitor.TryResume(59000, blocked, true, true, sceneChanged: true));
+        Assert.False(monitor.TryTakeNotification(60000));
+        Assert.False(monitor.IsHolding);
+    }
+
+    [Fact]
     public void 詰まり検出から一分未満は通知せず一分後も残る時だけ一度通知する()
     {
         var monitor = new VisualProgressReviewMonitor();

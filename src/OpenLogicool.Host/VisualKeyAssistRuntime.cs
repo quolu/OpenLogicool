@@ -312,6 +312,7 @@ public static class VisualKeyAssistRuntime
         if (progressProfile is not null && recoveryRecognizer is null)
             throw new ArgumentException("進行設定には、描画領域とHUDを認識する --recovery-profile が必要です。");
         var progressRecognizer = progressProfile is null ? null : new VisualProgressRecognizer(progressProfile);
+        var readWhileInhibited = progressProfile?.Rules.Any(rule => rule.AllowWhileInhibited) == true;
         var progressSchedule = progressProfile is null ? null : new VisualProgressSchedule(progressProfile);
         var reviewNotifier = VisualAssistReviewNotifier.Create(
             Array.IndexOf(arguments, "--review-mcp") < 0 ? null : Required("--review-mcp"),
@@ -387,7 +388,7 @@ public static class VisualKeyAssistRuntime
                         .OrderBy(match => match.Difference).First();
                     var immediate = inhibitMatch.Matches || progressRecognizer is null ? null
                         : progressRecognizer.RecognizeImmediateImage(frame, viewport!);
-                    var ocr = immediate is null && !inhibitMatch.Matches && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
+                    var ocr = immediate is null && (!inhibitMatch.Matches || readWhileInhibited) && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                         ? progressRecognizer is null ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token)
                             : await progressRecognizer.ReadOcrAsync(frame, viewport!, token) : null;
                     var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
@@ -396,12 +397,15 @@ public static class VisualKeyAssistRuntime
                     var recoveryObservation = arguments.Contains("--observe-only", StringComparer.Ordinal)
                         ? recoveryRecognizer?.Observe(frame, viewport, ocr?.Text) : null;
                     var flowCandidate = immediate ?? (progressRecognizer is null || ocr is null ? null
-                        : progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame));
+                        : progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame, inhibitMatch.Matches));
+                    var flowInhibited = inhibitMatch.Matches && flowCandidate?.AllowWhileInhibited != true;
+                    var sceneActivity = progressProfile is null ? (Changed: false, Difference: 0d)
+                        : sceneMonitor.Observe(frame, viewport!);
                     if (reviewMonitor.IsHolding)
                     {
                         var candidate = flowCandidate ?? new(VisualProgressAction.Normal);
-                        if (!reviewMonitor.TryResume(clock.ElapsedMilliseconds, candidate, inhibitMatch.Matches,
-                            recoveryRecognizer?.Observe(frame, viewport).HudVisible == true))
+                        if (!reviewMonitor.TryResume(clock.ElapsedMilliseconds, candidate, flowInhibited,
+                            recoveryRecognizer?.Observe(frame, viewport).HudVisible == true, sceneActivity.Changed))
                         {
                             Emit(new { Event = "progress-monitoring", AtMs = clock.ElapsedMilliseconds,
                                 Candidate = candidate.Action.ToString(), candidate.RuleId });
@@ -433,10 +437,8 @@ public static class VisualKeyAssistRuntime
                         }
                     }
                     var flowTimed = flowCandidate?.RuleId is not null && progressProfile!.Rules.Single(rule => rule.Id == flowCandidate.RuleId).Timed;
-                    var sceneActivity = progressProfile is null ? (Changed: false, Difference: 0d)
-                        : sceneMonitor.Observe(frame, viewport!);
                     var flowChoice = progressSchedule?.Decide(clock.ElapsedMilliseconds,
-                        flowCandidate ?? new(VisualProgressAction.Normal), inhibitMatch.Matches,
+                        flowCandidate ?? new(VisualProgressAction.Normal), flowInhibited,
                         recoveryRecognizer!.Observe(frame, viewport).HudVisible,
                         schedule.Decide(clock.ElapsedMilliseconds, false, !flowTimed) is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed,
                         sceneActivity.Changed);
@@ -513,15 +515,16 @@ public static class VisualKeyAssistRuntime
                                 token.ThrowIfCancellationRequested();
                                 if (!TryForeground()) continue;
                                 var fresh = await frames.CaptureAsync(token);
-                                if (Inhibited(fresh)) continue;
+                                var freshInhibited = Inhibited(fresh);
                                 var freshViewport = WindowsGameTargetLocator.CaptureClientBounds(target.Window);
-                                var current = progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport);
+                                var current = freshInhibited ? null : progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport);
                                 if (current is null)
                                 {
-                                    var freshOcr = await progressRecognizer.ReadOcrAsync(fresh, freshViewport, token);
-                                    current = progressRecognizer.Recognize(freshOcr, fresh.Width, fresh.Height, freshViewport, fresh);
+                                    var freshOcr = await progressRecognizer!.ReadOcrAsync(fresh, freshViewport, token);
+                                    current = progressRecognizer.Recognize(freshOcr, fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited);
                                 }
-                                if (current.Signature != flowChoice.Signature || current.Action != flowChoice.Action) continue;
+                                if (freshInhibited && !current.AllowWhileInhibited
+                                    || current.Signature != flowChoice.Signature || current.Action != flowChoice.Action) continue;
                                 if (UserIsActive()) continue;
                                 var bound = Observation(fresh);
                                 var dispatch = current.Action == VisualProgressAction.Key
@@ -674,7 +677,8 @@ public static class VisualKeyAssistRuntime
                 if (reviewMonitor.IsHolding) return;
                 var detectedAt = clock.ElapsedMilliseconds;
                 reviewMonitor.Hold(candidate, recoveryRecognizer?.Observe(frame,
-                    WindowsGameTargetLocator.CaptureClientBounds(target.Window)).HudVisible == true, detectedAt);
+                    WindowsGameTargetLocator.CaptureClientBounds(target.Window)).HudVisible == true, detectedAt,
+                    Inhibited(frame) && !candidate.AllowWhileInhibited);
                 if (!continueRules) progress.Pause();
                 var folder = Path.Combine(evidenceDirectory, $"review-{++reviewNumber:D3}");
                 Directory.CreateDirectory(folder);

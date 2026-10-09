@@ -11,8 +11,9 @@ internal sealed class VisualProgressReviewMonitor
     private bool blockedHudVisible;
     private long heldAt;
     private bool notificationTaken;
+    private bool blockedInhibited;
 
-    public void Hold(VisualProgressChoice candidate, bool hudVisible = false, long now = 0)
+    public void Hold(VisualProgressChoice candidate, bool hudVisible = false, long now = 0, bool inhibited = false)
     {
         IsHolding = true;
         blockedSignature = candidate.Signature;
@@ -20,6 +21,7 @@ internal sealed class VisualProgressReviewMonitor
         stableSignature = null;
         heldAt = now;
         notificationTaken = false;
+        blockedInhibited = inhibited;
     }
 
     public bool TryTakeNotification(long now)
@@ -29,10 +31,12 @@ internal sealed class VisualProgressReviewMonitor
         return true;
     }
 
-    public bool TryResume(long now, VisualProgressChoice candidate, bool inhibited, bool hudVisible)
+    public bool TryResume(long now, VisualProgressChoice candidate, bool inhibited, bool hudVisible, bool sceneChanged = false)
     {
         if (!IsHolding) return false;
-        string? known = inhibited ? "停止表示" : candidate.Action switch
+        if (blockedInhibited && sceneChanged) { IsHolding = false; return true; }
+        string? known = inhibited ? blockedInhibited ? null : "停止表示"
+            : blockedInhibited ? "停止表示解除" : candidate.Action switch
         {
             VisualProgressAction.Key or VisualProgressAction.Click or VisualProgressAction.Wait
                 when candidate.Signature is not null && candidate.Signature != blockedSignature => candidate.Signature,
