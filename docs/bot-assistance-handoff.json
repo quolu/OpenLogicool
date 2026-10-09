@@ -51,12 +51,12 @@
     }
   ],
   "currentAssistance": {
-    "incidentId": "301c80c6-0e2c-4f21-9120-d60038bf012d",
-    "status": "resolved",
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-185628-991-0ea5230b\\review-001",
-    "detail": "休憩メニューからSpaceのOCR依存を外し、実録画像と欠落ケースで確認した。Aiterm共通配達口へ接続し、作業中の検証通知と実際のBot通知が同じターンへ届いた。",
-    "nextAction": "Botを継続。次の自然な支援通知で、待機中の受付時刻と会話開始時刻を照合する。作業中の即時受信と待機中の遅延を混同しない。",
-    "resolutionEvidence": "evidence/bot-bonus-attack11-20261009/acceptance.md",
+    "incidentId": "2c5329f0-97a1-4702-944d-1ff6bdcec2c4",
+    "status": "claimed",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21\\review-002",
+    "detail": "新しいボーナス3択はDEX成長8（Rare・推奨）・LUCK成長11（Elite）・WILL成長1。決裁箱K-JD2EZWへ申請し回答待ち。古い休憩案件e66213b2と9bf01e78は旧実行終了・現行画面からの解消を確認して追加操作なく完了した。",
+    "nextAction": "決裁箱K-JD2EZWの回答に従い、現在の画面を再確認してNanoで選択・確定する。回答前はこの選択を保留し、Botの観測を継続する。",
+    "resolutionEvidence": "evidence/bot-bonus-dex8-20261009",
     "repairEvidence": "evidence/bot-bonus-attack11-20261009/acceptance.md"
   },
   "gameFacts": {
@@ -83,22 +83,22 @@
     }
   },
   "pendingGameDecision": {
-    "decisionId": "K-Z6UBT9",
-    "incidentId": "e8dbfc49-95d7-4cbe-a945-810ba2e6b437",
-    "status": "resolved",
-    "selectedChoice": "攻撃優先11段階（Elite）",
-    "userInstruction": "攻撃優先11段階（Elite・ゲーム内推奨）（option_id=attack11）",
-    "approvalBoxStatus": "回答済み・Nanoで選択とSpace確定を実施済み",
+    "decisionId": "K-JD2EZW",
+    "incidentId": "2c5329f0-97a1-4702-944d-1ff6bdcec2c4",
+    "status": "pending",
+    "selectedChoice": null,
+    "userInstruction": null,
+    "approvalBoxStatus": "回答待ち",
     "choices": [
-      "攻撃優先11段階（Elite）",
-      "速度優先1段階",
-      "技巧優先3段階"
+      "DEX成長8段階（Rare・推奨）",
+      "LUCK成長11段階（Elite）",
+      "WILL成長1段階"
     ],
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-174914-539-f74f290f\\review-004",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21\\review-002",
     "replyThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
-    "afterAnswer": "攻撃優先11の選択と確定は完了済み。Lv43を確認してBotを再開した。操作を繰り返さない。",
-    "reviewEvidence": "evidence/bot-bonus-attack11-20261009/level43-after-bonus.png",
-    "resolutionEvidence": "evidence/bot-bonus-attack11-20261009/acceptance.md"
+    "afterAnswer": "未実行。回答に従い選択・確定し、結果画面を確認してBotを継続する。",
+    "reviewEvidence": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-190705-378-5824fd21\\review-002\\progress-review.png",
+    "resolutionEvidence": null
   },
   "deliveryVerification": {
     "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",

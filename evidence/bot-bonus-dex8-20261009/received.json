@@ -1,0 +1,14 @@
+{
+  "incidentId": "2c5329f0-97a1-4702-944d-1ff6bdcec2c4",
+  "receptionScope": "active-turn",
+  "detectedAtMs": 414443,
+  "observedAtMs": 474933,
+  "graceMs": 60490,
+  "decisionId": "K-JD2EZW",
+  "status": "awaiting-human-choice",
+  "oldCasesClosed": [
+    "e66213b2-33bc-4a24-bc70-b791ed4226ef",
+    "9bf01e78-b78f-4185-8e5a-798fe872e6a2"
+  ],
+  "oldCasesExtraInputCount": 0
+}
