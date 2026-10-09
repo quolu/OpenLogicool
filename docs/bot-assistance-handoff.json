@@ -16,7 +16,7 @@
       "role": "マビモバ攻略ポータル更新担当",
       "sessionId": "571e5cb2-2e60-4d3d-a6b2-c05da94d3964",
       "localId": "codex:01a11e07-9999-7b50-ba3b-084b37257beb",
-      "lastSentSequence": 4,
+      "lastSentSequence": 5,
       "lastReceivedSequence": 3,
       "delivery": "BellTeam accepted",
       "publishedArticle": "https://mabimoba.kitepon.dev/guides/water-bottle/",
@@ -46,32 +46,34 @@
   ],
   "currentAssistance": {
     "incidentId": "fbf362ce-a6af-4a05-9c14-80fd0e9d42c0",
-    "status": "awaiting-bonus-choice",
+    "status": "resolved",
     "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-100631-268-fd5ec092\\review-001",
-    "detail": "単一ラベルとSpace表示だけを確定し、複数候補・Spaceなしの待機を維持する修理は45件成功・開発版導入済み。導入時には元画面から進行済みのため、新規則の実機送出は未確認。現在は回復の意志／抵抗の意志のボーナス2択で決裁箱K-JH2JXQの回答待ち。",
-    "nextAction": "回答後は現在も同じ2択か確認してNanoで選択・確定し、Botの進行と案件の最新根拠を確認してからresolveする。単一ラベルの新規則は実録再生と実機送出を区別し、実機未確認を成功扱いにしない。",
+    "detail": "K-JH2JXQの回答どおり抵抗の意志1段階をNanoで選択・確定済み。Lv40・黒いバラの記憶を確認し、指定時間終了で停止していたBotを再開。Bot自身のコンパスSpaceとクリステルの会話への移動を実測して案件をresolveした。単独Space新規則の実機送出は未確認を維持する。",
+    "nextAction": "抵抗の意志は選択済みで繰り返さない。次の詰まり通知に対応する。単一ラベルの新規則は実録再生と実機送出を区別し、未確認のまま対応済みと表示しない。",
+    "resolutionEvidence": "evidence/bot-assistance-20261009/resistance-acceptance.md",
     "repairEvidence": "evidence/bot-assistance-20261009/dialogue-single-space-acceptance.md"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "ナオで回答した話題の選択とラビダンジョンへの進行は完了済み。サキュバスの会話の単一Space確定を汎用修理・導入済み。現在は回復の意志／抵抗の意志（各Epic・1段階）のボーナス2択で、K-JH2JXQの回答待ち。Botの観測と回復監視は継続中。ルピーのサキュバスクエスト記事は公開ページと本文を確認済み。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-100631-268-fd5ec092"
+    "nextCheck": "抵抗の意志1段階を回答どおり確定し、Lv40・次のクエスト『黒いバラの記憶／クリステルと会話』を確認。Botを再開してクリステルとの会話まで移動済み。次の詰まり通知に対応する。追加の進行実測はルピーへ共有済み・返信不要。単独Space新規則の実機送出、サキュバス討伐の直接観測と完了ポップアップ名は未確認を維持。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-120833-416-db5890c7"
   },
   "pendingGameDecision": {
     "decisionId": "K-JH2JXQ",
     "incidentId": "fbf362ce-a6af-4a05-9c14-80fd0e9d42c0",
-    "status": "awaiting-human-choice",
-    "selectedChoice": null,
-    "userInstruction": null,
-    "approvalBoxStatus": "回答待ち",
+    "status": "resolved",
+    "selectedChoice": "抵抗の意志1段階",
+    "userInstruction": "抵抗の意志1段階を選ぶ（option_id=resistance）",
+    "approvalBoxStatus": "回答済み・Nanoで選択と確定を実行済み",
     "choices": [
       "回復の意志1段階（Epic・画面の推奨）",
       "抵抗の意志1段階（Epic）"
     ],
     "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-100631-268-fd5ec092\\review-001",
     "replyThreadId": "01a11e07-9999-7b50-ba3b-084b37257beb",
-    "afterAnswer": "現在も同じ2択であることを確認し、Nanoで回答したカードを選び、選択表示を確認してからSpaceで確定する。Botを再開して実際の進行と案件の最新根拠を確認しresolveする。過去のDEXやナオの回答を今回の選択へ流用しない。",
-    "reviewEvidence": "evidence/bot-assistance-20261009/bonus-epic-two.png"
+    "afterAnswer": "抵抗の意志の選択・確定、通常HUD復帰、Bot再開とクリステルの会話までの進行、案件resolveは完了済み。選択を繰り返さない。",
+    "reviewEvidence": "evidence/bot-assistance-20261009/bonus-epic-two.png",
+    "resolutionEvidence": "evidence/bot-assistance-20261009/resistance-acceptance.md"
   }
 }
