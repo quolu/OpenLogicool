@@ -64,8 +64,9 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
     private readonly (double X, double Y, byte[] Color)[][]? stableSamples = stableRegions?.Select(area =>
         Enumerable.Range(0, 64).Select(index =>
         {
-            var x = area[0] + (index % 8 + 0.5) * area[2] / 8;
-            var y = area[1] + (index / 8 + 0.5) * area[3] / 8;
+            // 2×2画素の平均を取る標本は、右隣と下隣も参照画像内に収める。
+            var x = Math.Min(area[0] + (index % 8 + 0.5) * area[2] / 8, (width - 2d) / width);
+            var y = Math.Min(area[1] + (index / 8 + 0.5) * area[3] / 8, (height - 2d) / height);
             var color = Enumerable.Range(0, 3).Select(channel => (byte)Value(bgra, width * 4,
                 (int)(x * width), (int)(y * height), channel, relativeColor, silhouette)).ToArray();
             return (x, y, color);

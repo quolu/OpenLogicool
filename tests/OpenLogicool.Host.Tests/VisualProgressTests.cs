@@ -62,6 +62,30 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public async Task NPCのメニュー項目が増えてクエスト位置が移っても印から選ぶ()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var frame = ReadFrame(Path.Combine(fixture, "npc-quest-menu-extra.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("npc-quest-option", choice.RuleId);
+        Assert.Equal(VisualProgressAction.Click, choice.Action);
+        Assert.InRange(choice.Point![0], 0.25, 0.39);
+        Assert.InRange(choice.Point[1], 0.9, 0.99);
+
+        var bytes = frame.Pixels!.Bgra8.ToArray();
+        var color = bytes.AsSpan(1040 * frame.Pixels.Stride + 445 * 4, 4).ToArray();
+        for (var y = 1028; y < 1060; y++)
+            for (var x = 450; x < 470; x++) color.CopyTo(bytes.AsSpan(y * frame.Pixels.Stride + x * 4));
+        var noMarker = frame with { Pixels = new FramePixels(bytes, frame.Pixels.Stride) };
+        Assert.NotEqual("npc-quest-option", recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, noMarker).RuleId);
+    }
+
+    [Fact]
     public async Task 商人メニューは通常会話のSpaceよりEsc終了を優先する()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
