@@ -79,6 +79,16 @@
       "When": [{ "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] }]
     },
     {
+      "Id": "dialogue-space-confirm", "Key": "Key:Space", "Priority": 26,
+      "When": [
+        { "Text": "", "Bounds": [0.2, 0.04, 0.6, 0.3] },
+        { "Text": "Space", "Bounds": [0.2, 0.88, 0.6, 0.12] }
+      ],
+      "SingleTextRunBounds": [0.2, 0.92, 0.6, 0.06],
+      "Image": "dialogue-cue.jpg", "ImageBounds": [0.2, 0.04, 0.6, 0.3],
+      "ImageClientWidth": 1506, "ImageRotates": true
+    },
+    {
       "Id": "dialogue-choice-wait", "WaitForChange": true, "Priority": 25,
       "When": [
         { "Text": "", "Bounds": [0.2, 0.04, 0.6, 0.3] },

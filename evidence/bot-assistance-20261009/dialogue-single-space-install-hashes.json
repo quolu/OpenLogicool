@@ -1,0 +1,18 @@
+[
+  {
+    "Path": "C:\\Users\\kite_\\Developer\\OpenLogicool\\src\\OpenLogicool.Host\\bin\\Release\\net10.0-windows10.0.22621.0\\OpenLogicool.Host.dll",
+    "Hash": "29D2C4A05F6BFB4E2D8A28E1CD2091C6D2FD95AFB1FB75701691ECA69D7EBB47"
+  },
+  {
+    "Path": "C:\\Users\\kite_\\Developer\\OpenLogicool\\artifacts\\development\\OpenLogicool\\OpenLogicool.Host.dll",
+    "Hash": "29D2C4A05F6BFB4E2D8A28E1CD2091C6D2FD95AFB1FB75701691ECA69D7EBB47"
+  },
+  {
+    "Path": "C:\\Users\\kite_\\Developer\\OpenLogicool\\fixtures\\visual-recovery\\mabinogi-20261008\\progress.json",
+    "Hash": "039E0D286623B1045DC135225E69FF2D264C9763938A56D3C2A60F999394C755"
+  },
+  {
+    "Path": "C:\\Users\\kite_\\Developer\\OpenLogicool\\artifacts\\development\\OpenLogicool\\BotScripts\\MabinogiMobile\\progress.json",
+    "Hash": "039E0D286623B1045DC135225E69FF2D264C9763938A56D3C2A60F999394C755"
+  }
+]

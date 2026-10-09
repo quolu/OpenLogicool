@@ -11,7 +11,8 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
     bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false,
-    int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null);
+    int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null,
+    double[]? SingleTextRunBounds = null);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
@@ -47,6 +48,7 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             .Concat(value.ReviewWhen.SelectMany(text => text.ChoiceBounds ?? []))
             .Concat(value.Rules.Where(rule => rule.Image is not null).Select(rule => rule.ImageBounds!))
             .Concat(value.Rules.Where(rule => rule.FilledQuantitiesBounds is not null).Select(rule => rule.FilledQuantitiesBounds!))
+            .Concat(value.Rules.Where(rule => rule.SingleTextRunBounds is not null).Select(rule => rule.SingleTextRunBounds!))
             .Concat(value.Rules.SelectMany(rule => rule.ImageStableRegions ?? [])))
             if (bounds is not { Length: 4 } || bounds.Any(x => !double.IsFinite(x) || x < 0 || x > 1)
                 || bounds[2] <= 0 || bounds[3] <= 0
@@ -134,6 +136,8 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             }
             var texts = rule.When.Select(Read).ToArray();
             if (!rule.When.Select((condition, i) => Matches(texts[i], condition.Text)).All(x => x)) continue;
+            if (rule.SingleTextRunBounds is { } labelBounds
+                && !HasSingleTextRun(ocr, labelBounds, viewport, width, height)) continue;
             if (rule.FilledQuantitiesBounds is { } quantityBounds)
             {
                 var quantities = string.Join(" ", ocr.Words.Where(word => Inside(word, quantityBounds, viewport)).Select(word => word.Text));
@@ -204,6 +208,23 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         return quantities.Count > 0 && quantities.All(match =>
             int.TryParse(match.Groups[1].Value, out var supplied) && int.TryParse(match.Groups[2].Value, out var required)
             && required > 0 && supplied == required);
+    }
+
+    private static bool HasSingleTextRun(WindowsGameOcrResult ocr, double[] bounds, FrameRect viewport, int width, int height)
+    {
+        var labels = new WindowsGameOcrResult("", ocr.RecognizerLanguage, 0,
+            ocr.Words.Where(word => Inside(word, bounds, viewport)).ToArray());
+        var spans = WindowsGameOcrSpanBuilder.Canonicalize(WindowsGameOcrSpanBuilder.Build(labels, width, height));
+        var count = 0;
+        var right = double.NegativeInfinity;
+        // 長い一つのラベルから作られた重複spanを、同じ横方向の文字列として数える。
+        foreach (var span in spans.OrderBy(span => span.EvidenceRegion.NormalizedBounds[0]))
+        {
+            var rect = span.EvidenceRegion.NormalizedBounds;
+            if (rect[0] > right) count++;
+            right = Math.Max(right, rect[0] + rect[2]);
+        }
+        return count == 1;
     }
 
     internal static bool Matches(string observed, string expected)

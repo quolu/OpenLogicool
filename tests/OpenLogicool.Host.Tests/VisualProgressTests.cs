@@ -113,6 +113,32 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public async Task 会話の単一ラベルにSpaceが明示されている時だけ確定する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var frame = ReadFrame(Path.Combine(fixture, "dialogue-single-space.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("dialogue-space-confirm", choice.RuleId);
+        Assert.Equal(VisualProgressAction.Key, choice.Action);
+        Assert.Equal("Key:Space", choice.Key);
+        var noHint = new WindowsGameOcrResult("", "ja", 0,
+            ocr.Words.Where(word => word.Y < 990 || word.Y > 1030).ToArray());
+        Assert.Equal(VisualProgressAction.Wait, recognizer.Recognize(noHint, frame.Width, frame.Height, viewport, frame).Action);
+
+        var multiple = ReadFrame(Path.Combine(fixture, "dialogue-topic-choices.png"));
+        var multipleOcr = await new WindowsGameOcrRecognizer().RecognizeAsync(multiple);
+        var multipleWithHint = new WindowsGameOcrResult("", "ja", 0,
+            multipleOcr.Words.Append(new("Space", 610, 1010, 42, 18)).ToArray());
+        Assert.Equal(VisualProgressAction.Wait, recognizer.Recognize(multipleWithHint,
+            multiple.Width, multiple.Height, new(1, 31, multiple.Width - 2, multiple.Height - 32), multiple).Action);
+    }
+
+    [Fact]
     public async Task 商人メニューは通常会話のSpaceよりEsc終了を優先する()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
