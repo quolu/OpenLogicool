@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "result": {
+    "schemaVersion": 1,
+    "binding": {
+      "threadId": "01a11c03-9418-7fc3-85fa-05376192e03b",
+      "codexHome": "C:\\Users\\kite_\\.codex",
+      "generation": 1,
+      "boundUtc": "2026-10-08T23:56:04.0308889+00:00"
+    },
+    "retiredThreads": [],
+    "incidents": []
+  }
+}

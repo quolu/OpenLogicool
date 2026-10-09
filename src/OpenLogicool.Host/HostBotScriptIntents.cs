@@ -32,6 +32,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
     private readonly Func<string, string, Action<JsonElement>, CancellationToken, Task<BotScriptResult>> execute;
     private readonly IReadOnlyList<BotScriptItem> scripts;
     private readonly string dataDirectory;
+    private readonly Func<string, string, Task>? reportFault;
     private CancellationTokenSource? stop;
     private Task? worker;
     private bool disposed;
@@ -41,12 +42,14 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
 
     internal HostBotScriptIntents(IReadOnlyList<BotScriptItem> scripts, string dataDirectory,
         DemonstrationRecordingGate executionGate,
-        Func<string, string, Action<JsonElement>, CancellationToken, Task<BotScriptResult>> execute)
+        Func<string, string, Action<JsonElement>, CancellationToken, Task<BotScriptResult>> execute,
+        Func<string, string, Task>? reportFault = null)
     {
         this.scripts = scripts;
         this.dataDirectory = dataDirectory;
         this.executionGate = executionGate;
         this.execute = execute;
+        this.reportFault = reportFault;
     }
 
     public static HostBotScriptIntents Create(string databasePath, SerialHidDiscoveryService discovery,
@@ -87,7 +90,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                     "--cue-text", "画面を押してください", "--keys", "Key:Space",
                     "--duration-ms", package.DurationMs.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     "--recovery-profile", package.File("profile.json"), "--progress-profile", package.File("progress.json"),
-                    "--evidence", evidence, "--continue-on-review", "--pause-on-user-input" };
+                    "--evidence", evidence, "--continue-on-review", "--pause-on-user-input", "--assistance-db", databasePath };
                 if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
                 var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(), nano, emitter, target,
                     $"window:bot:{target.ProcessId}", token, report);
@@ -97,6 +100,12 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                     json.TryGetProperty("Detail", out var detail) ? detail.GetString()! : "実行が終了しました。");
             }
             finally { owned?.Dispose(); }
+        }, async (evidence, detail) =>
+        {
+            if (!new BotAssistanceStore(databasePath).Exists) return;
+            var fault = JsonSerializer.SerializeToElement(new { Kind = "fault", Detail = detail });
+            System.IO.File.WriteAllText(Path.Combine(evidence, "assistance-fault.json"), fault.GetRawText());
+            await BotAssistanceCoordinator.Create(databasePath).ReportAsync(evidence, fault, CancellationToken.None);
         });
     }
 
@@ -133,6 +142,14 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                 catch (Exception error)
                 {
                     lock (gate) state = state with { Phase = BotScriptPhase.Faulted, Detail = error.Message };
+                    if (reportFault is not null)
+                    {
+                        try { await reportFault(evidence, error.Message); }
+                        catch (Exception delivery)
+                        {
+                            lock (gate) state = state with { Detail = state.Detail + " AI支援通知に失敗しました: " + delivery.Message };
+                        }
+                    }
                 }
                 finally
                 {

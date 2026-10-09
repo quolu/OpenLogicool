@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "periodicAiMonitoring": "paused",
+  "assistanceDeliveryImplementation": "implemented-queue-and-handoff-verified",
+  "activeWork": "Botを継続。詰まり時だけ担当AIへ配達する。新会話はassistant attachで未処理案件とルピーの通話を引き継ぐ",
+  "approvedSources": [
+    "https://mabimoba.kitepon.dev/",
+    "X",
+    "Web"
+  ],
+  "coordinationCalls": [
+    {
+      "memberSystem": "bellteam",
+      "memberName": "ルピー",
+      "memberId": "bot-ca9fed97",
+      "role": "マビモバ攻略ポータル更新担当",
+      "sessionId": "7596a4f3-981a-43bf-a8c1-2292e59dac2b",
+      "localId": "codex:01a11c03-9418-7fc3-85fa-05376192e03b",
+      "lastSentSequence": 4,
+      "lastReceivedSequence": 5,
+      "delivery": "BellTeam accepted",
+      "publishedArticle": "https://mabimoba.kitepon.dev/guides/water-bottle/",
+      "publishedCommit": "5e95e9d",
+      "pendingReply": null,
+      "pendingLiveValidation": [
+        "空き瓶価格と採集1回の消費・入手数",
+        "納品後バッグ残数、ロック・重量",
+        "メイブンの不足表示と金属の光沢剤の同一段階",
+        "ケアラの交換内容と回数",
+        "日常採集の到着地点"
+      ],
+      "handoffAction": "新しい会話でcall_openし、旧通話へ移動先を知らせ、新通話へ返答待ちを引き継いで旧通話を閉じる。返信のポーリングは行わない",
+      "replyThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302"
+    }
+  ],
+  "gameFacts": {
+    "waterBottleLastObserved": "所持3本・納品登録2/2",
+    "waterBottleAcquisitionComplete": true,
+    "nextCheck": "金属の光沢剤の完成会話と通常HUD復帰まで確認済み。メイブン不足との同一段階と納品後バッグ残数は未確認"
+  }
+}

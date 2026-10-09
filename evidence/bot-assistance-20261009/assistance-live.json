@@ -1,0 +1,28 @@
+{
+  "success": true,
+  "result": {
+    "schemaVersion": 1,
+    "binding": {
+      "threadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+      "codexHome": "C:\\Users\\kite_\\.codex",
+      "generation": 1,
+      "boundUtc": "2026-10-08T23:52:13.7589769+00:00"
+    },
+    "retiredThreads": [],
+    "incidents": [
+      {
+        "id": "429f6f41-6ab3-4919-b62d-205f4b5d6946",
+        "status": "claimed",
+        "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-085223-153-b555c90d\\review-001",
+        "detail": "\u8907\u6570\u56DE\u89B3\u6E2C\u3057\u3066\u753B\u9762\u306E\u5909\u5316\u304C\u6B62\u307E\u308A\u307E\u3057\u305F\u304C\u3001\u78BA\u8A8D\u6E08\u307F\u306E\u753B\u9762\u898F\u5247\u3068HUD\u306B\u4E00\u81F4\u3057\u307E\u305B\u3093\u3002",
+        "deliveryState": "queued",
+        "targetThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+        "submissionId": "01a11dee-db19-7530-a72c-82f7e4bb9870",
+        "ownerThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+        "error": null,
+        "resolution": null,
+        "observedCleared": false
+      }
+    ]
+  }
+}

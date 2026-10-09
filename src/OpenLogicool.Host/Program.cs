@@ -109,6 +109,7 @@ return command switch
     "supervised-import" when args.Length >= 2 => SupervisedImport(args[1], args[2..]),
     "game-index" when args.Length >= 2 => HostGameIndexCommand.Run(args[1], args[2..]),
     "user-input-probe" => HostUserInputProbe.Run(args[1..]),
+    "assistant" => BotAssistanceCli.Run(args[1..], DefaultDatabasePath()),
     "control" or "app" or "bot" or "device" or "devices" or "profile" or "recording" or "serial" or "lcd"
         or "explorer" or "learning" or "research" or "editor" or "resident" or "supervised" => ApplicationControlCli.Run(command, args[1..]),
     _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>]]"),

@@ -5,9 +5,24 @@ using System.Text.Json;
 
 namespace OpenLogicool.Host;
 
-/// <summary>入力処理の終了後、公開MCP経由で確認画像と停止理由を決裁箱へ送る。</summary>
+internal enum VisualAssistNoticeKind { Human, Assistant }
+internal sealed record VisualAssistNotice(VisualAssistNoticeKind Kind, string Id);
+
+/// <summary>詰まりを担当AIへ配達し、AI未登録の単独運用では人向けの通知設定を使う。</summary>
 internal sealed record VisualAssistReviewNotifier(string Executable, string[] Arguments)
 {
+    internal string? AssistanceDatabasePath { get; init; }
+
+    public static VisualAssistReviewNotifier? Create(string? humanSettings, string? assistanceDatabasePath)
+    {
+        if (assistanceDatabasePath is not null && new BotAssistanceStore(assistanceDatabasePath).Exists)
+        {
+            if (new BotAssistanceStore(assistanceDatabasePath).Read().Binding is null)
+                throw new InvalidDataException("AI支援の担当が未登録です。");
+            return new("", []) { AssistanceDatabasePath = assistanceDatabasePath };
+        }
+        return humanSettings is null ? null : Load(humanSettings);
+    }
     public static VisualAssistReviewNotifier Load(string path)
     {
         var value = JsonSerializer.Deserialize<VisualAssistReviewNotifier>(File.ReadAllText(path))
@@ -17,11 +32,20 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
         return value;
     }
 
-    public async Task<string> NotifyAsync(string evidenceDirectory, JsonElement result, CancellationToken token)
-        => await ExchangeAsync(evidenceDirectory, result, token);
+    public async Task<VisualAssistNotice> NotifyAsync(string evidenceDirectory, JsonElement result, CancellationToken token)
+        => AssistanceDatabasePath is { } database
+            ? new(VisualAssistNoticeKind.Assistant, await BotAssistanceCoordinator.Create(database).ReportAsync(evidenceDirectory, result, token))
+            : new(VisualAssistNoticeKind.Human, await ExchangeAsync(evidenceDirectory, result, token));
 
-    public async Task ResolveAsync(string decisionId, CancellationToken token)
-        => _ = await ExchangeAsync("", default, token, decisionId);
+    public async Task ResolveAsync(VisualAssistNotice notice, CancellationToken token)
+    {
+        if (notice.Kind == VisualAssistNoticeKind.Assistant)
+        {
+            new BotAssistanceStore(AssistanceDatabasePath ?? throw new InvalidOperationException("AI支援の接続がありません。")).ObservedClear(notice.Id);
+            return;
+        }
+        _ = await ExchangeAsync("", default, token, notice.Id);
+    }
 
     private async Task<string> ExchangeAsync(string evidenceDirectory, JsonElement result, CancellationToken token, string? resolvedDecisionId = null)
     {

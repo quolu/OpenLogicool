@@ -1,0 +1,14 @@
+{
+  "testsPassed": 1626,
+  "assistanceTests": 13,
+  "route": "NanoSerialHid",
+  "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-085749-204-58e57cb1",
+  "testProjects": 22,
+  "aiPeriodicMonitoring": "paused",
+  "handoverTests": 7,
+  "deliveryDependency": {
+    "installedVersion": "0.1.5",
+    "source": "https://github.com/kitepon/aiterm-steer-delivery",
+    "name": "aiterm-steer-delivery"
+  }
+}

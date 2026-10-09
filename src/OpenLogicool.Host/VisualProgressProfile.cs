@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using OpenLogicool.Contracts.Capture;
 
 namespace OpenLogicool.Host;
@@ -10,7 +11,7 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
     bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false,
-    int MinimumVisibleMs = 600);
+    int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
@@ -25,13 +26,15 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
         foreach (var rule in value.Rules)
         {
             if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null || (rule.When.Length == 0 && rule.Image is null)
-                || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) != 1)
+                || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) + (rule.ClickImage ? 1 : 0) != 1)
                 throw new InvalidDataException("進行規則には条件と、キー・クリック・待機のいずれか一つが必要です。");
             if (rule.MinimumVisibleMs < 0)
                 throw new InvalidDataException("表示待ち時間が不正です。");
             if (rule.Key is not null) OpenLogicool.Input.OutputTokens.Parse(rule.Key);
             if (rule.Image is not null && (rule.ImageBounds is null || rule.ImageClientWidth <= 0))
                 throw new InvalidDataException("進行規則の画像には探索範囲と基準描画幅が必要です。");
+            if (rule.ClickImage && rule.Image is null)
+                throw new InvalidDataException("画像のクリック先には参照画像が必要です。");
             if (rule.ImageRotates && (rule.Image is null || rule.ImageSilhouette))
                 throw new InvalidDataException("回転する印には単色画像を指定します。");
             if (rule.ImageStableRegions is not null && (rule.Image is null || rule.ImageRotates || rule.ImageStableRegions.Length == 0))
@@ -43,6 +46,7 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             .Concat(value.ReviewWhen).Select(text => text.Bounds)
             .Concat(value.ReviewWhen.SelectMany(text => text.ChoiceBounds ?? []))
             .Concat(value.Rules.Where(rule => rule.Image is not null).Select(rule => rule.ImageBounds!))
+            .Concat(value.Rules.Where(rule => rule.FilledQuantitiesBounds is not null).Select(rule => rule.FilledQuantitiesBounds!))
             .Concat(value.Rules.SelectMany(rule => rule.ImageStableRegions ?? [])))
             if (bounds is not { Length: 4 } || bounds.Any(x => !double.IsFinite(x) || x < 0 || x > 1)
                 || bounds[2] <= 0 || bounds[3] <= 0
@@ -70,6 +74,31 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
     private readonly Dictionary<string, VisualRotatingTemplate> rotatingTemplates = profile.Rules.Where(rule => rule.ImageRotates)
         .ToDictionary(rule => rule.Id, rule => new VisualRotatingTemplate(rule.Image!));
 
+    public async ValueTask<WindowsGameOcrResult> ReadOcrAsync(CapturedFrame frame, FrameRect viewport, CancellationToken token = default)
+    {
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token);
+        foreach (var rule in profile.Rules.Where(rule => rule.FilledQuantitiesBounds is not null))
+        {
+            if (!rule.When.All(condition => Matches(Normalize(string.Concat(ocr.Words
+                .Where(word => Inside(word, condition.Bounds, viewport)).Select(word => word.Text))), condition.Text))) continue;
+            var area = rule.FilledQuantitiesBounds!;
+            var x = (int)(viewport.X + area[0] * viewport.Width);
+            var y = (int)(viewport.Y + area[1] * viewport.Height);
+            var width = (int)(area[2] * viewport.Width);
+            var height = (int)(area[3] * viewport.Height);
+            var pixels = frame.Pixels ?? throw new InvalidOperationException("数量OCRには画像が必要です。");
+            var bytes = new byte[width * height * 4];
+            for (var row = 0; row < height; row++)
+                pixels.Bgra8.Span.Slice((y + row) * pixels.Stride + x * 4, width * 4).CopyTo(bytes.AsSpan(row * width * 4));
+            var cropped = frame with { Width = width, Height = height, Pixels = new FramePixels(bytes, width * 4), Crop = null };
+            var quantities = await new WindowsGameOcrRecognizer(4).RecognizeAsync(cropped, token);
+            ocr = ocr with { Text = ocr.Text + " " + quantities.Text, Words = ocr.Words
+                .Where(word => !Inside(word, area, viewport))
+                .Concat(quantities.Words.Select(word => word with { X = word.X + x, Y = word.Y + y })).ToArray() };
+        }
+        return ocr;
+    }
+
     public VisualProgressChoice Recognize(WindowsGameOcrResult ocr, int width, int height, FrameRect viewport,
         CapturedFrame? frame = null)
     {
@@ -89,6 +118,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         var candidates = new List<VisualProgressChoice>();
         foreach (var rule in profile.Rules)
         {
+            double[]? point = null;
             if (rule.Image is not null)
             {
                 if (frame is null) continue;
@@ -100,10 +130,15 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 var match = rule.ImageRotates ? rotatingTemplates[rule.Id].Find(frame, mapped, scale)
                     : templates[rule.Id].FindAtWindowScale(frame, mapped, scale);
                 if (!match.Matches) continue;
+                if (rule.ClickImage) point = [match.Bounds[0] + match.Bounds[2] / 2, match.Bounds[1] + match.Bounds[3] / 2];
             }
             var texts = rule.When.Select(Read).ToArray();
             if (!rule.When.Select((condition, i) => Matches(texts[i], condition.Text)).All(x => x)) continue;
-            double[]? point = null;
+            if (rule.FilledQuantitiesBounds is { } quantityBounds)
+            {
+                var quantities = string.Join(" ", ocr.Words.Where(word => Inside(word, quantityBounds, viewport)).Select(word => word.Text));
+                if (!QuantitiesFilled(quantities)) continue;
+            }
             if (rule.Click is not null)
             {
                 var spans = WindowsGameOcrSpanBuilder.Build(ocr, width, height)
@@ -125,7 +160,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 }
             }
             candidates.Add(new(rule.WaitForChange ? VisualProgressAction.Wait
-                : rule.Click is null ? VisualProgressAction.Key : VisualProgressAction.Click,
+                : rule.Click is null && !rule.ClickImage ? VisualProgressAction.Key : VisualProgressAction.Click,
                 rule.Id, rule.Id + ":" + string.Join("|", rule.When.Select((condition, i) =>
                     string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text))), rule.Key, point));
         }
@@ -162,6 +197,14 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
 
     internal static string Normalize(string text) => string.Concat(text.Normalize(NormalizationForm.FormKC)
         .Where(c => char.IsLetterOrDigit(c))).ToUpperInvariant();
+
+    internal static bool QuantitiesFilled(string text)
+    {
+        var quantities = Regex.Matches(text.Normalize(NormalizationForm.FormKC), @"(?<!\d)(\d+)\s*/\s*(\d+)(?!\d)");
+        return quantities.Count > 0 && quantities.All(match =>
+            int.TryParse(match.Groups[1].Value, out var supplied) && int.TryParse(match.Groups[2].Value, out var required)
+            && required > 0 && supplied == required);
+    }
 
     internal static bool Matches(string observed, string expected)
     {

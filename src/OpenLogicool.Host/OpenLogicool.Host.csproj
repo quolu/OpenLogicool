@@ -10,6 +10,7 @@
     <RestoreLockedMode>true</RestoreLockedMode>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\toggle-off.png" Link="BotScripts\MabinogiMobile\toggle-off.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="AngleSharp" Version="1.7.1" />
     <PackageReference Include="ReverseMarkdown" Version="6.2.1" />
     <PackageReference Include="System.IO.Ports" Version="10.0.11" />

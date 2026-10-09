@@ -68,3 +68,7 @@ $cli = './artifacts/development/OpenLogicool/OpenLogicool.Host.exe'
 Botは手元のキーボード・マウスとリモート操作を検出すると、前面化と入力送出を一時停止する。画面観測は続け、全キー・ボタンの解放後3秒間入力がなければ再開する。Nanoの入力はUSBの識別情報で除外する。状態は`bot status`とBot画面の「手入力で一時停止中」で確認できる。
 
 実機確認は[受入記録](../evidence/application-control-20261008/acceptance.md)を参照。
+
+## Botから担当AIへの支援依頼
+
+`assistant attach|status|claim|resolve`で現在の会話を登録し、詰まりと異常終了の案件を引き継ぐ。[Bot支援の運用](bot-assistance-workflow.md)に接続条件・配達状態・Throughline後の手順を記載している。定期監視は使わず、Botから詰まりイベントで通知する。

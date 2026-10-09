@@ -303,8 +303,9 @@ public static class VisualKeyAssistRuntime
             throw new ArgumentException("進行設定には、描画領域とHUDを認識する --recovery-profile が必要です。");
         var progressRecognizer = progressProfile is null ? null : new VisualProgressRecognizer(progressProfile);
         var progressSchedule = progressProfile is null ? null : new VisualProgressSchedule(progressProfile);
-        var reviewNotifier = Array.IndexOf(arguments, "--review-mcp") < 0 ? null
-            : VisualAssistReviewNotifier.Load(Required("--review-mcp"));
+        var reviewNotifier = VisualAssistReviewNotifier.Create(
+            Array.IndexOf(arguments, "--review-mcp") < 0 ? null : Required("--review-mcp"),
+            Array.IndexOf(arguments, "--assistance-db") < 0 ? null : Required("--assistance-db"));
         var recoveryStatePath = Path.GetFullPath(Required("--db")) + ".visual-recovery.json";
         var recovery = recoveryProfile is null ? null : new VisualRecoverySchedule(recoveryProfile,
             File.Exists(recoveryStatePath)
@@ -335,7 +336,7 @@ public static class VisualKeyAssistRuntime
             long lastUserSample = -1000;
             var reviewMonitor = new VisualProgressReviewMonitor();
             Task notificationWork = Task.CompletedTask;
-            string? reviewDecisionId = null;
+            VisualAssistNotice? reviewDecisionId = null;
             var reviewNumber = 0;
             var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)
                 ? await RunProgressAsync(stop.Token)
@@ -374,7 +375,8 @@ public static class VisualKeyAssistRuntime
                     var immediate = inhibitMatch.Matches || progressRecognizer is null ? null
                         : progressRecognizer.RecognizeImmediateImage(frame, viewport!);
                     var ocr = immediate is null && !inhibitMatch.Matches && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
-                        ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token) : null;
+                        ? progressRecognizer is null ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token)
+                            : await progressRecognizer.ReadOcrAsync(frame, viewport!, token) : null;
                     var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
                     var decision = progress.Apply(schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
                         cueMatch?.Matches == true || matchedTexts.Length > 0));
@@ -500,7 +502,7 @@ public static class VisualKeyAssistRuntime
                                 var current = progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport);
                                 if (current is null)
                                 {
-                                    var freshOcr = await new WindowsGameOcrRecognizer().RecognizeAsync(fresh, token);
+                                    var freshOcr = await progressRecognizer.ReadOcrAsync(fresh, freshViewport, token);
                                     current = progressRecognizer.Recognize(freshOcr, fresh.Width, fresh.Height, freshViewport, fresh);
                                 }
                                 if (current.Signature != flowChoice.Signature || current.Action != flowChoice.Action) continue;
