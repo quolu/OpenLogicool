@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\nano-firmware-install-20261010\\before-flash-game.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "05c8edd6b633d306f5fac6673ee6d0fe1752403d532fc5e4f4c57a2a5f66daa7",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
