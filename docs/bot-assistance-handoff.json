@@ -131,8 +131,8 @@
     "objective": "Nanoの通信停止を修理してBotを動かす",
     "sourceCommit": "9f53d60",
     "rootCauseReproduced": "旧firmwareで全解放後200ms通信を空けるとSequenceViolation。修正版とnative試験・AVR build済み",
-    "firmwareInstallation": "2026-10-10、RSTの意味と操作箇所が利用者に伝わっていなかったためタイミング通知K-4NWSMKを取り下げた。書込み未開始の待機だけ終了。firmwareは未導入で、正規診断は1.1.3 READY・全解放成功。操作箇所の確認が取れるまで基板の操作を依頼しない。",
-    "manualDecisionId": "K-4NWSMK",
+    "firmwareInstallation": "利用者から未導入修正の実施指示を受領。firmware1.1.4を固定toolchainでbuildしHEXを保存済み。旧1.1.3の自動reset阻害と前回の手動reset失敗は保持。基板写真で操作箇所を確認するまで入力接続を停止せず、書込み待機やRST操作依頼を開始しない。",
+    "manualDecisionId": "K-U5885Y",
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
@@ -152,11 +152,19 @@
       "testProjects": 22,
       "sourceCommit": "3c0682d"
     },
-    "readinessDecisionId": "K-3UKN4D"
+    "readinessDecisionId": "K-3UKN4D",
+    "preparedFirmware": {
+      "version": "1.1.4",
+      "sourceCommit": "5d3445786b5e735ea969f29b881e6d222ead40c3",
+      "hex": "evidence/nano-firmware-install-20261010/firmware-1.1.4.hex",
+      "sha256": "b50c316a6776dd46692c8ec8575105c514d7cfbbff2607140beab0d9f11e3751",
+      "status": "built-awaiting-board-photo",
+      "uploadStarted": false
+    }
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-09T23:09:53.5634769+00:00",
+    "updatedUtc": "2026-10-09T23:12:22.7881669+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -168,10 +176,12 @@
       "379225d3-7ac8-4a7b-a293-55c09ab9f0ab",
       "e4367d3f-c5d1-4359-8f82-3ae8af00b24f"
     ],
-    "pendingDecisionIds": [],
+    "pendingDecisionIds": [
+      "K-U5885Y"
+    ],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "Botを継続。定期巡回はせず、新しい詰まり通知だけを受けて対応する。",
+    "nextAction": "Nano基板の写真を受領し、実機のresetボタンまたは接点を特定する。その後にだけ正規flash scriptの待機を開始し、本人へタイミングを伝える。Botは継続。",
     "firmware": "1.1.3のまま。手動リセット依頼は取り下げ済みで再依頼しない。",
     "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。",
     "captureRepair": {

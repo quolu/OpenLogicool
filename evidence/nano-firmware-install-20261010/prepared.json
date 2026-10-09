@@ -1,0 +1,9 @@
+{
+  "Commit": "5d3445786b5e735ea969f29b881e6d222ead40c3",
+  "FirmwareVersion": "1.1.4",
+  "DeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
+  "HexSha256": "B50C316A6776DD46692C8EC8575105C514D7CFBBFF2607140BEAB0D9F11E3751",
+  "HexBytes": 18439,
+  "BotKeptRunning": true,
+  "UploadStarted": false
+}
