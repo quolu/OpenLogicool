@@ -37,5 +37,18 @@
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
     "nextCheck": "金属の光沢剤の完成会話と通常HUD復帰まで確認済み。メイブン不足との同一段階と納品後バッグ残数は未確認"
+  },
+  "pendingGameDecision": {
+    "decisionId": "K-R3N7W4",
+    "incidentId": "e316de8a-26dc-42fa-84f4-bf9ab96ca627",
+    "status": "awaiting-human-choice",
+    "choices": [
+      "STR成長1段階",
+      "DEX成長7段階（レア）",
+      "INT成長1段階"
+    ],
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-085749-204-58e57cb1\\review-002",
+    "replyThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
+    "afterAnswer": "現在画面の同じ選択肢を確認しNanoで選択・確定する。Botの復帰を実測して支援案件をresolveする。手入力優先と画面・回復監視を維持する。"
   }
 }
