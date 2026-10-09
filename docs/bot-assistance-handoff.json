@@ -160,11 +160,25 @@
       "sha256": "b50c316a6776dd46692c8ec8575105c514d7cfbbff2607140beab0d9f11e3751",
       "status": "built-upload-not-started-photo-request-cancelled",
       "uploadStarted": false
+    },
+    "advisor": {
+      "harness": "claude-code",
+      "model": "fable",
+      "effort": "high",
+      "sessionId": "nano-firmware-fable",
+      "parentThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
+      "deliveryId": "57d3e265-047a-4af4-b89b-bc8a754c696e",
+      "status": "running",
+      "completion": "Aiterm managed_completionによる自動配送。ポーリングしない。",
+      "mission": "親の自動reset阻害の判断を反証し、既存記録と旧firmware・Arduino coreを照合して、利用者の写真や未理解の操作なしに正規更新できるか助言する。",
+      "authority": "調査だけ。ファイル変更・Bot操作・serial接続・device操作・flash禁止をpromptへ明記。",
+      "readOnlyEnforcement": "Claude入口ではツールによる強制は非対応。promptによる範囲指定。",
+      "replyPending": true
     }
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-09T23:18:13.2860702+00:00",
+    "updatedUtc": "2026-10-09T23:21:24.1501870+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -179,7 +193,7 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "既知のNanoのfirmware更新を継続する。写真依頼K-U5885Yは利用者の指摘で取消済み。機種確認を再依頼しない。旧版による標準自動reset阻害と、基板resetなしでは実機導入できていない事実を保持する。",
+    "nextAction": "AitermのFable相談nano-firmware-fableの自動完了配送を受け、提案と実物を親が検証してfirmware導入を進める。写真依頼は取消済み。",
     "firmware": "1.1.3のまま。手動リセット依頼は取り下げ済みで再依頼しない。",
     "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。",
     "captureRepair": {
