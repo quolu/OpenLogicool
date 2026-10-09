@@ -83,19 +83,21 @@
     }
   },
   "pendingGameDecision": {
-    "decisionId": "K-SY99CD",
+    "decisionId": "K-WMQ75B",
+    "priorDecisionId": "K-SY99CD",
     "incidentId": "b2f4c507-2962-4e81-aa05-21a626a36da2",
-    "status": "awaiting-human-choice",
+    "status": "awaiting-human-price-choice",
+    "userInstruction": "自動回復10個を選び6,000ゴールド以内なら購入・登録",
+    "execution": "自動回復品をNanoで選択し価格27,000を確認。上限超過のため購入なし。Botの観測を再開済み",
     "choices": [
-      "最上級自動回復10個を選び6,000ゴールド以内なら購入・登録",
-      "最上級回復10個を6,000ゴールドで購入・登録",
+      "自動回復10個を27,000ゴールドで購入・登録",
+      "通常回復10個を6,000ゴールドで購入・登録",
       "購入せず閉じる"
     ],
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-211702-126-d3580f0b\\review-001",
+    "evidenceDirectory": "evidence/bot-potion-refill-20261009",
     "replyThreadId": "01a11dea-b105-7b21-b580-ca5e41a2f302",
     "assistanceOwnerThreadId": "01a11f31-b036-7653-bcd0-de02f96eddac",
-    "afterAnswer": "同じ窓の品名・価格を実画面で確認してNanoで操作する。自動回復品の価格は未確認、6,000超なら購入せず確認する。実行後にBotの復帰を確認する。",
-    "observedState": "ポーション購入確認窓が通常画面を覆っており、Botは画面・回復監視を続けているが進行は保留中"
+    "afterAnswer": "現在の窓で回答された品名・数量・実価格を再確認しNanoで一回購入または閉じる。購入した場合は所持金差分と登録結果を確認してBotの進行を再開する。"
   },
   "deliveryVerification": {
     "verificationId": "20e80029-1aa0-4da4-9d81-8e4a5a4743ad",

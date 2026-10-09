@@ -1,0 +1,26 @@
+{
+  "success": true,
+  "value": {
+    "id": "0f4e470fc888492f95c85abfb84269b4",
+    "operation": "bot.current",
+    "state": "completed",
+    "progress": null,
+    "result": {
+      "phase": "Running",
+      "detail": "HUD非表示中は消費しません。",
+      "scriptId": "mabinogi-mobile",
+      "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261009-212733-328-a88ac488",
+      "observationCount": 183,
+      "lastIntervalMs": 243,
+      "healthFraction": null,
+      "inputCount": 4,
+      "foodCount": 0,
+      "potionCount": 0,
+      "bandageCount": 0
+    },
+    "error": null,
+    "cancellationRequested": false
+  },
+  "error": null,
+  "version": 1
+}
