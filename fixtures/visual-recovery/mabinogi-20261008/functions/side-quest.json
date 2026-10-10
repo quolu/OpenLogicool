@@ -17,6 +17,13 @@
       "Click": { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032] }
     },
     {
+      "Id": "side-quest-retry", "Preempt": true, "Priority": 80, "MinimumVisibleMs": 2500,
+      "AllowWhileInhibited": true, "NextStage": "side-quest", "MaxRepeats": 3,
+      "When": [ { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032], "Zoom": 3 } ],
+      "Recall": { "Name": "side-quest", "Bounds": [0.7, 0.2, 0.3, 0.32], "Shown": false },
+      "Click": { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032] }
+    },
+    {
       "Id": "side-quest-open", "Stage": "side-quest", "Priority": 1, "AllowWhileInhibited": true,
       "When": [ { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032], "Zoom": 3 } ],
       "Click": { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032] }

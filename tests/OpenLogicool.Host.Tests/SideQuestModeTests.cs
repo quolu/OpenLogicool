@@ -63,7 +63,7 @@ public sealed class SideQuestModeTests
             new WindowsGameOcrWord("チャレンジできる財貨が不足しています。", 350, 275, 300, 18) };
         var tab = new WindowsGameOcrWord("クエスト", 955, 100, 30, 12);
 
-        var start = recognizer.Recognize(Screen([.. toast, tab]), 1000, 600, viewport, after: "compass-space");
+        var start = recognizer.Recognize(Screen([.. toast, tab]), 1000, 600, viewport, recent: new("compass-space", 800));
         Assert.Equal("side-quest-start", start.RuleId);
         Assert.Equal(VisualProgressAction.Click, start.Action);
         Assert.Equal("side-quest", start.NextStage);
@@ -72,29 +72,122 @@ public sealed class SideQuestModeTests
         Assert.True(start.AllowWhileInhibited);
         // 即時の画像（コンパス）が出ている間に読む時は、直後の規則だけを評価する。
         Assert.Equal("side-quest-start",
-            recognizer.Recognize(Screen([.. toast, tab]), 1000, 600, viewport, after: "compass-space", afterOnly: true).RuleId);
+            recognizer.Recognize(Screen([.. toast, tab]), 1000, 600, viewport, recent: new("compass-space", 800), afterOnly: true).RuleId);
 
-        // Spaceの直後でなければ始めない。知らせが無い時も、ほかの規則の直後も始めない。
+        // Spaceの直後（3秒以内）でなければ始めない。知らせが無い時も、ほかの規則の直後も始めない。
         Assert.NotEqual("side-quest-start", recognizer.Recognize(Screen([.. toast, tab]), 1000, 600, viewport).RuleId);
-        Assert.NotEqual("side-quest-start", recognizer.Recognize(Screen([.. toast, tab]), 1000, 600, viewport, after: "feather-t").RuleId);
+        Assert.NotEqual("side-quest-start", recognizer.Recognize(Screen([.. toast, tab]), 1000, 600, viewport, recent: new("compass-space", 3001)).RuleId);
+        Assert.NotEqual("side-quest-start", recognizer.Recognize(Screen([.. toast, tab]), 1000, 600, viewport, recent: new("feather-t", 800)).RuleId);
         Assert.Equal(VisualProgressAction.Normal,
-            recognizer.Recognize(Screen(tab), 1000, 600, viewport, after: "compass-space", afterOnly: true).Action);
+            recognizer.Recognize(Screen(tab), 1000, 600, viewport, recent: new("compass-space", 800), afterOnly: true).Action);
     }
 
     [Fact]
-    public void 操作の直後かどうかは送ってから3秒で見る()
+    public void 直前に操作を送った規則と送ってからの時間を返す()
     {
         var schedule = new VisualProgressSchedule(Profile());
-        Assert.Null(schedule.RecentRule(0));
+        Assert.Null(schedule.RecentInput(0));
         schedule.RecordInput(1000, new(VisualProgressAction.Key, "compass-space", "compass-space", "Key:Space", Immediate: true));
-        Assert.Equal("compass-space", schedule.RecentRule(1200));
-        Assert.Equal("compass-space", schedule.RecentRule(4000));
-        Assert.Null(schedule.RecentRule(4001));
+        Assert.Equal(new VisualProgressRecent("compass-space", 200), schedule.RecentInput(1200));
+        Assert.Equal(new VisualProgressRecent("compass-space", 3000), schedule.RecentInput(4000));
         // 受注の流れを始める操作で、受注の段階へ入る。
         schedule.RecordInput(4500, new(VisualProgressAction.Click, "side-quest-start", "side-quest-start:", Point: [0.97, 0.2], NextStage: Stage));
         Assert.Equal(Stage, schedule.Stage);
     }
 
+    // 受注した後、右の一覧の追跡中（大きい文字）の名前が、受注した名前と違っていたら、クエストの帯から受注をやり直す。
+    [Theory]
+    // 追跡中が「料理入門」の画面。
+    [InlineData("side-quest-hud.png", "料理入門第", false)]
+    [InlineData("side-quest-hud.png", "魔族を召喚する結界第", true)]
+    // 追跡中が一覧の途中にあり、上に知らせが出ている画面。
+    [InlineData("side-quest-hud-waiting.png", "魔族を召喚する結界第", false)]
+    [InlineData("side-quest-hud-waiting.png", "料理入門", true)]
+    // 追跡中の名前が光って読み違いが多い画面と、長い名前の画面。
+    [InlineData("side-quest-hud-blue.png", "トゥガルドアイルに戻る", false)]
+    [InlineData("side-quest-hud-blue.png", "料理入門", true)]
+    [InlineData("side-quest-hud-orange.png", "[ウィークリー目標]冒険者ギルドの定期依頼", false)]
+    [InlineData("side-quest-hud-orange.png", "魔族を召喚する結界", true)]
+    public async Task 受注した後に追跡中の名前が違っていたら帯から受注をやり直す(string image, string accepted, bool retry)
+    {
+        var frame = ReadFrame(Fixture(image));
+        var recognizer = new VisualProgressRecognizer(Profile());
+        recognizer.SetRemembered("side-quest", [accepted, "010m", "説明"]);
+        var ocr = await recognizer.ReadOcrAsync(frame, Viewport(frame));
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, Viewport(frame), frame,
+            recent: new("side-quest-accept", 4000), afterOnly: true);
+        if (!retry)
+        {
+            Assert.Equal(VisualProgressAction.Normal, choice.Action);
+            return;
+        }
+        Assert.Equal("side-quest-retry", choice.RuleId);
+        Assert.Equal(VisualProgressAction.Click, choice.Action);
+        // Spaceの直後の知らせを待たずに、クエストの帯から始める。
+        Assert.InRange(choice.Point![0], 0.955, 0.98);
+        Assert.InRange(choice.Point[1], 0.19, 0.21);
+        Assert.Equal(Stage, choice.NextStage);
+    }
+
+    [Fact]
+    public async Task 名前の照合はBotが動いている間ずっと行い覚えた名前が無ければやり直さない()
+    {
+        var frame = ReadFrame(Fixture("side-quest-hud.png"));
+        var recognizer = new VisualProgressRecognizer(Profile());
+        var ocr = await recognizer.ReadOcrAsync(frame, Viewport(frame));
+        VisualProgressChoice Check(VisualProgressRecent? recent, bool afterOnly) => recognizer.Recognize(
+            ocr, frame.Width, frame.Height, Viewport(frame), frame, recent: recent, afterOnly: afterOnly);
+        // 覚えた名前が無い間は、比べられないのでやり直さない。文字を先に読む必要も無い。
+        Assert.False(recognizer.HasPreempting(null));
+        Assert.Equal(VisualProgressAction.Normal, Check(null, true).Action);
+
+        recognizer.SetRemembered("side-quest", ["魔族を召喚する結界第"]);
+        Assert.True(recognizer.HasPreempting(null));
+        // 受注の直後に限らない。ほかの操作の後でも、時間がたっても、右下のSpaceのボタンが出ていても確かめる。
+        Assert.Equal("side-quest-retry", Check(null, true).RuleId);
+        Assert.Equal("side-quest-retry", Check(new("side-quest-accept", 600_000), true).RuleId);
+        Assert.Equal("side-quest-retry", Check(new("compass-space", 800), true).RuleId);
+        Assert.Equal("side-quest-retry", Check(null, false).RuleId);
+        // 受注の段階の中では、照合の規則は評価しない。
+        Assert.False(recognizer.HasPreempting(Stage));
+
+        recognizer.SetRemembered("side-quest", ["料理入門第"]);
+        Assert.Equal(VisualProgressAction.Normal, Check(null, true).Action);
+    }
+    [Fact]
+    public void 受注のやり直しは違う状態が続いた時だけ送り3回で止めて知らせる()
+    {
+        var profile = Profile();
+        var schedule = new VisualProgressSchedule(profile);
+        var retry = new VisualProgressChoice(VisualProgressAction.Click, "side-quest-retry", "side-quest-retry:クエスト",
+            Point: [0.97, 0.2], AllowWhileInhibited: true, NextStage: Stage);
+        // 画面の切り替わりの途中で早合点しないよう、2.5秒続いてから送る。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, retry, false, true, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2400, retry, false, true, true).Action);
+        Assert.Same(retry, schedule.Decide(2500, retry, false, true, true));
+        schedule.RecordInput(2600, retry);
+        schedule.RecordInput(20000, retry);
+        Assert.NotEqual(VisualProgressAction.Review, schedule.Decide(30000, retry, false, true, true).Action);
+        schedule.RecordInput(40000, retry);
+        // 3回やり直しても名前が合わない時は、同じ操作を続けずに知らせる。
+        var stopped = schedule.Decide(50000, retry, false, true, true);
+        Assert.Equal(VisualProgressAction.Review, stopped.Action);
+        Assert.Contains("3回", stopped.Detail);
+        // 2分たてば、あらためてやり直せる。
+        Assert.NotEqual(VisualProgressAction.Review, schedule.Decide(40000 + 120_001 + 2600, retry, false, true, true).Action);
+    }
+
+    [Theory]
+    [InlineData("魔族を召喚する結界", "魔族を召喚する結界第", true)]
+    [InlineData("っカルトアイルに戻る", "トゥガルドアイルに戻る", true)]
+    [InlineData("ウィークリー目標冒険者ギルドの定期依頼", "ウィークリー目標冒険者ギルドの定期依頼第", true)]
+    [InlineData("料理入門", "料理入門第", true)]
+    [InlineData("料理入門", "魔族を召喚する結界第", false)]
+    [InlineData("魔族を召喚する結界", "黒髪の魔法使い", false)]
+    [InlineData("ルーン昇級", "料理入門", false)]
+    [InlineData("", "料理入門", false)]
+    public void 名前は読み取りの揺れを同じとみなし別のクエストは区別する(string shown, string accepted, bool same) =>
+        Assert.Equal(same, VisualProgressRecognizer.SameName(shown, accepted));
     // サイドを選んだ後は、一番上のカードの真ん中を押してカードを開く。一覧は送らない。
     [Theory]
     [InlineData("side-quest-list-top.png")]
@@ -164,6 +257,7 @@ public sealed class SideQuestModeTests
     [InlineData("side-quest-hud.png")]
     [InlineData("side-quest-hud-blue.png")]
     [InlineData("side-quest-hud-orange.png")]
+    [InlineData("side-quest-hud-waiting.png")]
     [InlineData("side-quest-list-all.png")]
     [InlineData("side-quest-list-middle.png")]
     [InlineData("side-quest-list-top.png")]

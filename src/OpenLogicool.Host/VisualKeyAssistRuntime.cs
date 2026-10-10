@@ -330,6 +330,13 @@ public static class VisualKeyAssistRuntime
             Array.IndexOf(arguments, "--review-mcp") < 0 ? null : Required("--review-mcp"),
             Array.IndexOf(arguments, "--assistance-db") < 0 ? null : Required("--assistance-db"));
         var recoveryStatePath = Path.GetFullPath(Required("--db")) + ".visual-recovery.json";
+        // 操作を送った時に覚えた内容（受注したクエストの名前など）。Botを始め直しても引き継ぐ。
+        var rememberedPath = Path.GetFullPath(Required("--db")) + ".remembered.json";
+        var rememberedLines = File.Exists(rememberedPath)
+            ? JsonSerializer.Deserialize<Dictionary<string, string[]>>(File.ReadAllText(rememberedPath))
+                ?? throw new InvalidDataException("保存した覚え書きが空です。")
+            : [];
+        foreach (var (name, lines) in rememberedLines) progressRecognizer?.SetRemembered(name, lines);
         // --no-recovery-input は、回復の機能を外す。描画領域とHUDの認識には回復設定を使い続ける。
         if (recoveryOnly && arguments.Contains("--no-recovery-input", StringComparer.Ordinal))
             throw new ArgumentException("--recovery-only と --no-recovery-input は併用できません。");
@@ -496,10 +503,13 @@ public static class VisualKeyAssistRuntime
                     var immediate = numbered is null ? progressRecognizer?.RecognizeImmediateImage(frame, viewport!, inhibitMatch.Matches, stage) : null;
                     // 直前に操作を送った規則の直後だけ評価する規則がある間は、即時の画像が出ていても文字を読む
                     // （Spaceを押した直後に出る知らせを読むため）。
-                    var recentRule = progressSchedule?.RecentRule(clock.ElapsedMilliseconds);
-                    var afterPending = recentRule is not null
-                        && progressProfile!.Rules.Any(rule => rule.After == recentRule && rule.Stage == stage);
-                    var ocr = (immediate is null || afterPending) && (!inhibitMatch.Matches || readWhileInhibited) && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
+                    var recent = progressSchedule?.RecentInput(clock.ElapsedMilliseconds);
+                    var recentRule = recent?.RuleId;
+                    var afterPending = recent is { } last && progressProfile!.Rules.Any(rule =>
+                        rule.After == last.RuleId && last.ElapsedMs <= rule.AfterWithinMs && rule.Stage == stage);
+                    // 即時の画像より先に評価する規則（受注した名前と追跡中の名前の照合など）がある間も、文字を読む。
+                    var preemptPending = progressRecognizer?.HasPreempting(stage) == true;
+                    var ocr = (immediate is null || afterPending || preemptPending) && (!inhibitMatch.Matches || readWhileInhibited) && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                         ? progressRecognizer is null ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token)
                             : await progressRecognizer.ReadOcrAsync(frame, viewport!, token, stage) : null;
                     if (ocr is not null && progressSchedule?.PendingModeStage(clock.ElapsedMilliseconds) is { } pendingModeStage
@@ -523,10 +533,10 @@ public static class VisualKeyAssistRuntime
                         ? recoveryRecognizer?.Observe(frame, viewport, ocr?.Text) : null;
                     var flowCandidate = immediate ?? (progressRecognizer is null || ocr is null ? null
                         : progressRecognizer.Prefer(numbered,
-                            progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame, inhibitMatch.Matches, stage, recentRule)));
-                    if (immediate is not null && afterPending && ocr is not null
+                            progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame, inhibitMatch.Matches, stage, recent)));
+                    if (immediate is not null && (afterPending || preemptPending) && ocr is not null
                         && progressRecognizer!.Recognize(ocr, frame.Width, frame.Height, viewport!, frame, inhibitMatch.Matches, stage,
-                            recentRule, afterOnly: true) is { Action: VisualProgressAction.Key or VisualProgressAction.Click } afterChoice)
+                            recent, afterOnly: true) is { Action: VisualProgressAction.Key or VisualProgressAction.Click } afterChoice)
                         flowCandidate = afterChoice;
                     if (afterPending && ocr is not null)
                     {
@@ -708,12 +718,13 @@ public static class VisualKeyAssistRuntime
                                     : await progressRecognizer!.RecognizeNumberRuleAsync(fresh, freshViewport, stage, progressSchedule!.MayStart,
                                         progressSchedule!.ObserveUnmet, freshInhibited, token);
                                 // 操作の直後だけ評価する規則は、即時の画像が出ていても、その規則だけを読み直して確かめる。
-                                var flowAfter = completingClick || flowChoice.RuleId is null ? null
-                                    : progressProfile!.Rules.SingleOrDefault(rule => rule.Id == flowChoice.RuleId)?.After;
+                                var flowRule = completingClick || flowChoice.RuleId is null ? null
+                                    : progressProfile!.Rules.SingleOrDefault(rule => rule.Id == flowChoice.RuleId);
                                 var current = freshInhibited && !flowChoice.AllowWhileInhibited ? null
-                                    : flowAfter is not null ? progressRecognizer!.Recognize(
+                                    : flowRule is { After: not null } or { Preempt: true } ? progressRecognizer!.Recognize(
                                         await progressRecognizer.ReadOcrAsync(fresh, freshViewport, token, stage),
-                                        fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited, stage, flowAfter, afterOnly: true)
+                                        fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited, stage,
+                                        progressSchedule!.RecentInput(clock.ElapsedMilliseconds), afterOnly: true)
                                     : completingClick ? flowChoice : flowChoice.RepeatIntervalMs > 0
                                     ? progressRecognizer!.RecognizeRepeatingImage(fresh, freshViewport, rule => rule.Id == flowChoice.RuleId)
                                     : freshNumbered is null ? progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport, freshInhibited, stage) : null;
@@ -722,7 +733,7 @@ public static class VisualKeyAssistRuntime
                                     var freshOcr = await progressRecognizer!.ReadOcrAsync(fresh, freshViewport, token, stage);
                                     current = progressRecognizer.Prefer(freshNumbered,
                                         progressRecognizer.Recognize(freshOcr, fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited, stage,
-                                            progressSchedule!.RecentRule(clock.ElapsedMilliseconds)));
+                                            progressSchedule!.RecentInput(clock.ElapsedMilliseconds)));
                                 }
                                 if (freshInhibited && !current.AllowWhileInhibited
                                     || current.Signature != flowChoice.Signature || current.Action != flowChoice.Action) continue;
@@ -1255,6 +1266,12 @@ public static class VisualKeyAssistRuntime
                 var image = Path.Combine(folder, name + ".png");
                 File.WriteAllBytes(image, new WindowsGameFramePngEncoder().Encode(source with { Width = width, Height = height,
                     Pixels = new FramePixels(bytes, width * 4), Crop = null }).Bytes.ToArray());
+                // 後の規則が、覚えた名前と画面の表示を照らし合わせる。Botを始め直しても忘れないよう、保存する。
+                progressRecognizer!.SetRemembered(remembered.Name, remembered.Lines);
+                rememberedLines[remembered.Name] = remembered.Lines;
+                var temporaryRemembered = rememberedPath + ".tmp";
+                File.WriteAllText(temporaryRemembered, JsonSerializer.Serialize(rememberedLines));
+                File.Move(temporaryRemembered, rememberedPath, overwrite: true);
                 var entry = new { Event = "remembered", AtMs = clock.ElapsedMilliseconds, remembered.Name, RuleId = ruleId,
                     remembered.Lines, Image = image, RecordedAt = DateTimeOffset.Now };
                 File.WriteAllText(Path.Combine(folder, name + ".json"), JsonSerializer.Serialize(entry));

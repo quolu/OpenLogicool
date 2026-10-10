@@ -25,6 +25,13 @@ public sealed record VisualProgressFlick(double[] From, double[] To);
 /// </summary>
 public sealed record VisualProgressRemember(string Name, double[] Bounds, double? EndBelowClick = null, double? AboveClick = null);
 public sealed record VisualProgressRemembered(string Name, string[] Lines, double[] Bounds);
+/// <summary>
+/// 覚えた内容の1行目（名前）が、領域の中でいちばん大きい文字の行（追跡中の表示）に出ているか。
+/// Shown が false の規則は、出ていない時に当たる。覚えた内容が無い時と、領域に文字が無い時は、どちらの規則も当たらない。
+/// </summary>
+public sealed record VisualProgressRecall(string Name, double[] Bounds, bool Shown = true);
+/// <summary>直前に操作を送った規則と、送ってからの時間。</summary>
+public readonly record struct VisualProgressRecent(string RuleId, long ElapsedMs);
 /// <summary>外から入り・解除を指示する動き方。入った時と、入ったままBotを始めた時に、通常の画面で Stage の段階を始める。</summary>
 public sealed record VisualProgressMode(string Id, string Name, string Stage);
 public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
@@ -37,7 +44,8 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     bool ImageClipsAtBottom = false, bool RepeatAfterChange = false, VisualProgressNumber? Number = null,
     string? Stage = null, string? NextStage = null, string[]? ThenKeys = null,
     VisualProgressArea[]? Areas = null, VisualProgressFlick? Flick = null, VisualProgressRemember? Remember = null,
-    bool EndStage = false, string? Function = null, double[]? Point = null, string? After = null);
+    bool EndStage = false, string? Function = null, double[]? Point = null, string? After = null,
+    int AfterWithinMs = 3000, VisualProgressRecall? Recall = null, int? MaxRepeats = null, bool Preempt = false);
 /// <summary>
 /// 機能。Botの動きを、単独でも組み合わせても使える単位に分けたもの。進行設定の隣の functions/ に、機能ごとのファイルで置く。
 /// Requires は、この機能と一緒に読む機能。
@@ -152,6 +160,11 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             if (rule.After is not null && (rule.Immediate || rule.RepeatIntervalMs > 0 || rule.WaitForChange
                 || !value.Rules.Any(other => other.Id == rule.After)))
                 throw new InvalidDataException("ある操作の直後だけ評価する規則は、設定にある規則の名前を、即時・反復・待機でない規則に指定します。");
+            if (rule.Preempt && (rule.Immediate || rule.RepeatIntervalMs > 0 || rule.WaitForChange))
+                throw new InvalidDataException("即時の画像より先に評価する規則は、即時・反復・待機でない規則に指定します。");
+            if (rule.AfterWithinMs <= 0 || rule.MaxRepeats <= 0
+                || rule.Recall is { } recall && (string.IsNullOrWhiteSpace(recall.Name) || rule.Immediate || rule.RepeatIntervalMs > 0))
+                throw new InvalidDataException("直後とみなす時間と繰り返しの上限は正の値で、覚えた内容との照合は即時・反復でない規則に指定します。");
             if (rule.MinimumVisibleMs < 0)
                 throw new InvalidDataException("表示待ち時間が不正です。");
             if (rule.Key is not null) OpenLogicool.Input.OutputTokens.Parse(rule.Key);
@@ -238,6 +251,7 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             .Concat(value.Rules.SelectMany(rule => rule.ImageStableRegions ?? []))
             .Concat(value.Rules.SelectMany(rule => rule.Areas ?? []).Select(area => area.Bounds))
             .Concat(value.Rules.Where(rule => rule.Remember is not null).Select(rule => rule.Remember!.Bounds))
+            .Concat(value.Rules.Where(rule => rule.Recall is not null).Select(rule => rule.Recall!.Bounds))
             .Concat(value.WhiteTextBounds ?? []))
             if (bounds is not { Length: 4 } || bounds.Any(x => !double.IsFinite(x) || x < 0 || x > 1)
                 || bounds[2] <= 0 || bounds[3] <= 0
@@ -464,12 +478,25 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             || recognized.RuleId is not null && Priority(numbered.RuleId!) > Priority(recognized.RuleId)) ? numbered : recognized;
     }
 
+    private readonly Dictionary<string, string[]> remembered = [];
+
+    /// <summary>操作を送った時に覚えた内容。後の規則が、画面の表示と照らし合わせる。</summary>
+    public void SetRemembered(string name, string[] lines) => remembered[name] = lines;
+
     /// <summary>
-    /// after は、直前に操作を送った規則。After を指定した規則は、その規則の直後だけ評価する。
-    /// afterOnly は、その直後の規則だけを評価する（即時の画像が出ている間に、直後の表示を読むため）。
+    /// 即時の画像が出ている間も、文字を読んで先に評価する規則が、今の段階にあるか。
+    /// 覚えた内容と照らし合わせる規則は、その内容を覚えている間だけ数える。
+    /// </summary>
+    public bool HasPreempting(string? stage) => profile.Rules.Any(rule => rule.Preempt && rule.Stage == stage
+        && (rule.Recall is null || remembered.ContainsKey(rule.Recall.Name)));
+
+    /// <summary>
+    /// recent は、直前に操作を送った規則と、送ってからの時間。After を指定した規則は、その規則の直後だけ評価する。
+    /// afterOnly は、その直後の規則と、Preempt を指定した規則だけを評価する（即時の画像が出ている間に読むため）。
     /// </summary>
     public VisualProgressChoice Recognize(WindowsGameOcrResult ocr, int width, int height, FrameRect viewport,
-        CapturedFrame? frame = null, bool inhibited = false, string? stage = null, string? after = null, bool afterOnly = false)
+        CapturedFrame? frame = null, bool inhibited = false, string? stage = null, VisualProgressRecent? recent = null,
+        bool afterOnly = false)
     {
         if (!afterOnly && frame is not null && RecognizeImmediateImage(frame, viewport, inhibited, stage) is { } immediate) return immediate;
         string Read(VisualProgressText area) => Normalize(string.Concat(ocr.Words
@@ -496,7 +523,8 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             && (rule.Number is null || rule.When.Length > 0)))
         {
             if (inhibited && !rule.AllowWhileInhibited) continue;
-            if (rule.After is null ? afterOnly : rule.After != after) continue;
+            if (rule.After is null ? afterOnly && !rule.Preempt
+                : !(recent is { } last && last.RuleId == rule.After && last.ElapsedMs <= rule.AfterWithinMs)) continue;
             double[]? point = null;
             if (rule.Image is not null)
             {
@@ -514,6 +542,12 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     match.Bounds[1] + match.Bounds[3] * (rule.ClickImagePoint?[1] ?? 0.5)];
             }
             if (rule.Areas is not null && (frame is null || !rule.Areas.All(area => AreaHolds(frame, viewport, area)))) continue;
+            if (rule.Recall is { } recall)
+            {
+                if (!remembered.TryGetValue(recall.Name, out var lines) || lines.Length == 0
+                    || LargestLine(ocr, recall.Bounds, viewport) is not { } shown) continue;
+                if (SameName(shown, Normalize(lines[0])) != recall.Shown) continue;
+            }
             var texts = rule.When.Select(Read).ToArray();
             if (!rule.When.Select((condition, i) => Matches(texts[i], condition)).All(x => x)) continue;
             if (rule.SingleTextRunBounds is { } labelBounds
@@ -594,6 +628,15 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             lines[^1].Add(word);
         }
         return lines;
+    }
+
+    /// <summary>領域の中で、文字がいちばん大きい行を読む。追跡中の名前のように、大きい文字で示す表示を見分ける。</summary>
+    private static string? LargestLine(WindowsGameOcrResult ocr, double[] area, FrameRect viewport)
+    {
+        var lines = Lines(ocr, area, viewport)
+            .Select(line => (Height: line.Max(word => word.Height), Text: Normalize(string.Concat(line.OrderBy(word => word.X).Select(word => word.Text)))))
+            .Where(line => line.Text.Length >= 2).ToArray();
+        return lines.Length == 0 ? null : lines.MaxBy(line => line.Height).Text;
     }
 
     /// <summary>
@@ -831,6 +874,12 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         // OCRは文字を落とす・余分に読むこともある。短い語は別の語と区別できないため6文字以上に限り、
         // 抜け・余分・読違いの合計が長さの4分の1以下なら同じ表示とする。
         if (expected.Length < 6) return false;
+        return PartialDistance(observed, expected) <= expected.Length / 4;
+    }
+
+    /// <summary>expected と、observed の中のいちばん近い部分との、抜け・余分・読違いの合計。</summary>
+    private static int PartialDistance(string observed, string expected)
+    {
         var previous = new int[observed.Length + 1]; // 観測文字列のどこから始まってもよい。
         var current = new int[observed.Length + 1];
         for (var i = 1; i <= expected.Length; i++)
@@ -841,7 +890,20 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     previous[j - 1] + (expected[i - 1] == observed[j - 1] ? 0 : 1));
             (previous, current) = (current, previous);
         }
-        return previous.Min() <= expected.Length / 4;
+        return previous.Min();
+    }
+
+    /// <summary>
+    /// 画面に出ている名前と、覚えた名前が同じクエストか。覚えた名前はカードの読み取りで、画面の名前は景色に重なって
+    /// 読み違いが増える。別のクエストの名前はほとんど重ならないので、4割までの違いは同じ名前とみなす。
+    /// 名前の横の絵の読み違いが前後に付くので、どちらかがもう一方に含まれる形でも比べる。
+    /// </summary>
+    internal static bool SameName(string shown, string name)
+    {
+        if (shown.Length < 2 || name.Length < 2) return false;
+        if (shown.Contains(name, StringComparison.Ordinal) || name.Contains(shown, StringComparison.Ordinal)) return true;
+        if (name.Length < 4 || shown.Length < 4) return false;
+        return PartialDistance(shown, name) <= name.Length * 2 / 5 || PartialDistance(name, shown) <= shown.Length * 2 / 5;
     }
 }
 
@@ -860,10 +922,12 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     private bool wasInhibited;
     // 直前に操作を送った規則。その直後だけ評価する規則（After）のために覚える。
     private (string RuleId, long At)? lastInput;
-    private const int AfterWindowMs = 3000;
+    // 繰り返しの上限を持つ規則が、操作を送った時刻。
+    private readonly Dictionary<string, List<long>> repeats = [];
+    private const int RepeatWindowMs = 120_000;
 
-    /// <summary>操作を送ってから3秒以内の、その規則の名前。</summary>
-    public string? RecentRule(long now) => lastInput is { } last && now - last.At <= AfterWindowMs ? last.RuleId : null;
+    /// <summary>直前に操作を送った規則と、送ってからの時間。</summary>
+    public VisualProgressRecent? RecentInput(long now) => lastInput is { } last ? new(last.RuleId, now - last.At) : null;
     private readonly Dictionary<string, long> repeatedAt = [];
     private readonly HashSet<string> started = [];
     private long? stageHudAt;
@@ -946,6 +1010,12 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     public VisualProgressChoice Decide(long now, VisualProgressChoice candidate, bool inhibited,
         bool hudVisible, bool due, bool sceneChanged = false)
     {
+        // 繰り返しの上限に達した規則は、同じ操作を続けずに知らせる。
+        if (candidate.RuleId is not null && repeats.TryGetValue(candidate.RuleId, out var sent)
+            && profile.Rules.Single(rule => rule.Id == candidate.RuleId).MaxRepeats is { } limit
+            && sent.Count(at => now - at <= RepeatWindowMs) >= limit)
+            return new(VisualProgressAction.Review, candidate.RuleId, candidate.Signature,
+                Detail: $"{candidate.RuleId} を{limit}回繰り返しても、条件が変わりません。同じ操作は続けていません。");
         if (Stage is not null && candidate.Action == VisualProgressAction.Normal && hudVisible)
         {
             stageHudAt ??= now;
@@ -1049,7 +1119,16 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
 
     public void RecordInput(long now, VisualProgressChoice choice)
     {
-        if (choice.RuleId is not null) lastInput = (choice.RuleId, now);
+        if (choice.RuleId is not null)
+        {
+            lastInput = (choice.RuleId, now);
+            if (profile.Rules.SingleOrDefault(rule => rule.Id == choice.RuleId)?.MaxRepeats is not null)
+            {
+                if (!repeats.TryGetValue(choice.RuleId, out var times)) repeats[choice.RuleId] = times = [];
+                times.RemoveAll(at => now - at > RepeatWindowMs);
+                times.Add(now);
+            }
+        }
         if (modeStage) { modeStageInputs++; modeFailureReported = false; }
         if (choice.NextStage is not null)
         {

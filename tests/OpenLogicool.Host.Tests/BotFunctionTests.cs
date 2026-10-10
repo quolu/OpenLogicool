@@ -34,9 +34,9 @@ public sealed class BotFunctionTests
     {
         var main = VisualProgressProfile.Load(Progress);
         Assert.Equal(Main, main.Functions!);
-        Assert.Equal(50, main.Rules.Length);
+        Assert.Equal(51, main.Rules.Length);
         Assert.All(main.Rules, rule => Assert.Contains(rule.Function, main.Functions!));
-        Assert.Equal(5, main.Rules.Count(rule => rule.Function == "side-quest"));
+        Assert.Equal(6, main.Rules.Count(rule => rule.Function == "side-quest"));
         Assert.Equal("side-quest", Assert.Single(main.Modes!).Id);
         Assert.Equal(2, main.ReviewWhen.Length);
         Assert.Equal(2, main.WhiteTextBounds!.Length);
@@ -74,7 +74,7 @@ public sealed class BotFunctionTests
     {
         var withSideQuest = VisualProgressProfile.Load(Progress, ["side-quest", "dialogue"], withMain: true);
         Assert.Equal(Main, withSideQuest.Functions!);
-        Assert.Equal(50, withSideQuest.Rules.Length);
+        Assert.Equal(51, withSideQuest.Rules.Length);
     }
     [Fact]
     public void 無い機能と一覧に無いファイルと機能に分けていない設定での指定は拒否する()

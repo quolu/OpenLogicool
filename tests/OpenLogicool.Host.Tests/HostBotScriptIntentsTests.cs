@@ -75,7 +75,7 @@ public sealed class HostBotScriptIntentsTests
         Assert.False(package.TimedInputEnabled);
         var recovery = VisualRecoveryProfile.Load(package.File("profile.json"));
         // 進行設定は機能の組み合わせで、機能ごとのファイルも一緒に配る。
-        Assert.Equal(50, VisualProgressProfile.Load(package.File("progress.json")).Rules.Length);
+        Assert.Equal(51, VisualProgressProfile.Load(package.File("progress.json")).Rules.Length);
         Assert.Equal(10, VisualProgressProfile.ListFunctions(package.File("progress.json")).Count);
         Assert.Equal(0.7, recovery.PotionThreshold);
         Assert.Equal(0.2, recovery.BandageThreshold);
