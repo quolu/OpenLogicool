@@ -113,16 +113,20 @@
 - `docs/remote-view-operation.md`（設置と使い方）。
 - 実機で段0 の表を測り直し、`docs/remote-view-exit-assessment.md` で合否を宣言する。
 
-### 段5 の現在地（人の許可を待つ間の記録）
+### 段5 の現在地
 
-- オーナーの回答（決裁箱 K-EZE9L9）: サーバーへの設置を進めてよい。
-- オーナーの指示（2026-10-11・会話）: Cloudflare の中継サービス（TURN）は使わない。名前を引いてメインサーバーへ届いた後は直結にする。
-- 決まった形: 名前は `stream.kitepon.dev`。MediaMTX 1.21.2 を main-server の `~/remote-view/` へ docker で置き、既存の Caddy（network `license-server_default`）から `remote-view-mediamtx:8889` へ渡す。家の中向けに `192.168.1.2:8189/udp` を開ける。Cloudflare のトンネル（home-server）へ行き先を1行足し、DNS へ `stream` を足す。
-- 済み: 送信用と視聴用の ID とパスワードの生成、MediaMTX の設定ファイルと compose の用意（サーバーへは未配置）。この PC のアプリへ送信先・視聴用の URL・送信用の ID とパスワードを保存した（`remoteview save-settings`・読み戻しで確認）。
-- 未実施: サーバーへの配置と起動、Caddy、トンネル、DNS、UDP 8189 の開放、視聴用の ID とパスワードの 1Password への保存。作業する会話の自動の許可判定が、サーバーへの書き込みと 1Password への書き込みを止めた。オーナーの許可を待つ。
-- 直結に要るもの: 家のルーターが UDP 8189 をメインサーバー（192.168.1.2）へ通すこと。MediaMTX が外側の address を視聴側へ伝えること（`webrtcAdditionalHosts` へ address か名前を書く。STUN で自動に得られるかは設置後に実測する）。
-- 家の回線の実測（2026-10-11・サーバーから STUN 3か所へ問い合わせ）: 外側の IPv4 は1つで、内側の port がそのまま外側の port になり、宛先を変えても変わらない。IPv4 を共有する回線（使える port が限られる形）ではない。グローバルの IPv6 もある。ルーターが外からの最初の通信を通すかは未確認。
-- `kitepon.dev` の DNS は全てトンネル経由の CNAME で、家の回線の address を指す名前と、それを更新する定期の処理は無い。
+- オーナーの回答（決裁箱 K-EZE9L9）と指示（2026-10-11・会話）: サーバーへの設置を進める。Cloudflare の中継サービス（TURN）は使わない。名前を引いてメインサーバーへ届いた後は直結にする。
+- 設置した形と手順、戻し方は[設置と使い方](remote-view-operation.md)。
+- 済み（2026-10-11・実測）: MediaMTX の起動、Caddy・トンネル・DNS への追加。`https://stream.kitepon.dev/game/` は、ID なしと誤ったパスワードが 401、視聴用の ID で 200、視聴用の ID での送信が 401。この PC から試験用の映像と音を送り、家の中の直結（UDP 8189）で届いた（MediaMTX の記録で 2 tracks・publishing）。この PC のアプリへ送信先・視聴用の URL・送信用の ID とパスワードを保存した。
+- 直した欠陥: ffmpeg の WHIP の送信の溜め場が既定のままだと、別の機器の中継サーバーへ送る時に最初のコマで終了する。`-ts_buffer_size` を足した（[調査](../rag/openlogicool/remote-view-stack-2026-10-10.md)）。
+- 家の回線の実測（サーバーから STUN 3か所へ問い合わせ）: 外側の IPv4 は1つで、内側の port がそのまま外側の port になり、宛先を変えても変わらない。IPv4 を共有する回線（使える port が限られる形）ではない。
+- 未実施・未確認:
+  - 修理を入れたアプリからの配信（`remoteview start`）と、Bot を動かしたままの同居。
+  - iPhone／iPad の Safari での音つき再生（家の Wi-Fi）。
+  - 外からの直結。家のルーターで UDP 8189 をメインサーバーへ転送する設定が要る（オーナーの手）。設定の後に携帯回線で確かめる。
+  - 家の回線の address が変わった時の扱い。MediaMTX の設定は address を固定で持つ。`kitepon.dev` の DNS は全てトンネル経由の CNAME で、家の回線を指す名前と、それを更新する定期の処理は無い。
+  - 視聴用の ID とパスワードの 1Password への保存。
+  - 段0 の表の測り直しと合否の宣言。
 
 ## クオ君の手が要る所
 
