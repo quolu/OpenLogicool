@@ -322,7 +322,7 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | OPS-008 | R3 | journal、Playbook、active Runをapp再起動後に復元できる |
 | OPS-009 | R3 | execution journalとengineering logを分離し、correlation IDで一遷移を追跡できる |
 | RV-001 | R4 | 選んだゲームの窓の映像と音を、利用者の中継サーバー経由で利用者の別端末（iPad／iPhone）に表示できる。対象の窓からフォーカスを奪わない |
-| RV-002 | R4 | 遠隔表示は既定OFFで、利用者が明示して開始・停止する。視聴には認証を要し、送信は中継サーバーへの1経路だけとする |
+| RV-002 | R4 | 遠隔表示は既定OFFで、利用者が「受け付ける」を入にした間だけ有効にする。入の間は、認証を通った端末が見る URL を開いた時に送り始め、いなくなると止める。入・切はアプリを起動し直しても続く。送信は中継サーバーへの1経路だけとする |
 | RV-003 | R4 | 遠隔表示の失敗・停止は fast path と Input Studio へ伝播しない。別processの終了は明示の状態として表示し、自動で再起動しない |
 
 ### 3.8 非機能予算

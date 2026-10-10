@@ -10,7 +10,8 @@ public sealed record RemoteViewSettings(
     string? PublishUrl,
     string? ViewerUrl,
     string? PublishUser,
-    RemoteViewQuality Quality)
+    RemoteViewQuality Quality,
+    bool AcceptViewers = false)
 {
     public const string CurrentSchemaVersion = "1.0";
 
@@ -101,7 +102,7 @@ public sealed class RemoteViewSettingsStore
             _ => throw new InvalidDataException($"quality '{document.Quality}' は未対応です。"),
         };
         var settings = new RemoteViewSettings(
-            document.SchemaVersion, document.PublishUrl, document.ViewerUrl, document.PublishUser, quality);
+            document.SchemaVersion, document.PublishUrl, document.ViewerUrl, document.PublishUser, quality, document.AcceptViewers);
         settings.Validate();
         return settings;
     }
@@ -115,7 +116,8 @@ public sealed class RemoteViewSettingsStore
             settings.PublishUrl,
             settings.ViewerUrl,
             settings.PublishUser,
-            settings.Quality == RemoteViewQuality.Fine ? "fine" : "standard");
+            settings.Quality == RemoteViewQuality.Fine ? "fine" : "standard",
+            settings.AcceptViewers);
         var temporaryPath = _path + ".tmp";
         File.WriteAllText(temporaryPath, JsonSerializer.Serialize(document, JsonOptions));
         File.Move(temporaryPath, _path, overwrite: true);
@@ -126,5 +128,6 @@ public sealed class RemoteViewSettingsStore
         string? PublishUrl,
         string? ViewerUrl,
         string? PublishUser,
-        string Quality);
+        string Quality,
+        bool AcceptViewers = false);
 }

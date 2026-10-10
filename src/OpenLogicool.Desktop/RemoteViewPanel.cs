@@ -6,7 +6,10 @@ using OpenLogicool.Contracts.Playbooks;
 
 namespace OpenLogicool.Desktop;
 
-/// <summary>遠隔表示（ゲームの映像と音を自分の中継サーバーへ送る）の操作と状態表示。送信の処理はHostへ委ねる。</summary>
+/// <summary>
+/// 遠隔表示（ゲームの映像と音を自分の中継サーバーへ送る）の受け付けの入り切りと状態表示。
+/// 受け付けている間、見る URL を開いた端末がいる時だけ Host が送る。送信の処理は Host へ委ねる。
+/// </summary>
 public sealed class RemoteViewPanel : UserControl
 {
     private const string StandardLabel = "標準（720p・約3Mbps）";
@@ -45,7 +48,7 @@ public sealed class RemoteViewPanel : UserControl
         this.copyToClipboard = copyToClipboard ?? Clipboard.SetText;
         Background = Theme.Bg;
         Foreground = Theme.Text;
-        AutomationProperties.SetName(toggle, "遠隔表示の開始と停止");
+        AutomationProperties.SetName(toggle, "遠隔表示の受け付けの入り切り");
         AutomationProperties.SetName(publishUrl, "送り先のURL");
         AutomationProperties.SetName(viewerUrlField, "見るURL");
         AutomationProperties.SetName(publishUser, "送信用のID");
@@ -68,7 +71,7 @@ public sealed class RemoteViewPanel : UserControl
         });
         root.Children.Add(new TextBlock
         {
-            Text = "入れている間だけ、ゲームの映像と音を自分の中継サーバーへ送ります。",
+            Text = "受け付けている間、見る URL を開いた時だけ映像と音を自分の中継サーバーへ送ります。閉じると少しして止まります。",
             Foreground = Theme.Muted, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 18, 0, 0),
         });
         root.Children.Add(BuildQuality());
@@ -91,7 +94,7 @@ public sealed class RemoteViewPanel : UserControl
             {
                 new TextBlock { Text = "画質", FontWeight = FontWeights.Bold },
                 radios,
-                new TextBlock { Text = "画質は、止めている間だけ変えられます。配信中に変える時は、先に止めてください。", Foreground = Theme.Muted, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) },
+                new TextBlock { Text = "画質は、送っていない間だけ変えられます。配信中に変える時は、見ているページを閉じて止まるのを待ってください。", Foreground = Theme.Muted, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) },
             },
         };
     }
@@ -143,13 +146,14 @@ public sealed class RemoteViewPanel : UserControl
     {
         var current = intents.Current();
         var running = current.Phase is RemoteViewPhase.Starting or RemoteViewPhase.Streaming;
-        toggle.Content = running ? "配信を止める" : "配信を始める";
+        toggle.Content = current.AcceptingViewers ? "受け付けをやめる" : "遠隔表示を受け付ける";
         status.Text = current.Phase switch
         {
             RemoteViewPhase.Starting => "つないでいます",
-            RemoteViewPhase.Streaming => $"配信中（{Elapsed(current.StreamedSeconds)}{(string.IsNullOrEmpty(current.TargetProcessName) ? "" : $"・対象: {current.TargetProcessName}")}）",
+            RemoteViewPhase.Streaming => $"配信中（{Elapsed(current.StreamedSeconds)}{(string.IsNullOrEmpty(current.TargetProcessName) ? "" : $"・対象: {current.TargetProcessName}")}{(current.Viewers > 0 ? $"・見ている端末: {current.Viewers}" : "")}）",
             RemoteViewPhase.Faulted => $"失敗: {current.Detail}",
-            _ => "止まっています",
+            _ when current.AcceptingViewers => string.IsNullOrEmpty(current.Detail) ? "見に来るのを待っています" : current.Detail,
+            _ => "受け付けていません",
         };
         status.Foreground = current.Phase switch
         {
@@ -181,18 +185,15 @@ public sealed class RemoteViewPanel : UserControl
     private async Task ToggleAsync()
     {
         operationError.Text = "";
-        var phase = intents.Current().Phase;
-        if (phase is RemoteViewPhase.Starting or RemoteViewPhase.Streaming)
+        var enable = !intents.Current().AcceptingViewers;
+        toggle.IsEnabled = false;
+        try
         {
-            var pending = intents.StopAsync();
-            Refresh();
-            try { await pending; }
-            catch (Exception error) { operationError.Text = error.Message; return; }
-            Refresh();
-            return;
+            // 切にする時は、送っている配信が止まるまで Host が待つ。
+            await intents.SetAcceptViewersAsync(enable);
         }
-        try { intents.Start(); }
         catch (Exception error) { operationError.Text = error.Message; }
+        finally { toggle.IsEnabled = true; }
         Refresh();
     }
 

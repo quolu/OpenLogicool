@@ -16,7 +16,15 @@ public sealed class RemoteViewPanelTests
         {
             var fake = new Fake();
             var panel = new RemoteViewPanel(fake, _ => { });
-            Assert.Contains("止まっています", Texts(panel));
+            Assert.Contains("受け付けていません", Texts(panel));
+
+            fake.State = Snapshot(RemoteViewPhase.Stopped) with { AcceptingViewers = true, Detail = "見に来るのを待っています。" };
+            panel.Refresh();
+            Assert.Contains("見に来るのを待っています。", Texts(panel));
+
+            fake.State = Snapshot(RemoteViewPhase.Stopped) with { AcceptingViewers = true, Detail = "中継サーバーへ視聴の有無を問い合わせできません: 名前を引けません" };
+            panel.Refresh();
+            Assert.Contains("中継サーバーへ視聴の有無を問い合わせできません: 名前を引けません", Texts(panel));
 
             fake.State = Snapshot(RemoteViewPhase.Starting);
             panel.Refresh();
@@ -26,6 +34,11 @@ public sealed class RemoteViewPanelTests
             panel.Refresh();
             Assert.Contains("配信中（3分12秒・対象: MabinogiMobile）", Texts(panel));
             Assert.Equal(Visibility.Collapsed, Stalled(panel).Visibility);
+
+            fake.State = fake.State with { AcceptingViewers = true, Viewers = 2 };
+            panel.Refresh();
+            Assert.Contains("配信中（3分12秒・対象: MabinogiMobile・見ている端末: 2）", Texts(panel));
+            fake.State = fake.State with { Viewers = 0 };
 
             fake.State = fake.State with { VideoStalled = true };
             panel.Refresh();
@@ -39,36 +52,40 @@ public sealed class RemoteViewPanelTests
     }
 
     [Fact]
-    public void 開始と停止を一つのボタンで切り替える()
+    public void 受け付けの入り切りを一つのボタンで切り替え_配信の開始と停止は押さない()
     {
         OnSta(() =>
         {
             var fake = new Fake();
             var panel = new RemoteViewPanel(fake, _ => { });
-            var toggle = Buttons(panel).Single(button => Equals(button.Content, "配信を始める"));
+            var toggle = Buttons(panel).Single(button => Equals(button.Content, "遠隔表示を受け付ける"));
             toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Assert.Equal(1, fake.StartCalls);
-            Assert.Equal(0, fake.StopCalls);
-            Assert.Equal("配信を止める", toggle.Content);
-            Assert.Contains(Texts(panel), text => text.StartsWith("配信中", StringComparison.Ordinal));
+            Assert.Equal([true], fake.AcceptCalls);
+            Assert.Equal("受け付けをやめる", toggle.Content);
+            Assert.Contains("見に来るのを待っています", Texts(panel));
+            Assert.True(toggle.IsEnabled);
 
             toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Assert.Equal(1, fake.StopCalls);
-            Assert.Equal("配信を始める", toggle.Content);
-            Assert.Contains("止まっています", Texts(panel));
+            Assert.Equal([true, false], fake.AcceptCalls);
+            Assert.Equal("遠隔表示を受け付ける", toggle.Content);
+            Assert.Contains("受け付けていません", Texts(panel));
+            Assert.Equal(0, fake.StartCalls);
+            Assert.Equal(0, fake.StopCalls);
         });
     }
 
     [Fact]
-    public void 開始の例外は文言を状態の欄へ出し落とさない()
+    public void 受け付けを入れられない時の例外は文言を状態の欄へ出し落とさない()
     {
         OnSta(() =>
         {
-            var fake = new Fake { StartError = new InvalidOperationException("遠隔表示の対象のゲームが未設定です。") };
+            var fake = new Fake { AcceptError = new InvalidOperationException("遠隔表示の送信用パスワードが保存されていません。") };
             var panel = new RemoteViewPanel(fake, _ => { });
-            Buttons(panel).Single(button => Equals(button.Content, "配信を始める")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Assert.Contains("遠隔表示の対象のゲームが未設定です。", Texts(panel));
-            Assert.Contains("止まっています", Texts(panel));
+            var toggle = Buttons(panel).Single(button => Equals(button.Content, "遠隔表示を受け付ける"));
+            toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.Contains("遠隔表示の送信用パスワードが保存されていません。", Texts(panel));
+            Assert.Contains("受け付けていません", Texts(panel));
+            Assert.True(toggle.IsEnabled);
         });
     }
 
@@ -198,8 +215,9 @@ public sealed class RemoteViewPanelTests
         public RemoteViewSnapshot State = Snapshot(RemoteViewPhase.Stopped);
         public int StartCalls;
         public int StopCalls;
-        public Exception? StartError;
         public Exception? SaveError;
+        public Exception? AcceptError;
+        public List<bool> AcceptCalls = [];
         public List<(string PublishUrl, string ViewerUrl, string PublishUser, string? Password, RemoteViewQuality Quality)> Saves = [];
         private RemoteViewSettingsView settings = new("https://relay.example.com/in", "https://view.example.com/x", "user1", true, RemoteViewQuality.Standard);
 
@@ -207,7 +225,6 @@ public sealed class RemoteViewPanelTests
 
         public void Start()
         {
-            if (StartError is not null) throw StartError;
             StartCalls++;
             State = Snapshot(RemoteViewPhase.Streaming) with { TargetProcessName = "game", StreamedSeconds = 5 };
         }
@@ -220,6 +237,15 @@ public sealed class RemoteViewPanelTests
         }
 
         public RemoteViewSettingsView LoadSettings() => settings;
+
+        public Task<RemoteViewSettingsView> SetAcceptViewersAsync(bool enabled)
+        {
+            if (AcceptError is not null) throw AcceptError;
+            AcceptCalls.Add(enabled);
+            settings = settings with { AcceptViewers = enabled };
+            State = State with { AcceptingViewers = enabled };
+            return Task.FromResult(settings);
+        }
 
         public RemoteViewSettingsView SaveSettings(string publishUrl, string viewerUrl, string publishUser, string? publishPassword, RemoteViewQuality quality)
         {

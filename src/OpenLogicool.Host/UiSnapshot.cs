@@ -182,8 +182,8 @@ public static class UiSnapshot
             remoteViewIntents: SampleIntents.Create<IRemoteViewIntents>(method => method.Name switch
             {
                 nameof(IRemoteViewIntents.Current) => streaming
-                    ? new RemoteViewSnapshot(RemoteViewPhase.Streaming, "配信中", RemoteViewQuality.Fine, "見本のゲーム", 754, 22620, false, "https://view.example.com/sample")
-                    : new RemoteViewSnapshot(RemoteViewPhase.Stopped, "止まっています", RemoteViewQuality.Standard, null, 0, 0, false, null),
+                    ? new RemoteViewSnapshot(RemoteViewPhase.Streaming, "配信中", RemoteViewQuality.Fine, "見本のゲーム", 754, 22620, false, "https://view.example.com/sample", AcceptingViewers: true, Viewers: 1)
+                    : new RemoteViewSnapshot(RemoteViewPhase.Stopped, "", RemoteViewQuality.Standard, null, 0, 0, false, null),
                 nameof(IRemoteViewIntents.LoadSettings) => streaming
                     ? new RemoteViewSettingsView("https://relay.example.com/sample", "https://view.example.com/sample", "sample-user", true, RemoteViewQuality.Fine)
                     : new RemoteViewSettingsView(null, null, null, false, RemoteViewQuality.Standard),

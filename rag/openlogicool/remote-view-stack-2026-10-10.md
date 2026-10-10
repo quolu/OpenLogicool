@@ -13,7 +13,9 @@
 - 合図は HTTP `webrtcAddress :8889`、media は `webrtcLocalUDPAddress :8189`。NAT や docker では `webrtcAdditionalHosts` を設定して UDP 8189 を開ける。
 - **実測**: 既定で MoQ の待ち受け（:8892 TCP/UDP・:8893 UDP）が全ての interface に開く。`moq: false` で切る。初回の起動で Windows ファイアウォールの確認が出た。
 - **実測**: 資格情報なし・誤ったパスワード・視聴用の利用者での送信は、すべて 401。
-- docker の公式 image は `bluenviron/mediamtx`。<https://mediamtx.org/docs/kickoff/install>
+- **実測（2026-10-11・v1.21.2 の Windows 版をこの PC で）: 見に来た時だけ送る形**。path に `runOnDemand` を設定すると、送り手がいない所へ WHEP で来た見る側は断られず、`runOnDemandStartTimeout` の間待たされる。待っている間、API `GET /v3/webrtcsessions/list` に `state: "read"`・`path`・`peerConnectionEstablished: false` で現れる。その間に別の送り手が WHIP で入ると、待っていた見る側へそのまま映る（20秒で521コマ・同じ絵の繰り返し0）。命令がすぐ終わるもの（`mediamtx --version`）でも同じに待たせる。`runOnDemand` が無いと「no stream is available」ですぐ断られ、一覧には一瞬しか現れない。
+- API は `api: true`・`apiAddress`。利用者の `permissions` に `action: api` が要る（Basic 認証）。API は設定の書き換えもできるので、前段で読むだけの口に絞る。
+- docker の公式 image は `bluenviron/mediamtx`。scratch で作られていて、中に shell の道具は無い（`runOnDemand` に使える命令は `/mediamtx` だけ）。<https://mediamtx.org/docs/kickoff/install>
 
 ## ffmpeg（9.0.1 full・Gyan・winget）
 

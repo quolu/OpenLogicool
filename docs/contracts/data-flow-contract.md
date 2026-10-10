@@ -26,7 +26,8 @@
 | diagnostic bundle | Diagnostics | 利用者が指定した場所 | 利用者が明示共有するときだけ | 生成物として残る | ファイル削除 | 生成は利用者操作。secret redaction 失敗は共有不可 |
 | Knowledge Pack | import／export | ローカル | 利用者が export したときだけ | pack の寿命 | pack 削除 | import 直後 Untrusted |
 | GameLab oracle / fake Observation | GameLab／test | Execution Journal と同じ | 送信しない | journal と同じ | journal と同じ | Phase 4 の「現在 state」根拠。実画面ではない |
-| 遠隔表示の映像と音 | ffmpeg（対象の窓の取り込み）と process loopback（対象 process の音） | 保存しない（メモリと送信中の packet だけ） | 利用者が設定した自分の中継サーバーだけ（WHIP・TLS） | 配信中だけ | 配信の停止 | **OFF**。利用者が明示して開始した時だけ送る。対象は選んだゲームの窓だけ |
+| 遠隔表示の映像と音 | ffmpeg（対象の窓の取り込み）と process loopback（対象 process の音） | 保存しない（メモリと送信中の packet だけ） | 利用者が設定した自分の中継サーバーだけ（WHIP・TLS） | 配信中だけ | 配信の停止 | **OFF**。利用者が「受け付ける」を入にしている間、見る URL を認証つきで開いた端末がいる時だけ送る。いなくなると止める。対象は選んだゲームの窓だけ |
+| 遠隔表示の視聴の有無 | 中継サーバーの「接続の一覧」（Host が約1秒おきに聞きに行く。製品に待ち受けは作らない） | 保存しない（数と直近の失敗の文言だけをメモリに持つ） | 送信しない（問い合わせに送るのは送信用の資格情報だけ） | 「受け付ける」が入の間だけ | 「受け付ける」を切にする | **OFF**。応答に含まれる視聴側の address は読まずに捨てる |
 | 中継サーバーの資格情報 | 利用者の入力 | Windows Credential Manager | 中継サーバーへの認証だけ | 利用者が消すまで | 設定画面からの削除 | 設定ファイル・log・`app status`・export・診断 bundle へ出さない |
 
 ## 規則
