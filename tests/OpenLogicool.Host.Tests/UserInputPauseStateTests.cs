@@ -61,6 +61,26 @@ public sealed class UserInputPauseStateTests
     }
 
     [Fact]
+    public void 離した合図が届かない日本語入力のモードキーは押下に数えず三秒後に再開する()
+    {
+        long now = 0;
+        var state = new UserInputPauseState(() => now);
+        // 実測: 英数(0xF0)と半角/全角(0xF4)は押した合図だけが届き、OSも押下中と返し続ける。
+        now = 10_000; WindowsUserInputMonitor.Key(state, 10, 0xF0, true);
+        now = 10_100; WindowsUserInputMonitor.Key(state, 10, 0xF4, true);
+        Assert.Equal(0, state.Snapshot().HeldCount);
+        Assert.Equal(2, state.Snapshot().UserEvents);
+        now = 13_099; Assert.True(state.Snapshot().Paused);
+        now = 13_100; Assert.False(state.Snapshot().Paused);
+        // 通常のキーは従来どおり、離すまで押下に数える。
+        WindowsUserInputMonitor.Key(state, 10, 0x41, true);
+        now = 60_000; Assert.True(state.Snapshot().Paused);
+        Assert.Equal(1, state.Snapshot().HeldCount);
+        WindowsUserInputMonitor.Key(state, 10, 0x41, false);
+        now = 63_000; Assert.False(state.Snapshot().Paused);
+    }
+
+    [Fact]
     public void 移動やホイール後に三秒待ち押しっぱなしなら再開しない()
     {
         long now = 4000;

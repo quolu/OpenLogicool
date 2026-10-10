@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "report": "「手入力で一時停止中」から復活しないことがある。",
+  "reproduction": {
+    "run": "20261010-124228-164-d87f8e03",
+    "observed": "16071msに一時停止。71580ms以降、手入力が189秒間0件でも押下数2のまま再開しなかった（stuck-before.json）。",
+    "osState": "GetAsyncKeyStateが、無操作の間も0xF0（英数・scan 0x3A）と0xF4（半角/全角）を押下中と返し続けた。3回・0.3秒おきで同じ。",
+    "earlier": "20261010-120601-669-77ff4523でも675107ms以降、押下数2のまま停止まで再開しなかった。"
+  },
+  "rootCause": "日本語入力のモード指示キー（VK_DBE_* 0xF0〜0xFB）は押した合図に対になるkey upが届かない。起動時の押下確認では除外済みだったが、起動後のRaw Inputと合成入力hookの追跡は押下集合へ入れていたため、IMEを切り替えた時点から押下数が残り続けた。",
+  "fix": {
+    "owner": "WindowsUserInputMonitor（Windowsの入力適合）",
+    "behavior": "モード指示キーは押下集合へ入れず、操作があった事実（3秒の無入力待ち）だけを記録する。通常のキーとマウスボタンは従来どおり離すまで数える。"
+  },
+  "tests": {
+    "focused": 23,
+    "failed": 0,
+    "class": "UserInputPauseStateTests"
+  },
+  "live": {
+    "run": "20261010-124713-280-62ca02c1",
+    "observed": "OSが0xF0・0xF4を押下中と返したままの状態で、3102msに再開し9491msにnpc-dialogue-cueを送出。押下数0。",
+    "unverified": "更新後の実行中にIMEを切り替えた時の押下数は、利用者の次の日本語入力で確認する。"
+  },
+  "updatedUtc": "2026-10-10T03:47:44.8081355+00:00"
+}

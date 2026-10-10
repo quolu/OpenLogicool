@@ -150,7 +150,7 @@ internal sealed class WindowsUserInputMonitor : IDisposable
             {
                 var key = Marshal.PtrToStructure<RawKeyboard>(body);
                 if (key.VKey == 255) return;
-                state.Button(header.Device, KeyboardCode(key.VKey, key.MakeCode, key.Flags), (key.Flags & 1) == 0);
+                Key(state, header.Device, KeyboardCode(key.VKey, key.MakeCode, key.Flags), (key.Flags & 1) == 0);
             }
             else
             {
@@ -181,10 +181,18 @@ internal sealed class WindowsUserInputMonitor : IDisposable
         _ => vk
     };
 
-    // VK_DBE_*はIMEのモード指示。スキャンコードがあっても起動時の押下状態へ取り込まない。
-    // 起動後に届く実際のdown/upはRaw Inputで従来どおり追跡する。
+    // VK_DBE_*はIMEのモード指示。押した合図に対になるkey upが届かず、OSも押下中と返し続ける。
+    // 押下状態には入れず、起動時も起動後も「操作があった」事実だけを扱う。
+    internal static bool IsImeModeKey(int vk) => vk is >= 0xF0 and <= 0xFB;
+
     internal static bool HasStartupPhysicalKey(int vk, uint scan) =>
-        vk is 1 or 2 or 4 or 5 or 6 || scan != 0 && vk is not (>= 0xF0 and <= 0xFB);
+        vk is 1 or 2 or 4 or 5 or 6 || scan != 0 && !IsImeModeKey(vk);
+
+    internal static void Key(UserInputPauseState state, nint source, int code, bool down)
+    {
+        if (IsImeModeKey(code)) state.Activity();
+        else state.Button(source, code, down);
+    }
 
     private bool IsNano(nint device)
     {
@@ -211,7 +219,7 @@ internal sealed class WindowsUserInputMonitor : IDisposable
                 var input = Marshal.PtrToStructure<KeyboardHookData>(pointer);
                 // リモート操作等の合成入力を補足する。Nanoの物理入力はRaw Inputで識別する。
                 if ((input.Flags & 0x10) != 0)
-                    state.Button(new nint(-2), KeyboardCode((int)input.VKey, (int)input.Scan, (input.Flags & 1) != 0 ? 2 : 0),
+                    Key(state, new nint(-2), KeyboardCode((int)input.VKey, (int)input.Scan, (input.Flags & 1) != 0 ? 2 : 0),
                         message is 0x100 or 0x104);
             }
         }
