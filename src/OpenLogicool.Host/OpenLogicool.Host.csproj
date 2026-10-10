@@ -28,7 +28,7 @@
     <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\feather-t.png" Link="BotScripts\MabinogiMobile\feather-t.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\top-left-b.png" Link="BotScripts\MabinogiMobile\top-left-b.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\pointer-guide.png" Link="BotScripts\MabinogiMobile\pointer-guide.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\bag-item-tab.png;..\..\fixtures\visual-recovery\mabinogi-20261008\coin-box.png"
+    <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\bag-item-tab.png;..\..\fixtures\visual-recovery\mabinogi-20261008\coin-box.png;..\..\fixtures\visual-recovery\mabinogi-20261008\difficulty-recommended.png"
              Link="BotScripts\MabinogiMobile\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="BotScripts\**\bot.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- Botの機能ごとの規則。progress.json が、メインの組み合わせを決める。 -->

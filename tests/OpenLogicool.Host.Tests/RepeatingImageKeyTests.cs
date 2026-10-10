@@ -287,18 +287,31 @@ public sealed class RepeatingImageKeyTests
     [Fact]
     public async Task 選択済みダンジョンの入場画面は報酬一覧とSpaceと入場の組合せで進める()
     {
+        // VERY HARD が選ばれていて、印も VERY HARD に付いている画面。
         var frame = Read("dungeon-entry-screen.png");
         var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
         var recognizer = new VisualProgressRecognizer(Profile());
-        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, Viewport(frame), frame);
+        // 印の付いた難易度は、既に選ばれていても一度押してから入場する。
+        var difficulty = recognizer.Recognize(ocr, frame.Width, frame.Height, Viewport(frame), frame);
+        Assert.Equal("dungeon-difficulty", difficulty.RuleId);
+        Assert.Equal(VisualProgressAction.Click, difficulty.Action);
+        Assert.InRange(difficulty.Point![0] * frame.Width, 1150, 1195);
+        Assert.InRange(difficulty.Point[1] * frame.Height, 124, 142);
+        Assert.Equal("dungeon-enter", difficulty.NextStage);
+        var enter = recognizer.Recognize(ocr, frame.Width, frame.Height, Viewport(frame), frame, stage: "dungeon-enter");
+        Assert.Equal("dungeon-enter-recommended", enter.RuleId);
+        Assert.Equal("Key:Space", enter.Key);
+        // 印を見分ける画像が無い時（印の無い入場の画面）は、今までどおりSpaceだけを送る。
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, Viewport(frame));
         Assert.Equal("dungeon-entry", choice.RuleId);
         Assert.Equal("Key:Space", choice.Key);
         var withoutSpace = ocr with { Words = ocr.Words.Where(word => !word.Text.Contains("Space", StringComparison.OrdinalIgnoreCase)).ToArray() };
-        Assert.NotEqual("dungeon-entry", recognizer.Recognize(withoutSpace, frame.Width, frame.Height, Viewport(frame), frame).RuleId);
+        Assert.Null(recognizer.Recognize(withoutSpace, frame.Width, frame.Height, Viewport(frame), frame).RuleId);
+        Assert.Null(recognizer.Recognize(withoutSpace, frame.Width, frame.Height, Viewport(frame)).RuleId);
         var withoutEntry = ocr with { Words = ocr.Words.Where(word => word.Y < frame.Height * 0.9).ToArray() };
-        Assert.NotEqual("dungeon-entry", recognizer.Recognize(withoutEntry, frame.Width, frame.Height, Viewport(frame), frame).RuleId);
+        Assert.Null(recognizer.Recognize(withoutEntry, frame.Width, frame.Height, Viewport(frame), frame).RuleId);
+        Assert.Null(recognizer.Recognize(withoutEntry, frame.Width, frame.Height, Viewport(frame), stage: "dungeon-enter").RuleId);
     }
-
     private static CapturedFrame Read(string name)
     {
         using var file = File.OpenRead(Path.Combine(Fixture, name));

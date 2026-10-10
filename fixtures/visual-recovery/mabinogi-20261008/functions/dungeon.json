@@ -10,6 +10,25 @@
       ]
     },
     {
+      "Id": "dungeon-difficulty", "Priority": 25, "ClickImage": true, "NextStage": "dungeon-enter",
+      "When": [
+        { "Text": "任務報酬リスト", "Bounds": [0.5, 0.7, 0.4, 0.12] },
+        { "Text": "Space", "Bounds": [0.6, 0.88, 0.15, 0.08] },
+        { "Text": "入場", "Bounds": [0.65, 0.9, 0.25, 0.1] }
+      ],
+      "Image": "difficulty-recommended.png", "ImageBounds": [0.45, 0.055, 0.3, 0.04], "ImageClientWidth": 1711,
+      "ImageStableRegions": [[0.467, 0.5, 0.267, 0.286], [0.067, 0.5, 0.067, 0.286]],
+      "ClickImageOffset": [-0.0149, 0.0175]
+    },
+    {
+      "Id": "dungeon-enter-recommended", "Stage": "dungeon-enter", "Key": "Key:Space", "EndStage": true,
+      "When": [
+        { "Text": "任務報酬リスト", "Bounds": [0.5, 0.7, 0.4, 0.12] },
+        { "Text": "Space", "Bounds": [0.6, 0.88, 0.15, 0.08] },
+        { "Text": "入場", "Bounds": [0.65, 0.9, 0.25, 0.1] }
+      ]
+    },
+    {
       "Id": "dungeon-entry", "Key": "Key:Space", "Priority": 20,
       "When": [
         { "Text": "任務報酬リスト", "Bounds": [0.5, 0.7, 0.4, 0.12] },

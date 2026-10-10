@@ -45,7 +45,8 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Stage = null, string? NextStage = null, string[]? ThenKeys = null,
     VisualProgressArea[]? Areas = null, VisualProgressFlick? Flick = null, VisualProgressRemember? Remember = null,
     bool EndStage = false, string? Function = null, double[]? Point = null, string? After = null,
-    int AfterWithinMs = 3000, VisualProgressRecall? Recall = null, int? MaxRepeats = null, bool Preempt = false);
+    int AfterWithinMs = 3000, VisualProgressRecall? Recall = null, int? MaxRepeats = null, bool Preempt = false,
+    double[]? ClickImageOffset = null);
 /// <summary>
 /// 機能。Botの動きを、単独でも組み合わせても使える単位に分けたもの。進行設定の隣の functions/ に、機能ごとのファイルで置く。
 /// Requires は、この機能と一緒に読む機能。
@@ -160,6 +161,10 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             if (rule.After is not null && (rule.Immediate || rule.RepeatIntervalMs > 0 || rule.WaitForChange
                 || !value.Rules.Any(other => other.Id == rule.After)))
                 throw new InvalidDataException("ある操作の直後だけ評価する規則は、設定にある規則の名前を、即時・反復・待機でない規則に指定します。");
+            // 見つけた画像からずらした位置を押す（印の付いたボタンを押す時など）。描画領域に対する割合で指定する。
+            if (rule.ClickImageOffset is not null && (!rule.ClickImage || rule.ClickImageOffset.Length != 2
+                || rule.ClickImageOffset.Any(value => !double.IsFinite(value) || Math.Abs(value) > 1)))
+                throw new InvalidDataException("画像からずらすクリック位置は、画像のクリック規則に2値で指定します。");
             if (rule.Preempt && (rule.Immediate || rule.RepeatIntervalMs > 0 || rule.WaitForChange))
                 throw new InvalidDataException("即時の画像より先に評価する規則は、即時・反復・待機でない規則に指定します。");
             if (rule.AfterWithinMs <= 0 || rule.MaxRepeats <= 0
@@ -457,8 +462,10 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             {
                 var match = FindImage(rule, frame, viewport);
                 if (!match.Matches) continue;
-                if (rule.ClickImage) point = [match.Bounds[0] + match.Bounds[2] * (rule.ClickImagePoint?[0] ?? 0.5),
-                    match.Bounds[1] + match.Bounds[3] * (rule.ClickImagePoint?[1] ?? 0.5)];
+                if (rule.ClickImage) point = [match.Bounds[0] + match.Bounds[2] * (rule.ClickImagePoint?[0] ?? 0.5)
+                        + (rule.ClickImageOffset?[0] ?? 0) * viewport.Width / frame.Width,
+                    match.Bounds[1] + match.Bounds[3] * (rule.ClickImagePoint?[1] ?? 0.5)
+                        + (rule.ClickImageOffset?[1] ?? 0) * viewport.Height / frame.Height];
             }
             return new(rule.ClickImage ? VisualProgressAction.Click : VisualProgressAction.Key, rule.Id,
                 FormattableString.Invariant($"{rule.Id}:{reading}"), rule.Key, point,
@@ -538,8 +545,10 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     : templates[rule.Id].FindAtWindowScale(frame, mapped, scale);
                 if (!match.Matches) continue;
                 // 指し示す画像は、画像の中心ではなく指定した位置（指先など）を押す。
-                if (rule.ClickImage) point = [match.Bounds[0] + match.Bounds[2] * (rule.ClickImagePoint?[0] ?? 0.5),
-                    match.Bounds[1] + match.Bounds[3] * (rule.ClickImagePoint?[1] ?? 0.5)];
+                if (rule.ClickImage) point = [match.Bounds[0] + match.Bounds[2] * (rule.ClickImagePoint?[0] ?? 0.5)
+                        + (rule.ClickImageOffset?[0] ?? 0) * viewport.Width / frame.Width,
+                    match.Bounds[1] + match.Bounds[3] * (rule.ClickImagePoint?[1] ?? 0.5)
+                        + (rule.ClickImageOffset?[1] ?? 0) * viewport.Height / frame.Height];
             }
             if (rule.Areas is not null && (frame is null || !rule.Areas.All(area => AreaHolds(frame, viewport, area)))) continue;
             if (rule.Recall is { } recall)
