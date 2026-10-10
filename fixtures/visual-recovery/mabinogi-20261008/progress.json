@@ -329,27 +329,15 @@
     {
       "Id": "side-quest-tab", "Stage": "side-quest", "Priority": 2, "AllowWhileInhibited": true,
       "When": [ { "Text": "サイド", "Bounds": [0.76, 0.133, 0.06, 0.032] } ],
-      "Areas": [ { "Bounds": [0.76, 0.139, 0.01, 0.018], "Rgb": [22, 29, 34], "Tolerance": 14 } ],
+      "Areas": [ { "Bounds": [0.763, 0.1328, 0.038, 0.005], "Rgb": [22, 29, 34], "Tolerance": 14 } ],
       "Click": { "Text": "サイド", "Bounds": [0.76, 0.133, 0.06, 0.032] }
     },
     {
-      "Id": "side-quest-to-top", "Stage": "side-quest", "Priority": 3, "AllowWhileInhibited": true, "RepeatAfterChange": true,
-      "When": [],
-      "Areas": [
-        { "Bounds": [0.76, 0.139, 0.01, 0.018], "Rgb": [13, 179, 118], "Tolerance": 30 },
-        { "Bounds": [0.648, 0.2415, 0.31, 0.023], "Flat": false }
-      ],
-      "Flick": { "From": [0.8, 0.49], "To": [0.8, 0.64] }
-    },
-    {
-      "Id": "side-quest-accept", "Stage": "side-quest", "Priority": 4, "AllowWhileInhibited": true, "EndStage": true,
-      "When": [ { "Text": "進行", "Bounds": [0.86, 0.38, 0.12, 0.22] } ],
-      "Areas": [
-        { "Bounds": [0.76, 0.139, 0.01, 0.018], "Rgb": [13, 179, 118], "Tolerance": 30 },
-        { "Bounds": [0.648, 0.2415, 0.31, 0.023], "Rgb": [34, 39, 50], "Tolerance": 10, "Flat": true }
-      ],
-      "Click": { "Text": "進行", "Bounds": [0.86, 0.38, 0.12, 0.22] },
-      "Remember": { "Name": "side-quest", "Bounds": [0.636, 0.236, 0.338, 0.4], "EndBelowClick": 0.045 }
+      "Id": "side-quest-accept", "Stage": "side-quest", "Priority": 3, "AllowWhileInhibited": true, "EndStage": true,
+      "When": [ { "Text": "進行", "Bounds": [0.86, 0.3, 0.12, 0.56], "Zoom": 3 } ],
+      "Areas": [ { "Bounds": [0.763, 0.1328, 0.038, 0.005], "Rgb": [13, 179, 118], "Tolerance": 30 } ],
+      "Click": { "Text": "進行", "Bounds": [0.86, 0.3, 0.12, 0.56], "First": true },
+      "Remember": { "Name": "side-quest", "Bounds": [0.636, 0.236, 0.338, 0.66], "EndBelowClick": 0.045, "AboveClick": 0.3 }
     }
   ]
 }

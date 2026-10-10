@@ -9,7 +9,8 @@ namespace OpenLogicool.Host;
 /// <summary>Zoom を2以上にすると、その規則の段階の間、領域を拡大して読み直す（小さい文字のため）。</summary>
 public sealed record VisualProgressText(string Text, double[] Bounds, double[][]? ChoiceBounds = null,
     bool AskUserImmediately = false, VisualProgressText? Confirm = null, string? ConfirmKey = null,
-    double[]? ChoiceBand = null, VisualProgressText? Recommended = null, bool Exact = false, int Zoom = 1);
+    double[]? ChoiceBand = null, VisualProgressText? Recommended = null, bool Exact = false, int Zoom = 1,
+    bool First = false);
 /// <summary>画面の数値の条件。OutOf を指定した表示は「現在値/上限」の形で、上限まで読めた時だけ現在値を使う。</summary>
 public sealed record VisualProgressNumber(double[] Bounds, int? AtMost = null, int? Exactly = null, int? OutOf = null);
 /// <summary>
@@ -22,7 +23,7 @@ public sealed record VisualProgressFlick(double[] From, double[] To);
 /// <summary>
 /// 操作を送る時に、領域の文字と画像を記録へ残す。EndBelowClick を指定すると、領域の下端を押す位置からその分だけ下までに縮める。
 /// </summary>
-public sealed record VisualProgressRemember(string Name, double[] Bounds, double? EndBelowClick = null);
+public sealed record VisualProgressRemember(string Name, double[] Bounds, double? EndBelowClick = null, double? AboveClick = null);
 public sealed record VisualProgressRemembered(string Name, string[] Lines, double[] Bounds);
 /// <summary>
 /// 外から入り・解除を指示する動き方。入っている間は、通常の画面で Stage の段階を始める。
@@ -119,7 +120,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("画素の条件には、RGBの3成分か、平らかどうかを指定します。");
             if (rule.Remember is { } remember && (rule.Click is null && !rule.ClickImage || string.IsNullOrWhiteSpace(remember.Name)
                 || remember.Name.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-')
-                || remember.EndBelowClick is { } below && (!double.IsFinite(below) || below <= 0)))
+                || remember.EndBelowClick is { } below && (!double.IsFinite(below) || below <= 0)
+                || remember.AboveClick is { } above && (!double.IsFinite(above) || above <= 0)))
                 throw new InvalidDataException("覚える指定は、クリックの規則に英数字とハイフンの名前で指定します。");
             if (rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }).Any(text => text.Zoom is < 1 or > 4))
                 throw new InvalidDataException("読み直しの拡大率は1〜4で指定します。");
@@ -437,10 +439,12 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                         rule.Click.Bounds, viewport))
                     .OrderBy(span => Normalize(span.Text).Length).ToArray();
                 if (spans.Length == 0) continue;
+                // 一覧のように同じ名前のボタンが縦に並ぶ表示は、一番上を選ぶと明示した時だけ一番上を押す。
+                if (rule.Click.First) spans = spans.OrderBy(span => span.EvidenceRegion.NormalizedBounds[1]).ToArray();
                 var bounds = spans[0].EvidenceRegion.NormalizedBounds;
                 point = [bounds[0] + bounds[2] / 2, bounds[1] + bounds[3] / 2];
                 // 離れた同名ボタンが複数ある場合は選ばない。
-                if (spans.Any(span => Math.Abs(span.EvidenceRegion.NormalizedBounds[0] - bounds[0]) > bounds[2]
+                if (!rule.Click.First && spans.Any(span => Math.Abs(span.EvidenceRegion.NormalizedBounds[0] - bounds[0]) > bounds[2]
                     || Math.Abs(span.EvidenceRegion.NormalizedBounds[1] - bounds[1]) > bounds[3]))
                 {
                     candidates.Add(new(VisualProgressAction.Review, rule.Id, Detail: $"クリック先が複数あります: {rule.Id}"));
@@ -463,7 +467,8 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                         $"@{Math.Round(point![0] * 20) / 20:0.00},{Math.Round(point[1] * 20) / 20:0.00}")), rule.Key, point,
                 Immediate: rule.Immediate, AllowWhileInhibited: rule.AllowWhileInhibited, AfterClickKey: rule.AfterClickKey,
                 NextStage: rule.NextStage, ThenKeys: rule.ThenKeys, FlickTo: flickTo,
-                Remembered: rule.Remember is null ? null : Remember(rule.Remember, point!, ocr, viewport, width, height),
+                Remembered: rule.Remember is null ? null
+                    : Remember(rule.Remember, rule.Click?.Text, point!, ocr, viewport, width, height),
                 EndStage: rule.EndStage));
         }
         var priority = candidates.Count == 0 ? 0 : candidates.Max(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority);
@@ -510,28 +515,39 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         return area.Flat switch { true => brightest - darkest <= 3, false => brightest - darkest >= 5, null => true };
     }
 
-    /// <summary>覚える領域の文字を、上の行から順に読む。領域は画像全体に対する割合で返す。</summary>
-    private static VisualProgressRemembered Remember(VisualProgressRemember remember, double[] point, WindowsGameOcrResult ocr,
-        FrameRect viewport, int width, int height)
+    /// <summary>
+    /// 覚える領域の文字を、上の行から順に読む。領域は画像全体に対する割合で返す。
+    /// 押す文字と同じ文字が押す位置より上にある時（一つ上のカードのボタン）は、その行より下だけを覚える。
+    /// </summary>
+    private static VisualProgressRemembered Remember(VisualProgressRemember remember, string? clickText, double[] point,
+        WindowsGameOcrResult ocr, FrameRect viewport, int width, int height)
     {
         var area = remember.Bounds;
-        var bottom = area[1] + area[3];
-        if (remember.EndBelowClick is { } below)
-            bottom = Math.Min(bottom, (point[1] * height - viewport.Y) / viewport.Height + below);
-        double[] bounds = [area[0], area[1], area[2], bottom - area[1]];
-        var lines = new List<List<WindowsGameOcrWord>>();
-        foreach (var word in ocr.Words.Where(word => Inside(word, bounds, viewport)).OrderBy(word => word.Y + word.Height / 2))
+        var click = (point[1] * height - viewport.Y) / viewport.Height;
+        var top = remember.AboveClick is { } above ? Math.Max(area[1], click - above) : area[1];
+        var bottom = remember.EndBelowClick is { } below ? Math.Min(area[1] + area[3], click + below) : area[1] + area[3];
+        List<List<WindowsGameOcrWord>> Lines(double from)
         {
-            var center = word.Y + word.Height / 2;
-            // 同じ行の文字は、縦の中心がほぼそろう。
-            if (lines.Count == 0 || center - lines[^1].Average(other => other.Y + other.Height / 2) > 0.012 * viewport.Height) lines.Add([]);
-            lines[^1].Add(word);
+            var lines = new List<List<WindowsGameOcrWord>>();
+            foreach (var word in ocr.Words.Where(word => Inside(word, [area[0], from, area[2], bottom - from], viewport))
+                .OrderBy(word => word.Y + word.Height / 2))
+            {
+                var center = word.Y + word.Height / 2;
+                // 同じ行の文字は、縦の中心がほぼそろう。
+                if (lines.Count == 0 || center - lines[^1].Average(other => other.Y + other.Height / 2) > 0.012 * viewport.Height) lines.Add([]);
+                lines[^1].Add(word);
+            }
+            return lines;
         }
-        return new(remember.Name, lines.Select(line => string.Concat(line.OrderBy(word => word.X).Select(word => word.Text))).ToArray(),
-            [(viewport.X + bounds[0] * viewport.Width) / width, (viewport.Y + bounds[1] * viewport.Height) / height,
-                bounds[2] * viewport.Width / width, bounds[3] * viewport.Height / height]);
+        string Text(List<WindowsGameOcrWord> line) => string.Concat(line.OrderBy(word => word.X).Select(word => word.Text));
+        double Center(List<WindowsGameOcrWord> line) => (line.Average(word => word.Y + word.Height / 2) - viewport.Y) / viewport.Height;
+        if (clickText is not null && Lines(top).LastOrDefault(line => Center(line) < click - 0.03
+            && Matches(Normalize(Text(line)), clickText)) is { } previous)
+            top = Center(previous) + 0.03;
+        return new(remember.Name, Lines(top).Select(Text).ToArray(),
+            [(viewport.X + area[0] * viewport.Width) / width, (viewport.Y + top * viewport.Height) / height,
+                area[2] * viewport.Width / width, (bottom - top) * viewport.Height / height]);
     }
-
     /// <summary>指定した領域に、指定した文字が表示されているかを読む。</summary>
     public static bool Shows(WindowsGameOcrResult ocr, FrameRect viewport, VisualProgressText text) =>
         Matches(Normalize(string.Concat(ocr.Words.Where(word => Inside(word, text.Bounds, viewport)).Select(word => word.Text))), text.Text);

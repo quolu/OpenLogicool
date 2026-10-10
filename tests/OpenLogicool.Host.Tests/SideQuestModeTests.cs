@@ -51,29 +51,13 @@ public sealed class SideQuestModeTests
         Assert.InRange(choice.Point[1], 0.16, 0.18);
     }
 
-    [Fact]
-    public async Task 一覧の途中では上へ払い一番上では払わない()
-    {
-        var middle = await Recognize("side-quest-list-middle.png", Stage);
-        Assert.Equal("side-quest-to-top", middle.RuleId);
-        Assert.Equal(VisualProgressAction.Flick, middle.Action);
-        // 描画領域の縦49%で押し、64%まで下へ進む（一覧は上へ戻る）。
-        Assert.InRange(middle.Point![0], 0.79, 0.81);
-        Assert.InRange(middle.Point[1], 0.49, 0.515);
-        Assert.InRange(middle.FlickTo![0], 0.79, 0.81);
-        Assert.InRange(middle.FlickTo[1], 0.64, 0.66);
-        Assert.False(middle.EndStage);
-        // 文字の読み取りに頼らず、画素の条件だけで選ぶ（読み取りは同じ画面でも揺れる）。
-        Assert.Equal("side-quest-to-top:", middle.Signature);
-
-        foreach (var top in new[] { "side-quest-list-top.png", "side-quest-list-top-progress.png" })
-            Assert.NotEqual(VisualProgressAction.Flick, (await Recognize(top, Stage)).Action);
-    }
-
+    // サイドを選んだ後は、一覧を送らずに、一番上に見えているクエストの「進行」を押す。
     [Theory]
-    [InlineData("side-quest-list-top.png", 0.448, "料理入門", "料理を学びたいけど")]
-    [InlineData("side-quest-list-top-progress.png", 0.518, "料理入門", "食料品店で砂糖を購入")]
-    public async Task 一番上では先頭のクエストの内容を覚えて進行を押し段階を終える(string image, double y, string title, string body)
+    [InlineData("side-quest-list-top.png", 0.448, "料理入門", "料理を学びたいけど", "肝試し")]
+    [InlineData("side-quest-list-top-progress.png", 0.518, "料理入門", "食料品店で砂糖を購入", "肝試し")]
+    [InlineData("side-quest-list-middle.png", 0.436, "ガルドアイルの巨大クマ", "その件でお願いしたいことがあるんです", "旅館")]
+    public async Task サイドを選んだ後は一番上に見えるクエストの内容を覚えて進行を押し段階を終える(
+        string image, double y, string title, string body, string next)
     {
         var choice = await Recognize(image, Stage);
         Assert.Equal("side-quest-accept", choice.RuleId);
@@ -81,13 +65,44 @@ public sealed class SideQuestModeTests
         Assert.InRange(choice.Point![0], 0.9, 0.93);
         Assert.InRange(choice.Point[1], y - 0.015, y + 0.015);
         Assert.True(choice.EndStage);
+        Assert.True(choice.AllowWhileInhibited);
         var remembered = choice.Remembered!;
         Assert.Equal("side-quest", remembered.Name);
         Assert.Contains(remembered.Lines, line => line.Contains(title, StringComparison.Ordinal));
         Assert.Contains(remembered.Lines, line => line.Contains(body, StringComparison.Ordinal));
         // 覚えるのは押すカードまで。次のカードの名前は入れない。
-        Assert.DoesNotContain(remembered.Lines, line => line.Contains("肝試し", StringComparison.Ordinal));
+        Assert.DoesNotContain(remembered.Lines, line => line.Contains(next, StringComparison.Ordinal));
         Assert.InRange(remembered.Bounds[1] + remembered.Bounds[3], choice.Point[1] + 0.03, choice.Point[1] + 0.06);
+    }
+
+    // 上のカードが切れて見えている時も、一番上に見える「進行」を押す。覚えるのは、そのカードの見えている部分だけ。
+    [Fact]
+    public async Task 上のカードが切れていても一番上に見える進行を押し下のカードは覚えない()
+    {
+        var choice = await Recognize("side-quest-list-five-tabs.png", Stage);
+        Assert.Equal("side-quest-accept", choice.RuleId);
+        Assert.InRange(choice.Point![0], 0.9, 0.93);
+        Assert.InRange(choice.Point[1], 0.317, 0.347);
+        Assert.DoesNotContain(choice.Remembered!.Lines, line => line.Contains("料理入門", StringComparison.Ordinal));
+        Assert.InRange(choice.Remembered.Bounds[1], 0.2, 0.26);
+    }
+
+    // タブが5つの地域（エリア任務が増える）では、サイドのタブの位置が左へずれる。
+    [Fact]
+    public void サイドのタブが選ばれているかはタブが4つでも5つでも見分ける()
+    {
+        var profile = Profile();
+        var selected = profile.Rules.Single(rule => rule.Id == "side-quest-accept").Areas!.Single();
+        var unselected = profile.Rules.Single(rule => rule.Id == "side-quest-tab").Areas!.Single();
+        foreach (var image in new[] { "side-quest-list-top.png", "side-quest-list-middle.png", "side-quest-list-five-tabs.png" })
+        {
+            var frame = ReadFrame(Fixture(image));
+            Assert.True(VisualProgressRecognizer.AreaHolds(frame, Viewport(frame), selected), image);
+            Assert.False(VisualProgressRecognizer.AreaHolds(frame, Viewport(frame), unselected), image);
+        }
+        var all = ReadFrame(Fixture("side-quest-list-all.png"));
+        Assert.False(VisualProgressRecognizer.AreaHolds(all, Viewport(all), selected));
+        Assert.True(VisualProgressRecognizer.AreaHolds(all, Viewport(all), unselected));
     }
 
     [Theory]
@@ -98,6 +113,7 @@ public sealed class SideQuestModeTests
     [InlineData("side-quest-list-middle.png")]
     [InlineData("side-quest-list-top.png")]
     [InlineData("side-quest-list-top-progress.png")]
+    [InlineData("side-quest-list-five-tabs.png")]
     public async Task モードの段階の外ではクエストの一覧を操作しない(string image)
     {
         var choice = await Recognize(image, null);
@@ -136,34 +152,6 @@ public sealed class SideQuestModeTests
         schedule.Decide(10000, normal, false, true, true);
         schedule.Decide(20000, normal, false, true, true);
         Assert.Null(schedule.Stage);
-    }
-
-    [Fact]
-    public void 払う操作は画面が動いて止まるたびに次を送り動かない間は送り直さない()
-    {
-        var schedule = new VisualProgressSchedule(Profile());
-        var flick = new VisualProgressChoice(VisualProgressAction.Flick, "side-quest-to-top", "side-quest-to-top:",
-            Point: [0.8, 0.5], FlickTo: [0.8, 0.65], AllowWhileInhibited: true);
-        // 最初は、表示が0.6秒続いてから送る。
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, flick, false, false, true).Action);
-        Assert.Same(flick, schedule.Decide(600, flick, false, false, true));
-        schedule.RecordInput(700, flick);
-        // 払った直後、画面がまだ動いていない間は送らない。
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(900, flick, false, false, true).Action);
-        // 一覧が流れている間は送らず、止まった観測で次を送る。
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1500, flick, false, false, true, sceneChanged: true).Action);
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2100, flick, false, false, true, sceneChanged: true).Action);
-        Assert.Same(flick, schedule.Decide(2700, flick, false, false, true));
-        schedule.RecordInput(2800, flick);
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(3400, flick, false, false, true, sceneChanged: true).Action);
-        Assert.Same(flick, schedule.Decide(4000, flick, false, false, true));
-        schedule.RecordInput(4100, flick);
-        // 払っても画面が動かないまま5秒たったら、送り直さずに詰まりとして扱う。
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(4700, flick, false, false, true).Action);
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(7000, flick, false, false, true).Action);
-        var stuck = schedule.Decide(9200, flick, false, false, true);
-        Assert.Equal(VisualProgressAction.Review, stuck.Action);
-        Assert.Contains("side-quest-to-top", stuck.Detail);
     }
 
     [Fact]
