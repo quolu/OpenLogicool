@@ -115,11 +115,14 @@
 
 ### 段5 の現在地（人の許可を待つ間の記録）
 
-- オーナーの回答（決裁箱 K-EZE9L9）: サーバーへの設置を進めてよい。外から見る経路は Cloudflare の中継サービス（TURN）を使う。
+- オーナーの回答（決裁箱 K-EZE9L9）: サーバーへの設置を進めてよい。
+- オーナーの指示（2026-10-11・会話）: Cloudflare の中継サービス（TURN）は使わない。名前を引いてメインサーバーへ届いた後は直結にする。
 - 決まった形: 名前は `stream.kitepon.dev`。MediaMTX 1.21.2 を main-server の `~/remote-view/` へ docker で置き、既存の Caddy（network `license-server_default`）から `remote-view-mediamtx:8889` へ渡す。家の中向けに `192.168.1.2:8189/udp` を開ける。Cloudflare のトンネル（home-server）へ行き先を1行足し、DNS へ `stream` を足す。
 - 済み: 送信用と視聴用の ID とパスワードの生成、MediaMTX の設定ファイルと compose の用意（サーバーへは未配置）。この PC のアプリへ送信先・視聴用の URL・送信用の ID とパスワードを保存した（`remoteview save-settings`・読み戻しで確認）。
 - 未実施: サーバーへの配置と起動、Caddy、トンネル、DNS、UDP 8189 の開放、視聴用の ID とパスワードの 1Password への保存。作業する会話の自動の許可判定が、サーバーへの書き込みと 1Password への書き込みを止めた。オーナーの許可を待つ。
-- 外から見る経路で分かったこと: Cloudflare の TURN の資格情報は最長 48 時間で切れる。MediaMTX は固定の資格情報しか受けないので、期限の前に資格情報を作り直して設定へ書く定期の処理をサーバーへ置く（[調査](../rag/openlogicool/remote-view-stack-2026-10-10.md)）。家の中で映ることを確かめた後に、内容を示してから足す。
+- 直結に要るもの: 家のルーターが UDP 8189 をメインサーバー（192.168.1.2）へ通すこと。MediaMTX が外側の address を視聴側へ伝えること（`webrtcAdditionalHosts` へ address か名前を書く。STUN で自動に得られるかは設置後に実測する）。
+- 家の回線の実測（2026-10-11・サーバーから STUN 3か所へ問い合わせ）: 外側の IPv4 は1つで、内側の port がそのまま外側の port になり、宛先を変えても変わらない。IPv4 を共有する回線（使える port が限られる形）ではない。グローバルの IPv6 もある。ルーターが外からの最初の通信を通すかは未確認。
+- `kitepon.dev` の DNS は全てトンネル経由の CNAME で、家の回線の address を指す名前と、それを更新する定期の処理は無い。
 
 ## クオ君の手が要る所
 

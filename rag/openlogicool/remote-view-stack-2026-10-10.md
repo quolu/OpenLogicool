@@ -7,6 +7,7 @@
 
 - publish の受け口は SRT・WHIP・RTSP／RTSPS・RTMP。どれも H.264＋Opus が通る。<https://mediamtx.org/docs/publish/ffmpeg>
 - 視聴は組み込みページ `http://host:8889/<path>`、WHEP は `/<path>/whep`。<https://mediamtx.org/docs/read/web-browsers>
+- NAT や container の内側に置く時の公式の手順は2通り。固定の UDP 8189 を NAT で通して `webrtcAdditionalHosts` へ外側の address か DNS の名前を書く形と、STUN で穴を開ける形（ランダムな UDP port を使い、port を開けない）。TCP で受ける `webrtcLocalTCPAddress` もある。<https://mediamtx.org/docs/features/webrtc-specific-features>
 - B-frame 付きの H.264 は WebRTC で再生できない。<https://mediamtx.org/docs/features/webrtc-specific-features>
 - 認証は `authMethod: internal|http|jwt`。`authInternalUsers[].permissions[].action`（publish／read）と `path` で利用者ごとに分けられる。WHIP は `Authorization: Bearer user:pass`。既定の設定は `user: any` に publish／read を許すので必ず置き換える。<https://mediamtx.org/docs/features/authentication>
 - 合図は HTTP `webrtcAddress :8889`、media は `webrtcLocalUDPAddress :8189`。NAT や docker では `webrtcAdditionalHosts` を設定して UDP 8189 を開ける。
@@ -30,7 +31,7 @@
 - 黄色い枠を消す `IsBorderRequired=false` には `RequestAccessAsync(Borderless)` と package manifest の `graphicsCaptureWithoutBorder` が要る。unpackaged の扱いは記載なし（未確認）。<https://learn.microsoft.com/en-us/uwp/api/windows.graphics.capture.graphicscapturesession.isborderrequired>
 - `MinUpdateInterval` は build 26100 以降。
 
-## Cloudflare Realtime TURN（外から見る経路の候補）
+## Cloudflare Realtime TURN（外から見る経路の候補。オーナーの指示で不採用）
 
 - 料金: egress 1GB あたり $0.05。SFU と合わせて毎月 1,000GB まで無料。課金されるのは TURN サーバーから TURN client へ送った分で、client からの ingress は無料。STUN（`stun.cloudflare.com`）は無料。<https://developers.cloudflare.com/realtime/sfu/pricing/>・<https://developers.cloudflare.com/realtime/turn/faq/>
 - 受け口: `turn.cloudflare.com` の 3478/udp（代替 443/udp）、3478/tcp（代替 80/tcp）、TLS は 5349/tcp（代替 443/tcp）。<https://developers.cloudflare.com/realtime/turn/>
