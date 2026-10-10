@@ -224,12 +224,13 @@
     "botStoppedReason": null,
     "botRunNote": "2026-10-10 23:09 に利用者がBotを始めた。23:27 に担当AIが入れ替えた版で始め直した。利用者の手入力が続いている間、Botは送出を止めて待つ。",
     "botFunctions": {
-      "status": "split-main-equivalent-not-live-run",
+      "status": "installed-start-verified",
       "userInstruction": "利用者の指示（2026-10-10 23:53〜23:57）: やり方を変える。今までのBot（サイドクエストは別）を機能別に分解し、組み合わせて元通りにする。必要に応じて機能ごとに組み合わせて使う。",
       "layout": "規則は fixtures/visual-recovery/mabinogi-20261008/functions/<機能>.json。progress.json はメインの組み合わせ（Functions）と選んだ時だけ読む機能（OptionalFunctions）だけを書く。",
       "use": "bot functions で一覧。bot start mabinogi-mobile --functions a,b で選んだ機能だけ。指定なしはメイン。recovery は監視の側の機能。",
       "verified": "分ける前と後で規則48本・確認の表示・設定値が同じ中身（1回きりの機械照合）。Host 826件・画面 130件・構成 9件・同梱 14件が成功。",
-      "unverified": "機能を選んで始めたBotの実機での動き。"
+      "liveCheck": "2026-10-11 00:08 導入版で確認: bot functions は recovery＋メイン9機能＋side-quest（選んだ時だけ）。無い機能の指定は始める前に拒否。--functions results は Functions=results・Recovery=False で開始。指定なしは メイン9機能・Recovery=True で開始。",
+      "unverified": "機能を選んだBotが、実際の画面で規則どおりに動く所。"
     },
     "sideQuestMode": {
       "status": "parked-accept-click-unresolved",
