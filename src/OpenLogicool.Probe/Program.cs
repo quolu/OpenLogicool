@@ -40,6 +40,9 @@ return command switch
     "g13-backlight-audio-smoke" => OpenLogicool.Probe.G13BacklightAudioSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "remote-view-smoke" => OpenLogicool.Probe.RemoteViewSmoke.Run(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
     "g13-backlight-smoke" => OpenLogicool.Probe.G13BacklightSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
