@@ -145,6 +145,8 @@ public static class Theme
         window.Background = DialogGround;
     }
 
+    // template と style は読み込んだ UI thread に属するため、thread ごとに読み込む。
+    [ThreadStatic]
     private static ResourceDictionary? controlResources;
 
     private static ResourceDictionary ControlResources() => controlResources ??=

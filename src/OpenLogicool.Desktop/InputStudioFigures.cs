@@ -348,10 +348,15 @@ public static class InputStudioFigures
 
     // ─────────────────────────── 部品 ───────────────────────────
 
-    private static readonly Dictionary<double, Style> KeyStyles = [];
+    // Style は作った UI thread に属するため、使い回しは thread ごとに持つ（別 thread の Style を当てると例外になる）。
+    [ThreadStatic]
+    private static Dictionary<double, Style>? keyStyles;
 
-    private static Style KeyStyle(double radius) =>
-        KeyStyles.TryGetValue(radius, out var style) ? style : KeyStyles[radius] = Theme.CreateFlatButtonStyle(radius);
+    private static Style KeyStyle(double radius)
+    {
+        keyStyles ??= [];
+        return keyStyles.TryGetValue(radius, out var style) ? style : keyStyles[radius] = Theme.CreateFlatButtonStyle(radius);
+    }
 
     private static void Place(Canvas canvas, UIElement element, double x, double y)
     {
