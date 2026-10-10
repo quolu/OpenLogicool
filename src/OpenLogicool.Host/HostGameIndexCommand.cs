@@ -116,7 +116,7 @@ public static class HostGameIndexCommand
 
     /// <summary>
     /// 保存した画面の画像で、規則に一致しない画面の判断（Jev）を確かめる。ゲームと入力装置には触れない。
-    /// --background は、目的の背景を1行ずつ書いたファイル。
+    /// --background は、目的の背景を1行ずつ書いたファイル。--progress-profile は、Botの進行設定（progress.json）。
     /// </summary>
     private static async Task<object> JudgeImageAsync(string[] arguments)
     {
@@ -131,7 +131,12 @@ public static class HostGameIndexCommand
             1, 0, DateTimeOffset.UtcNow, bitmap.PixelWidth, bitmap.PixelHeight, "BGRA8", 96, 96, 1, 0, 0,
             Pixels: new FramePixels(pixels, stride));
         var background = Optional(arguments, "--background") is { } path ? File.ReadAllLines(Path.GetFullPath(path)) : [];
-        var texts = ScreenTextReader.Read(await new WindowsGameOcrRecognizer().RecognizeAsync(frame), frame.Width, frame.Height);
+        // Botと同じ読み取り（進行設定の拡大と白い文字の読み直し）で読む。描画領域は --client-bounds（x,y,幅,高さ）で渡す。
+        var bounds = Required(arguments, "--client-bounds").Split(',').Select(int.Parse).ToArray();
+        if (bounds.Length != 4) throw new ArgumentException("--client-bounds は x,y,幅,高さ の4値で指定します。");
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.GetFullPath(Required(arguments, "--progress-profile"))));
+        var texts = ScreenTextReader.Read(
+            await recognizer.ReadOcrAsync(frame, new FrameRect(bounds[0], bounds[1], bounds[2], bounds[3])), frame.Width, frame.Height);
         var judgment = await ScreenJudgeSettings.Load(Path.GetFullPath(Required(arguments, "--settings")))
             .ChooseAsync(Required(arguments, "--goal"), background, texts, CancellationToken.None);
         return new { Mode = "judge-image", ProductHostEntry = true, Judgment = judgment, Texts = texts };

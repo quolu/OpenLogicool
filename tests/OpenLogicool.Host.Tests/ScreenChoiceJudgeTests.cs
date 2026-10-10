@@ -127,20 +127,59 @@ public sealed class ScreenChoiceJudgeTests
         for (var time = 0; time <= profile.UnknownTimeoutMs + 1000; time += 500)
             last = unknown.Decide(time, new(VisualProgressAction.Normal), false, hudVisible: false, due: false);
         Assert.Equal(VisualProgressAction.Review, last.Action);
-        Assert.True(last.UnknownScreen);
+        Assert.True(last.Judgeable);
         // 操作の後に、規則にも通常の画面にも一致しない画面で止まった時も渡す。
         var after = new VisualProgressSchedule(profile);
         after.RecordInput(0, new(VisualProgressAction.Key, "screen-prompt", "screen-prompt:", "Key:Space"));
         for (var time = 500; time <= profile.UnknownTimeoutMs + 1500; time += 500)
             last = after.Decide(time, new(VisualProgressAction.Normal), false, hudVisible: false, due: false);
         Assert.Equal(VisualProgressAction.Review, last.Action);
-        Assert.True(last.UnknownScreen);
+        Assert.True(last.Judgeable);
         // 待つ規則の画面で止まった時は渡さない（待つと決めた画面）。
         var waiting = new VisualProgressSchedule(profile);
         for (var time = 0; time <= profile.UnknownTimeoutMs + 1000; time += 500)
             last = waiting.Decide(time, new(VisualProgressAction.Wait, "loot-wait", "loot-wait:"), false, hudVisible: false, due: false);
         Assert.Equal(VisualProgressAction.Review, last.Action);
-        Assert.False(last.UnknownScreen);
+        Assert.False(last.Judgeable);
+    }
+
+    [Fact]
+    public async Task 会話の選択肢は印とクエストの名前の決め打ちが先でどちらも無ければ判断へ渡す()
+    {
+        var frame = ReadFrame(Fixture("dialogue-quest-choice-screen.png"));
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var profile = VisualProgressProfile.Load(Fixture("progress.json"));
+        var recognizer = new VisualProgressRecognizer(profile);
+        var ocr = await recognizer.ReadOcrAsync(frame, viewport);
+        void InButton(VisualProgressChoice choice)
+        {
+            Assert.Equal(VisualProgressAction.Click, choice.Action);
+            // 「！魔族を召喚する結界」のボタン（横548〜795・縦1016〜1070）。
+            Assert.InRange(choice.Point![0] * frame.Width, 555, 790);
+            Assert.InRange(choice.Point[1] * frame.Height, 1020, 1066);
+        }
+        // 受注したクエストの名前を覚えていない時は、「！」の付いた選択肢を押す。
+        var marked = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("dialogue-marked-choice", marked.RuleId);
+        InButton(marked);
+        // 覚えている時は、クエストの名前と同じ選択肢を押す（読み取りが名前の後ろへ付けた余分な文字は同じ名前とみなす）。
+        recognizer.SetRemembered("side-quest", Card);
+        var named = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("side-quest-talk", named.RuleId);
+        InButton(named);
+        // 「！」を読み落とした回でも、名前で拾う。
+        var noMark = ocr with { Words = ocr.Words.Where(word => !word.Text.Contains('!') && !word.Text.Contains('！')).ToArray() };
+        Assert.Equal("side-quest-talk", recognizer.Recognize(noMark, frame.Width, frame.Height, viewport, frame).RuleId);
+        // 印も名前も無い会話の選択肢は、何も押さずに待ち、止まったら判断へ渡す。
+        var waiting = new VisualProgressRecognizer(profile).Recognize(noMark, frame.Width, frame.Height, viewport, frame);
+        Assert.Equal("dialogue-choice-wait", waiting.RuleId);
+        Assert.Equal(VisualProgressAction.Wait, waiting.Action);
+        var schedule = new VisualProgressSchedule(profile);
+        VisualProgressChoice last = new(VisualProgressAction.Wait);
+        for (var time = 0; time <= profile.UnknownTimeoutMs + 1000; time += 500)
+            last = schedule.Decide(time, waiting, false, hudVisible: false, due: false);
+        Assert.Equal(VisualProgressAction.Review, last.Action);
+        Assert.True(last.Judgeable);
     }
 
     [Theory]

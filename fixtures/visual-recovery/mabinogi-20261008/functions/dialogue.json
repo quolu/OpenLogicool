@@ -37,7 +37,14 @@
       "ImageClientWidth": 1506, "ImageRotates": true
     },
     {
-      "Id": "dialogue-choice-wait", "WaitForChange": true, "Priority": 25,
+      "Id": "dialogue-marked-choice", "Priority": 28,
+      "When": [ { "Text": "", "Bounds": [0.2, 0.04, 0.6, 0.3] } ],
+      "Image": "dialogue-cue.jpg", "ImageBounds": [0.2, 0.04, 0.6, 0.3],
+      "ImageClientWidth": 1506, "ImageRotates": true,
+      "ClickMarked": { "Mark": "！", "Bounds": [0.2, 0.88, 0.6, 0.12] }
+    },
+    {
+      "Id": "dialogue-choice-wait", "WaitForChange": true, "Priority": 25, "Judge": true,
       "When": [
         { "Text": "", "Bounds": [0.2, 0.04, 0.6, 0.3] },
         { "Text": "", "Bounds": [0.2, 0.88, 0.6, 0.12] }

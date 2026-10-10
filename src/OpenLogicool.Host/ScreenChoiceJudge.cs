@@ -147,8 +147,12 @@ public static class ScreenTextReader
     /// </summary>
     public static ScreenText[] Read(WindowsGameOcrResult ocr, int width, int height)
     {
+        // 読み直しで足された文字（白い文字の読み直しなど）は、元の読み取りと同じ場所に重なる。先に読めたほうを残す。
+        var words = new List<WindowsGameOcrWord>();
+        foreach (var word in ocr.Words.Where(word => !string.IsNullOrWhiteSpace(word.Text)))
+            if (!words.Any(kept => SamePlace(kept, word))) words.Add(word);
         var lines = new List<List<WindowsGameOcrWord>>();
-        foreach (var word in ocr.Words.Where(word => !string.IsNullOrWhiteSpace(word.Text)).OrderBy(word => word.Y + word.Height / 2))
+        foreach (var word in words.OrderBy(word => word.Y + word.Height / 2))
         {
             if (lines.Count == 0 || !SameLine(lines[^1], word)) lines.Add([]);
             lines[^1].Add(word);
@@ -170,6 +174,15 @@ public static class ScreenTextReader
             Add(run);
         }
         return [.. texts];
+
+        // 重なりが、小さいほうの文字の面積の半分以上なら、同じ場所の文字。
+        static bool SamePlace(WindowsGameOcrWord left, WindowsGameOcrWord right)
+        {
+            var width = Math.Min(left.X + left.Width, right.X + right.Width) - Math.Max(left.X, right.X);
+            var height = Math.Min(left.Y + left.Height, right.Y + right.Height) - Math.Max(left.Y, right.Y);
+            return width > 0 && height > 0
+                && width * height >= 0.5 * Math.Min(left.Width * left.Height, right.Width * right.Height);
+        }
 
         // 同じ行の文字は、縦の中心がそろう。行の間が詰まった文章を混ぜないよう、ずれは文字の高さの半分までとする。
         // 句読点のような小さい文字は中心が下へずれるので、行の高さの中に収まっていれば同じ行とする。

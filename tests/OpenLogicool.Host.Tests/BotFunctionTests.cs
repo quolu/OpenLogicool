@@ -37,7 +37,7 @@ public sealed class BotFunctionTests
         // 規則の名前は、機能をまたいでも重ならない。
         Assert.Equal(main.Rules.Length, main.Rules.Select(rule => rule.Id).Distinct().Count());
         Assert.All(main.Rules, rule => Assert.Contains(rule.Function, main.Functions!));
-        Assert.Equal(6, main.Rules.Count(rule => rule.Function == "side-quest"));
+        Assert.Equal(7, main.Rules.Count(rule => rule.Function == "side-quest"));
         Assert.Equal("side-quest", Assert.Single(main.Modes!).Id);
         Assert.Equal(2, main.ReviewWhen.Length);
         Assert.Equal(2, main.WhiteTextBounds!.Length);

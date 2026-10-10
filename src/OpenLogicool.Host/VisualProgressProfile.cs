@@ -30,8 +30,14 @@ public sealed record VisualProgressRemembered(string Name, string[] Lines, doubl
 /// <summary>
 /// 覚えた内容の1行目（名前）が、領域の中でいちばん大きい文字の行（追跡中の表示）に出ているか。
 /// Shown が false の規則は、出ていない時に当たる。覚えた内容が無い時と、領域に文字が無い時は、どちらの規則も当たらない。
+/// Click を指定した規則は、領域の中で覚えた名前と同じ文字のまとまり（ボタン）を探し、その中心を押す。無い時は当たらない。
 /// </summary>
-public sealed record VisualProgressRecall(string Name, double[] Bounds, bool Shown = true);
+public sealed record VisualProgressRecall(string Name, double[] Bounds, bool Shown = true, bool Click = false);
+/// <summary>
+/// 領域の中で、印の文字（「！」など）から始まる文字のまとまり（ボタン）が1つだけある時に、その中心を押す。
+/// ゲームが用件のある選択肢に付ける印を、押す先の手がかりにする。
+/// </summary>
+public sealed record VisualProgressMarked(string Mark, double[] Bounds);
 /// <summary>直前に操作を送った規則と、送ってからの時間。</summary>
 public readonly record struct VisualProgressRecent(string RuleId, long ElapsedMs);
 /// <summary>外から入り・解除を指示する動き方。入った時と、入ったままBotを始めた時に、通常の画面で Stage の段階を始める。</summary>
@@ -48,7 +54,7 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     VisualProgressArea[]? Areas = null, VisualProgressFlick? Flick = null, VisualProgressRemember? Remember = null,
     bool EndStage = false, string? Function = null, double[]? Point = null, string? After = null,
     int AfterWithinMs = 3000, VisualProgressRecall? Recall = null, int? MaxRepeats = null, bool Preempt = false,
-    double[]? ClickImageOffset = null);
+    double[]? ClickImageOffset = null, bool Judge = false, VisualProgressMarked? ClickMarked = null);
 /// <summary>
 /// 機能。Botの動きを、単独でも組み合わせても使える単位に分けたもの。進行設定の隣の functions/ に、機能ごとのファイルで置く。
 /// Requires は、この機能と一緒に読む機能。
@@ -170,8 +176,9 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null
                 || (rule.When.Length == 0 && rule.Image is null && rule.Number is null && rule.Areas is null)
                 || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) + (rule.ClickImage ? 1 : 0)
-                    + (rule.Flick is null ? 0 : 1) + (rule.Point is null ? 0 : 1) != 1)
-                throw new InvalidDataException("進行規則には条件と、キー・クリック・決まった位置のクリック・払う操作・待機のいずれか一つが必要です。");
+                    + (rule.Flick is null ? 0 : 1) + (rule.Point is null ? 0 : 1)
+                    + (rule.ClickMarked is null ? 0 : 1) + (rule.Recall is { Click: true } ? 1 : 0) != 1)
+                throw new InvalidDataException("進行規則には条件と、キー・クリック・決まった位置のクリック・印や覚えた名前のクリック・払う操作・待機のいずれか一つが必要です。");
             if (rule.Point is not null && (rule.Point.Length != 2 || rule.Point.Any(value => !double.IsFinite(value) || value < 0 || value > 1)))
                 throw new InvalidDataException("決まった位置のクリックは、描画領域内の位置を0〜1の2値で指定します。");
             // After は、その規則が操作を送った直後だけ評価する規則。即時の画像が出ている間も読む。
@@ -182,6 +189,12 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             if (rule.ClickImageOffset is not null && (!rule.ClickImage || rule.ClickImageOffset.Length != 2
                 || rule.ClickImageOffset.Any(value => !double.IsFinite(value) || Math.Abs(value) > 1)))
                 throw new InvalidDataException("画像からずらすクリック位置は、画像のクリック規則に2値で指定します。");
+            // 待つ画面を汎用の判断へ渡す指定は、待つ規則に付ける。覚えた名前のボタンを押す指定は、出ている時の照合に付ける。
+            if (rule.Judge && !rule.WaitForChange || rule.Recall is { Click: true, Shown: false })
+                throw new InvalidDataException("判断へ渡す指定は待つ規則に、覚えた名前を押す指定は出ている時の照合に指定します。");
+            if (rule.ClickMarked is { } marked && (string.IsNullOrWhiteSpace(marked.Mark) || rule.Click is not null || rule.ClickImage
+                || rule.Point is not null || rule.Key is not null || rule.WaitForChange))
+                throw new InvalidDataException("印の付いた文字を押す指定は、印の文字を指定し、ほかの操作と併せて指定しません。");
             if (rule.Preempt && (rule.Immediate || rule.RepeatIntervalMs > 0 || rule.WaitForChange))
                 throw new InvalidDataException("即時の画像より先に評価する規則は、即時・反復・待機でない規則に指定します。");
             if (rule.AfterWithinMs <= 0 || rule.MaxRepeats <= 0
@@ -275,6 +288,7 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             .Concat(value.Rules.SelectMany(rule => rule.Areas ?? []).Select(area => area.Bounds))
             .Concat(value.Rules.Where(rule => rule.Remember is not null).Select(rule => rule.Remember!.Bounds))
             .Concat(value.Rules.Where(rule => rule.Recall is not null).Select(rule => rule.Recall!.Bounds))
+            .Concat(value.Rules.Where(rule => rule.ClickMarked is not null).Select(rule => rule.ClickMarked!.Bounds))
             .Concat(value.WhiteTextBounds ?? []))
             if (bounds is not { Length: 4 } || bounds.Any(x => !double.IsFinite(x) || x < 0 || x > 1)
                 || bounds[2] <= 0 || bounds[3] <= 0
@@ -313,7 +327,7 @@ public sealed record VisualProgressChoice(VisualProgressAction Action, string? R
     int RepeatIntervalMs = 0, string? AfterClickKey = null, bool AskUserImmediately = false,
     VisualProgressText? ReviewSource = null, double[][]? OptionPoints = null, string? NextStage = null,
     string[]? ThenKeys = null, double[]? FlickTo = null, VisualProgressRemembered? Remembered = null, bool EndStage = false,
-    bool UnknownScreen = false);
+    bool Judgeable = false);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
@@ -572,9 +586,27 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             if (rule.Areas is not null && (frame is null || !rule.Areas.All(area => AreaHolds(frame, viewport, area)))) continue;
             if (rule.Recall is { } recall)
             {
-                if (!remembered.TryGetValue(recall.Name, out var lines) || lines.Length == 0
-                    || LargestLine(ocr, recall.Bounds, viewport) is not { } shown) continue;
-                if (SameName(shown, Normalize(lines[0])) != recall.Shown) continue;
+                if (!remembered.TryGetValue(recall.Name, out var lines) || lines.Length == 0) continue;
+                if (recall.Click)
+                {
+                    // 覚えた名前と同じ文字のまとまり（ボタン）が1つだけある時に、その中心を押す。
+                    var named = ScreenTextReader.Read(ocr, width, height).Where(text =>
+                        Inside(new WindowsGameOcrWord(text.Text, text.X * width, text.Y * height, 0, 0), recall.Bounds, viewport)
+                        && SameName(Normalize(text.Text), Normalize(lines[0]))).ToArray();
+                    if (named.Length != 1) continue;
+                    point = [named[0].X, named[0].Y];
+                }
+                else if (LargestLine(ocr, recall.Bounds, viewport) is not { } shown
+                    || SameName(shown, Normalize(lines[0])) != recall.Shown) continue;
+            }
+            if (rule.ClickMarked is { } mark)
+            {
+                var markText = mark.Mark.Normalize(NormalizationForm.FormKC);
+                var markedTexts = ScreenTextReader.Read(ocr, width, height).Where(text =>
+                    Inside(new WindowsGameOcrWord(text.Text, text.X * width, text.Y * height, 0, 0), mark.Bounds, viewport)
+                    && text.Text.Normalize(NormalizationForm.FormKC).StartsWith(markText, StringComparison.Ordinal)).ToArray();
+                if (markedTexts.Length != 1) continue;
+                point = [markedTexts[0].X, markedTexts[0].Y];
             }
             var texts = rule.When.Select(Read).ToArray();
             if (!rule.When.Select((condition, i) => Matches(texts[i], condition)).All(x => x)) continue;
@@ -623,7 +655,8 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             }
             candidates.Add(new(rule.WaitForChange ? VisualProgressAction.Wait
                 : rule.Flick is not null ? VisualProgressAction.Flick
-                : rule.Click is null && !rule.ClickImage && rule.Point is null ? VisualProgressAction.Key : VisualProgressAction.Click,
+                : rule.Click is null && !rule.ClickImage && rule.Point is null && rule.Recall?.Click != true && rule.ClickMarked is null
+                    ? VisualProgressAction.Key : VisualProgressAction.Click,
                 rule.Id, rule.Id + ":" + string.Join("|", rule.When.Select((condition, i) =>
                     string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text)))
                     // 指し示す先が別の場所へ移ったら、同じ操作の結果待ちではなく次の操作として扱う。
@@ -1114,7 +1147,7 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
                 return ObserveUnresolved(now, sceneChanged,
                     candidate.Action == VisualProgressAction.Normal ? Math.Max(profile.ResultTimeoutMs, profile.UnknownTimeoutMs) : profile.ResultTimeoutMs,
                     $"{pending.RuleId} の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。",
-                    unknownScreen: candidate.Action == VisualProgressAction.Normal && !hudVisible);
+                    judgeable: candidate.Action == VisualProgressAction.Normal && !hudVisible);
             else
             {
                 if (stableSignature != candidate.Signature) { stableSignature = candidate.Signature; stableAt = now; }
@@ -1128,7 +1161,7 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
             stableSignature = null;
             if (hudVisible) { ResetUnresolved(); return candidate; }
             return ObserveUnresolved(now, sceneChanged, profile.UnknownTimeoutMs,
-                "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。", unknownScreen: true);
+                "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。", judgeable: true);
         }
         if (candidate.Action == VisualProgressAction.Wait)
         {
@@ -1138,7 +1171,8 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
                 && OpenLogicool.Contracts.Perception.OcrTextMatcher.Similarity(waitingSignature, reading) < SameWaitSimilarity)
             { waitingSignature = reading; ResetUnresolved(); }
             return ObserveUnresolved(now, sceneChanged, profile.UnknownTimeoutMs,
-                $"{candidate.RuleId ?? candidate.Detail} の待機中、複数回観測して画面の変化が止まったままです。追加入力はしていません。");
+                $"{candidate.RuleId ?? candidate.Detail} の待機中、複数回観測して画面の変化が止まったままです。追加入力はしていません。",
+                judgeable: profile.Rules.SingleOrDefault(rule => rule.Id == candidate.RuleId)?.Judge == true);
         }
         ResetUnresolved();
         if (stableSignature != candidate.Signature) { stableSignature = candidate.Signature; stableAt = now; }
@@ -1171,13 +1205,13 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
         pending = choice; pendingChanged = false; unknownAt = now; unresolvedObservations = 0;
     }
 
-    // unknownScreen は、規則にも通常の画面（HUD）にも一致しない画面で止まった時。汎用の判断へ渡せる止まり。
-    private VisualProgressChoice ObserveUnresolved(long now, bool sceneChanged, int waitMs, string detail, bool unknownScreen = false)
+    // judgeable は、汎用の判断へ渡せる止まり。規則にも通常の画面（HUD）にも一致しない画面と、判断へ渡すと指定した待つ画面。
+    private VisualProgressChoice ObserveUnresolved(long now, bool sceneChanged, int waitMs, string detail, bool judgeable = false)
     {
         if (unknownAt is null || sceneChanged) { unknownAt = now; unresolvedObservations = 0; }
         unresolvedObservations++;
         return unresolvedObservations >= 3 && now - unknownAt >= waitMs
-            ? new(VisualProgressAction.Review, Detail: detail, UnknownScreen: unknownScreen)
+            ? new(VisualProgressAction.Review, Detail: detail, Judgeable: judgeable)
             : new(VisualProgressAction.Wait);
     }
 

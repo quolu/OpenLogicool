@@ -24,6 +24,13 @@
       "Click": { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032] }
     },
     {
+      "Id": "side-quest-talk", "Priority": 30,
+      "When": [ { "Text": "", "Bounds": [0.2, 0.04, 0.6, 0.3] } ],
+      "Image": "dialogue-cue.jpg", "ImageBounds": [0.2, 0.04, 0.6, 0.3],
+      "ImageClientWidth": 1506, "ImageRotates": true,
+      "Recall": { "Name": "side-quest", "Bounds": [0.2, 0.88, 0.6, 0.12], "Click": true }
+    },
+    {
       "Id": "side-quest-open", "Stage": "side-quest", "Priority": 1, "AllowWhileInhibited": true,
       "When": [ { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032], "Zoom": 3 } ],
       "Click": { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032] }

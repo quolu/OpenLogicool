@@ -415,7 +415,7 @@ public static class VisualKeyAssistRuntime
 
                 // 規則にも通常の画面にも一致せず止まった画面で、目的のために押す文字をJevへ選ばせる。
                 // 押す文字が決まった時だけクリックの操作を返す。決まらない時と問い合わせの失敗は記録へ残し、今までどおり止まりを知らせる。
-                async Task<VisualProgressChoice?> JudgeScreenAsync(CapturedFrame frame, CancellationToken token)
+                async Task<VisualProgressChoice?> JudgeScreenAsync(CapturedFrame frame, FrameRect viewport, string? stage, CancellationToken token)
                 {
                     try
                     {
@@ -425,7 +425,8 @@ public static class VisualKeyAssistRuntime
                                 Detail = "覚えた目的がないため、Jevへ聞いていません。" });
                             return null;
                         }
-                        var texts = ScreenTextReader.Read(await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token), frame.Width, frame.Height);
+                        // Botの普段の読み取り（拡大と白い文字の読み直しを含む）を渡す。色の付いたボタンの文字は、素の読み取りでは落ちる。
+                        var texts = ScreenTextReader.Read(await progressRecognizer!.ReadOcrAsync(frame, viewport, token, stage), frame.Width, frame.Height);
                         var judgment = await screenJudge!.ChooseAsync(goal.Goal, goal.Background, texts, token);
                         var now = clock.ElapsedMilliseconds;
                         File.WriteAllText(Path.Combine(evidenceDirectory, $"review-{reviewNumber:D3}", $"screen-judge-{now:D9}.json"),
@@ -452,10 +453,10 @@ public static class VisualKeyAssistRuntime
                 }
 
                 // Jevが選んだ文字が、押す直前の画面でも同じ場所に出ているか。
-                async Task<bool> JudgedStillShownAsync(VisualProgressChoice judged, CapturedFrame fresh, CancellationToken token)
+                async Task<bool> JudgedStillShownAsync(VisualProgressChoice judged, CapturedFrame fresh, FrameRect viewport, string? stage, CancellationToken token)
                 {
                     var text = judged.Signature![(ScreenChoiceJudge.RuleId.Length + 1)..];
-                    var shown = ScreenTextReader.Read(await new WindowsGameOcrRecognizer().RecognizeAsync(fresh, token), fresh.Width, fresh.Height)
+                    var shown = ScreenTextReader.Read(await progressRecognizer!.ReadOcrAsync(fresh, viewport, token, stage), fresh.Width, fresh.Height)
                         .Any(item => item.Text == text && Math.Abs(item.X - judged.Point![0]) < 0.02 && Math.Abs(item.Y - judged.Point[1]) < 0.02);
                     if (!shown)
                     {
@@ -740,16 +741,16 @@ public static class VisualKeyAssistRuntime
                                 }
                                 BeginMonitoring(flowCandidate ?? new(VisualProgressAction.Normal), frame,
                                     flowChoice.Detail!, flowChoice.Options, ocr?.Text, token, flowChoice.AskUserImmediately ? flowChoice : null);
-                                var unknownScreen = flowChoice.UnknownScreen;
+                                var judgeable = flowChoice.Judgeable;
                                 flowChoice = VisualProgressContinuation.AfterReview(
                                     flowCandidate ?? new(VisualProgressAction.Normal), continueRules);
                                 // 止まった画面ごとに1回だけJevへ聞く。止まりの監視（1分後の知らせ）は、押した後も続ける。
-                                if (unknownScreen && screenJudge is not null && !UserIsActive())
+                                if (judgeable && screenJudge is not null && !UserIsActive())
                                 {
                                     if (!screenJudged)
                                     {
                                         screenJudged = true;
-                                        judgedPending = await JudgeScreenAsync(frame, token);
+                                        judgedPending = await JudgeScreenAsync(frame, viewport!, stage, token);
                                     }
                                     if (judgedPending is not null) flowChoice = judgedPending;
                                 }
@@ -795,7 +796,7 @@ public static class VisualKeyAssistRuntime
                                 var current = freshInhibited && !flowChoice.AllowWhileInhibited ? null
                                     // Jevが選んだ文字は規則を持たないため、押す直前の画面に同じ文字が同じ場所にあることを確かめる。
                                     : !completingClick && flowChoice.RuleId == ScreenChoiceJudge.RuleId
-                                        ? await JudgedStillShownAsync(flowChoice, fresh, token) ? flowChoice : new(VisualProgressAction.Wait)
+                                        ? await JudgedStillShownAsync(flowChoice, fresh, freshViewport, stage, token) ? flowChoice : new(VisualProgressAction.Wait)
                                     : flowRule is { After: not null } or { Preempt: true } ? progressRecognizer!.Recognize(
                                         await progressRecognizer.ReadOcrAsync(fresh, freshViewport, token, stage),
                                         fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited, stage,
