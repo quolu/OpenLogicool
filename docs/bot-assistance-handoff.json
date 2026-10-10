@@ -61,8 +61,8 @@
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "レベルアップボーナス3択（STR成長1・LUCK成長13・WILL成長1）の回答待ち。",
-    "botRun": "bot-runs/mabinogi-mobile/20261010-123559-432-cc306951",
+    "nextCheck": "Lv54。レベルガイドの一推し「南の廃墟 2F エリア1」へBotが今すぐ移動を押して自動移動中。クエストは冒険者の向上心（Lv55達成）。",
+    "botRun": "bot-runs/mabinogi-mobile/20261010-130911-594-43ae1b44",
     "levelProgression": {
       "currentLevel": 53,
       "targetLevel": 42,
@@ -75,10 +75,10 @@
       "lastGuideCompletionPercent": 67
     },
     "lastBonusChoice": {
-      "choice": "LUCK成長11段階（Elite）",
-      "basis": "決裁箱K-JD2EZWの利用者回答に従い実行。ゲーム内推奨DEX8と異なる回答をそのまま守った。",
+      "choice": "LUCK成長13段階（Epic・推奨）",
+      "basis": "決裁箱K-VS2VHHの利用者回答（選択肢2）。Botが検出直後に自分で申請した。",
       "status": "executed",
-      "evidence": "evidence/bot-bonus-dex8-20261009/level44-after-luck11.png"
+      "evidence": "evidence/bot-bonus-ask-user-20261010/after-confirm.png"
     }
   },
   "pendingGameDecision": {
@@ -181,7 +181,7 @@
   },
   "continuation": {
     "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
-    "updatedUtc": "2026-10-10T03:37:39.5198099+00:00",
+    "updatedUtc": "2026-10-10T04:10:56.4512767+00:00",
     "assistanceGeneration": 6,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -193,12 +193,11 @@
       "379225d3-7ac8-4a7b-a293-55c09ab9f0ab"
     ],
     "pendingDecisionIds": [
-      "K-VS2VHH",
-      "K-X9E7Z7"
+      "K-5V3KM4"
     ],
-    "botPhase": "ReviewMonitoring",
+    "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "K-VS2VHHの回答後、Botを止めてgame-index click-pointで選ばれたカードを選択し、拡大表示とSpace決定を確認してkey-tapでSpace、Botを--db指定で再開する。b1cc2557は実機で解消済みだがClaudeの会話からresolveできないため、状態はclaimedのまま残る。",
+    "nextAction": "K-5V3KM4の回答に従う。承認済みのボーナス回答の実行と、通知の宛先・保存先の統一を進める。Botの詰まり通知は今もCodexの会話宛てなので、詰まりは担当AIが記録を直接読んで確認する。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -274,6 +273,51 @@
       "live": "検出から0.64秒でK-VS2VHHを申請。",
       "afterAnswer": "回答後のカード選択と確定は担当AIがNanoで行う。",
       "evidence": "evidence/bot-bonus-ask-user-20261010/acceptance.json"
+    },
+    "imeModeKeys": {
+      "sourceCommit": "1997a1d",
+      "status": "installed-and-live-verified",
+      "cause": "日本語入力のモード指示キー（VK_DBE_*）はkey upが届かず、手入力の押下数が残って一時停止が解けなかった。",
+      "live": "修理後、約1,700件の手入力の後に押下数0で再開した。",
+      "evidence": "evidence/bot-ime-pause-20261010/acceptance.json"
+    },
+    "topLeftB": {
+      "sourceCommit": "5d8d5d7",
+      "status": "installed",
+      "behavior": "左上にBの印が付いたアイコンがある間、1秒おきにBを送る。停止表示中は送らない。",
+      "live": "印つきのアイコンは自動移動中に表示されたが、停止表示優先のため送出はまだない。",
+      "evidence": "evidence/bot-b-icon-20261010/acceptance.json"
+    },
+    "pointerGuide": {
+      "sourceCommit": "5d8d5d7",
+      "status": "installed-and-live-verified",
+      "behavior": "チュートリアルの指差しの手を探し、指先を1回クリックする。",
+      "live": "メニューボタンをクリックしてメインメニューが開いた。",
+      "evidence": "evidence/bot-pointer-guide-20261010/acceptance.json"
+    },
+    "textGuide": {
+      "status": "pending-decision",
+      "decisionId": "K-5V3KM4",
+      "observed": "「成長ガイドを押してください。」は文章とボタンの強調だけの案内。担当AIが手で1回クリックして通過させた。",
+      "options": [
+        "Jevに押す先を選ばせる（まず実測）",
+        "案内文ごとの固定の規則",
+        "AIなしの汎用",
+        "手で押す"
+      ],
+      "uncommitted": "固定の規則guide-press-growth-guideと実画面の試験は作業ツリーにあるが未commit・未導入。裁定が固定以外なら取り除く。"
+    },
+    "bonusAnswerExecution": {
+      "status": "approved-not-implemented",
+      "decisionId": "K-8WKC8R",
+      "answer": "Botが回答を読んでカード選択と確定まで行う",
+      "measured": "中央のカードをクリックすると、選んだカードが拡大され下にSpaceの決定ボタンが出る。Spaceで確定して通常画面へ戻る（after-click.png・after-confirm.png）。左右のカードの拡大表示は未確認。"
+    },
+    "assistantTakeover": {
+      "status": "approved-not-started",
+      "decisionId": "K-X9E7Z7",
+      "answer": "通知の宛先対応と保存先の統一を両方やる",
+      "ownerNote": "判定のたびに、両方のAIを起こすことのないように。"
     }
   }
 }

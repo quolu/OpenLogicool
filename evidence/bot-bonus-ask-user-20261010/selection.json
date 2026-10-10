@@ -1,0 +1,21 @@
+{
+  "Mode": "click-point",
+  "ProductHostEntry": true,
+  "X": 0.5,
+  "Y": 0.49,
+  "dispatch": {
+    "SchemaVersion": "0.3.0",
+    "Operation": "click",
+    "Status": "Dispatched",
+    "ObservationId": "observation:window:game-index:44864:2",
+    "TargetWindowSourceId": "window:game-index:44864",
+    "Route": "NanoSerialHid",
+    "DispatchCount": 1,
+    "StartedUtc": "2026-10-10T03:42:02.6693873+00:00",
+    "CompletedUtc": "2026-10-10T03:42:03.2098198+00:00",
+    "CandidateId": "host-click-point",
+    "TransportReceiptId": "pointer:4538,1203-\u003E2239,551;deltas:34;mouse-left-down-up",
+    "FailureReason": null
+  },
+  "AiCallCount": 0
+}
