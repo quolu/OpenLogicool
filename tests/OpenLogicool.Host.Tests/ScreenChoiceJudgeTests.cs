@@ -182,6 +182,41 @@ public sealed class ScreenChoiceJudgeTests
         Assert.True(last.Judgeable);
     }
 
+    [Fact]
+    public async Task 追跡中の表示から覚えたクエストの今の目標を読み直す()
+    {
+        // 通常の画面。右の一覧の追跡中は「[女神の庭]狩りIV」で、その下に目標が並ぶ。
+        var frame = ReadFrame(Fixture("tracker-hud.png"));
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var profile = VisualProgressProfile.Load(Fixture("progress.json"));
+        var recognizer = new VisualProgressRecognizer(profile);
+        var ocr = await recognizer.ReadOcrAsync(frame, viewport);
+        // 覚えたクエストが追跡中と別の時は、読み直さない（受注のやり直しは別の規則が担う）。
+        recognizer.SetRemembered("side-quest", Card);
+        Assert.Null(recognizer.RefreshGoal(ocr, viewport));
+        Assert.Null(recognizer.RefreshGoal(ocr, viewport));
+        // 同じクエストで目標が変わっていたら、続けて2回読めた時に、目的の行だけを差し替える。
+        recognizer.SetRemembered("side-quest", ["[女神の庭]狩りIV", "説明の行", "・古い目標", "お礼"]);
+        Assert.Null(recognizer.RefreshGoal(ocr, viewport));
+        var refreshed = recognizer.RefreshGoal(ocr, viewport);
+        Assert.NotNull(refreshed);
+        Assert.Equal("side-quest", refreshed.Value.Name);
+        Assert.Equal("[女神の庭]狩りIV", refreshed.Value.Lines[0]);
+        Assert.Equal("説明の行", refreshed.Value.Lines[1]);
+        Assert.Equal("お礼", refreshed.Value.Lines[^1]);
+        Assert.StartsWith("・", refreshed.Value.Lines[2]);
+        Assert.DoesNotContain("古い目標", string.Concat(refreshed.Value.Lines));
+        Assert.Contains("偵察ポイント", refreshed.Value.Lines[2]);
+        Assert.DoesNotContain("180", refreshed.Value.Lines[2]);
+        // 別のクエストの見出し（黒穴出現・ルーン昇級）は、目標に入れない。
+        Assert.DoesNotContain(refreshed.Value.Lines, line => line.Contains("ルーン") || line.Contains("黒穴"));
+        // 読み直した後は、同じ目標なので書き換えない。
+        recognizer.SetRemembered("side-quest", refreshed.Value.Lines);
+        Assert.Null(recognizer.RefreshGoal(ocr, viewport));
+        Assert.Null(recognizer.RefreshGoal(ocr, viewport));
+        Assert.Contains("偵察ポイント", profile.GoalFrom(new Dictionary<string, string[]> { ["side-quest"] = refreshed.Value.Lines })!.Value.Goal);
+    }
+
     [Theory]
     [InlineData("""{ "ApiKeyFile": "", "Model": "jev-latest" }""")]
     [InlineData("""{ "ApiKeyFile": "missing-key.env", "Model": "" }""")]

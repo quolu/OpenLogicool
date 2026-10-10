@@ -573,6 +573,15 @@ public static class VisualKeyAssistRuntime
                     var ocr = (immediate is null || afterPending || preemptPending) && (!inhibitMatch.Matches || readWhileInhibited) && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                         ? progressRecognizer is null ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token)
                             : await progressRecognizer.ReadOcrAsync(frame, viewport!, token, stage) : null;
+                    // 通常の画面の追跡中の表示から、覚えたクエストの今の目標を読み直す（同じクエストの目標が次へ進んだ時）。
+                    if (ocr is not null && stage is null && recoveryRecognizer!.Observe(frame, viewport).HudVisible
+                        && progressRecognizer!.RefreshGoal(ocr, viewport!) is { } refreshed)
+                    {
+                        progressRecognizer.SetRemembered(refreshed.Name, refreshed.Lines);
+                        rememberedLines[refreshed.Name] = refreshed.Lines;
+                        PersistRemembered();
+                        Emit(new { Event = "goal-updated", AtMs = clock.ElapsedMilliseconds, refreshed.Name, refreshed.Lines });
+                    }
                     if (ocr is not null && progressSchedule?.PendingModeStage(clock.ElapsedMilliseconds) is { } pendingModeStage
                         && !recoveryRecognizer!.Observe(frame, viewport).HudVisible)
                     {
@@ -1327,6 +1336,13 @@ public static class VisualKeyAssistRuntime
             }
 
             // 操作を送った時の領域の文字と画像を、実行の記録へ残す。
+            void PersistRemembered()
+            {
+                var temporaryRemembered = rememberedPath + ".tmp";
+                File.WriteAllText(temporaryRemembered, JsonSerializer.Serialize(rememberedLines));
+                File.Move(temporaryRemembered, rememberedPath, overwrite: true);
+            }
+
             void SaveRemembered(VisualProgressRemembered remembered, string ruleId, CapturedFrame source)
             {
                 var folder = Path.Combine(evidenceDirectory, "remembered");
@@ -1346,9 +1362,7 @@ public static class VisualKeyAssistRuntime
                 // 後の規則が、覚えた名前と画面の表示を照らし合わせる。Botを始め直しても忘れないよう、保存する。
                 progressRecognizer!.SetRemembered(remembered.Name, remembered.Lines);
                 rememberedLines[remembered.Name] = remembered.Lines;
-                var temporaryRemembered = rememberedPath + ".tmp";
-                File.WriteAllText(temporaryRemembered, JsonSerializer.Serialize(rememberedLines));
-                File.Move(temporaryRemembered, rememberedPath, overwrite: true);
+                PersistRemembered();
                 var entry = new { Event = "remembered", AtMs = clock.ElapsedMilliseconds, remembered.Name, RuleId = ruleId,
                     remembered.Lines, Image = image, RecordedAt = DateTimeOffset.Now };
                 File.WriteAllText(Path.Combine(folder, name + ".json"), JsonSerializer.Serialize(entry));

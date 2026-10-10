@@ -27,9 +27,10 @@ public sealed record VisualProgressFlick(double[] From, double[] To);
 /// <summary>
 /// 操作を送る時に、領域の文字と画像を記録へ残す。EndBelowClick を指定すると、領域の下端を押す位置からその分だけ下までに縮める。
 /// GoalPrefix を指定すると、覚えた行のうちその文字で始まる行を今の目的として扱い、覚えた行の全部を目的の背景として扱う。
+/// Tracker は、通常の画面で追跡中のクエストが出る領域。覚えた名前が追跡中の名前に出ている時、その下の目標の行で目的を読み直す。
 /// </summary>
 public sealed record VisualProgressRemember(string Name, double[] Bounds, double? EndBelowClick = null, double? AboveClick = null,
-    string? GoalPrefix = null);
+    string? GoalPrefix = null, double[]? Tracker = null);
 public sealed record VisualProgressRemembered(string Name, string[] Lines, double[] Bounds);
 /// <summary>
 /// 覚えた内容の1行目（名前）が、領域の中でいちばん大きい文字の行（追跡中の表示）に出ているか。
@@ -268,8 +269,9 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 || remember.Name.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-')
                 || remember.EndBelowClick is { } below && (!double.IsFinite(below) || below <= 0)
                 || remember.AboveClick is { } above && (!double.IsFinite(above) || above <= 0)
-                || remember.GoalPrefix is { } prefix && string.IsNullOrWhiteSpace(prefix)))
-                throw new InvalidDataException("覚える指定は、クリックの規則に英数字とハイフンの名前で指定します。目的の行の先頭の文字は空にしません。");
+                || remember.GoalPrefix is { } prefix && string.IsNullOrWhiteSpace(prefix)
+                || remember.Tracker is not null && remember.GoalPrefix is null))
+                throw new InvalidDataException("覚える指定は、クリックの規則に英数字とハイフンの名前で指定します。目的の行の先頭の文字は空にせず、追跡中の領域は目的の行の指定と併せて指定します。");
             if (rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }).Any(text => text.Zoom is < 1 or > 4))
                 throw new InvalidDataException("読み直しの拡大率は1〜4で指定します。");
             if (rule.EndStage && (rule.Stage is null || rule.NextStage is not null || rule.WaitForChange))
@@ -293,6 +295,7 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             .Concat(value.Rules.SelectMany(rule => rule.ImageStableRegions ?? []))
             .Concat(value.Rules.SelectMany(rule => rule.Areas ?? []).Select(area => area.Bounds))
             .Concat(value.Rules.Where(rule => rule.Remember is not null).Select(rule => rule.Remember!.Bounds))
+            .Concat(value.Rules.Where(rule => rule.Remember?.Tracker is not null).Select(rule => rule.Remember!.Tracker!))
             .Concat(value.Rules.Where(rule => rule.Recall is not null).Select(rule => rule.Recall!.Bounds))
             .Concat(value.Rules.Where(rule => rule.ClickMarked is not null).Select(rule => rule.ClickMarked!.Bounds))
             .Concat(value.WhiteTextBounds ?? []))
@@ -547,6 +550,56 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
 
     /// <summary>操作を送った時に覚えた内容。後の規則が、画面の表示と照らし合わせる。</summary>
     public void SetRemembered(string name, string[] lines) => remembered[name] = lines;
+
+    private string? pendingGoal;
+
+    /// <summary>
+    /// 通常の画面の追跡中の表示から、覚えたクエストの今の目標を読み直す。覚えた名前が追跡中の名前（領域でいちばん大きい文字の行）に
+    /// 出ている時、その直ぐ下に詰めて並ぶ行が目標。いちばん上の目標が覚えた目的と変わっていたら、目的の行を差し替えた内容を返す。
+    /// 読み取りのゆれで書き換えないよう、同じ目標を続けて2回読めた時だけ返す。追跡中が別のクエストの時は読み直さない。
+    /// </summary>
+    public (string Name, string[] Lines)? RefreshGoal(WindowsGameOcrResult ocr, FrameRect viewport)
+    {
+        foreach (var remember in profile.Rules.Select(rule => rule.Remember).Where(remember => remember?.Tracker is not null))
+        {
+            if (!remembered.TryGetValue(remember!.Name, out var lines) || lines.Length == 0) continue;
+            var shown = Lines(ocr, remember.Tracker!, viewport)
+                .Select(line => (Top: line.Min(word => word.Y), Bottom: line.Max(word => word.Y + word.Height),
+                    Height: line.Max(word => word.Height), Text: string.Concat(line.OrderBy(word => word.X).Select(word => word.Text))))
+                .Where(line => Normalize(line.Text).Length >= 2).OrderBy(line => line.Top).ToArray();
+            if (shown.Length == 0) continue;
+            var name = Array.IndexOf(shown, shown.MaxBy(line => line.Height));
+            if (!SameName(Normalize(shown[name].Text), Normalize(lines[0]))) continue;
+            var objectives = new List<string>();
+            for (var index = name + 1; index < shown.Length && shown[index].Top - shown[index - 1].Bottom <= shown[index].Height; index++)
+            {
+                // 行の先頭の距離（180m）と行頭の印は、目標の文に含めない。
+                var objective = Regex.Replace(shown[index].Text, @"^\s*(\d+\s*m)?[\s•・･·.\-]*", "").Trim();
+                if (Normalize(objective).Length >= 2) objectives.Add(objective);
+            }
+            if (objectives.Count == 0) continue;
+            var prefix = remember.GoalPrefix!;
+            var current = lines.FirstOrDefault(line => line.StartsWith(prefix, StringComparison.Ordinal));
+            if (current is not null && OpenLogicool.Contracts.Perception.OcrTextMatcher.Similarity(
+                Normalize(current[prefix.Length..]), Normalize(objectives[0])) >= SameGoalSimilarity)
+            {
+                pendingGoal = null;
+                continue;
+            }
+            var reading = remember.Name + ":" + Normalize(objectives[0]);
+            if (pendingGoal != reading) { pendingGoal = reading; continue; }
+            pendingGoal = null;
+            // 目的の行があった場所へ、読み直した目標を入れる。名前と説明の行はそのまま残す。
+            var at = Array.FindIndex(lines, line => line.StartsWith(prefix, StringComparison.Ordinal));
+            var kept = lines.Where(line => !line.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+            kept.InsertRange(at < 0 ? kept.Count : Math.Min(at, kept.Count), objectives.Select(objective => prefix + objective));
+            return (remember.Name, kept.ToArray());
+        }
+        return null;
+    }
+
+    // 同じ目標かは、読みの類似度で見分ける（数の進み 0/50 → 3/50 や、読み取りのゆれで書き換えないため）。
+    private const double SameGoalSimilarity = 0.5;
 
     /// <summary>
     /// 即時の画像が出ている間も、文字を読んで先に評価する規則が、今の段階にあるか。
