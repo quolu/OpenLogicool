@@ -7,7 +7,7 @@ namespace OpenLogicool.Devices.G13.Tests;
 /// <summary>
 /// Phase 2 Exit 条件2: 1,000,000 report replay（G13）。
 /// 生成器（固定 LCG）が各 report で加えた変化を oracle として保持し、
-/// stream の出力（button edge・stick sample）が加えた変化と完全一致することを全 report で検証する。
+/// stream の出力（button edge・スティック方向の edge・stick sample）が加えた変化と完全一致することを全 report で検証する。
 /// 台帳の未確認 bit（byte5 bit6-7・byte7 bit1-2/4-6・jitter bit7）へ noise を混ぜ、
 /// 既知 control 以外が edge を生まないことも同時に検証する。
 /// </summary>
@@ -48,7 +48,11 @@ public sealed class G13MillionReportReplayTests
         byte lastY = 0;
         var hasStick = false;
         long totalEdges = 0;
+        long totalDirectionEdges = 0;
         long totalStickSamples = 0;
+        var xSide = 0;
+        var ySide = 0;
+        var expected = new List<(string ControlId, PhysicalInputEdge Edge)>();
         long expectedSequence = 0;
 
         for (var i = 0; i < ReportCount; i++)
@@ -84,18 +88,21 @@ public sealed class G13MillionReportReplayTests
             stream.Feed(report, monotonicMs: i, inputs, out var stickSample);
             expectedSequence++;
 
-            if (flippedControl is null)
+            // 期待: 反転した button（あれば）→ X 軸の方向 → Y 軸の方向。各軸は解放が押下より先。
+            expected.Clear();
+            if (flippedControl is not null)
             {
-                Assert.Empty(inputs);
-            }
-            else
-            {
-                var input = Assert.Single(inputs);
-                Assert.Equal(flippedControl, input.ControlId);
-                Assert.Equal(flippedToDown ? PhysicalInputEdge.Down : PhysicalInputEdge.Up, input.Edge);
-                Assert.Equal(expectedSequence, input.ReportSequence);
+                expected.Add((flippedControl, flippedToDown ? PhysicalInputEdge.Down : PhysicalInputEdge.Up));
                 totalEdges++;
             }
+
+            var buttonEdges = expected.Count;
+            ExpectAxis(ref xSide, report[1], "STICK_LEFT", "STICK_RIGHT", expected);
+            ExpectAxis(ref ySide, report[2], "STICK_UP", "STICK_DOWN", expected);
+            totalDirectionEdges += expected.Count - buttonEdges;
+
+            Assert.Equal(expected, inputs.Select(input => (input.ControlId, input.Edge)));
+            Assert.All(inputs, input => Assert.Equal(expectedSequence, input.ReportSequence));
 
             // stick sample は (X,Y) が前回 sample から変化した時だけ
             var expectStick = !hasStick || report[1] != lastX || report[2] != lastY;
@@ -115,16 +122,46 @@ public sealed class G13MillionReportReplayTests
             }
         }
 
-        // 終端: idle report（stick 中立 0,0 も含む）で保持中の全 control が Up になる
+        // 終端: 全 button を離しスティックを中立へ戻した report で、保持中の全 control（方向を含む）が Up になる
         var expectedFinalUps = ButtonBits.Where((_, index) => heldByControl[index]).Select(b => b.ControlId).ToHashSet();
+        if (xSide != 0) expectedFinalUps.Add(xSide < 0 ? "STICK_LEFT" : "STICK_RIGHT");
+        if (ySide != 0) expectedFinalUps.Add(ySide < 0 ? "STICK_UP" : "STICK_DOWN");
+        var released = G13ReportParser.IdleReport();
+        released[1] = 128;
+        released[2] = 128;
         inputs.Clear();
-        stream.Feed(G13ReportParser.IdleReport(), monotonicMs: ReportCount, inputs, out _);
+        stream.Feed(released, monotonicMs: ReportCount, inputs, out _);
         Assert.All(inputs, input => Assert.Equal(PhysicalInputEdge.Up, input.Edge));
         Assert.Equal(expectedFinalUps, inputs.Select(input => input.ControlId).ToHashSet());
 
         // 空回りで成立していないことの下限（LCG 期待値 ~60万 edge・~25万 sample）
         Assert.True(totalEdges > 400_000, $"edge 総数が想定より少ない: {totalEdges}");
         Assert.True(totalStickSamples > 150_000, $"stick sample 総数が想定より少ない: {totalStickSamples}");
+        Assert.True(totalDirectionEdges > 100_000, $"方向 edge 総数が想定より少ない: {totalDirectionEdges}");
+    }
+
+    /// <summary>
+    /// 方向の oracle。押下は端から 1/4（63 以下・192 以上）、解放は 80〜175 へ戻った時。
+    /// stream 側の実装（状態の switch）とは別の書き方で同じ仕様を表す。
+    /// </summary>
+    private static void ExpectAxis(
+        ref int side,
+        byte value,
+        string lowControlId,
+        string highControlId,
+        List<(string ControlId, PhysicalInputEdge Edge)> expected)
+    {
+        int next;
+        if (side < 0 && value <= 79) next = -1;
+        else if (side > 0 && value >= 176) next = 1;
+        else if (value <= 63) next = -1;
+        else if (value >= 192) next = 1;
+        else next = 0;
+
+        if (next == side) return;
+        if (side != 0) expected.Add((side < 0 ? lowControlId : highControlId, PhysicalInputEdge.Up));
+        if (next != 0) expected.Add((next < 0 ? lowControlId : highControlId, PhysicalInputEdge.Down));
+        side = next;
     }
 }
 

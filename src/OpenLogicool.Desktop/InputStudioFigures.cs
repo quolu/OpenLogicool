@@ -3,6 +3,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using OpenLogicool.Contracts.Devices.G13;
 
 namespace OpenLogicool.Desktop;
 
@@ -50,8 +51,43 @@ public static class InputStudioFigures
         stick.Style = Theme.CreateFlatButtonStyle(38);
         Place(canvas, stick, 442, 499);
 
+        // スティックを倒す4方向。絵のスティックは小さく4つを載せられないため、手のひら側の空きへ十字に並べて引出線でつなぐ。
+        (string ControlId, string Kid, double X, double Y)[] directions =
+        [
+            (G13Controls.StickUp, "↑ 上", 261, 590),
+            (G13Controls.StickLeft, "← 左", 195, 634),
+            (G13Controls.StickRight, "→ 右", 327, 634),
+            (G13Controls.StickDown, "↓ 下", 261, 678),
+        ];
+        foreach (var (controlId, kid, x, y) in directions)
+        {
+            Place(canvas, Key(kid, controlId, bindings, false, () => onAssign(controlId), width: 62, height: 40), x, y);
+        }
+
+        Place(canvas, new TextBlock
+        {
+            Text = "スティックを倒す向き",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = Theme.Muted,
+            FontSize = 10,
+            Width = 62,
+            TextAlignment = TextAlignment.Center,
+        }, 261, 640);
+        canvas.Children.Add(LinePath("M 391,654 L 422,654 L 452,566"));
+
         return WrapFigure(canvas, maxHeight: 470);
     }
+
+    /// <summary>G13 のスティック系 control の表示名（内部 control ID を画面へ出さない）。該当しなければ null。</summary>
+    internal static string? G13StickName(string controlId) => controlId switch
+    {
+        "STICK_PRESS" => "スティック押込み",
+        G13Controls.StickUp => "スティック上",
+        G13Controls.StickDown => "スティック下",
+        G13Controls.StickLeft => "スティック左",
+        G13Controls.StickRight => "スティック右",
+        _ => null,
+    };
 
     // ─────────────────────────── G600（側面=親指 12 ボタン・上面=ホイール/G7/G8/G-Shift） ───────────────────────────
 
@@ -266,7 +302,7 @@ public static class InputStudioFigures
         }
 
         // ToolTip に内部 control ID をそのまま出さない（STICK_PRESS 等は表示名へ）。
-        var tipName = controlId == "STICK_PRESS" ? "スティック押込み" : controlId;
+        var tipName = G13StickName(controlId) ?? controlId;
         var dimpleToolTipSuffix = dimple && !hasBinding ? "（指のホーム位置）" : string.Empty;
         var button = new Button
         {

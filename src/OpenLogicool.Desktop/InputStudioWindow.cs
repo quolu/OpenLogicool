@@ -1959,9 +1959,9 @@ public sealed class InputStudioWindow : Window
             ("G600", "G8") => "上面ボタン下",
             _ => null,
         };
-        if (deviceKind == "G13" && controlId == "STICK_PRESS")
+        if (deviceKind == "G13" && InputStudioFigures.G13StickName(controlId) is { } stickName)
         {
-            return "スティック押込み";
+            return stickName;
         }
 
         return physicalName is null ? controlId : $"{controlId}（{physicalName}）";

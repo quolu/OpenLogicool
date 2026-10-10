@@ -13,6 +13,7 @@ public sealed class G13ReportStream
     private readonly string deviceInstanceId;
     private readonly byte[] previous = G13ReportParser.IdleReport();
     private readonly List<(string ControlId, PhysicalInputEdge Edge)> edgeBuffer = new();
+    private readonly G13StickDirectionTracker stickDirections = new();
     private long sequence;
     private byte lastStickX;
     private byte lastStickY;
@@ -20,7 +21,9 @@ public sealed class G13ReportStream
 
     public G13ReportStream(string deviceInstanceId) => this.deviceInstanceId = deviceInstanceId;
 
-    /// <summary>1 report を消化し、発生した button edge と（変化時のみ）stick sample を返す。</summary>
+    /// <summary>
+    /// 1 report を消化し、発生した button edge・スティック方向の edge と（変化時のみ）stick sample を返す。
+    /// </summary>
     public void Feed(
         ReadOnlySpan<byte> report,
         double monotonicMs,
@@ -30,8 +33,10 @@ public sealed class G13ReportStream
         G13ReportParser.ValidateReport(report);
         sequence++;
 
+        var (x, y) = G13ReportParser.ReadStick(report);
         edgeBuffer.Clear();
         G13ReportParser.Diff(previous, report, edgeBuffer);
+        stickDirections.Feed(x, y, edgeBuffer);
         foreach (var (controlId, edge) in edgeBuffer)
         {
             inputs.Add(new PhysicalInput(
@@ -43,7 +48,6 @@ public sealed class G13ReportStream
                 sequence));
         }
 
-        var (x, y) = G13ReportParser.ReadStick(report);
         if (!hasStick || x != lastStickX || y != lastStickY)
         {
             stickSample = new G13StickSample(

@@ -28,6 +28,17 @@ public static class G13LcdContract
 /// </summary>
 public static class G13Controls
 {
+    public const string StickUp = "STICK_UP";
+    public const string StickDown = "STICK_DOWN";
+    public const string StickLeft = "STICK_LEFT";
+    public const string StickRight = "STICK_RIGHT";
+
+    /// <summary>
+    /// スティックを倒した方向（X/Y の生値から作る digital control）。斜めは2方向が同時に押下になる。
+    /// 値と方向の対応（X 小＝左・Y 小＝上）は公開実装の慣例に基づく「強い推定」。
+    /// </summary>
+    public static readonly IReadOnlyList<string> StickDirections = [StickUp, StickDown, StickLeft, StickRight];
+
     public static readonly IReadOnlyList<string> Buttons =
     [
         "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8",
@@ -36,6 +47,7 @@ public static class G13Controls
         "LCD_AUX", "LCD1", "LCD2", "LCD3", "LCD4",
         "M1", "M2", "M3", "MR",
         "STICK_PRESS",
+        StickUp, StickDown, StickLeft, StickRight,
     ];
 
     /// <summary>

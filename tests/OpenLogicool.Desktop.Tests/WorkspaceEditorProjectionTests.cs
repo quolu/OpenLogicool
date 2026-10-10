@@ -81,6 +81,19 @@ public sealed class WorkspaceEditorProjectionTests
     }
 
     [Fact]
+    public void G13_binding_options_offer_the_four_stick_directions_as_not_yet_confirmed()
+    {
+        var view = WorkspaceEditorProjection.Project(SampleDocument(), selectedActionId: "dodge");
+
+        var g13Options = Assert.Single(view.Inspector!.DeviceOptions, options => options.DeviceKind == "G13");
+        foreach (var direction in new[] { "STICK_UP", "STICK_DOWN", "STICK_LEFT", "STICK_RIGHT" })
+        {
+            // 値と向きの対応は実機での確認前（強い推定）なので、確認済みとは表示しない。
+            Assert.False(Assert.Single(g13Options.Controls, control => control.ControlId == direction).IsConfirmed);
+        }
+    }
+
+    [Fact]
     public void ParseOutputs_splits_on_whitespace_and_drops_empty_entries()
     {
         Assert.Equal(["Key:LCtrl", "Key:C"], WorkspaceEditorProjection.ParseOutputs("  Key:LCtrl   Key:C "));

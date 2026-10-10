@@ -65,8 +65,10 @@ public sealed class G13ReportParserTests
         var allBits = Report(b3: 0xFF, b4: 0xFF, b5: 0xFF, b6: 0xFF, b7: 0xFF);
 
         var edges = Diff(idle, allBits);
-        Assert.Equal(G13Controls.Buttons.Count, edges.Count);
-        Assert.All(edges, edge => Assert.Contains(edge.ControlId, G13Controls.Buttons));
+        // スティックの方向は report の bit でなく X/Y の値から作るため、bit 由来の control はそれ以外の全部。
+        Assert.Equal(
+            G13Controls.Buttons.Except(G13Controls.StickDirections),
+            edges.Select(edge => edge.ControlId));
     }
 
     [Fact]

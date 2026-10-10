@@ -18,8 +18,14 @@ public sealed class G13RecordedInputSourceTests
     [
         ("G20", PhysicalInputEdge.Down),
         ("G20", PhysicalInputEdge.Up),
+        // 1回目の押込みは左上へ倒れたまま押している（X=11・Y=49 まで振れる）ので、方向の押下・解放が挟まる。
         ("STICK_PRESS", PhysicalInputEdge.Down),
+        ("STICK_LEFT", PhysicalInputEdge.Down),
+        ("STICK_UP", PhysicalInputEdge.Down),
         ("STICK_PRESS", PhysicalInputEdge.Up),
+        ("STICK_UP", PhysicalInputEdge.Up),
+        ("STICK_LEFT", PhysicalInputEdge.Up),
+        // 2回目の押込みは中立付近（X=124〜128）のままなので方向は出ない。
         ("STICK_PRESS", PhysicalInputEdge.Down),
         ("STICK_PRESS", PhysicalInputEdge.Up),
         ("G1", PhysicalInputEdge.Down),
