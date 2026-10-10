@@ -337,6 +337,8 @@ public static class VisualKeyAssistRuntime
                 ?? throw new InvalidDataException("保存した覚え書きが空です。")
             : [];
         foreach (var (name, lines) in rememberedLines) progressRecognizer?.SetRemembered(name, lines);
+        // 規則に一致しない画面で止まった時に、目的のために押す文字をJevへ選ばせる。接続設定を渡した時だけ使う。
+        var screenJudge = Array.IndexOf(arguments, "--screen-judge") < 0 ? null : ScreenJudgeSettings.Load(Required("--screen-judge"));
         // --no-recovery-input は、回復の機能を外す。描画領域とHUDの認識には回復設定を使い続ける。
         if (recoveryOnly && arguments.Contains("--no-recovery-input", StringComparer.Ordinal))
             throw new ArgumentException("--recovery-only と --no-recovery-input は併用できません。");
@@ -380,7 +382,7 @@ public static class VisualKeyAssistRuntime
             var askQueued = false;
             var reviewNumber = 0;
             Emit(new { Event = "run-started", DurationMs = duration, AutomaticRulesContinue = continueRules, TimedInputEnabled = timedInputEnabled,
-                Functions = progressProfile?.Functions, Recovery = recovery is not null,
+                Functions = progressProfile?.Functions, Recovery = recovery is not null, ScreenJudge = screenJudge is not null,
                 NotificationGraceMs = VisualProgressReviewMonitor.NotificationGraceMs, UserInputSource = userInput?.SourceDescription });
             var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)
                 ? await RunProgressAsync(stop.Token)
@@ -405,6 +407,64 @@ public static class VisualKeyAssistRuntime
                 var sceneMonitor = new VisualProgressSceneMonitor();
                 var inputSequence = new VisualProgressInputSequence(actions);
                 VisualKeyAssistDecision? previous = null;
+                // 今止まっている画面について、Jevへ聞いたか。画面が動いたら、次に止まった時に聞き直す。
+                var screenJudged = false;
+                // Jevが選んで、まだ送れていない操作（前面でない・手入力中などで持ち越したもの）。聞き直さずに次の観測で送る。
+                VisualProgressChoice? judgedPending = null;
+                var judgedChoices = new List<(string Text, long AtMs)>();
+
+                // 規則にも通常の画面にも一致せず止まった画面で、目的のために押す文字をJevへ選ばせる。
+                // 押す文字が決まった時だけクリックの操作を返す。決まらない時と問い合わせの失敗は記録へ残し、今までどおり止まりを知らせる。
+                async Task<VisualProgressChoice?> JudgeScreenAsync(CapturedFrame frame, CancellationToken token)
+                {
+                    try
+                    {
+                        if (progressProfile!.GoalFrom(rememberedLines) is not { } goal)
+                        {
+                            Emit(new { Event = "screen-judge-skipped", AtMs = clock.ElapsedMilliseconds,
+                                Detail = "覚えた目的がないため、Jevへ聞いていません。" });
+                            return null;
+                        }
+                        var texts = ScreenTextReader.Read(await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token), frame.Width, frame.Height);
+                        var judgment = await screenJudge!.ChooseAsync(goal.Goal, goal.Background, texts, token);
+                        var now = clock.ElapsedMilliseconds;
+                        File.WriteAllText(Path.Combine(evidenceDirectory, $"review-{reviewNumber:D3}", $"screen-judge-{now:D9}.json"),
+                            JsonSerializer.Serialize(judgment));
+                        // 同じ文字を2分のうちに3回押しても止まる時は、同じ操作を続けずに知らせる（Jevの答えは自分で制御できないため）。
+                        judgedChoices.RemoveAll(item => now - item.AtMs > 120_000);
+                        var repeated = judgment.Target is not null && judgedChoices.Count(item => item.Text == judgment.Choice) >= 3;
+                        Emit(new { Event = "screen-judge", AtMs = now, judgment.Goal, judgment.Choice, judgment.Probabilities, judgment.Pressable,
+                            Point = judgment.Target is { } target ? new[] { target.X, target.Y } : null, judgment.ElapsedMs,
+                            Detail = repeated ? "同じ文字を2分のうちに3回押しても止まるため、押していません。" : judgment.Reason });
+                        if (judgment.Target is null || repeated) return null;
+                        judgedChoices.Add((judgment.Choice!, now));
+                        return new(VisualProgressAction.Click, ScreenChoiceJudge.RuleId, $"{ScreenChoiceJudge.RuleId}:{judgment.Choice}",
+                            Point: [judgment.Target.X, judgment.Target.Y]);
+                    }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                    catch (Exception error)
+                    {
+                        // 外のサービスへの問い合わせの失敗。押さずに記録へ残し、止まりの知らせは今までどおり出る。
+                        Emit(new { Event = "screen-judge-failed", AtMs = clock.ElapsedMilliseconds,
+                            Detail = "Jevへの問い合わせに失敗しました。押していません。 " + error.Message });
+                        return null;
+                    }
+                }
+
+                // Jevが選んだ文字が、押す直前の画面でも同じ場所に出ているか。
+                async Task<bool> JudgedStillShownAsync(VisualProgressChoice judged, CapturedFrame fresh, CancellationToken token)
+                {
+                    var text = judged.Signature![(ScreenChoiceJudge.RuleId.Length + 1)..];
+                    var shown = ScreenTextReader.Read(await new WindowsGameOcrRecognizer().RecognizeAsync(fresh, token), fresh.Width, fresh.Height)
+                        .Any(item => item.Text == text && Math.Abs(item.X - judged.Point![0]) < 0.02 && Math.Abs(item.Y - judged.Point[1]) < 0.02);
+                    if (!shown)
+                    {
+                        judgedPending = null;
+                        Emit(new { Event = "screen-judge-skipped", AtMs = clock.ElapsedMilliseconds, Choice = text,
+                            Detail = "Jevが選んだ文字が、押す直前の画面の同じ場所にないため、押していません。" });
+                    }
+                    return shown;
+                }
 
                 // 利用者が決裁箱で答えた選択を押し、確定の表示を確かめてから確定キーを送る。
                 // 終えた時（送出・回答どおりに進められない時）はtrue、手入力中などで次の観測へ持ち越す時はfalse。
@@ -549,6 +609,7 @@ public static class VisualKeyAssistRuntime
                     var flowInhibited = inhibitMatch.Matches && flowCandidate?.AllowWhileInhibited != true;
                     var sceneActivity = progressProfile is null ? (Changed: false, Difference: 0d)
                         : sceneMonitor.Observe(frame, viewport!);
+                    if (sceneActivity.Changed) { screenJudged = false; judgedPending = null; }
                     if (reviewMonitor.IsHolding)
                     {
                         var candidate = flowCandidate ?? new(VisualProgressAction.Normal);
@@ -679,8 +740,19 @@ public static class VisualKeyAssistRuntime
                                 }
                                 BeginMonitoring(flowCandidate ?? new(VisualProgressAction.Normal), frame,
                                     flowChoice.Detail!, flowChoice.Options, ocr?.Text, token, flowChoice.AskUserImmediately ? flowChoice : null);
+                                var unknownScreen = flowChoice.UnknownScreen;
                                 flowChoice = VisualProgressContinuation.AfterReview(
                                     flowCandidate ?? new(VisualProgressAction.Normal), continueRules);
+                                // 止まった画面ごとに1回だけJevへ聞く。止まりの監視（1分後の知らせ）は、押した後も続ける。
+                                if (unknownScreen && screenJudge is not null && !UserIsActive())
+                                {
+                                    if (!screenJudged)
+                                    {
+                                        screenJudged = true;
+                                        judgedPending = await JudgeScreenAsync(frame, token);
+                                    }
+                                    if (judgedPending is not null) flowChoice = judgedPending;
+                                }
                                 if (flowChoice.Action == VisualProgressAction.Wait)
                                 {
                                     await Task.Delay(250, token);
@@ -721,6 +793,9 @@ public static class VisualKeyAssistRuntime
                                 var flowRule = completingClick || flowChoice.RuleId is null ? null
                                     : progressProfile!.Rules.SingleOrDefault(rule => rule.Id == flowChoice.RuleId);
                                 var current = freshInhibited && !flowChoice.AllowWhileInhibited ? null
+                                    // Jevが選んだ文字は規則を持たないため、押す直前の画面に同じ文字が同じ場所にあることを確かめる。
+                                    : !completingClick && flowChoice.RuleId == ScreenChoiceJudge.RuleId
+                                        ? await JudgedStillShownAsync(flowChoice, fresh, token) ? flowChoice : new(VisualProgressAction.Wait)
                                     : flowRule is { After: not null } or { Preempt: true } ? progressRecognizer!.Recognize(
                                         await progressRecognizer.ReadOcrAsync(fresh, freshViewport, token, stage),
                                         fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited, stage,
@@ -750,6 +825,7 @@ public static class VisualKeyAssistRuntime
                                 if (dispatch.Status != GameInteractionDispatchStatus.Dispatched)
                                     throw new InvalidOperationException($"進行操作のNano入力に失敗しました: {dispatch.FailureReason}");
                                 if (!completingClick) progressSchedule!.RecordInput(clock.ElapsedMilliseconds, current);
+                                if (current.RuleId == ScreenChoiceJudge.RuleId) judgedPending = null;
                                 if (current.RepeatIntervalMs == 0) schedule.RecordInput(clock.ElapsedMilliseconds);
                                 if (!completingClick && current.Remembered is { } remembered) SaveRemembered(remembered, current.RuleId!, fresh);
                                 Emit(new { Event = "progress-input", AtMs = clock.ElapsedMilliseconds, current.RuleId,

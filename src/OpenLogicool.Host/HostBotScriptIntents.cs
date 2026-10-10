@@ -188,6 +188,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
         }).ToArray();
         var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-runs");
         var reviewSettings = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-review-mcp.json");
+        var screenJudgeSettings = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, ScreenJudgeSettings.FileName);
         return intents = new(scripts, dataDirectory, executionGate, async (id, evidence, report, token) =>
         {
             var package = packages[id];
@@ -214,6 +215,8 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                 arguments.AddRange(BotFunctionPlanner.Arguments(intents!.CurrentPlan, package.File("progress.json")));
                 if (!package.TimedInputEnabled) arguments.Add("--no-timed-input");
                 if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
+                // 規則に一致しない画面の判断（Jev）は、接続設定を置いた時だけ使う。
+                if (System.IO.File.Exists(screenJudgeSettings)) arguments.AddRange(["--screen-judge", screenJudgeSettings]);
                 var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(), nano, emitter, target,
                     $"window:bot:{target.ProcessId}", token, report, physicalInput, () => intents!.RunningMode(id));
                 var json = JsonSerializer.SerializeToElement(result);

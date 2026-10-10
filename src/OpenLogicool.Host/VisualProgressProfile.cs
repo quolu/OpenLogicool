@@ -22,8 +22,10 @@ public sealed record VisualProgressArea(double[] Bounds, int[]? Rgb = null, int 
 public sealed record VisualProgressFlick(double[] From, double[] To);
 /// <summary>
 /// 操作を送る時に、領域の文字と画像を記録へ残す。EndBelowClick を指定すると、領域の下端を押す位置からその分だけ下までに縮める。
+/// GoalPrefix を指定すると、覚えた行のうちその文字で始まる行を今の目的として扱い、覚えた行の全部を目的の背景として扱う。
 /// </summary>
-public sealed record VisualProgressRemember(string Name, double[] Bounds, double? EndBelowClick = null, double? AboveClick = null);
+public sealed record VisualProgressRemember(string Name, double[] Bounds, double? EndBelowClick = null, double? AboveClick = null,
+    string? GoalPrefix = null);
 public sealed record VisualProgressRemembered(string Name, string[] Lines, double[] Bounds);
 /// <summary>
 /// 覚えた内容の1行目（名前）が、領域の中でいちばん大きい文字の行（追跡中の表示）に出ているか。
@@ -65,6 +67,21 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
     double[][]? WhiteTextBounds = null, VisualProgressMode[]? Modes = null,
     string[]? Functions = null, string[]? OptionalFunctions = null)
 {
+    /// <summary>
+    /// 覚えた内容から、今の目的と背景を取り出す。目的の行を指定した覚える規則のうち、覚えた内容に目的の行があるものを使う。
+    /// </summary>
+    public (string Goal, string[] Background)? GoalFrom(IReadOnlyDictionary<string, string[]> remembered)
+    {
+        foreach (var remember in Rules.Select(rule => rule.Remember).Where(remember => remember?.GoalPrefix is not null))
+        {
+            if (!remembered.TryGetValue(remember!.Name, out var lines)) continue;
+            var goal = lines.Where(line => line.StartsWith(remember.GoalPrefix!, StringComparison.Ordinal))
+                .Select(line => line[remember.GoalPrefix!.Length..].Trim()).FirstOrDefault(line => line.Length > 0);
+            if (goal is not null) return (goal, lines);
+        }
+        return null;
+    }
+
     private static VisualProgressProfile Read(string path) =>
         JsonSerializer.Deserialize<VisualProgressProfile>(File.ReadAllText(path))
             ?? throw new InvalidDataException("進行設定が空です。");
@@ -231,8 +248,9 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             if (rule.Remember is { } remember && (rule.Click is null && !rule.ClickImage || string.IsNullOrWhiteSpace(remember.Name)
                 || remember.Name.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-')
                 || remember.EndBelowClick is { } below && (!double.IsFinite(below) || below <= 0)
-                || remember.AboveClick is { } above && (!double.IsFinite(above) || above <= 0)))
-                throw new InvalidDataException("覚える指定は、クリックの規則に英数字とハイフンの名前で指定します。");
+                || remember.AboveClick is { } above && (!double.IsFinite(above) || above <= 0)
+                || remember.GoalPrefix is { } prefix && string.IsNullOrWhiteSpace(prefix)))
+                throw new InvalidDataException("覚える指定は、クリックの規則に英数字とハイフンの名前で指定します。目的の行の先頭の文字は空にしません。");
             if (rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }).Any(text => text.Zoom is < 1 or > 4))
                 throw new InvalidDataException("読み直しの拡大率は1〜4で指定します。");
             if (rule.EndStage && (rule.Stage is null || rule.NextStage is not null || rule.WaitForChange))
@@ -294,7 +312,8 @@ public sealed record VisualProgressChoice(VisualProgressAction Action, string? R
     VisualProgressOption[]? Options = null, bool Immediate = false, bool AllowWhileInhibited = false,
     int RepeatIntervalMs = 0, string? AfterClickKey = null, bool AskUserImmediately = false,
     VisualProgressText? ReviewSource = null, double[][]? OptionPoints = null, string? NextStage = null,
-    string[]? ThenKeys = null, double[]? FlickTo = null, VisualProgressRemembered? Remembered = null, bool EndStage = false);
+    string[]? ThenKeys = null, double[]? FlickTo = null, VisualProgressRemembered? Remembered = null, bool EndStage = false,
+    bool UnknownScreen = false);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
@@ -1094,7 +1113,8 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
             else if (candidate.Signature == pending!.Signature || (candidate.Action == VisualProgressAction.Normal && !hudVisible))
                 return ObserveUnresolved(now, sceneChanged,
                     candidate.Action == VisualProgressAction.Normal ? Math.Max(profile.ResultTimeoutMs, profile.UnknownTimeoutMs) : profile.ResultTimeoutMs,
-                    $"{pending.RuleId} の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。");
+                    $"{pending.RuleId} の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。",
+                    unknownScreen: candidate.Action == VisualProgressAction.Normal && !hudVisible);
             else
             {
                 if (stableSignature != candidate.Signature) { stableSignature = candidate.Signature; stableAt = now; }
@@ -1108,7 +1128,7 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
             stableSignature = null;
             if (hudVisible) { ResetUnresolved(); return candidate; }
             return ObserveUnresolved(now, sceneChanged, profile.UnknownTimeoutMs,
-                "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。");
+                "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。", unknownScreen: true);
         }
         if (candidate.Action == VisualProgressAction.Wait)
         {
@@ -1151,12 +1171,13 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
         pending = choice; pendingChanged = false; unknownAt = now; unresolvedObservations = 0;
     }
 
-    private VisualProgressChoice ObserveUnresolved(long now, bool sceneChanged, int waitMs, string detail)
+    // unknownScreen は、規則にも通常の画面（HUD）にも一致しない画面で止まった時。汎用の判断へ渡せる止まり。
+    private VisualProgressChoice ObserveUnresolved(long now, bool sceneChanged, int waitMs, string detail, bool unknownScreen = false)
     {
         if (unknownAt is null || sceneChanged) { unknownAt = now; unresolvedObservations = 0; }
         unresolvedObservations++;
         return unresolvedObservations >= 3 && now - unknownAt >= waitMs
-            ? new(VisualProgressAction.Review, Detail: detail)
+            ? new(VisualProgressAction.Review, Detail: detail, UnknownScreen: unknownScreen)
             : new(VisualProgressAction.Wait);
     }
 

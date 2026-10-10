@@ -1,7 +1,10 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Microsoft.Data.Sqlite;
+using OpenLogicool.Contracts.Capture;
 using OpenLogicool.Contracts.Devices.Shared;
 using OpenLogicool.Contracts.Perception;
 using OpenLogicool.Contracts.Exploration;
@@ -32,6 +35,7 @@ public static class HostGameIndexCommand
 
     private static async Task<int> RunAsync(string mode, string[] arguments)
     {
+        if (mode == "judge-image") return WriteResult(arguments, await JudgeImageAsync(arguments));
         var processName = Required(arguments, "--process");
         if (mode == "capture")
         {
@@ -104,10 +108,33 @@ public static class HostGameIndexCommand
             "focus-nano" => FocusWithNano(target, emitter),
             "focus-taskbar" => FocusWithTaskbar(target, nano.Protocol, emitter),
             "inspect" => Inspect(profiles, target.ProcessName, environment),
-            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、key-tap、key-assist、point、click-point、scroll-point、drag-points、flick-points、capture、focus-nano、focus-taskbar、inspectです。"),
+            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、key-tap、key-assist、point、click-point、scroll-point、drag-points、flick-points、capture、judge-image、focus-nano、focus-taskbar、inspectです。"),
         };
         nano.Protocol.SendAllUp();
         return WriteResult(arguments, result);
+    }
+
+    /// <summary>
+    /// 保存した画面の画像で、規則に一致しない画面の判断（Jev）を確かめる。ゲームと入力装置には触れない。
+    /// --background は、目的の背景を1行ずつ書いたファイル。
+    /// </summary>
+    private static async Task<object> JudgeImageAsync(string[] arguments)
+    {
+        using var stream = File.OpenRead(Path.GetFullPath(Required(arguments, "--image")));
+        var bitmap = new FormatConvertedBitmap(
+            BitmapDecoder.Create(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0],
+            PixelFormats.Bgra32, null, 0);
+        var stride = bitmap.PixelWidth * 4;
+        var pixels = new byte[stride * bitmap.PixelHeight];
+        bitmap.CopyPixels(pixels, stride, 0);
+        var frame = new CapturedFrame(ContractSchemaVersions.Revision03, "image:judge", CaptureBackend.WindowsGraphicsCapture,
+            1, 0, DateTimeOffset.UtcNow, bitmap.PixelWidth, bitmap.PixelHeight, "BGRA8", 96, 96, 1, 0, 0,
+            Pixels: new FramePixels(pixels, stride));
+        var background = Optional(arguments, "--background") is { } path ? File.ReadAllLines(Path.GetFullPath(path)) : [];
+        var texts = ScreenTextReader.Read(await new WindowsGameOcrRecognizer().RecognizeAsync(frame), frame.Width, frame.Height);
+        var judgment = await ScreenJudgeSettings.Load(Path.GetFullPath(Required(arguments, "--settings")))
+            .ChooseAsync(Required(arguments, "--goal"), background, texts, CancellationToken.None);
+        return new { Mode = "judge-image", ProductHostEntry = true, Judgment = judgment, Texts = texts };
     }
 
     private static int WriteResult(string[] arguments, object result)
