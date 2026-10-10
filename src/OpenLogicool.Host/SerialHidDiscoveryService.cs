@@ -140,6 +140,16 @@ public sealed class SerialHidDiscoveryService(
         || exception.InnerException is not null && IsVersionMismatch(exception.InnerException);
 }
 
+/// <summary>
+/// 常駐のSerial HID出力が持つNanoの接続。接続口は同時に1つのprocessしか開けないため、
+/// 同じprocessのNano操作は開き直さずにこれを借りる。
+/// </summary>
+public interface ISerialHidSessionLender
+{
+    /// <summary>起動済みの接続。未起動ならnull。</summary>
+    SerialHidResidentOutputSession? SerialHidSession { get; }
+}
+
 public static class ResidentOutputSessionFactory
 {
     public static Func<IResidentOutputSession> Create(
@@ -160,9 +170,11 @@ public static class ResidentOutputSessionFactory
 
     private sealed class DeferredSerialHidResidentOutputSession(
         SerialHidDiscoveryService discovery,
-        string? selectedDeviceInstanceId) : IResidentOutputSession
+        string? selectedDeviceInstanceId) : IResidentOutputSession, ISerialHidSessionLender
     {
         private SerialHidResidentOutputSession? _inner;
+
+        public SerialHidResidentOutputSession? SerialHidSession => _inner;
         private bool _startAttempted;
         private bool _disposed;
 

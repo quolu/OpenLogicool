@@ -91,8 +91,11 @@ public sealed class ResidentInputHost : IDisposable
         _outputSession?.Route ?? throw new InvalidOperationException("resident host は未起動です。");
 
     /// <summary>Serial HID resident時だけ、Nano操作が同じCOM sessionを借用する。</summary>
-    public SerialHidResidentOutputSession? BorrowedNanoSession =>
-        _outputSession as SerialHidResidentOutputSession;
+    public SerialHidResidentOutputSession? BorrowedNanoSession => Lent(_outputSession);
+
+    /// <summary>常駐の出力が持つNanoの接続を取り出す。保存済みの設定から作る出力は、起動を遅らせる包みの中に接続を持つ。</summary>
+    internal static SerialHidResidentOutputSession? Lent(IResidentOutputSession? session) =>
+        session as SerialHidResidentOutputSession ?? (session as ISerialHidSessionLender)?.SerialHidSession;
 
     /// <summary>fast pathまたはoutput sessionのresident停止原因（nullなら正常）。</summary>
     public Exception? Failure => _pump?.Failure ?? _outputSession?.BackgroundFailure ?? _stopFailure;

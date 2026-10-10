@@ -277,6 +277,25 @@ public sealed class SerialHidDiscoveryTests
         Assert.Equal(SerialHidMessageKind.Hello, exchanges.Exchanges.Single().RequestKinds[0]);
     }
 
+    [Fact]
+    public void 保存済みの設定から作ったSerial出力も起動後はNanoの接続をBotへ貸す()
+    {
+        // 実測: 出力設定がNanoの時、常駐が接続口を持ったままBotへ貸せず、Botは接続口を開けずに異常終了した。
+        var discovery = new SerialHidDiscoveryService(new FakeCandidates([CandidateA]), new FakeExchangeFactory());
+        var settings = new SerialHidOutputSettings(
+            SerialHidOutputSettings.CurrentSchemaVersion,
+            ResidentOutputRoute.SerialHid,
+            CandidateA.DeviceInstanceId);
+        using var session = ResidentOutputSessionFactory.Create(settings, "unused-watchdog.exe", discovery)();
+
+        Assert.Null(ResidentInputHost.Lent(session));
+        session.Start();
+        var lent = ResidentInputHost.Lent(session);
+        Assert.NotNull(lent);
+        Assert.Same(session.Emitter, lent.Emitter);
+        Assert.Null(ResidentInputHost.Lent(null));
+    }
+
     private static SerialHidDiscoveryService Service(IReadOnlyList<SerialHidCandidate> candidates) =>
         new(new FakeCandidates(candidates), new FakeExchangeFactory());
 
