@@ -29,7 +29,8 @@
   "live": {
     "run": "20261010-134317-474-fa2927ca",
     "screenPrompt": "7309msにscreen-promptがKey:Spaceを1回送出し、狩り場クリアの画面を通過（after-start-2.png）。",
-    "featherT": "導入後、自動移動中の羽根の表示機会がまだなく、Tの実機送出は未確認。"
+    "featherT": "58211msにfeather-tがKey:Tを1回送出（自動移動中）。その後80269msにダンジョンへ入場。",
+    "cycle": "同じ実行で、screen-prompt→loot-continue→dungeon-exit→compass-space→level-guide-recommended→feather-t→dungeon-entry→compass-spaceの順に、担当AIの操作なしで進行した。"
   },
   "incident": {
     "observed": "13:36の再開時、bot startが「指定したDBと起動中アプリのDBが異なります」で失敗した。",

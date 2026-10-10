@@ -61,7 +61,7 @@
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "氷の峡谷の狩り場をクリアし、レベルアップの演出中。",
+    "nextCheck": "Lv54。狩り場クリア後、Botがレベルガイドの推奨から自動移動し、ダンジョンへ入場して進行中。",
     "botRun": "bot-runs/mabinogi-mobile/20261010-134317-474-fa2927ca",
     "levelProgression": {
       "currentLevel": 53,
@@ -181,7 +181,7 @@
   },
   "continuation": {
     "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
-    "updatedUtc": "2026-10-10T04:44:37.0830139+00:00",
+    "updatedUtc": "2026-10-10T04:45:16.8861098+00:00",
     "assistanceGeneration": 6,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -195,7 +195,7 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "ボーナス回答のBot実行と羽根のTの実機確認（表示機会待ち）。Jevの実測結果への利用者の判断。通知の宛先・保存先の統一（K-X9E7Z7）は未着手。",
+    "nextAction": "ボーナス回答のBot実行の実機確認（次のボーナス画面）。Jevの実測結果への利用者の判断。通知の宛先・保存先の統一（K-X9E7Z7）は未着手。本体側のcommit（d6f598dまで）は次回の導入で入る。導入後にapp closeの正常終了とG13入力を確認して本体側の会話へ知らせる。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -208,10 +208,10 @@
     },
     "developmentPolicy": "開発中のBot停止をしない。更新を反映する再起動だけ事前に伝えて実施し、すぐ再開する。",
     "featherTRule": {
-      "status": "installed",
+      "status": "installed-and-live-verified",
       "intervalMs": 1000,
       "evidence": "evidence/bot-feather-t-20261010/acceptance.json",
-      "liveDispatch": "停止表示中は評価されない欠陥を修理。修理後の実機送出は表示機会待ち。"
+      "liveDispatch": "停止表示中は評価されない欠陥を修理し、自動移動中にTを1回送出した。"
     },
     "immediateScreenPrompt": {
       "sourceCommit": "821467a",
@@ -319,9 +319,9 @@
       "evidence": "evidence/bot-dungeon-clear-20261010/acceptance.json"
     },
     "stopDisplaySpaceOnly": {
-      "status": "installed",
+      "status": "installed-and-live-verified",
       "ownerRule": "停止表示で処理を止めるのは、Spaceを押す操作だけ。",
-      "live": "羽根のTは自動移動の表示機会待ち。",
+      "live": "自動移動中に羽根のTを1回送出し、ダンジョンへ入場した。",
       "evidence": "evidence/bot-stop-display-space-only-20261010/acceptance.json"
     },
     "whiteTextReread": {
