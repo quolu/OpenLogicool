@@ -3,7 +3,7 @@
 - 実施日: 2026-10-10
 - 対象: Logicool G13（firmware release 0203）、Windows 11 build 26200、常駐 Host（Bot）稼働中
 - 道具: `OpenLogicool.Probe g13-backlight-audio-smoke`（製品と同じ `G13AudioBacklightRuntime`・`ProcessLoopbackAudioSource`・`G13BacklightHidTransport` を使う）
-- 判定: runtime 単体は**確認済み**。常駐 Host への配線（前面アプリに合わせた入切）は、開発版の導入後に確認する（**未確認**）。
+- 判定: runtime 単体は**確認済み**。常駐 Host で「入」にした時の追従も**確認済み**（下の「常駐 Host での確認」）。前面を別のアプリへ替えた時に元の色へ戻る動きと、オーナーの目視は**未確認**。
 
 ## 結果
 
@@ -16,6 +16,13 @@
 | オーナーの目視 | 確認済み（調整前の版） | 「結構いい感じだった」。調整後の版は未目視 |
 
 記録: `probe-output/g13-backlight-audio-smoke-20261010-164321-348.json`（20 秒）、`…-164459-476.json`（45 秒・録音つき）。
+
+## 常駐 Host での確認（2026-10-10 17:20・開発版 a7385a1）
+
+- 動作中のアプリの正規の入口（`workspace.load-document` → `editor.set-g13-backlight-follows-audio` → `workspace.save`）で、マビノギモバイル用の設定（`ws-mabinogimobile`）を「入」にして保存した。版は 3 → 4。操作 5・割当 5・LCD 表示は変わっていない。アプリの起動し直しはしていない。
+- 保存の直後から、`app status` の `backlight` が `targetProcessId=33892`（前面のマビノギモバイル）・`isFollowing=true`・`isConnected=true`・`failure=null` になり、`colorWrites` が 2 秒ごとの読み出しで 203 → 289 → 380 と増えた。
+- その間、常駐の出力（Serial HID）と Bot は動いたままで、resident fault なし、G13 の取りこぼし 0。
+- 調整後の版を道具で 90 秒流した記録: `probe-output/g13-backlight-audio-smoke-20261010-165908-873.json`（2664 回・失敗 0・終了後に元の色へ復帰。色の入れ替わりは毎秒 4.9 回）。
 
 ## 色の決め方の調整（同じ録音 43 秒で比較）
 

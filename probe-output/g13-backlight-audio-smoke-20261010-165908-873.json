@@ -1,0 +1,64 @@
+{
+  "Probe": "g13-backlight-audio-smoke",
+  "CapturedAtUtc": "2026-10-10T07:57:38.7428830Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "Arguments": [
+    "--pid",
+    "33892",
+    "--seconds",
+    "90"
+  ],
+  "TargetProcessId": 33892,
+  "TargetProcessName": "MabinogiMobile",
+  "ColorBefore": {
+    "Red": 90,
+    "Green": 255,
+    "Blue": 110
+  },
+  "ColorAfter": {
+    "Red": 90,
+    "Green": 255,
+    "Blue": 110
+  },
+  "Seconds": 90.0984309,
+  "Status": {
+    "IsRunning": true,
+    "TargetProcessId": 33892,
+    "IsFollowing": true,
+    "IsConnected": true,
+    "ColorWrites": 2663,
+    "Failure": null
+  },
+  "Audio": {
+    "SampleRate": 48000,
+    "Samples": 4165440,
+    "SamplesPerSecond": 46232.103693606055,
+    "Reads": 2893,
+    "ReadsPerSecond": 32.10932722247885,
+    "EmptyReads": 1,
+    "Rms": 0.024596046964302173,
+    "Peak": 0.15924072
+  },
+  "Colors": {
+    "Writes": 2664,
+    "WritesPerSecond": 29.567662537394977,
+    "WriteMsMedian": 0.307,
+    "WriteMsMax": 5.5183,
+    "NearestRainbowColorCounts": [
+      420,
+      443,
+      424,
+      453,
+      389,
+      194,
+      340
+    ],
+    "ColorChangesPerSecond": 4.872448894112761,
+    "BrightnessMin": 38,
+    "BrightnessMedian": 219,
+    "BrightnessMax": 254,
+    "NotFullySaturated": 0
+  },
+  "Failure": null
+}
