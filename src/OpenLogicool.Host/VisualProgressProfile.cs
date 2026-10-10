@@ -25,11 +25,8 @@ public sealed record VisualProgressFlick(double[] From, double[] To);
 /// </summary>
 public sealed record VisualProgressRemember(string Name, double[] Bounds, double? EndBelowClick = null, double? AboveClick = null);
 public sealed record VisualProgressRemembered(string Name, string[] Lines, double[] Bounds);
-/// <summary>
-/// 外から入り・解除を指示する動き方。入っている間は、通常の画面で Stage の段階を始める。
-/// RestartAfter の規則が操作を送った後は、通常の画面へ戻った時にもう一度始める。
-/// </summary>
-public sealed record VisualProgressMode(string Id, string Name, string Stage, string[]? RestartAfter = null);
+/// <summary>外から入り・解除を指示する動き方。入った時と、入ったままBotを始めた時に、通常の画面で Stage の段階を始める。</summary>
+public sealed record VisualProgressMode(string Id, string Name, string Stage);
 public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
@@ -40,7 +37,7 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     bool ImageClipsAtBottom = false, bool RepeatAfterChange = false, VisualProgressNumber? Number = null,
     string? Stage = null, string? NextStage = null, string[]? ThenKeys = null,
     VisualProgressArea[]? Areas = null, VisualProgressFlick? Flick = null, VisualProgressRemember? Remember = null,
-    bool EndStage = false, string? Function = null);
+    bool EndStage = false, string? Function = null, double[]? Point = null, string? After = null);
 /// <summary>
 /// 機能。Botの動きを、単独でも組み合わせても使える単位に分けたもの。進行設定の隣の functions/ に、機能ごとのファイルで置く。
 /// Requires は、この機能と一緒に読む機能。
@@ -147,8 +144,14 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null
                 || (rule.When.Length == 0 && rule.Image is null && rule.Number is null && rule.Areas is null)
                 || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) + (rule.ClickImage ? 1 : 0)
-                    + (rule.Flick is null ? 0 : 1) != 1)
-                throw new InvalidDataException("進行規則には条件と、キー・クリック・払う操作・待機のいずれか一つが必要です。");
+                    + (rule.Flick is null ? 0 : 1) + (rule.Point is null ? 0 : 1) != 1)
+                throw new InvalidDataException("進行規則には条件と、キー・クリック・決まった位置のクリック・払う操作・待機のいずれか一つが必要です。");
+            if (rule.Point is not null && (rule.Point.Length != 2 || rule.Point.Any(value => !double.IsFinite(value) || value < 0 || value > 1)))
+                throw new InvalidDataException("決まった位置のクリックは、描画領域内の位置を0〜1の2値で指定します。");
+            // After は、その規則が操作を送った直後だけ評価する規則。即時の画像が出ている間も読む。
+            if (rule.After is not null && (rule.Immediate || rule.RepeatIntervalMs > 0 || rule.WaitForChange
+                || !value.Rules.Any(other => other.Id == rule.After)))
+                throw new InvalidDataException("ある操作の直後だけ評価する規則は、設定にある規則の名前を、即時・反復・待機でない規則に指定します。");
             if (rule.MinimumVisibleMs < 0)
                 throw new InvalidDataException("表示待ち時間が不正です。");
             if (rule.Key is not null) OpenLogicool.Input.OutputTokens.Parse(rule.Key);
@@ -220,9 +223,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
         foreach (var mode in value.Modes ?? [])
             if (string.IsNullOrWhiteSpace(mode.Id) || string.IsNullOrWhiteSpace(mode.Name)
                 || value.Modes!.Count(other => other.Id == mode.Id) != 1
-                || !value.Rules.Any(rule => rule.Stage == mode.Stage)
-                || (mode.RestartAfter ?? []).Any(id => !value.Rules.Any(rule => rule.Id == id)))
-                throw new InvalidDataException("モードには、重複しない名前と、規則のある段階と、設定にある規則の名前を指定します。");
+                || !value.Rules.Any(rule => rule.Stage == mode.Stage))
+                throw new InvalidDataException("モードには、重複しない名前と、規則のある段階を指定します。");
         foreach (var bounds in value.Rules.SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }))
             .Concat(value.ReviewWhen).Concat(value.ReviewWhen.Where(text => text.Confirm is not null).Select(text => text.Confirm!))
             .Concat(value.ReviewWhen.Where(text => text.Recommended is not null).Select(text => text.Recommended!))
@@ -462,14 +464,18 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             || recognized.RuleId is not null && Priority(numbered.RuleId!) > Priority(recognized.RuleId)) ? numbered : recognized;
     }
 
+    /// <summary>
+    /// after は、直前に操作を送った規則。After を指定した規則は、その規則の直後だけ評価する。
+    /// afterOnly は、その直後の規則だけを評価する（即時の画像が出ている間に、直後の表示を読むため）。
+    /// </summary>
     public VisualProgressChoice Recognize(WindowsGameOcrResult ocr, int width, int height, FrameRect viewport,
-        CapturedFrame? frame = null, bool inhibited = false, string? stage = null)
+        CapturedFrame? frame = null, bool inhibited = false, string? stage = null, string? after = null, bool afterOnly = false)
     {
-        if (frame is not null && RecognizeImmediateImage(frame, viewport, inhibited, stage) is { } immediate) return immediate;
+        if (!afterOnly && frame is not null && RecognizeImmediateImage(frame, viewport, inhibited, stage) is { } immediate) return immediate;
         string Read(VisualProgressText area) => Normalize(string.Concat(ocr.Words
             .Where(word => Inside(word, area.Bounds, viewport))
             .Select(word => word.Text)));
-        foreach (var review in inhibited ? [] : profile.ReviewWhen)
+        foreach (var review in inhibited || afterOnly ? [] : profile.ReviewWhen)
             if (Matches(Read(review), review.Text))
             {
                 var choices = ReadChoices(review, ocr, viewport, width, height);
@@ -490,6 +496,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             && (rule.Number is null || rule.When.Length > 0)))
         {
             if (inhibited && !rule.AllowWhileInhibited) continue;
+            if (rule.After is null ? afterOnly : rule.After != after) continue;
             double[]? point = null;
             if (rule.Image is not null)
             {
@@ -518,7 +525,13 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             }
             if (rule.Number is { } number && !(ReadNumber(string.Concat(ocr.Words.Where(word => Inside(word, number.Bounds, viewport))
                 .OrderBy(word => word.X).Select(word => word.Text)), number) is { } reading && Satisfies(reading, number))) continue;
-            if (rule.Click is not null)
+            if (rule.Click is { First: true })
+            {
+                // 同じ名前のボタンが縦に並ぶ表示は、一番上を選ぶと明示した時だけ、行ごとに読んで一番上の行のその文字を押す。
+                if (FirstLineMatch(ocr, rule.Click, viewport) is not { } first) continue;
+                point = [first[0] / width, first[1] / height];
+            }
+            else if (rule.Click is not null)
             {
                 var spans = WindowsGameOcrSpanBuilder.Build(ocr, width, height)
                     .Where(span => Matches(Normalize(span.Text), rule.Click.Text))
@@ -528,24 +541,18 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                         rule.Click.Bounds, viewport))
                     .OrderBy(span => Normalize(span.Text).Length).ToArray();
                 if (spans.Length == 0) continue;
-                // 一覧のように同じ名前のボタンが縦に並ぶ表示は、一番上を選ぶと明示した時だけ一番上を押す。
-                // 上下のボタンを1つにまとめたかたまりは、中心がボタンの間に来る。1行ぶんの高さのものだけから選ぶ。
-                if (rule.Click.First)
-                {
-                    var lineHeight = spans.Min(span => span.EvidenceRegion.NormalizedBounds[3]);
-                    spans = spans.Where(span => span.EvidenceRegion.NormalizedBounds[3] <= lineHeight * 1.5)
-                        .OrderBy(span => span.EvidenceRegion.NormalizedBounds[1]).ToArray();
-                }
                 var bounds = spans[0].EvidenceRegion.NormalizedBounds;
                 point = [bounds[0] + bounds[2] / 2, bounds[1] + bounds[3] / 2];
                 // 離れた同名ボタンが複数ある場合は選ばない。
-                if (!rule.Click.First && spans.Any(span => Math.Abs(span.EvidenceRegion.NormalizedBounds[0] - bounds[0]) > bounds[2]
+                if (spans.Any(span => Math.Abs(span.EvidenceRegion.NormalizedBounds[0] - bounds[0]) > bounds[2]
                     || Math.Abs(span.EvidenceRegion.NormalizedBounds[1] - bounds[1]) > bounds[3]))
                 {
                     candidates.Add(new(VisualProgressAction.Review, rule.Id, Detail: $"クリック先が複数あります: {rule.Id}"));
                     continue;
                 }
             }
+            if (rule.Point is not null)
+                point = [(viewport.X + rule.Point[0] * viewport.Width) / width, (viewport.Y + rule.Point[1] * viewport.Height) / height];
             double[]? flickTo = null;
             if (rule.Flick is { } flick)
             {
@@ -554,7 +561,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             }
             candidates.Add(new(rule.WaitForChange ? VisualProgressAction.Wait
                 : rule.Flick is not null ? VisualProgressAction.Flick
-                : rule.Click is null && !rule.ClickImage ? VisualProgressAction.Key : VisualProgressAction.Click,
+                : rule.Click is null && !rule.ClickImage && rule.Point is null ? VisualProgressAction.Key : VisualProgressAction.Click,
                 rule.Id, rule.Id + ":" + string.Join("|", rule.When.Select((condition, i) =>
                     string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text)))
                     // 指し示す先が別の場所へ移ったら、同じ操作の結果待ちではなく次の操作として扱う。
@@ -574,6 +581,48 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             1 => preferred[0],
             _ => new(VisualProgressAction.Review, Detail: "複数の進行規則が同時に一致しました。"),
         };
+    }
+
+    /// <summary>領域の文字を、縦の中心がそろうものを1行として、上の行から並べる。</summary>
+    private static List<List<WindowsGameOcrWord>> Lines(WindowsGameOcrResult ocr, double[] area, FrameRect viewport)
+    {
+        var lines = new List<List<WindowsGameOcrWord>>();
+        foreach (var word in ocr.Words.Where(word => Inside(word, area, viewport)).OrderBy(word => word.Y + word.Height / 2))
+        {
+            var center = word.Y + word.Height / 2;
+            if (lines.Count == 0 || center - lines[^1].Average(other => other.Y + other.Height / 2) > 0.012 * viewport.Height) lines.Add([]);
+            lines[^1].Add(word);
+        }
+        return lines;
+    }
+
+    /// <summary>
+    /// 領域を行ごとに読み、押す文字を含む一番上の行の、その文字の中心（画像の画素）を返す。
+    /// まとめ読みのかたまりは使わない。上下のボタンを1つにまとめたかたまりの中心は、ボタンの間に来るため。
+    /// </summary>
+    private static double[]? FirstLineMatch(WindowsGameOcrResult ocr, VisualProgressText click, FrameRect viewport)
+    {
+        var wanted = Normalize(click.Text);
+        foreach (var line in Lines(ocr, click.Bounds, viewport))
+        {
+            var words = line.OrderBy(word => word.X).Select(word => (Word: word, Text: Normalize(word.Text))).ToArray();
+            var start = string.Concat(words.Select(word => word.Text)).IndexOf(wanted, StringComparison.Ordinal);
+            if (start < 0) continue;
+            // 見つかった文字の範囲に重なる読み取りだけで、中心を決める。
+            var offset = 0;
+            var matched = new List<WindowsGameOcrWord>();
+            foreach (var word in words)
+            {
+                if (offset < start + wanted.Length && offset + word.Text.Length > start) matched.Add(word.Word);
+                offset += word.Text.Length;
+            }
+            var left = matched.Min(word => word.X);
+            var right = matched.Max(word => word.X + word.Width);
+            var top = matched.Min(word => word.Y);
+            var bottom = matched.Max(word => word.Y + word.Height);
+            return [(left + right) / 2, (top + bottom) / 2];
+        }
+        return null;
     }
 
     /// <summary>
@@ -809,6 +858,12 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     private string? consumedImmediate;
     private long? immediateMissingAt;
     private bool wasInhibited;
+    // 直前に操作を送った規則。その直後だけ評価する規則（After）のために覚える。
+    private (string RuleId, long At)? lastInput;
+    private const int AfterWindowMs = 3000;
+
+    /// <summary>操作を送ってから3秒以内の、その規則の名前。</summary>
+    public string? RecentRule(long now) => lastInput is { } last && now - last.At <= AfterWindowMs ? last.RuleId : null;
     private readonly Dictionary<string, long> repeatedAt = [];
     private readonly HashSet<string> started = [];
     private long? stageHudAt;
@@ -994,8 +1049,8 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
 
     public void RecordInput(long now, VisualProgressChoice choice)
     {
+        if (choice.RuleId is not null) lastInput = (choice.RuleId, now);
         if (modeStage) { modeStageInputs++; modeFailureReported = false; }
-        if (choice.RuleId is not null && mode?.RestartAfter?.Contains(choice.RuleId) == true) modeDue = true;
         if (choice.NextStage is not null)
         {
             if (Stage is null) started.Add(choice.RuleId!);

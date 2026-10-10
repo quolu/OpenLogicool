@@ -494,7 +494,12 @@ public static class VisualKeyAssistRuntime
                         : await progressRecognizer.RecognizeNumberRuleAsync(frame, viewport!, stage, progressSchedule!.MayStart,
                             progressSchedule!.ObserveUnmet, inhibitMatch.Matches, token);
                     var immediate = numbered is null ? progressRecognizer?.RecognizeImmediateImage(frame, viewport!, inhibitMatch.Matches, stage) : null;
-                    var ocr = immediate is null && (!inhibitMatch.Matches || readWhileInhibited) && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
+                    // 直前に操作を送った規則の直後だけ評価する規則がある間は、即時の画像が出ていても文字を読む
+                    // （Spaceを押した直後に出る知らせを読むため）。
+                    var recentRule = progressSchedule?.RecentRule(clock.ElapsedMilliseconds);
+                    var afterPending = recentRule is not null
+                        && progressProfile!.Rules.Any(rule => rule.After == recentRule && rule.Stage == stage);
+                    var ocr = (immediate is null || afterPending) && (!inhibitMatch.Matches || readWhileInhibited) && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                         ? progressRecognizer is null ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token)
                             : await progressRecognizer.ReadOcrAsync(frame, viewport!, token, stage) : null;
                     if (ocr is not null && progressSchedule?.PendingModeStage(clock.ElapsedMilliseconds) is { } pendingModeStage
@@ -518,7 +523,19 @@ public static class VisualKeyAssistRuntime
                         ? recoveryRecognizer?.Observe(frame, viewport, ocr?.Text) : null;
                     var flowCandidate = immediate ?? (progressRecognizer is null || ocr is null ? null
                         : progressRecognizer.Prefer(numbered,
-                            progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame, inhibitMatch.Matches, stage)));
+                            progressRecognizer.Recognize(ocr, frame.Width, frame.Height, viewport!, frame, inhibitMatch.Matches, stage, recentRule)));
+                    if (immediate is not null && afterPending && ocr is not null
+                        && progressRecognizer!.Recognize(ocr, frame.Width, frame.Height, viewport!, frame, inhibitMatch.Matches, stage,
+                            recentRule, afterOnly: true) is { Action: VisualProgressAction.Key or VisualProgressAction.Click } afterChoice)
+                        flowCandidate = afterChoice;
+                    if (afterPending && ocr is not null)
+                    {
+                        // 操作の直後に見た画面と読んだ文字を残す。画像は最新の1枚だけを上書きする。
+                        File.WriteAllBytes(Path.Combine(evidenceDirectory, "after-check.png"),
+                            new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                        Emit(new { Event = "after-check", AtMs = clock.ElapsedMilliseconds, After = recentRule,
+                            flowCandidate?.RuleId, OcrText = ocr.Text.Length > 900 ? ocr.Text[..900] : ocr.Text });
+                    }
                     var flowInhibited = inhibitMatch.Matches && flowCandidate?.AllowWhileInhibited != true;
                     var sceneActivity = progressProfile is null ? (Changed: false, Difference: 0d)
                         : sceneMonitor.Observe(frame, viewport!);
@@ -690,7 +707,13 @@ public static class VisualKeyAssistRuntime
                                 var freshNumbered = completingClick || flowChoice.RepeatIntervalMs > 0 ? null
                                     : await progressRecognizer!.RecognizeNumberRuleAsync(fresh, freshViewport, stage, progressSchedule!.MayStart,
                                         progressSchedule!.ObserveUnmet, freshInhibited, token);
+                                // 操作の直後だけ評価する規則は、即時の画像が出ていても、その規則だけを読み直して確かめる。
+                                var flowAfter = completingClick || flowChoice.RuleId is null ? null
+                                    : progressProfile!.Rules.SingleOrDefault(rule => rule.Id == flowChoice.RuleId)?.After;
                                 var current = freshInhibited && !flowChoice.AllowWhileInhibited ? null
+                                    : flowAfter is not null ? progressRecognizer!.Recognize(
+                                        await progressRecognizer.ReadOcrAsync(fresh, freshViewport, token, stage),
+                                        fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited, stage, flowAfter, afterOnly: true)
                                     : completingClick ? flowChoice : flowChoice.RepeatIntervalMs > 0
                                     ? progressRecognizer!.RecognizeRepeatingImage(fresh, freshViewport, rule => rule.Id == flowChoice.RuleId)
                                     : freshNumbered is null ? progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport, freshInhibited, stage) : null;
@@ -698,7 +721,8 @@ public static class VisualKeyAssistRuntime
                                 {
                                     var freshOcr = await progressRecognizer!.ReadOcrAsync(fresh, freshViewport, token, stage);
                                     current = progressRecognizer.Prefer(freshNumbered,
-                                        progressRecognizer.Recognize(freshOcr, fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited, stage));
+                                        progressRecognizer.Recognize(freshOcr, fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited, stage,
+                                            progressSchedule!.RecentRule(clock.ElapsedMilliseconds)));
                                 }
                                 if (freshInhibited && !current.AllowWhileInhibited
                                     || current.Signature != flowChoice.Signature || current.Action != flowChoice.Action) continue;
