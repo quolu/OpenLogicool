@@ -30,7 +30,7 @@ Throughlineで会話が切り替わるたびに、Botの通知先、ルピーと
 
 ## 接続と案件の操作
 
-現在のCodex会話の標準shellで、導入版の入口を呼ぶ。
+担当にする会話（CodexまたはClaude）の標準shellで、導入版の入口を呼ぶ。
 
 ```powershell
 $cli = './artifacts/development/OpenLogicool/OpenLogicool.Host.exe'
@@ -41,13 +41,19 @@ $cli = './artifacts/development/OpenLogicool/OpenLogicool.Host.exe'
 & $cli assistant resolve <案件ID> --reason '修理と実機確認の結果'
 ```
 
-`attach`は`CODEX_THREAD_ID`の会話を公開`aiterm-steer-delivery`で検証して登録する。一つの操作で未処理案件と担当を返し、引き継ぎ前の会話を退役させる。新しい会話は返された未処理案件を引き受ける。旧会話から再登録・claim・resolveすることはできない。Botを再起動せず、以後の詰まりの通知先が切り替わる。
+`attach`は呼び出した会話を担当に登録する。会話の種類は環境から決まる（`CODEX_THREAD_ID`があればCodex、`CLAUDE_CODE_SESSION_ID`があればClaude）。両方ある時だけ`--harness codex|claude`で指定する。一つの操作で未処理案件と担当を返し、引き継ぎ前の会話を退役させる。新しい会話は返された未処理案件を引き受ける。旧会話から再登録・claim・resolveすることはできない。Botを再起動せず、以後の詰まりの通知先が切り替わる。宛先は登録した1会話だけで、CodexとClaudeへ同時には送らない。
 
 利用者が以前の会話へ直接戻って新しい作業を依頼した場合だけ、`assistant attach --takeover`で現在の担当を明示的に引き継ぐ。未処理案件と根拠は保持する。古い自動通知を受け取っただけの会話はこの指定を使わず、通常の退役拒否を守る。
 
-配達はAiterm 0.56.0以上の正規入口`aiterm-parent-delivery`を使う。導入・設定は公式の`npm install --global aiterm-mcp`と`aiterm-setup`で行う。`assistant attach`と送信前に、宛先とAitermのCodex差し込みが有効であることを検証する。未導入・宛先検証失敗・差し込み無効は明示エラーになり、キューだけの配達へ切り替えない。フックとCodexとの配達方言はAitermが所有し、OpenLogicoolは公開入口だけを呼ぶ。独自の定期起動は行わない。動作中の会話への通知は同じターンへ入り、待機中なら同じ会話の新しいターンになる。受付と実際の受信は分けて確認する。
+Codexの会話への配達はAiterm 0.56.0以上の正規入口`aiterm-parent-delivery`を使う。導入・設定は公式の`npm install --global aiterm-mcp`と`aiterm-setup`で行う。`assistant attach`と送信前に、宛先とAitermのCodex差し込みが有効であることを検証する。未導入・宛先検証失敗・差し込み無効は明示エラーになり、キューだけの配達へ切り替えない。フックとCodexとの配達方言はAitermが所有し、OpenLogicoolは公開入口だけを呼ぶ。独自の定期起動は行わない。動作中の会話への通知は同じターンへ入り、待機中なら同じ会話の新しいターンになる。受付と実際の受信は分けて確認する。
 
-状態は選択DBの隣の`.bot-assistance/state.json`に製品が保存する。案件ID、根拠の場所、担当、配達受付ID、対処結果を保持する。`open`は未処理、`claimed`は担当が対応中、`resolved`は対処済み。配達の`queued`は受付済み、`failed`は失敗、`unknown`は結果不明であり、読了や修理完了を意味しない。`sending`のままprocessが終了した場合も状態を確認し、自動再送しない。
+Claudeの会話への配達は、その会話の受信箱へ1通書く。受信箱の方言は公開部品`aiterm-steer-delivery`（0.1.13以上・npmのglobal）の`sendClaudeInbox`が所有し、OpenLogicoolはその関数だけを呼ぶ。`attach`は宛先確認の文を1通送り、書き込めた時だけ登録する。確認の文がその会話へ届くことを担当AIが見て確かめる。受信箱の鍵は状態の隣の`inbox-target.json`だけに保存し、状態・出力・ログ・gitへ出さない。Claudeのアプリの再起動や会話の作り直しで宛先は無効になり、送信は明示エラーになる。その会話で`attach`をやり直す。
+
+受信箱への送信は、会話が読んだことを通信では確かめられない。担当AIの`assistant claim`を受領の印にする。通知を受けた担当AIは、調査より先に`claim`する。
+
+担当AIへ送れなかった時と、送ってから5分たっても担当AIが引き受けず画面も回復していない時は、Botが決裁箱で利用者へ「担当AIへBotの詰まり通知が届いていません」と知らせる。知らせは案件ごとに1回で、画面が回復したら未回答のうちに取り下げる。決裁箱の接続設定が無い時は、知らせの失敗を案件の`error`へ残す。
+
+状態は選択DBの隣の`.bot-assistance/state.json`に製品が保存する。案件ID、根拠の場所、担当、配達受付ID、対処結果、利用者への知らせの申請IDを保持する。`open`は未処理、`claimed`は担当が対応中、`resolved`は対処済み。配達の`queued`は受付済み、`written`は受信箱へ書き込み済み、`failed`は失敗、`unknown`は結果不明であり、読了や修理完了を意味しない。`sending`のままprocessが終了した場合も状態を確認し、自動再送しない。
 
 同じ詰まりの継続は、同一の根拠フォルダーの案件へ最新根拠を保存し、通知を連打しない。別の根拠フォルダーの詰まりと、画面復帰後の新しい詰まりは、古い案件が未処理でも別件として1回配達する。古い案件の根拠・担当・配達結果は保持する。画面が回復しても案件は消さず、`observedCleared`として記録する。担当が原因・結果を確認して閉じる。利用者の明示停止は通知の対象にせず、同じ案件の配達失敗・結果不明を自動再送しない。ゲーム入力の別方式への切替や自動再送も行わない。
 

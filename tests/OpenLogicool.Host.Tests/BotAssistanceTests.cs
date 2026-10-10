@@ -221,6 +221,140 @@ public sealed class BotAssistanceTests : IDisposable
     }
 
     [Fact]
+    public async Task Claudeの会話を担当にすると鍵は専用ファイルだけに保存し状態へ出さない()
+    {
+        var dispatcher = new Dispatcher();
+        var store = new BotAssistanceStore(Database);
+        var coordinator = new BotAssistanceCoordinator(store, dispatcher);
+        await coordinator.AttachAsync(OldThread, root, default);
+        var inbox = new ClaudeInboxTarget(NewThread, @"\\.\pipe\LOCAL\試験", "秘密の鍵");
+        var state = await coordinator.AttachAsync(NewThread, "", default, inbox: inbox);
+        Assert.Equal(BotAssistantKind.Claude, state.Binding!.Kind);
+        Assert.Equal(2, state.Binding.Generation);
+        Assert.Contains(OldThread, state.RetiredThreads);
+        Assert.DoesNotContain("秘密の鍵", File.ReadAllText(Path.Combine(store.DirectoryPath, "state.json")));
+        Assert.DoesNotContain("秘密の鍵", JsonSerializer.Serialize(state, BotAssistanceStore.Json));
+        Assert.Equal(inbox, store.ReadInbox(NewThread));
+        var id = await coordinator.ReportAsync("根拠", Review("詰まり"), default);
+        Assert.Equal(ClaudeInboxBotAssistanceDispatcher.Written, store.Incident(id).DeliveryState);
+        Assert.Equal(NewThread, Assert.Single(dispatcher.Sent).Thread);
+        // 同じ会話の登録し直しは、世代を変えずに新しい鍵だけを保存する。
+        await coordinator.AttachAsync(NewThread, "", default, inbox: inbox with { Token = "新しい鍵" });
+        Assert.Equal(2, store.Read().Binding!.Generation);
+        Assert.Equal("新しい鍵", store.ReadInbox(NewThread).Token);
+        // 別の会話の鍵では送らず、Codexへ戻した時は鍵を残さない。
+        Assert.Equal("inbox-target-missing", Assert.Throws<BotAssistanceDeliveryException>(() => store.ReadInbox(OldThread)).Code);
+        await coordinator.AttachAsync(OldThread, root, default, takeover: true);
+        Assert.Equal(BotAssistantKind.Codex, store.Read().Binding!.Kind);
+        Assert.Throws<BotAssistanceDeliveryException>(() => store.ReadInbox(NewThread));
+    }
+
+    [Fact]
+    public void 種類の記録が無い保存済みの担当はCodexとして読む()
+    {
+        var store = new BotAssistanceStore(Database);
+        Directory.CreateDirectory(store.DirectoryPath);
+        File.WriteAllText(Path.Combine(store.DirectoryPath, "state.json"), """
+            {"schemaVersion":1,"binding":{"threadId":"旧会話","codexHome":"home","generation":6,"boundUtc":"2026-10-10T00:00:00+00:00"},
+             "retiredThreads":[],"incidents":[{"id":"a","status":"open","evidenceDirectory":"根拠","detail":"詰まり","deliveryState":"queued"}]}
+            """);
+        var state = store.Read();
+        Assert.Equal(BotAssistantKind.Codex, state.Binding!.Kind);
+        Assert.Null(state.Binding.Inbox);
+        Assert.Null(Assert.Single(state.Incidents).EscalationDecisionId);
+    }
+
+    [Theory]
+    [InlineData("""{"status":"unknown","outcome_unknown":true,"reason":"unconfirmed"}""", 0, null, false)]
+    [InlineData("""{"status":"accepted","outcome_unknown":false,"reason":"receiver_confirmed"}""", 0, null, false)]
+    [InlineData("""{"status":"not_sent","outcome_unknown":false,"reason":"connect_failed"}""", 0, "inbox-connect_failed", false)]
+    [InlineData("""{"status":"unknown","outcome_unknown":true,"reason":"write_failed"}""", 0, "inbox-write_failed", true)]
+    [InlineData("""{"status":"unknown","outcome_unknown":true,"reason":"unconfirmed"}""", 1, "inbox-invalid-response", true)]
+    [InlineData("壊れた出力", 0, "inbox-invalid-response", true)]
+    public void 受信箱への書き込みだけを送信済みとし未送信と結果不明を分ける(string output, int exitCode, string? code, bool unknown)
+    {
+        if (code is null) { ClaudeInboxBotAssistanceDispatcher.RequireWritten(output, exitCode); return; }
+        var error = Assert.Throws<BotAssistanceDeliveryException>(() => ClaudeInboxBotAssistanceDispatcher.RequireWritten(output, exitCode));
+        Assert.Equal(code, error.Code);
+        Assert.Equal(unknown, error.OutcomeUnknown);
+    }
+
+    [Theory]
+    [InlineData(true, false, null, BotAssistantKind.Codex)]
+    [InlineData(false, true, null, BotAssistantKind.Claude)]
+    [InlineData(true, true, "claude", BotAssistantKind.Claude)]
+    [InlineData(true, true, "codex", BotAssistantKind.Codex)]
+    [InlineData(false, false, null, null)]
+    public void 呼び出した会話の種類を環境から決め両方ある時は指定に従う(bool codex, bool claude, string? harness, string? expected)
+    {
+        var ids = new Dictionary<string, string?> { ["CODEX_THREAD_ID"] = codex ? OldThread : null, ["CLAUDE_CODE_SESSION_ID"] = claude ? NewThread : null };
+        var (kind, thread) = BotAssistanceCli.Caller(harness, name => ids[name]);
+        Assert.Equal(expected, kind);
+        Assert.Equal(expected switch { BotAssistantKind.Codex => OldThread, BotAssistantKind.Claude => NewThread, _ => null }, thread);
+    }
+
+    [Fact]
+    public void 両方の会話の中では推測せず種類の指定を求める()
+    {
+        var ids = new Dictionary<string, string?> { ["CODEX_THREAD_ID"] = OldThread, ["CLAUDE_CODE_SESSION_ID"] = NewThread };
+        Assert.Throws<InvalidOperationException>(() => BotAssistanceCli.Caller(null, name => ids[name]));
+        Assert.Throws<ArgumentException>(() => BotAssistanceCli.Caller("cursor", name => ids[name]));
+    }
+
+    [Fact]
+    public async Task 担当AIへ送れない時は利用者へ知らせ知らせられない時は両方の失敗を残す()
+    {
+        var dispatcher = new Dispatcher();
+        var store = new BotAssistanceStore(Database);
+        store.Bind(OldThread, root);
+        dispatcher.Failure = new("inbox-connect_failed", "受信箱へ送れません");
+        var notifier = VisualAssistReviewNotifier.Create("存在しない人向け設定", Database)! with { Coordinators = _ => new(store, dispatcher) };
+        var error = await Assert.ThrowsAsync<IOException>(() => notifier.NotifyAsync("根拠", Review("詰まり"), default));
+        Assert.Contains("inbox-connect_failed", error.Message);
+        Assert.Contains("決裁箱の接続設定がない", error.Message);
+        var incident = Assert.Single(store.Read().Incidents);
+        Assert.Equal("failed", incident.DeliveryState);
+        Assert.StartsWith("escalation-failed: ", incident.Error);
+        Assert.Null(incident.EscalationDecisionId);
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task 担当AIが期限内に引き受けない時だけ利用者へ知らせようとする(bool claimed, bool escalates)
+    {
+        var store = new BotAssistanceStore(Database);
+        store.Bind(OldThread, root);
+        var notifier = VisualAssistReviewNotifier.Create("存在しない人向け設定", Database)!
+            with { Coordinators = _ => new(store, new Dispatcher()), ClaimGrace = TimeSpan.FromMilliseconds(claimed ? 400 : 20) };
+        var notice = await notifier.NotifyAsync("根拠", Review("詰まり"), default);
+        if (claimed) store.Claim(notice.Id, OldThread);
+        await notifier.ClaimWatch;
+        // 決裁箱の接続が無い試験環境では、知らせようとした結果が失敗として残る。
+        Assert.Equal(escalates, store.Incident(notice.Id).Error?.StartsWith("escalation-failed: ") == true);
+        // 同じ詰まりの続報は配達も見届けも重ねない。
+        var watch = notifier.ClaimWatch;
+        await notifier.NotifyAsync("根拠", Review("続報"), default);
+        Assert.Same(watch, notifier.ClaimWatch);
+    }
+
+    [Fact]
+    public void 未受領の知らせは開いたままで画面も回復していない案件だけを対象にする()
+    {
+        var incident = new BotAssistanceIncident("案件", "open", "根拠の場所", "クエスト受諾の画面で静止", "written");
+        Assert.True(VisualAssistReviewNotifier.NeedsClaimEscalation(incident));
+        Assert.False(VisualAssistReviewNotifier.NeedsClaimEscalation(incident with { Status = "claimed" }));
+        Assert.False(VisualAssistReviewNotifier.NeedsClaimEscalation(incident with { ObservedCleared = true }));
+        Assert.False(VisualAssistReviewNotifier.NeedsClaimEscalation(incident with { EscalationDecisionId = "K-TEST" }));
+        var (title, context, options) = VisualAssistReviewNotifier.EscalationRequest(incident, "5分たっても担当AIが引き受けていません");
+        Assert.StartsWith("担当AIへBotの詰まり通知が届いていません: クエスト受諾の画面で静止", title);
+        Assert.Contains("5分たっても担当AIが引き受けていません", context);
+        Assert.Contains("案件ID: 案件", context);
+        Assert.Contains("根拠の場所", context);
+        Assert.Equal(2, options.Length);
+    }
+
+    [Fact]
     public async Task Bot異常と通知失敗を両方表示し実行を回収する()
     {
         var gate = new DemonstrationRecordingGate();
@@ -254,11 +388,12 @@ public sealed class BotAssistanceTests : IDisposable
         public List<(string Thread, string Id, string Message)> Sent { get; } = [];
         public Task VerifyAsync(BotAssistantBinding binding, CancellationToken token)
         { if (Failure is not null) throw Failure; return Task.CompletedTask; }
-        public Task<string?> SubmitAsync(BotAssistantBinding binding, string deliveryId, string message, CancellationToken token)
+        public Task<BotAssistanceReceipt> SubmitAsync(BotAssistantBinding binding, string deliveryId, string message, CancellationToken token)
         {
             Sent.Add((binding.ThreadId, deliveryId, message));
             if (Failure is not null) throw Failure;
-            return Task.FromResult<string?>("受付ID");
+            return Task.FromResult<BotAssistanceReceipt>(binding.Kind == BotAssistantKind.Claude
+                ? new(ClaudeInboxBotAssistanceDispatcher.Written, null) : new("queued", "受付ID"));
         }
     }
 

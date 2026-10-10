@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace OpenLogicool.Host;
 
@@ -12,6 +13,11 @@ internal sealed record VisualAssistNotice(VisualAssistNoticeKind Kind, string Id
 internal sealed record VisualAssistReviewNotifier(string Executable, string[] Arguments)
 {
     internal string? AssistanceDatabasePath { get; init; }
+    /// <summary>担当AIが通知を引き受けるまで待つ時間。過ぎても未受領なら利用者へ知らせる。</summary>
+    [JsonIgnore] internal TimeSpan ClaimGrace { get; init; } = TimeSpan.FromMinutes(5);
+    [JsonIgnore] internal Func<string, BotAssistanceCoordinator> Coordinators { get; init; } = BotAssistanceCoordinator.Create;
+    /// <summary>直近の通知の見届け。結果は支援状態へ残るため、呼び出し側は完了を待たない。</summary>
+    [JsonIgnore] internal Task ClaimWatch { get; private set; } = Task.CompletedTask;
 
     public static VisualAssistReviewNotifier? Create(string? humanSettings, string? assistanceDatabasePath)
     {
@@ -41,9 +47,60 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
     }
 
     public async Task<VisualAssistNotice> NotifyAsync(string evidenceDirectory, JsonElement result, CancellationToken token)
-        => AssistanceDatabasePath is { } database
-            ? new(VisualAssistNoticeKind.Assistant, await BotAssistanceCoordinator.Create(database).ReportAsync(evidenceDirectory, result, token))
-            : new(VisualAssistNoticeKind.Human, await ExchangeAsync(evidenceDirectory, result, token));
+    {
+        if (AssistanceDatabasePath is not { } database)
+            return new(VisualAssistNoticeKind.Human, await ExchangeAsync(evidenceDirectory, result, token));
+        var store = new BotAssistanceStore(database);
+        try
+        {
+            var report = await Coordinators(database).PublishAsync(evidenceDirectory, result, token);
+            // 会話が通知を読んだかを通信で確かめられない宛先があるため、担当AIの引き受けを受領の印として見届ける。
+            if (report.Published) ClaimWatch = WatchClaimAsync(store, report.Incident.Id, token);
+            return new(VisualAssistNoticeKind.Assistant, report.Incident.Id);
+        }
+        catch (BotAssistanceDeliveryException error) when (error.IncidentId is { } id)
+        {
+            // 担当AIへ届かない詰まりを黙って残さない。利用者へ知らせてから、元の失敗を返す。
+            try { await EscalateAsync(store, id, $"送信に失敗しました（{error.Code}: {error.Message}）", token); }
+            catch (Exception escalation) when (escalation is not OperationCanceledException)
+            {
+                store.EscalationFailed(id, escalation.Message);
+                throw new IOException($"担当AIへの通知に失敗し、利用者への知らせにも失敗しました。{error.Code}: {error.Message} ／ {escalation.Message}", error);
+            }
+            throw;
+        }
+    }
+
+    private async Task WatchClaimAsync(BotAssistanceStore store, string incidentId, CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(ClaimGrace, token);
+            if (!NeedsClaimEscalation(store.Incident(incidentId))) return;
+            await EscalateAsync(store, incidentId, $"{ClaimGrace.TotalMinutes:0.#}分たっても担当AIが引き受けていません", token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception error) { store.EscalationFailed(incidentId, error.Message); }
+    }
+
+    internal static bool NeedsClaimEscalation(BotAssistanceIncident incident) =>
+        incident is { Status: "open", ObservedCleared: false, EscalationDecisionId: null };
+
+    internal static (string Title, string Context, VisualProgressOption[] Options) EscalationRequest(BotAssistanceIncident incident, string reason) =>
+        ("担当AIへBotの詰まり通知が届いていません: " + incident.Detail[..Math.Min(60, incident.Detail.Length)],
+            $"Botが詰まりを検出して担当AIへ通知しましたが、{reason}。\n詰まりの内容: {incident.Detail}\n"
+            + "Botの画面観測と回復監視は続いています。\n担当AIの会話を開いて、この詰まりへの対応を頼んでください。"
+            + "通知の宛先が切れている時は、担当AIが assistant attach をやり直すと直ります。\n"
+            + $"案件ID: {incident.Id}\n根拠: {incident.EvidenceDirectory}",
+            [new("asked", "担当AIの会話で対応を頼んだ"), new("later", "今は対応しない")]);
+
+    private async Task EscalateAsync(BotAssistanceStore store, string incidentId, string reason, CancellationToken token)
+    {
+        if (Executable.Length == 0)
+            throw new InvalidOperationException("決裁箱の接続設定がないため、担当AIへ届いていないことを利用者へ知らせられません。");
+        var incident = store.Incident(incidentId);
+        store.Escalated(incidentId, await ExchangeAsync(incident.EvidenceDirectory, default, token, custom: EscalationRequest(incident, reason)));
+    }
 
     /// <summary>利用者へ直接申請した選択の回答を読む。未回答・取り下げ済みはnull。</summary>
     public async Task<string?> ReadAnswerAsync(VisualAssistNotice notice, CancellationToken token)
@@ -61,14 +118,19 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
     {
         if (notice.Kind == VisualAssistNoticeKind.Assistant)
         {
-            new BotAssistanceStore(AssistanceDatabasePath ?? throw new InvalidOperationException("AI支援の接続がありません。")).ObservedClear(notice.Id);
+            var store = new BotAssistanceStore(AssistanceDatabasePath ?? throw new InvalidOperationException("AI支援の接続がありません。"));
+            store.ObservedClear(notice.Id);
+            // 画面が回復したら、利用者への「届いていません」の知らせも未回答のうちに取り下げる。
+            if (store.Incident(notice.Id).EscalationDecisionId is { } escalation && Executable.Length > 0)
+                _ = await ExchangeAsync("", default, token, escalation);
             return;
         }
         _ = await ExchangeAsync("", default, token, notice.Id);
     }
 
     private async Task<string> ExchangeAsync(string evidenceDirectory, JsonElement result, CancellationToken token,
-        string? resolvedDecisionId = null, bool readAnswer = false)
+        string? resolvedDecisionId = null, bool readAnswer = false,
+        (string Title, string Context, VisualProgressOption[] Options)? custom = null)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
         deadline.CancelAfter(TimeSpan.FromSeconds(30));
@@ -101,20 +163,7 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
             var decisions = await Tool("list_my_decisions", new { });
             var images = new[] { "progress-review.png", "recovery-review.png", "review-after.png" }
                 .Select(name => Path.Combine(evidenceDirectory, name)).Where(File.Exists).ToArray();
-            var detail = result.TryGetProperty("Detail", out var text) ? text.GetString() : "画面の確認が必要です。";
-            var options = ReviewOptions(result);
-            var choiceText = options.Length > 2 ? "\n画面の選択肢（OCR・添付画像も確認）:\n"
-                + string.Join("\n", options.Where(option => option.Id != "stop").Select(option => option.Label)) : "";
-            var monitoring = result.TryGetProperty("MonitoringContinues", out var continues) && continues.GetBoolean();
-            var continuing = result.TryGetProperty("AutomaticRulesContinue", out var rulesContinue) && rulesContinue.GetBoolean();
-            var title = (continuing ? "ゲーム画面に確認事項があります（動作継続）: "
-                : monitoring ? "ゲーム画面の確認が必要です（監視継続）: " : "ゲームの自動進行を停止しました: ") + detail?[..Math.Min(80, detail.Length)];
-            var context = detail + choiceText + (continuing
-                ? "\n通常の操作規則・画面観測・回復監視は継続しています。確認通知を理由に操作全体を保留しません。回答が必要な選択は自動選択しません。"
-                : monitoring
-                ? "\n進行入力を止めて画面観測と回復監視を継続しています。確認済みの別画面に戻ったら自動で進行を再開します。"
-                : "\n入力は停止済みです。判断結果だけでは入力を再開しません。操作者が回答を確認して再開します。")
-                + "\n確認記録: " + Path.Combine(evidenceDirectory, "review.json");
+            var (title, context, options) = custom ?? ReviewRequest();
             object Request(string? checkToken) => new
             {
                 title, context,
@@ -134,6 +183,25 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
             var final = check is null ? first : await Tool("request_decision", Request(check));
             return final.GetProperty("decision_id").GetString()
                 ?? throw new InvalidDataException("確認通知が受理されませんでした: " + final.GetRawText());
+
+            (string Title, string Context, VisualProgressOption[] Options) ReviewRequest()
+            {
+                var detail = result.TryGetProperty("Detail", out var text) ? text.GetString() : "画面の確認が必要です。";
+                var choices = ReviewOptions(result);
+                var choiceText = choices.Length > 2 ? "\n画面の選択肢（OCR・添付画像も確認）:\n"
+                    + string.Join("\n", choices.Where(option => option.Id != "stop").Select(option => option.Label)) : "";
+                var monitoring = result.TryGetProperty("MonitoringContinues", out var continues) && continues.GetBoolean();
+                var continuing = result.TryGetProperty("AutomaticRulesContinue", out var rulesContinue) && rulesContinue.GetBoolean();
+                var heading = (continuing ? "ゲーム画面に確認事項があります（動作継続）: "
+                    : monitoring ? "ゲーム画面の確認が必要です（監視継続）: " : "ゲームの自動進行を停止しました: ") + detail?[..Math.Min(80, detail.Length)];
+                var body = detail + choiceText + (continuing
+                    ? "\n通常の操作規則・画面観測・回復監視は継続しています。確認通知を理由に操作全体を保留しません。回答が必要な選択は自動選択しません。"
+                    : monitoring
+                    ? "\n進行入力を止めて画面観測と回復監視を継続しています。確認済みの別画面に戻ったら自動で進行を再開します。"
+                    : "\n入力は停止済みです。判断結果だけでは入力を再開しません。操作者が回答を確認して再開します。")
+                    + "\n確認記録: " + Path.Combine(evidenceDirectory, "review.json");
+                return (heading, body, choices);
+            }
 
             async Task<string?> RefreshExisting(JsonElement items)
             {

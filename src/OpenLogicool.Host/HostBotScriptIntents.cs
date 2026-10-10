@@ -105,7 +105,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
             if (!new BotAssistanceStore(databasePath).Exists) return;
             var fault = JsonSerializer.SerializeToElement(new { Kind = "fault", Detail = detail });
             System.IO.File.WriteAllText(Path.Combine(evidence, "assistance-fault.json"), fault.GetRawText());
-            await BotAssistanceCoordinator.Create(databasePath).ReportAsync(evidence, fault, CancellationToken.None);
+            await VisualAssistReviewNotifier.Create(reviewSettings, databasePath)!.NotifyAsync(evidence, fault, CancellationToken.None);
         });
     }
 

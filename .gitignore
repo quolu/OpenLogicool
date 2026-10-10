@@ -10,3 +10,6 @@ probe-output/**/*.png
 
 # 実機写真（線画のトレース元・他社著作物のため再配布しない）
 docs/ui-assets/
+
+# Bot支援の受信箱の鍵（会話かぎりの秘密値）
+*.bot-assistance/inbox-target.json
