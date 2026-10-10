@@ -11,8 +11,12 @@ public sealed record VisualProgressText(string Text, double[] Bounds, double[][]
     bool AskUserImmediately = false, VisualProgressText? Confirm = null, string? ConfirmKey = null,
     double[]? ChoiceBand = null, VisualProgressText? Recommended = null, bool Exact = false, int Zoom = 1,
     bool First = false);
-/// <summary>画面の数値の条件。OutOf を指定した表示は「現在値/上限」の形で、上限まで読めた時だけ現在値を使う。</summary>
-public sealed record VisualProgressNumber(double[] Bounds, int? AtMost = null, int? Exactly = null, int? OutOf = null);
+/// <summary>
+/// 画面の数値の条件。OutOf を指定した表示は「現在値/上限」の形で、上限まで読めた時だけ現在値を使う。
+/// BrightAtLeast を指定すると、その明るさ以上の画素（白い太字の数字）だけを残した画像でも読み、同じ値になった時だけ使う。
+/// </summary>
+public sealed record VisualProgressNumber(double[] Bounds, int? AtMost = null, int? Exactly = null, int? OutOf = null,
+    int? BrightAtLeast = null);
 /// <summary>
 /// 画素で見る条件。Rgb は領域の平均色がその色に近いこと。Flat は行ごとの明るさが平らであること（true）、
 /// 濃淡があること（false）。一覧の上端のぼかしのように、文字では読めない状態を見分ける。
@@ -202,6 +206,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("直後とみなす時間と繰り返しの上限は正の値で、覚えた内容との照合は即時・反復でない規則に指定します。");
             if (rule.MinimumVisibleMs < 0)
                 throw new InvalidDataException("表示待ち時間が不正です。");
+            if (rule.Number?.BrightAtLeast is < 1 or > 255)
+                throw new InvalidDataException("数値を確かめる明るさは1〜255で指定します。");
             if (rule.Key is not null) OpenLogicool.Input.OutputTokens.Parse(rule.Key);
             if (rule.AfterClickKey is not null)
             {
@@ -429,12 +435,24 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             if (value is not null && value != reading) return null;
             value = reading;
         }
-        return value;
+        if (value is null || number.BrightAtLeast is not { } bright) return value;
+        // 隣の絵に接した先頭の数字は読み落とすことがある（110/100 を 10/100 と読んだ）。読み落としても形は正しい数値に見えるので、
+        // 明るい数字だけを残した画像でも読み、同じ値になった時だけ使う。
+        var confirmed = false;
+        foreach (var zoom in new[] { 2, 3, 4 })
+        {
+            var read = await ReadAreaAsync(frame, viewport, number.Bounds, zoom, token, bright);
+            if (ReadNumber(string.Concat(read.Words.OrderBy(word => word.X).Select(word => word.Text)), number with { OutOf = null })
+                is not { } reading) continue;
+            if (reading != value) return null;
+            confirmed = true;
+        }
+        return confirmed ? value : null;
     }
 
-    /// <summary>領域を切り出し、拡大して読む。</summary>
+    /// <summary>領域を切り出し、拡大して読む。brightAtLeast を指定すると、その明るさ以上の画素だけを黒で残してから読む。</summary>
     private static async ValueTask<WindowsGameOcrResult> ReadAreaAsync(CapturedFrame frame, FrameRect viewport, double[] area,
-        int zoom, CancellationToken token)
+        int zoom, CancellationToken token, int? brightAtLeast = null)
     {
         var x = (int)(viewport.X + area[0] * viewport.Width);
         var y = (int)(viewport.Y + area[1] * viewport.Height);
@@ -444,6 +462,13 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         var bytes = new byte[width * height * 4];
         for (var row = 0; row < height; row++)
             pixels.Bgra8.Span.Slice((y + row) * pixels.Stride + x * 4, width * 4).CopyTo(bytes.AsSpan(row * width * 4));
+        if (brightAtLeast is { } bright)
+            for (var i = 0; i < bytes.Length; i += 4)
+            {
+                var keep = bytes[i] >= bright && bytes[i + 1] >= bright && bytes[i + 2] >= bright;
+                bytes[i] = bytes[i + 1] = bytes[i + 2] = (byte)(keep ? 0 : 255);
+                bytes[i + 3] = 255;
+            }
         var cropped = frame with { Width = width, Height = height, Pixels = new FramePixels(bytes, width * 4), Crop = null };
         return await new WindowsGameOcrRecognizer(zoom).RecognizeAsync(cropped, token);
     }

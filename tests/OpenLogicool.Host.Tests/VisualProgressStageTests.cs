@@ -58,6 +58,25 @@ public sealed class VisualProgressStageTests
     }
 
     [Fact]
+    public async Task 上限を超えたコインを先頭の数字を落として読んでも補充を始めない()
+    {
+        // 実録は110/100。素の読み取りは先頭の1を落として10/100と読む（2026-10-11 02:11、これで70個を余分に使った）。
+        var frame = ReadFrame(Fixture("coin-hud-over-limit.png"));
+        var unmet = new List<string>();
+        var choice = await new VisualProgressRecognizer(Profile()).RecognizeNumberRuleAsync(frame, Viewport(frame), null,
+            _ => true, rule => unmet.Add(rule.Id));
+        Assert.Null(choice);
+        // 明るい数字だけの読み取り（110）と合わないので、読めなかったものとする。条件を外れたとも知らせない。
+        Assert.Empty(unmet);
+        // 確かめの読み取りを外すと、読み違いのまま補充を始める（欠陥の再現）。
+        var profile = Profile();
+        profile = profile with { Rules = profile.Rules.Select(rule => rule.Id == "coin-refill-open"
+            ? rule with { Number = rule.Number! with { BrightAtLeast = null } } : rule).ToArray() };
+        var misread = await new VisualProgressRecognizer(profile).RecognizeNumberRuleAsync(frame, Viewport(frame), null, _ => true, _ => { });
+        Assert.Equal("coin-refill-open:10", misread!.Signature);
+    }
+
+    [Fact]
     public async Task 通常画面のコインが条件以下なら所持品を開くキーを選び段階の中と停止表示中は選ばない()
     {
         var frame = ReadFrame(Fixture("coin-hud.png"));

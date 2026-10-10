@@ -5,7 +5,7 @@
     {
       "Id": "coin-refill-open", "Key": "Key:I", "Priority": 45, "MinimumVisibleMs": 1000, "NextStage": "coin-refill",
       "When": [],
-      "Number": { "Bounds": [0.099, 0.124, 0.043, 0.034], "AtMost": 30, "OutOf": 100 }
+      "Number": { "Bounds": [0.099, 0.124, 0.043, 0.034], "AtMost": 30, "OutOf": 100, "BrightAtLeast": 200 }
     },
     {
       "Id": "coin-refill-item-tab", "Stage": "coin-refill", "Priority": 1, "ClickImage": true,
