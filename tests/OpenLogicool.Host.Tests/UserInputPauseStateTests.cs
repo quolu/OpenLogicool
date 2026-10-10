@@ -50,9 +50,9 @@ public sealed class UserInputPauseStateTests
         long now = 0;
         var state = new UserInputPauseState(() => now);
         Assert.True(state.Snapshot().Paused);
-        now = 3000;
+        now = 5000;
         Assert.False(state.Snapshot().Paused);
-        now = 4000;
+        now = 6000;
         state.NanoInput(); state.NanoInput();
         Assert.False(state.Snapshot().Paused);
         Assert.Equal(0, state.Snapshot().HeldCount);
@@ -61,7 +61,7 @@ public sealed class UserInputPauseStateTests
     }
 
     [Fact]
-    public void 離した合図が届かない日本語入力のモードキーは押下に数えず三秒後に再開する()
+    public void 離した合図が届かない日本語入力のモードキーは押下に数えず五秒後に再開する()
     {
         long now = 0;
         var state = new UserInputPauseState(() => now);
@@ -70,18 +70,18 @@ public sealed class UserInputPauseStateTests
         now = 10_100; WindowsUserInputMonitor.Key(state, 10, 0xF4, true);
         Assert.Equal(0, state.Snapshot().HeldCount);
         Assert.Equal(2, state.Snapshot().UserEvents);
-        now = 13_099; Assert.True(state.Snapshot().Paused);
-        now = 13_100; Assert.False(state.Snapshot().Paused);
+        now = 15_099; Assert.True(state.Snapshot().Paused);
+        now = 15_100; Assert.False(state.Snapshot().Paused);
         // 通常のキーは従来どおり、離すまで押下に数える。
         WindowsUserInputMonitor.Key(state, 10, 0x41, true);
         now = 60_000; Assert.True(state.Snapshot().Paused);
         Assert.Equal(1, state.Snapshot().HeldCount);
         WindowsUserInputMonitor.Key(state, 10, 0x41, false);
-        now = 63_000; Assert.False(state.Snapshot().Paused);
+        now = 65_000; Assert.False(state.Snapshot().Paused);
     }
 
     [Fact]
-    public void 離した合図を取りこぼしたキーは入力が三秒途絶えた時にOSの押下状態で外す()
+    public void 離した合図を取りこぼしたキーは入力が五秒途絶えた時にOSの押下状態で外す()
     {
         // 実測: Botは押下1のまま9分半止まり、同じ時刻にOSが押下中と返すキーは無かった。
         long now = 0;
@@ -90,10 +90,10 @@ public sealed class UserInputPauseStateTests
         now = 10_000; state.Button(10, 0x41, true); state.Button(10, 0x10001, true);
         // 入力が続いている間はOSへ聞かず、届いた合図だけで数える。
         down.Clear();
-        now = 12_999; Assert.Equal(2, state.Snapshot().HeldCount);
+        now = 14_999; Assert.Equal(2, state.Snapshot().HeldCount);
         Assert.Equal([0x41, 0x10001], state.Snapshot().HeldCodes!);
-        // 3秒途絶えたらOSへ確かめ、離されているキーを外して再開する。
-        now = 13_000;
+        // 5秒途絶えたらOSへ確かめ、離されているキーを外して再開する。
+        now = 15_000;
         var resumed = state.Snapshot();
         Assert.False(resumed.Paused);
         Assert.Equal(0, resumed.HeldCount);
@@ -107,18 +107,18 @@ public sealed class UserInputPauseStateTests
     }
 
     [Fact]
-    public void 移動やホイール後に三秒待ち押しっぱなしなら再開しない()
+    public void 移動やホイール後に五秒待ち押しっぱなしなら再開しない()
     {
         long now = 4000;
         var state = new UserInputPauseState(() => now);
         now = 8000; state.Activity();
-        now = 10999; Assert.True(state.Snapshot().Paused);
-        now = 11000; Assert.False(state.Snapshot().Paused);
+        now = 12999; Assert.True(state.Snapshot().Paused);
+        now = 13000; Assert.False(state.Snapshot().Paused);
         state.Button(10, 65, true);
         now = 30000; Assert.True(state.Snapshot().Paused);
         state.Button(10, 65, false);
-        now = 32999; Assert.True(state.Snapshot().Paused);
-        now = 33000; Assert.False(state.Snapshot().Paused);
+        now = 34999; Assert.True(state.Snapshot().Paused);
+        now = 35000; Assert.False(state.Snapshot().Paused);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class UserInputPauseStateTests
         state.Button(1, 65, false); state.Button(2, 65, false);
         now = 10000; Assert.True(state.Snapshot().Paused);
         state.Button(1, 0x10001, false);
-        now = 13000; Assert.False(state.Snapshot().Paused);
+        now = 15000; Assert.False(state.Snapshot().Paused);
     }
 
     [Fact]
@@ -144,9 +144,9 @@ public sealed class UserInputPauseStateTests
         state.SeedHeld(65);
         now = 10000; Assert.True(state.Snapshot().Paused);
         state.Button(5, 65, false);
-        now = 13000; Assert.False(state.Snapshot().Paused);
+        now = 15000; Assert.False(state.Snapshot().Paused);
         state.Button(5, 66, true); state.Removed(5);
-        now = 16000; Assert.False(state.Snapshot().Paused);
+        now = 20000; Assert.False(state.Snapshot().Paused);
     }
 
     [Theory]

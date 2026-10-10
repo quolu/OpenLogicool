@@ -57,6 +57,11 @@ internal sealed class WindowsUserInputMonitor : IDisposable
     public int StartupHeldCount { get; private set; }
     public long SoftwareMoves => Interlocked.Read(ref softwareMoves);
     public long SoftwarePositionChanges => Interlocked.Read(ref softwarePositionChanges);
+    /// <summary>
+    /// Botがpointerを動かせなかった時に呼ぶ。矢印は利用者か別の操作が握っているので、手入力があった時と同じだけ待つ。
+    /// </summary>
+    public void PointerHeldByOther() => state.Activity();
+
     public UserInputPauseSnapshot Snapshot()
     {
         if (failure is { } error) throw new InvalidOperationException("手入力監視に失敗しました。", error);

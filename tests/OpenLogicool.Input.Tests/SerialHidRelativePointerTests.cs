@@ -41,6 +41,8 @@ public sealed class SerialHidRelativePointerTests
             pointer.MoveTo(new SerialHidCursorPoint(100, 100)));
 
         Assert.Contains("cursorが変化しません", fault.Message, StringComparison.Ordinal);
+        // 止まった理由を追えるよう、その時の位置と狙った位置を残す。
+        Assert.Contains("target=(100,100)", fault.Message, StringComparison.Ordinal);
         Assert.Equal(2, exchange.Requests.Count(frame =>
             SerialHidProtocolV1.Decode(frame).Kind == SerialHidMessageKind.MouseDelta));
     }

@@ -416,7 +416,7 @@ public static class VisualKeyAssistRuntime
                         if (UserIsActive()) return false;
                         var click = new VisualProgressChoice(VisualProgressAction.Click, "user-choice", $"user-choice:{asked.Notice.Id}:{option}",
                             Point: current.OptionPoints[index]);
-                        Send(click, fresh);
+                        if (!Send(click, fresh)) return false;
                         var deadline = clock.ElapsedMilliseconds + 5000;
                         while (clock.ElapsedMilliseconds < deadline)
                         {
@@ -432,13 +432,16 @@ public static class VisualKeyAssistRuntime
                     }
                     finally { inputGate.Release(); }
 
-                    void Send(VisualProgressChoice choice, CapturedFrame bound)
+                    // 送れた時はtrue。矢印を動かせなかった時はfalse（次の観測へ持ち越す）。
+                    bool Send(VisualProgressChoice choice, CapturedFrame bound)
                     {
                         var dispatch = inputSequence.Dispatch(choice, Observation(bound));
+                        if (PointerBlocked(choice, dispatch)) return false;
                         if (dispatch.Status != GameInteractionDispatchStatus.Dispatched)
                             throw new InvalidOperationException($"回答の選択のNano入力に失敗しました: {dispatch.FailureReason}");
                         Emit(new { Event = "progress-input", AtMs = clock.ElapsedMilliseconds, choice.RuleId, choice.Signature,
                             choice.Key, choice.Point, Immediate = false, RepeatIntervalMs = 0, AfterClick = false, dispatch });
+                        return true;
                     }
 
                     bool Fail(string detail)
@@ -648,6 +651,13 @@ public static class VisualKeyAssistRuntime
                                 if (UserIsActive()) continue;
                                 var bound = Observation(fresh);
                                 var dispatch = inputSequence.Dispatch(current, bound);
+                                if (PointerBlocked(current, dispatch))
+                                {
+                                    // 続く時は詰まりとして担当へ知らせる。画面が進めば知らせは取り下げる。
+                                    BeginMonitoring(current, fresh, "クリックの前にマウスの矢印を動かせません。ボタンは押していません。"
+                                        + "手入力があった時と同じだけ待って、次の観測でやり直します。 " + dispatch.FailureReason, null, null, token);
+                                    continue;
+                                }
                                 if (dispatch.Status != GameInteractionDispatchStatus.Dispatched)
                                     throw new InvalidOperationException($"進行操作のNano入力に失敗しました: {dispatch.FailureReason}");
                                 if (!completingClick) progressSchedule!.RecordInput(clock.ElapsedMilliseconds, current);
@@ -893,6 +903,18 @@ public static class VisualKeyAssistRuntime
                 });
             }
 
+            // クリックの前に矢印を動かせずに失敗したか。その時はボタンを押していない。矢印は利用者か別の操作が
+            // 握っているので、止まらずに手入力があった時と同じだけ待ち、次の観測でやり直す。
+            bool PointerBlocked(VisualProgressChoice choice, GameInteractionDispatchReceipt dispatch)
+            {
+                if (userInput is null || dispatch.Status == GameInteractionDispatchStatus.Dispatched
+                    || choice.Action != VisualProgressAction.Click || !actions.LastDispatchPointerUnmoved) return false;
+                userInput.PointerHeldByOther();
+                Emit(new { Event = "progress-input-blocked", AtMs = clock.ElapsedMilliseconds, choice.RuleId, choice.Signature, choice.Point,
+                    Foreground = ForegroundAppTracker.GetForegroundWindowTitle(), dispatch });
+                return true;
+            }
+
             bool UserIsActive()
             {
                 if (userInput is null) return false;
@@ -912,8 +934,8 @@ public static class VisualKeyAssistRuntime
                         Emit(new { Event = snapshot.Paused ? "user-input-paused" : "user-input-resumed",
                             AtMs = clock.ElapsedMilliseconds, snapshot.HeldCount, snapshot.IdleMilliseconds,
                             snapshot.UserEvents, snapshot.NanoEvents, snapshot.LostReleases, snapshot.HeldCodes,
-                            Detail = snapshot.Paused ? "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
-                                : "手入力がなくなって3秒経過したためBotの送出を再開しました。" });
+                            Detail = snapshot.Paused ? $"手入力を優先してBotの送出を一時停止しています。全解放後{UserInputPauseState.QuietMilliseconds / 1000}秒で再開します。"
+                                : $"手入力がなくなって{UserInputPauseState.QuietMilliseconds / 1000}秒経過したためBotの送出を再開しました。" });
                     }
                 }
                 return snapshot.Paused;

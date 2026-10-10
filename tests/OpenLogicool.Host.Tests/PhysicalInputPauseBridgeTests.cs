@@ -16,7 +16,7 @@ public sealed class PhysicalInputPauseBridgeTests
     }
 
     [Fact]
-    public void 観測の合間の短い押下でも一時停止になり三秒変化が無ければ解除する()
+    public void 観測の合間の短い押下でも一時停止になり五秒変化が無ければ解除する()
     {
         long now = 10_000;
         var (state, bridge) = Create(() => now);
@@ -28,16 +28,16 @@ public sealed class PhysicalInputPauseBridgeTests
         Assert.True(snapshot.Paused);
         Assert.Equal(0, snapshot.HeldCount);
         Assert.Equal(1, snapshot.UserEvents);
-        now = 22_999;
+        now = 24_999;
         bridge.Apply(new ResidentPhysicalInput(2, 0));
         Assert.True(state.Snapshot().Paused);
-        now = 23_000;
+        now = 25_000;
         bridge.Apply(new ResidentPhysicalInput(2, 0));
         Assert.False(state.Snapshot().Paused);
     }
 
     [Fact]
-    public void 押し続けは三秒を超えても一時停止のままで離してから三秒で解除する()
+    public void 押し続けは五秒を超えても一時停止のままで離してから五秒で解除する()
     {
         long now = 10_000;
         var (state, bridge) = Create(() => now);
@@ -58,10 +58,10 @@ public sealed class PhysicalInputPauseBridgeTests
         bridge.Apply(new ResidentPhysicalInput(2, 0));
         Assert.True(state.Snapshot().Paused);
         Assert.Equal(0, state.Snapshot().HeldCount);
-        now = 72_999;
+        now = 74_999;
         bridge.Apply(new ResidentPhysicalInput(2, 0));
         Assert.True(state.Snapshot().Paused);
-        now = 73_000;
+        now = 75_000;
         bridge.Apply(new ResidentPhysicalInput(2, 0));
         Assert.False(state.Snapshot().Paused);
     }

@@ -226,7 +226,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
             {
                 userResumePhase = state.Phase; userResumeDetail = state.Detail;
                 state = state with { Phase = BotScriptPhase.UserPaused,
-                    Detail = "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。" };
+                    Detail = $"手入力を優先してBotの送出を一時停止しています。全解放後{UserInputPauseState.QuietMilliseconds / 1000}秒で再開します。" };
             }
         }
     }

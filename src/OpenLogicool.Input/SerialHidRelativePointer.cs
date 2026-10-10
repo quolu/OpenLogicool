@@ -65,7 +65,8 @@ public sealed class SerialHidRelativePointer(
             if (noProgress >= maximumConsecutiveNoProgress)
             {
                 throw new SerialHidPointerMoveException(
-                    $"Nano relative pointerを{noProgress}回送ってもcursorが変化しませんでした。fallbackせず停止します。");
+                    $"Nano relative pointerを{noProgress}回送ってもcursorが変化しませんでした"
+                    + $"（cursor=({current.X},{current.Y}) target=({target.X},{target.Y})）。fallbackせず停止します。");
             }
             current = observed;
         }

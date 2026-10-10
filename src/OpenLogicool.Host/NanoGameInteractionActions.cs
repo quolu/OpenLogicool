@@ -33,6 +33,12 @@ public sealed class NanoGameInteractionActions(
 {
     private readonly TimeProvider time = timeProvider ?? TimeProvider.System;
 
+    /// <summary>
+    /// 直前のdispatchが、pointerを動かせずに失敗したか。Clickはpointerを動かしてからボタンを押すため、
+    /// この失敗ではボタンを押していない。
+    /// </summary>
+    public bool LastDispatchPointerUnmoved { get; private set; }
+
     public GameInteractionDispatchReceipt Hover(
         GameInteractionTargetBinding target,
         ObservationResult current) =>
@@ -135,6 +141,7 @@ public sealed class NanoGameInteractionActions(
         Func<string> dispatch)
     {
         var started = time.GetUtcNow();
+        LastDispatchPointerUnmoved = false;
         try
         {
             var transportReceipt = dispatch();
@@ -154,6 +161,7 @@ public sealed class NanoGameInteractionActions(
         }
         catch (Exception exception)
         {
+            LastDispatchPointerUnmoved = exception is SerialHidPointerMoveException;
             return new GameInteractionDispatchReceipt(
                 ContractSchemaVersions.Revision03,
                 operation,
