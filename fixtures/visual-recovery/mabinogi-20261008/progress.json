@@ -63,6 +63,16 @@
       "ClickImage": true
     },
     {
+      "Id": "merchant-greeting-skip", "Priority": 55, "MinimumVisibleMs": 0,
+      "When": [
+        { "Text": "ネコ商品", "Bounds": [0, 0, 1, 1] },
+        { "Text": "こんニャちわ", "Bounds": [0, 0, 1, 1] },
+        { "Text": "スキップ", "Bounds": [0.8, 0, 0.2, 0.15] }
+      ],
+      "Click": { "Text": "スキップ", "Bounds": [0.8, 0, 0.2, 0.15] },
+      "AfterClickKey": "Key:Esc"
+    },
+    {
       "Id": "merchant-exit", "Key": "Key:Esc", "Priority": 30,
       "When": [
         { "Text": "商店", "Bounds": [0.3, 0.88, 0.16, 0.12] },

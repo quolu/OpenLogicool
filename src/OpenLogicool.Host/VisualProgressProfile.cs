@@ -13,7 +13,7 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false,
     int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null,
     double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false,
-    int RepeatIntervalMs = 0);
+    int RepeatIntervalMs = 0, string? AfterClickKey = null);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
@@ -33,6 +33,12 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             if (rule.MinimumVisibleMs < 0)
                 throw new InvalidDataException("表示待ち時間が不正です。");
             if (rule.Key is not null) OpenLogicool.Input.OutputTokens.Parse(rule.Key);
+            if (rule.AfterClickKey is not null)
+            {
+                if (rule.Click is null && !rule.ClickImage)
+                    throw new InvalidDataException("クリック後のキーにはクリック規則を指定します。");
+                OpenLogicool.Input.OutputTokens.Parse(rule.AfterClickKey);
+            }
             if (rule.Image is not null && (rule.ImageBounds is null || rule.ImageClientWidth <= 0))
                 throw new InvalidDataException("進行規則の画像には探索範囲と基準描画幅が必要です。");
             if (rule.ClickImage && rule.Image is null)
@@ -72,7 +78,7 @@ public sealed record VisualProgressOption(string Id, string Label);
 public sealed record VisualProgressChoice(VisualProgressAction Action, string? RuleId = null,
     string? Signature = null, string? Key = null, double[]? Point = null, string? Detail = null,
     VisualProgressOption[]? Options = null, bool Immediate = false, bool AllowWhileInhibited = false,
-    int RepeatIntervalMs = 0);
+    int RepeatIntervalMs = 0, string? AfterClickKey = null);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
@@ -175,7 +181,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 : rule.Click is null && !rule.ClickImage ? VisualProgressAction.Key : VisualProgressAction.Click,
                 rule.Id, rule.Id + ":" + string.Join("|", rule.When.Select((condition, i) =>
                     string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text))), rule.Key, point,
-                Immediate: rule.Immediate, AllowWhileInhibited: rule.AllowWhileInhibited));
+                Immediate: rule.Immediate, AllowWhileInhibited: rule.AllowWhileInhibited, AfterClickKey: rule.AfterClickKey));
         }
         var priority = candidates.Count == 0 ? 0 : candidates.Max(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority);
         var preferred = candidates.Where(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority == priority).ToArray();

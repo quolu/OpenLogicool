@@ -373,6 +373,7 @@ public static class VisualKeyAssistRuntime
             {
                 using var frames = new WindowsWgcGameFrameSource(target.Window, sourceId + ":progress", TimeSpan.FromSeconds(10));
                 var sceneMonitor = new VisualProgressSceneMonitor();
+                var inputSequence = new VisualProgressInputSequence(actions);
                 VisualKeyAssistDecision? previous = null;
                 try
                 {
@@ -442,6 +443,8 @@ public static class VisualKeyAssistRuntime
                         recoveryRecognizer!.Observe(frame, viewport).HudVisible,
                         schedule.Decide(clock.ElapsedMilliseconds, false, !flowTimed) is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed,
                         sceneActivity.Changed);
+                    var completingClick = inputSequence.Pending is not null && !inhibitMatch.Matches;
+                    if (completingClick) flowChoice = inputSequence.Pending;
                     if (flowChoice is not null)
                         Emit(new { Event = "progress-observation", AtMs = clock.ElapsedMilliseconds,
                             sceneActivity.Changed, sceneActivity.Difference, Candidate = flowCandidate?.Action.ToString(),
@@ -520,7 +523,7 @@ public static class VisualKeyAssistRuntime
                                 var fresh = await frames.CaptureAsync(token);
                                 var freshInhibited = Inhibited(fresh);
                                 var freshViewport = WindowsGameTargetLocator.CaptureClientBounds(target.Window);
-                                var current = freshInhibited ? null : flowChoice.RepeatIntervalMs > 0
+                                var current = freshInhibited ? null : completingClick ? flowChoice : flowChoice.RepeatIntervalMs > 0
                                     ? progressRecognizer!.RecognizeRepeatingImage(fresh, freshViewport, rule => rule.Id == flowChoice.RuleId)
                                     : progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport);
                                 if (current is null)
@@ -532,18 +535,14 @@ public static class VisualKeyAssistRuntime
                                     || current.Signature != flowChoice.Signature || current.Action != flowChoice.Action) continue;
                                 if (UserIsActive()) continue;
                                 var bound = Observation(fresh);
-                                var dispatch = current.Action == VisualProgressAction.Key
-                                    ? actions.KeyTap(new GameInteractionKeyTapRequest(ContractSchemaVersions.Revision03,
-                                        bound.ObservationId, fresh.Sequence, fresh.TransformRevision, fresh.SourceId, [current.Key!]), bound)
-                                    : actions.Click(new GameInteractionTargetBinding(ContractSchemaVersions.Revision03,
-                                        bound.ObservationId, fresh.Sequence, fresh.TransformRevision, fresh.SourceId,
-                                        current.RuleId!, "visual-progress-v1", [current.Point![0] - 0.0005, current.Point[1] - 0.0005, 0.001, 0.001]), bound);
+                                var dispatch = inputSequence.Dispatch(current, bound);
                                 if (dispatch.Status != GameInteractionDispatchStatus.Dispatched)
                                     throw new InvalidOperationException($"進行操作のNano入力に失敗しました: {dispatch.FailureReason}");
-                                progressSchedule!.RecordInput(clock.ElapsedMilliseconds, current);
+                                if (!completingClick) progressSchedule!.RecordInput(clock.ElapsedMilliseconds, current);
                                 if (current.RepeatIntervalMs == 0) schedule.RecordInput(clock.ElapsedMilliseconds);
                                 Emit(new { Event = "progress-input", AtMs = clock.ElapsedMilliseconds, current.RuleId,
-                                    current.Signature, current.Key, current.Point, current.Immediate, current.RepeatIntervalMs, dispatch });
+                                    current.Signature, current.Key, current.Point, current.Immediate, current.RepeatIntervalMs,
+                                    AfterClick = completingClick, dispatch });
                             }
                             finally { inputGate.Release(); }
                             await Task.Delay(250, token);
