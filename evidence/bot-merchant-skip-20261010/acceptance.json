@@ -41,12 +41,13 @@
   },
   "live": {
     "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-120601-669-77ff4523",
-    "phase": "Running",
+    "phase": "ReviewMonitoring",
     "normalSpace": "NanoSerialHidで確認済み",
     "recovery": "観測とポーション送出を確認済み",
     "merchantSequence": "指定3語の表示機会がなく実機送出は未確認",
     "automaticInputRetry": false,
-    "fallback": false
+    "fallback": false,
+    "finalObservation": "HP充填が読めない参考表示を確認した直後の実画面はストーリー演出。復活の選択画面はなく、死亡確定とは扱っていない。通常規則と監視は継続。"
   },
-  "updatedUtc": "2026-10-10T03:07:02.7181355+00:00"
+  "updatedUtc": "2026-10-10T03:08:25.7743791+00:00"
 }

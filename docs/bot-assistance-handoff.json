@@ -62,7 +62,7 @@
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "三語表示でスキップ→Escの規則を導入済み。通常Spaceと回復処理を確認し、Bot継続中。指定3語の実画面での送出は表示機会待ち。",
+    "nextCheck": "三語表示のスキップ→Escを導入済み。Botは継続中。HP充填が読めない参考表示後、実画面はストーリー演出で復活選択なし。死亡確定と扱わず、新しい詰まり通知時だけ対応する。新規則の実機送出は表示機会待ち。",
     "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-120601-669-77ff4523",
     "levelProgression": {
       "currentLevel": 53,
@@ -182,7 +182,7 @@
   },
   "continuation": {
     "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
-    "updatedUtc": "2026-10-10T03:07:02.8282849+00:00",
+    "updatedUtc": "2026-10-10T03:08:25.7968157+00:00",
     "assistanceGeneration": 6,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -194,7 +194,7 @@
       "379225d3-7ac8-4a7b-a293-55c09ab9f0ab"
     ],
     "pendingDecisionIds": [],
-    "botPhase": "Running",
+    "botPhase": "ReviewMonitoring",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
     "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。三語表示のスキップ→Escを導入・130件試験済み。実画面の当該表示での送出は未確認。T反復と画面押下指示も、それぞれ表示機会待ちを保持する。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
