@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "3f3bdf2",
+  "incidentId": "c8495c47-92e7-4fba-82ed-3a72f6afbe92",
+  "stuck": {
+    "run": "20261010-155401-342-c3e241b8",
+    "screen": "画面中央に説明文（宝石やルーンなどを錬金術で昇級させると…）と送りの印だけが出るページ。",
+    "cause": "会話送りの規則は画面上部の吹き出しの範囲だけで送りの印を探す。中央の印は範囲の外で、どの規則にも一致しなかった。",
+    "fixture": "fixtures/visual-recovery/mabinogi-20261008/narration-cue-screen.png"
+  },
+  "change": "規則 narration-cue を追加した。画面中央に文字があり、中央の縦の帯に白い送りの印がある時にSpaceを1回送る。",
+  "tests": {
+    "hostAll": 665,
+    "failed": 0,
+    "focused": "RepeatingImageKeyTests 38件。今回の実画面で選ぶ1件と、ほかの実画面（幅1000px以上の見本すべて）の白い形に一致しない1件を追加。"
+  },
+  "live": {
+    "run": "20261010-160357-567-630e7f76",
+    "result": "再開4.6秒後に narration-cue でSpaceを1回送り、続けて会話送り・クエスト報酬の確認・コンパス・羽根の規則が働いて進行した。"
+  }
+}
