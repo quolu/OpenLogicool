@@ -53,6 +53,24 @@ public sealed class NanoGameInteractionActionsTests
     }
 
     [Fact]
+    public void Flick_dispatches_once_to_the_mapped_destination()
+    {
+        var device = new RecordingDevice();
+        var actions = new NanoGameInteractionActions(device, new Mapper());
+        var current = Observation();
+
+        var receipt = actions.Flick(new GameInteractionDragRequest(
+            ContractSchemaVersions.Revision03,
+            Target(),
+            [0.8, 0.7]), current);
+
+        Assert.Equal(GameInteractionDispatchStatus.Dispatched, receipt.Status);
+        Assert.Equal(GameInteractionOperations.Flick, receipt.Operation);
+        Assert.Equal(["flick"], device.Calls);
+        Assert.Equal(new SerialHidCursorPoint(8, 7), device.DragDestination);
+    }
+
+    [Fact]
     public void Stale_target_stops_before_device_call()
     {
         var device = new RecordingDevice();
@@ -168,6 +186,12 @@ public sealed class NanoGameInteractionActionsTests
         {
             DragDestination = destination;
             return Record("drag");
+        }
+
+        public string Flick(SerialHidCursorPoint start, SerialHidCursorPoint destination)
+        {
+            DragDestination = destination;
+            return Record("flick");
         }
 
         private string Record(string operation)

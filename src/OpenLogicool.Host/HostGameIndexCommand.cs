@@ -99,11 +99,12 @@ public static class HostGameIndexCommand
             "point" => await PointAsync(arguments, nano, emitter, target, sourceId),
             "click-point" => await ClickPointAsync(arguments, nano, emitter, target, sourceId),
             "scroll-point" => await ScrollPointAsync(arguments, nano, emitter, target, sourceId),
-            "drag-points" => await DragPointsAsync(arguments, nano, emitter, target, sourceId),
+            "drag-points" => await DragPointsAsync(arguments, nano, emitter, target, sourceId, flick: false),
+            "flick-points" => await DragPointsAsync(arguments, nano, emitter, target, sourceId, flick: true),
             "focus-nano" => FocusWithNano(target, emitter),
             "focus-taskbar" => FocusWithTaskbar(target, nano.Protocol, emitter),
             "inspect" => Inspect(profiles, target.ProcessName, environment),
-            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、key-tap、key-assist、point、click-point、scroll-point、drag-points、capture、focus-nano、focus-taskbar、inspectです。"),
+            _ => throw new ArgumentException("game-index modeはdiscover、execute、learn-operation、back、key-tap、key-assist、point、click-point、scroll-point、drag-points、flick-points、capture、focus-nano、focus-taskbar、inspectです。"),
         };
         nano.Protocol.SendAllUp();
         return WriteResult(arguments, result);
@@ -752,7 +753,8 @@ public static class HostGameIndexCommand
         SerialHidResidentOutputSession nano,
         SerialHidEmitter emitter,
         WindowsGameTarget target,
-        string sourceId)
+        string sourceId,
+        bool flick)
     {
         var startX = RequiredUnitDouble(arguments, "--start-x");
         var startY = RequiredUnitDouble(arguments, "--start-y");
@@ -761,13 +763,13 @@ public static class HostGameIndexCommand
             RequiredUnitDouble(arguments, "--destination-x"),
             RequiredUnitDouble(arguments, "--destination-y"),
         };
-        var observation = await CaptureBoundObservationAsync(target, sourceId, "host-drag-points-no-ai");
+        var mode = flick ? "flick-points" : "drag-points";
+        var observation = await CaptureBoundObservationAsync(target, sourceId, $"host-{mode}-no-ai");
         var actions = DirectActions(nano, emitter, target);
-        var binding = PointBinding(observation, startX, startY, "host-drag-points");
-        var dispatch = actions.Drag(
-            new GameInteractionDragRequest(ContractSchemaVersions.Revision03, binding, destination),
-            observation);
-        return new { Mode = "drag-points", ProductHostEntry = true, StartX = startX, StartY = startY, Destination = destination, dispatch, AiCallCount = 0 };
+        var binding = PointBinding(observation, startX, startY, $"host-{mode}");
+        var request = new GameInteractionDragRequest(ContractSchemaVersions.Revision03, binding, destination);
+        var dispatch = flick ? actions.Flick(request, observation) : actions.Drag(request, observation);
+        return new { Mode = mode, ProductHostEntry = true, StartX = startX, StartY = startY, Destination = destination, dispatch, AiCallCount = 0 };
     }
 
     private static async Task<ObservationResult> CaptureBoundObservationAsync(

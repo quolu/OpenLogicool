@@ -60,6 +60,30 @@ public sealed class SerialHidNanoGameInputDevice(
         return $"start:{PointerReceipt(startMove)};drag:{PointerReceipt(dragMove!)};mouse-left-up";
     }
 
+    public string Flick(SerialHidCursorPoint start, SerialHidCursorPoint destination)
+    {
+        var startMove = pointer.MoveTo(start);
+        var released = false;
+        emitter.Emit([Down("Mouse:Left")]);
+        SerialHidPointerMoveReceipt glide;
+        try
+        {
+            glide = pointer.GlideTo(destination, 0.5, () =>
+            {
+                emitter.Emit([Up("Mouse:Left")]);
+                released = true;
+            });
+        }
+        finally
+        {
+            if (!released)
+            {
+                emitter.Emit([Up("Mouse:Left")]);
+            }
+        }
+        return $"start:{PointerReceipt(startMove)};flick:{PointerReceipt(glide)};mouse-left-up-midway";
+    }
+
     private static string PointerReceipt(SerialHidPointerMoveReceipt receipt) =>
         $"pointer:{receipt.Start.X},{receipt.Start.Y}->{receipt.End.X},{receipt.End.Y};deltas:{receipt.DeltaCount}";
 

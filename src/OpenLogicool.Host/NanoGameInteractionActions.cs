@@ -16,6 +16,9 @@ public interface INanoGameInputDevice
     string Scroll(SerialHidCursorPoint target, int verticalSteps, int horizontalSteps);
 
     string Drag(SerialHidCursorPoint start, SerialHidCursorPoint destination);
+
+    /// <summary>startで押してdestinationへ一定の速さで進み、途中でボタンを離して進み続ける（払う操作）。</summary>
+    string Flick(SerialHidCursorPoint start, SerialHidCursorPoint destination);
 }
 
 public interface IGameInteractionCoordinateMapper
@@ -114,6 +117,27 @@ public sealed class NanoGameInteractionActions(
             request.Start.TargetWindowSourceId,
             request.Start.CandidateId,
             () => device.Drag(
+                coordinates.MapTargetCenter(request.Start),
+                coordinates.MapNormalized(request.DestinationNormalized)));
+    }
+
+    public GameInteractionDispatchReceipt Flick(
+        GameInteractionDragRequest request,
+        ObservationResult current)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ValidateTarget(request.Start, current, GameInteractionOperations.Flick, requirePrimitive: false);
+        if (request.DestinationNormalized.Count != 2
+            || request.DestinationNormalized.Any(value => !double.IsFinite(value) || value is < 0 or > 1))
+        {
+            throw new ArgumentException("Flick destinationはframe内normalized pointでなければなりません。", nameof(request));
+        }
+        return Dispatch(
+            GameInteractionOperations.Flick,
+            request.Start.ObservationId,
+            request.Start.TargetWindowSourceId,
+            request.Start.CandidateId,
+            () => device.Flick(
                 coordinates.MapTargetCenter(request.Start),
                 coordinates.MapNormalized(request.DestinationNormalized)));
     }

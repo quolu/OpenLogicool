@@ -13,6 +13,9 @@ public static class GameInteractionOperations
     public const string KeyTap = "key-tap";
     public const string Scroll = "scroll";
     public const string Drag = "drag";
+
+    /// <summary>押したまま動かし、動いている途中で離す（一覧を慣性で流す）。学習・探索の対象にはせず、明示の呼び出しだけが使う。</summary>
+    public const string Flick = "flick";
     public const string WaitStable = "wait-stable";
     public const string Compare = "compare";
     public const string LearnTransition = "learn-transition";

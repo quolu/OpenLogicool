@@ -590,6 +590,7 @@ public sealed class ProductGameExplorerRuntimeTests
         public string KeyTap(IReadOnlyList<string> keys) => Record("key-tap");
         public string Scroll(SerialHidCursorPoint target, int verticalSteps, int horizontalSteps) => Record("scroll");
         public string Drag(SerialHidCursorPoint start, SerialHidCursorPoint destination) => Record("drag");
+        public string Flick(SerialHidCursorPoint start, SerialHidCursorPoint destination) => Record("flick");
         private string Record(string operation)
         {
             Calls.Add(operation);

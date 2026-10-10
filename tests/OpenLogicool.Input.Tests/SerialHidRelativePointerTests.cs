@@ -62,6 +62,45 @@ public sealed class SerialHidRelativePointerTests
     }
 
     [Fact]
+    public void Glide_keeps_a_constant_step_and_signals_once_midway_without_stopping()
+    {
+        var cursor = new FakeCursor();
+        var exchange = new PointerExchange(cursor);
+        var pointer = new SerialHidRelativePointer(Connect(exchange), cursor);
+        var passedAt = new List<SerialHidCursorPoint>();
+
+        var receipt = pointer.GlideTo(
+            new SerialHidCursorPoint(0, 168),
+            0.5,
+            () => passedAt.Add(cursor.Position));
+
+        // 12刻みで 84 を越えた直後（7回目の後）に一度だけ知らせ、そのまま 168 まで進む。
+        Assert.Equal([new SerialHidCursorPoint(0, 84)], passedAt);
+        Assert.Equal(new SerialHidCursorPoint(0, 168), receipt.End);
+        Assert.Equal(14, receipt.DeltaCount);
+        var deltas = exchange.Requests
+            .Select(frame => SerialHidProtocolV1.Decode(frame))
+            .Where(frame => frame.Kind == SerialHidMessageKind.MouseDelta)
+            .ToArray();
+        Assert.Equal(14, deltas.Length);
+        Assert.All(deltas, frame => Assert.Equal([(byte)0, (byte)12], frame.Payload.Take(2)));
+    }
+
+    [Fact]
+    public void Glide_aborts_without_fallback_when_the_cursor_does_not_move()
+    {
+        var cursor = new FakeCursor { IgnoreDelta = true };
+        var exchange = new PointerExchange(cursor);
+        var pointer = new SerialHidRelativePointer(Connect(exchange), cursor);
+        var passed = 0;
+
+        Assert.Throws<SerialHidPointerMoveException>(() =>
+            pointer.GlideTo(new SerialHidCursorPoint(0, 168), 0.5, () => passed++));
+
+        Assert.Equal(0, passed);
+    }
+
+    [Fact]
     public void Button_down_delta_and_up_keep_single_ordered_session()
     {
         var cursor = new FakeCursor();

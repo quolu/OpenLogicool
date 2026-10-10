@@ -415,6 +415,7 @@ public sealed class KnownScreenActionRuntimeTests
         public string KeyTap(IReadOnlyList<string> keys) { KeyTapCount++; return "key-tap"; }
         public string Scroll(SerialHidCursorPoint target, int verticalSteps, int horizontalSteps) { ScrollCount++; return "scroll"; }
         public string Drag(SerialHidCursorPoint start, SerialHidCursorPoint destination) { DragCount++; return "drag"; }
+        public string Flick(SerialHidCursorPoint start, SerialHidCursorPoint destination) => throw new NotSupportedException();
     }
 
     private sealed class Mapper : IGameInteractionCoordinateMapper

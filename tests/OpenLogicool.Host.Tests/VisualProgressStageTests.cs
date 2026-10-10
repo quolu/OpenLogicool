@@ -262,5 +262,6 @@ public sealed class VisualProgressStageTests
         public string Hover(SerialHidCursorPoint target) => throw new NotSupportedException();
         public string Scroll(SerialHidCursorPoint target, int verticalSteps, int horizontalSteps) => throw new NotSupportedException();
         public string Drag(SerialHidCursorPoint start, SerialHidCursorPoint destination) => throw new NotSupportedException();
+        public string Flick(SerialHidCursorPoint start, SerialHidCursorPoint destination) => throw new NotSupportedException();
     }
 }

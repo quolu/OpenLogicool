@@ -76,6 +76,80 @@ public sealed class SerialHidRelativePointer(
             + $" final=({current.X},{current.Y})。fallbackせず停止します。");
     }
 
+    /// <summary>
+    /// 減速せず一定の刻みでtargetへ進む。進んだ割合がpassRatioを越えた直後に一度だけonPassedを呼び、
+    /// 止まらずにtargetまで進み続ける。動いている途中でボタンを離す操作（払う操作）のために使う。
+    /// </summary>
+    public SerialHidPointerMoveReceipt GlideTo(
+        SerialHidCursorPoint target,
+        double passRatio,
+        Action onPassed,
+        int stepDelta = 12,
+        int maximumSteps = 256,
+        int maximumConsecutiveNoProgress = 2)
+    {
+        ArgumentNullException.ThrowIfNull(onPassed);
+        if (!double.IsFinite(passRatio) || passRatio is <= 0 or >= 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(passRatio));
+        }
+        if (stepDelta is < 1 or > 127)
+        {
+            throw new ArgumentOutOfRangeException(nameof(stepDelta));
+        }
+        if (maximumSteps <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumSteps));
+        }
+        if (maximumConsecutiveNoProgress <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumConsecutiveNoProgress));
+        }
+
+        var start = cursorOracle.ReadCurrent();
+        double spanX = (long)target.X - start.X;
+        double spanY = (long)target.Y - start.Y;
+        var length = Math.Sqrt((spanX * spanX) + (spanY * spanY));
+        if (length < stepDelta)
+        {
+            throw new ArgumentException("GlideToは一刻みより長い移動を必要とします。", nameof(target));
+        }
+
+        var deltaX = checked((sbyte)Math.Round(spanX / length * stepDelta));
+        var deltaY = checked((sbyte)Math.Round(spanY / length * stepDelta));
+        var current = start;
+        var passed = false;
+        var noProgress = 0;
+        for (var step = 0; step < maximumSteps; step++)
+        {
+            var travelled = ((((long)current.X - start.X) * spanX) + (((long)current.Y - start.Y) * spanY)) / (length * length);
+            if (!passed && travelled >= passRatio)
+            {
+                passed = true;
+                onPassed();
+            }
+            if (travelled >= 1)
+            {
+                return new SerialHidPointerMoveReceipt(start, target, current, step);
+            }
+
+            session.SendMouseDelta(deltaX, deltaY, 0);
+            var observed = cursorOracle.ReadAfterDelta(current);
+            noProgress = observed == current ? noProgress + 1 : 0;
+            if (noProgress >= maximumConsecutiveNoProgress)
+            {
+                throw new SerialHidPointerMoveException(
+                    $"Nano relative pointerを{noProgress}回送ってもcursorが変化しませんでした"
+                    + $"（cursor=({current.X},{current.Y}) target=({target.X},{target.Y})）。fallbackせず停止します。");
+            }
+            current = observed;
+        }
+
+        throw new SerialHidPointerMoveException(
+            $"Nano relative pointerが{maximumSteps} stepでtarget ({target.X},{target.Y})を通過しませんでした。"
+            + $" final=({current.X},{current.Y})。fallbackせず停止します。");
+    }
+
     private static bool WithinTolerance(
         SerialHidCursorPoint current,
         SerialHidCursorPoint target,
