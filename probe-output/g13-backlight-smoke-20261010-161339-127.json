@@ -1,0 +1,55 @@
+{
+  "Probe": "g13-backlight-smoke",
+  "CapturedAtUtc": "2026-10-10T07:11:39.0805689Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "Arguments": [
+    "--sweep",
+    "--wait-for-press",
+    "--seconds",
+    "20",
+    "--rate",
+    "30",
+    "--restore",
+    "90,255,110"
+  ],
+  "Collections": [
+    {
+      "DevicePath": "\\\\?\\hid#vid_046d\u0026pid_c21c#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "VendorId": 1133,
+      "ProductId": 49692,
+      "UsagePage": 65280,
+      "Usage": 0,
+      "InputReportByteLength": 8,
+      "OutputReportByteLength": 992,
+      "FeatureReportByteLength": 258
+    }
+  ],
+  "Before": {
+    "Report5": {
+      "Succeeded": true,
+      "Win32Error": 0,
+      "FirstBytes": "0000000000000000"
+    },
+    "Report7": {
+      "Succeeded": true,
+      "Win32Error": 0,
+      "FirstBytes": "075AFF6E00000000"
+    }
+  },
+  "Sweep": {
+    "Started": false,
+    "Reason": "120 \u79D2\u4EE5\u5185\u306B G13 \u306E\u30DC\u30BF\u30F3\u304C\u62BC\u3055\u308C\u307E\u305B\u3093\u3067\u3057\u305F\u3002",
+    "G13RawInputDevices": 1
+  },
+  "Restore": {
+    "Color": {
+      "Item1": 90,
+      "Item2": 255,
+      "Item3": 110
+    },
+    "Succeeded": true,
+    "Win32Error": 0
+  },
+  "Failure": null
+}

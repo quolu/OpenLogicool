@@ -12,8 +12,9 @@ namespace OpenLogicool.Probe;
 /// 段階を分けて実行する:
 ///   --inspect-only            列挙と feature report 5／7 の読み出しだけ（書かない）
 ///   --set R,G,B               色を1回だけ書く
-///   --sweep --seconds N --rate HZ [--restore R,G,B]
+///   --sweep --seconds N --rate HZ [--restore R,G,B] [--wait-for-press]
 ///                             虹色を連続で書き、書き込みの所要時間・失敗・入力の取りこぼしを測る
+///                             （--wait-for-press は G13 のボタンが押されてから始める）
 /// 送るのは feature report 7（色）だけで、driver・firmware・profile には触れない。
 /// </summary>
 internal static class G13BacklightSmoke
@@ -37,7 +38,8 @@ internal static class G13BacklightSmoke
         }
 
         var collections = new G13LcdHidAccess().EnumerateCollections();
-        var collection = collections.SingleOrDefault(candidate => candidate.FeatureReportByteLength > 0);
+        var withFeature = collections.Where(candidate => candidate.FeatureReportByteLength > 0).ToArray();
+        var collection = withFeature.Length == 1 ? withFeature[0] : null;
         var evidence = new Dictionary<string, object?>
         {
             ["Probe"] = "g13-backlight-smoke",
@@ -89,7 +91,7 @@ internal static class G13BacklightSmoke
 
             if (sweep)
             {
-                evidence["Sweep"] = Sweep(handle, length, seconds, rate);
+                evidence["Sweep"] = Sweep(handle, length, seconds, rate, args.Contains("--wait-for-press", StringComparer.Ordinal));
                 if (restoreColor is { } restore)
                 {
                     var result = WriteColor(handle, length, restore);
@@ -106,14 +108,35 @@ internal static class G13BacklightSmoke
     }
 
     /// <summary>虹色を一定の間隔で書き続け、1回ごとの所要時間と失敗、G13 入力の取りこぼしを数える。</summary>
-    private static object Sweep(IntPtr handle, int length, int seconds, int rate)
+    private static object Sweep(IntPtr handle, int length, int seconds, int rate, bool waitForPress)
     {
         using var input = new G13RawInputSource();
         var devices = input.EnumerateDevices().Count;
+        var downs = 0;
+        var ups = 0;
+        if (waitForPress)
+        {
+            Console.WriteLine("[g13-backlight] G13 のボタンが押されるのを待っています（120 秒まで）。");
+            var waited = Stopwatch.StartNew();
+            while (downs == 0 && waited.Elapsed < TimeSpan.FromSeconds(120))
+            {
+                while (input.TryPull(out var first))
+                {
+                    if (first.Edge == OpenLogicool.Contracts.Devices.Shared.PhysicalInputEdge.Down) downs++; else ups++;
+                }
+
+                Thread.Sleep(2);
+            }
+
+            if (downs == 0)
+            {
+                return new { Started = false, Reason = "120 秒以内に G13 のボタンが押されませんでした。", G13RawInputDevices = devices };
+            }
+        }
+
         Console.WriteLine($"[g13-backlight] {seconds} 秒間、毎秒 {rate} 回の色を書きます。その間、G1 を何度か押してください。");
         var elapsed = new List<double>();
         var failures = 0;
-        var edges = 0;
         var interval = TimeSpan.FromSeconds(1.0 / rate);
         var clock = Stopwatch.StartNew();
         var next = TimeSpan.Zero;
@@ -132,9 +155,9 @@ internal static class G13BacklightSmoke
                 next += interval;
             }
 
-            while (input.TryPull(out _))
+            while (input.TryPull(out var edge))
             {
-                edges++;
+                if (edge.Edge == OpenLogicool.Contracts.Devices.Shared.PhysicalInputEdge.Down) downs++; else ups++;
             }
 
             Thread.Sleep(1);
@@ -150,8 +173,10 @@ internal static class G13BacklightSmoke
             WriteMsMedian = elapsed.Count == 0 ? 0 : elapsed[elapsed.Count / 2],
             WriteMsP99 = elapsed.Count == 0 ? 0 : elapsed[(int)(elapsed.Count * 0.99)],
             WriteMsMax = elapsed.Count == 0 ? 0 : elapsed[^1],
+            Started = true,
             G13RawInputDevices = devices,
-            G13EdgesObserved = edges,
+            G13Downs = downs,
+            G13Ups = ups,
             G13DroppedInputs = input.DroppedInputCount,
         };
     }

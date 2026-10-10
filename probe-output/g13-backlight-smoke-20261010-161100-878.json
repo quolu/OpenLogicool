@@ -1,0 +1,61 @@
+{
+  "Probe": "g13-backlight-smoke",
+  "CapturedAtUtc": "2026-10-10T07:10:20.7795463Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "Arguments": [
+    "--sweep",
+    "--seconds",
+    "40",
+    "--rate",
+    "30",
+    "--restore",
+    "90,255,110"
+  ],
+  "Collections": [
+    {
+      "DevicePath": "\\\\?\\hid#vid_046d\u0026pid_c21c#a\u002624a980b8\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+      "VendorId": 1133,
+      "ProductId": 49692,
+      "UsagePage": 65280,
+      "Usage": 0,
+      "InputReportByteLength": 8,
+      "OutputReportByteLength": 992,
+      "FeatureReportByteLength": 258
+    }
+  ],
+  "Before": {
+    "Report5": {
+      "Succeeded": true,
+      "Win32Error": 0,
+      "FirstBytes": "0000000000000000"
+    },
+    "Report7": {
+      "Succeeded": true,
+      "Win32Error": 0,
+      "FirstBytes": "005AFF6E00000000"
+    }
+  },
+  "Sweep": {
+    "Seconds": 40,
+    "RatePerSecond": 30,
+    "Writes": 1200,
+    "Failures": 0,
+    "WriteMsMedian": 0.3118,
+    "WriteMsP99": 0.5156,
+    "WriteMsMax": 1.035,
+    "G13RawInputDevices": 1,
+    "G13EdgesObserved": 0,
+    "G13DroppedInputs": 0
+  },
+  "Restore": {
+    "Color": {
+      "Item1": 90,
+      "Item2": 255,
+      "Item3": 110
+    },
+    "Succeeded": true,
+    "Win32Error": 0
+  },
+  "Failure": null
+}
