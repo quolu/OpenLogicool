@@ -871,5 +871,76 @@ public sealed class VisualProgressTests
         Assert.Equal(VisualProgressAction.Key, choice.Action);
     }
 
+    [Fact]
+    public async Task クエストクリアとアイテムの詳細案内が揃う実画面では結果待ちや入力期限を待たずSpaceを選ぶ()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var frame = ReadFrame(Path.Combine(fixture, "quest-reward-prompt.png"));
+        var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame);
+        var choice = new VisualProgressRecognizer(profile).Recognize(ocr, frame.Width, frame.Height,
+            new(1, 31, frame.Width - 2, frame.Height - 32), frame);
+        Assert.Equal("quest-reward-prompt", choice.RuleId);
+        Assert.Equal("Key:Space", choice.Key);
+        Assert.True(choice.Immediate);
+        var schedule = new VisualProgressSchedule(profile);
+        schedule.RecordInput(0, new(VisualProgressAction.Key, "space-confirm", "確認", "Key:Space"));
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(1, choice, false, false, due: false).Action);
+        schedule.RecordInput(1, choice);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2, choice, false, false, due: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2, choice, true, false, due: true).Action);
+    }
+
+    [Theory]
+    [InlineData("クエストクリア！")]
+    [InlineData("アイテムを押すと、詳細情報を確認できます。")]
+    public void クエストクリアの即時入力は二つのテキストの片方だけでは選ばない(string text)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var profile = VisualProgressProfile.Load(Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008/progress.json"));
+        var choice = new VisualProgressRecognizer(profile).Recognize(Ocr([new(text, 200, 200, 500, 30)]),
+            1000, 600, new(0, 0, 1000, 600));
+        Assert.NotEqual("quest-reward-prompt", choice.RuleId);
+    }
+
+    [Fact]
+    public void ボーナスの選択表示は利用者へ即時申請する印と選択肢を持ち行動不能には印を付けない()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(
+            Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008/progress.json")));
+        var bonus = recognizer.Recognize(Ocr([new("レベルアップボーナスを選択してください", 380, 180, 260, 20),
+            new("STR成長1段階", 360, 270, 70, 20), new("LUCK成長13段階", 465, 270, 70, 20), new("WILL成長1段階", 570, 270, 70, 20)]),
+            1000, 600, new(0, 0, 1000, 600));
+        Assert.Equal(VisualProgressAction.Review, bonus.Action);
+        Assert.True(bonus.AskUserImmediately);
+        Assert.Equal(new[] { "選択肢1: STR成長1段階", "選択肢2: LUCK成長13段階", "選択肢3: WILL成長1段階" },
+            bonus.Options!.Select(option => option.Label));
+        var schedule = new VisualProgressSchedule(VisualProgressProfile.Load(
+            Path.Combine(directory.FullName, "fixtures/visual-recovery/mabinogi-20261008/progress.json")));
+        Assert.True(schedule.Decide(0, bonus, false, false, due: false).AskUserImmediately);
+        var down = recognizer.Recognize(Ocr([new("行動不能", 400, 110, 100, 30)]), 1000, 600, new(0, 0, 1000, 600));
+        Assert.Equal(VisualProgressAction.Review, down.Action);
+        Assert.False(down.AskUserImmediately);
+    }
+
+    [Fact]
+    public void 利用者への即時申請は選択肢の領域を持つ確認画面にだけ指定できる()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"openlogicool-progress-{Guid.NewGuid():N}.json");
+        try
+        {
+            File.WriteAllText(path, """{"SchemaVersion":1,"Rules":[],"ReviewWhen":[{"Text":"選択","Bounds":[0,0,1,1],"AskUserImmediately":true}]}""");
+            Assert.Throws<InvalidDataException>(() => VisualProgressProfile.Load(path));
+            File.WriteAllText(path, """{"SchemaVersion":1,"Rules":[{"Id":"a","Key":"Key:Space","When":[{"Text":"選択","Bounds":[0,0,1,1],"AskUserImmediately":true}]}],"ReviewWhen":[]}""");
+            Assert.Throws<InvalidDataException>(() => VisualProgressProfile.Load(path));
+        }
+        finally { File.Delete(path); }
+    }
+
     private static WindowsGameOcrResult Ocr(WindowsGameOcrWord[] words) => new(string.Join(" ", words.Select(w => w.Text)), "ja", 0, words);
 }

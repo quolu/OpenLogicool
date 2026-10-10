@@ -19,10 +19,18 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
         {
             if (new BotAssistanceStore(assistanceDatabasePath).Read().Binding is null)
                 throw new InvalidDataException("AI支援の担当が未登録です。");
-            return new("", []) { AssistanceDatabasePath = assistanceDatabasePath };
+            // 利用者だけが選ぶ表示は担当AIを経由しないため、決裁箱の接続設定がある時は併せて持つ。
+            return (humanSettings is not null && File.Exists(humanSettings) ? Load(humanSettings) : new("", []))
+                with { AssistanceDatabasePath = assistanceDatabasePath };
         }
         return humanSettings is null ? null : Load(humanSettings);
     }
+
+    /// <summary>利用者だけが選ぶ表示を、担当AIを経由せず決裁箱へ申請する。</summary>
+    public async Task<VisualAssistNotice> AskUserAsync(string evidenceDirectory, JsonElement result, CancellationToken token)
+        => Executable.Length == 0
+            ? throw new InvalidOperationException("決裁箱の接続設定がないため、利用者へ直接申請できません。")
+            : new(VisualAssistNoticeKind.Human, await ExchangeAsync(evidenceDirectory, result, token));
     public static VisualAssistReviewNotifier Load(string path)
     {
         var value = JsonSerializer.Deserialize<VisualAssistReviewNotifier>(File.ReadAllText(path))

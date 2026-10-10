@@ -6,7 +6,8 @@ using OpenLogicool.Contracts.Capture;
 
 namespace OpenLogicool.Host;
 
-public sealed record VisualProgressText(string Text, double[] Bounds, double[][]? ChoiceBounds = null);
+public sealed record VisualProgressText(string Text, double[] Bounds, double[][]? ChoiceBounds = null,
+    bool AskUserImmediately = false);
 public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
@@ -68,6 +69,9 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("進行規則の描画領域内座標が不正です。");
         if (value.ReviewWhen.Any(text => text.ChoiceBounds is not null && text.ChoiceBounds.Length is < 2 or > 5))
             throw new InvalidDataException("確認画面の選択肢は2〜5領域で指定します。");
+        if (value.ReviewWhen.Any(text => text.AskUserImmediately && text.ChoiceBounds is null)
+            || value.Rules.SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click })).Any(text => text.AskUserImmediately))
+            throw new InvalidDataException("利用者への即時申請は、選択肢の領域を持つ確認画面に指定します。");
         return value with { Rules = value.Rules.Select(rule => rule.Image is null ? rule
             : rule with { Image = Path.GetFullPath(rule.Image, Path.GetDirectoryName(Path.GetFullPath(path))!) }).ToArray() };
     }
@@ -78,7 +82,7 @@ public sealed record VisualProgressOption(string Id, string Label);
 public sealed record VisualProgressChoice(VisualProgressAction Action, string? RuleId = null,
     string? Signature = null, string? Key = null, double[]? Point = null, string? Detail = null,
     VisualProgressOption[]? Options = null, bool Immediate = false, bool AllowWhileInhibited = false,
-    int RepeatIntervalMs = 0, string? AfterClickKey = null);
+    int RepeatIntervalMs = 0, string? AfterClickKey = null, bool AskUserImmediately = false);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
@@ -129,7 +133,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                         var label = Read(new("", bounds));
                         return new VisualProgressOption($"choice-{index + 1}",
                             $"選択肢{index + 1}: " + (label.Length == 0 ? "文字を読めません（添付画像を確認）" : label));
-                    }).ToArray());
+                    }).ToArray(), AskUserImmediately: review.AskUserImmediately);
         var candidates = new List<VisualProgressChoice>();
         foreach (var rule in profile.Rules.Where(rule => rule.RepeatIntervalMs == 0))
         {

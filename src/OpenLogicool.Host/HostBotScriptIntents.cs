@@ -7,7 +7,7 @@ using OpenLogicool.Playbooks;
 
 namespace OpenLogicool.Host;
 
-internal sealed record BotScriptPackage(string Id, string Name, string ProcessName)
+internal sealed record BotScriptPackage(string Id, string Name, string ProcessName, bool TimedInputEnabled = true)
 {
     public string Directory { get; init; } = "";
     public string File(string name) => Path.Combine(Directory, name);
@@ -63,7 +63,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
             var recovery = VisualRecoveryProfile.Load(package.File("profile.json"));
             _ = VisualProgressProfile.Load(package.File("progress.json"));
             return new BotScriptItem(package.Id, package.Name,
-                $"Nanoで入力・会話は表示の安定後に送る・通常Spaceは8〜12秒間隔\n回復監視は毎秒4回 ／ ポーション: HP {recovery.PotionThreshold:P0}以下 ／ 包帯: 白 {recovery.BandageThreshold:P0}以上 ／ 時間制限なし");
+                $"Nanoで入力・会話は表示の安定後に送る・{(package.TimedInputEnabled ? "通常Spaceは8〜12秒間隔" : "表示条件のある入力のみ・定期Spaceは停止中")}\n回復監視は毎秒4回 ／ ポーション: HP {recovery.PotionThreshold:P0}以下 ／ 包帯: 白 {recovery.BandageThreshold:P0}以上 ／ 時間制限なし");
         }).ToArray();
         var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-runs");
         var reviewSettings = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-review-mcp.json");
@@ -90,6 +90,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                     "--cue-text", "画面を押してください", "--keys", "Key:Space",
                     "--recovery-profile", package.File("profile.json"), "--progress-profile", package.File("progress.json"),
                     "--evidence", evidence, "--continue-on-review", "--pause-on-user-input", "--assistance-db", databasePath };
+                if (!package.TimedInputEnabled) arguments.Add("--no-timed-input");
                 if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
                 var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(), nano, emitter, target,
                     $"window:bot:{target.ProcessId}", token, report);

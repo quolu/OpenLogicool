@@ -50,6 +50,22 @@ public sealed class VisualKeyAssistTests
     }
 
     [Fact]
+    public void 定期入力を止めた時は期限を作らず表示がない限り何時間経っても送らない()
+    {
+        var timerCalls = 0;
+        var schedule = new VisualKeyAssistSchedule(0, () => { timerCalls++; return 8000; }, timedInputEnabled: false);
+        foreach (var now in new long[] { 0, 8000, 12000, 60000, 24 * 60 * 60 * 1000 })
+            Assert.Equal(VisualKeyAssistDecision.Wait, schedule.Decide(now, false, false));
+        Assert.Equal(VisualKeyAssistDecision.Cue, schedule.Decide(100000000, false, true));
+        schedule.RecordInput(100000000);
+        Assert.Equal(VisualKeyAssistDecision.Wait, schedule.Decide(100000749, false, true));
+        Assert.Equal(VisualKeyAssistDecision.Cue, schedule.Decide(100000750, false, true));
+        Assert.Equal(VisualKeyAssistDecision.Wait, schedule.Decide(200000000, false, false));
+        Assert.Equal(VisualKeyAssistDecision.Hold, schedule.Decide(200000000, true, true));
+        Assert.Equal(0, timerCalls);
+    }
+
+    [Fact]
     public void Visible_key_cue_does_not_wait_for_the_random_timer_or_repeat_on_the_same_immediate_capture()
     {
         var schedule = new VisualKeyAssistSchedule(0, () => 12_000);

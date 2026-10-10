@@ -45,6 +45,19 @@ public sealed class VisualProgressReviewMonitorTests
     }
 
     [Fact]
+    public void 利用者へ直接申請できた表示は一分後の通知を出さず申請できなかった時だけ通知する()
+    {
+        var monitor = new VisualProgressReviewMonitor();
+        monitor.Hold(new(VisualProgressAction.Review, Detail: "選択", AskUserImmediately: true), now: 1000);
+        monitor.MarkNotified();
+        Assert.False(monitor.TryTakeNotification(61_000));
+        Assert.True(monitor.IsHolding);
+        monitor.Hold(new(VisualProgressAction.Review, Detail: "選択", AskUserImmediately: true), now: 100_000);
+        Assert.False(monitor.TryTakeNotification(159_999));
+        Assert.True(monitor.TryTakeNotification(160_000));
+    }
+
+    [Fact]
     public void 一分以内に復帰したら通知を破棄し次の詰まりを検出した時から数え直す()
     {
         var monitor = new VisualProgressReviewMonitor();

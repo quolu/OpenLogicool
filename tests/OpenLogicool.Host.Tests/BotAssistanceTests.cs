@@ -171,6 +171,21 @@ public sealed class BotAssistanceTests : IDisposable
         Assert.Equal("open", incident.Status);
     }
 
+    [Fact]
+    public async Task AI支援登録時も決裁箱の接続を併せて持ち未設定なら直接申請を明示エラーにする()
+    {
+        new BotAssistanceStore(Database).Bind(OldThread, root);
+        Directory.CreateDirectory(root);
+        var settings = Path.Combine(root, "bot-review-mcp.json");
+        File.WriteAllText(settings, """{"Executable":"決裁箱の実行ファイル","Arguments":["引数"]}""");
+        var both = VisualAssistReviewNotifier.Create(settings, Database)!;
+        Assert.Equal("決裁箱の実行ファイル", both.Executable);
+        Assert.Equal(Database, both.AssistanceDatabasePath);
+        var assistantOnly = VisualAssistReviewNotifier.Create("存在しない人向け設定", Database)!;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => assistantOnly.AskUserAsync(root, Review("選択"), default));
+        Assert.Empty(new BotAssistanceStore(Database).Read().Incidents);
+    }
+
     [Theory]
     [InlineData("壊れたJSON", 0)]
     [InlineData("null", 0)]

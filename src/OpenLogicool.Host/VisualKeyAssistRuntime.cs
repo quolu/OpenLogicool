@@ -27,9 +27,9 @@ public sealed class VisualKeyAssistProgress
 }
 
 /// <summary>利用者の画像条件を優先し、通常の待ち時間だけを乱数で決める。</summary>
-public sealed class VisualKeyAssistSchedule(long startedMilliseconds, Func<int> nextInterval)
+public sealed class VisualKeyAssistSchedule(long startedMilliseconds, Func<int> nextInterval, bool timedInputEnabled = true)
 {
-    private long nextTimed = startedMilliseconds + nextInterval();
+    private long? nextTimed = timedInputEnabled ? startedMilliseconds + nextInterval() : null;
     private long nextCue;
     private readonly object gate = new();
 
@@ -37,14 +37,14 @@ public sealed class VisualKeyAssistSchedule(long startedMilliseconds, Func<int> 
     {
         lock (gate) return inhibited ? VisualKeyAssistDecision.Hold
         : cue ? now >= nextCue ? VisualKeyAssistDecision.Cue : VisualKeyAssistDecision.Wait
-        : now >= nextTimed ? VisualKeyAssistDecision.Timed : VisualKeyAssistDecision.Wait;
+        : nextTimed is { } deadline && now >= deadline ? VisualKeyAssistDecision.Timed : VisualKeyAssistDecision.Wait;
     }
 
     public void RecordInput(long now)
     {
         lock (gate)
         {
-            nextTimed = now + nextInterval();
+            if (timedInputEnabled) nextTimed = now + nextInterval();
             nextCue = now + 750;
         }
     }
@@ -298,6 +298,7 @@ public static class VisualKeyAssistRuntime
         // 計測では撮影と判定だけを実行し、前面化・Space・回復品を送出しない。
         var measureOnly = arguments.Contains("--measure-only", StringComparer.Ordinal);
         var continueRules = arguments.Contains("--continue-on-review", StringComparer.Ordinal);
+        var timedInputEnabled = !arguments.Contains("--no-timed-input", StringComparer.Ordinal);
         var keepMonitoring = continueRules || arguments.Contains("--keep-monitoring-on-review", StringComparer.Ordinal);
         var evidenceDirectory = Path.GetFullPath(Required("--evidence"));
         Directory.CreateDirectory(evidenceDirectory);
@@ -337,7 +338,7 @@ public static class VisualKeyAssistRuntime
                 new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()),
                 new WindowsGameInteractionCoordinateMapper(() => WindowsGameTargetLocator.Locate(target.ProcessName).Bounds));
             var clock = Stopwatch.StartNew();
-            var schedule = new VisualKeyAssistSchedule(0, () => Random.Shared.Next(8_000, 12_001));
+            var schedule = new VisualKeyAssistSchedule(0, () => Random.Shared.Next(8_000, 12_001), timedInputEnabled);
             var events = new ConcurrentQueue<object>();
             using var inputGate = new SemaphoreSlim(1, 1);
             var eventGate = new object();
@@ -350,7 +351,7 @@ public static class VisualKeyAssistRuntime
             Task notificationWork = Task.CompletedTask;
             VisualAssistNotice? reviewDecisionId = null;
             var reviewNumber = 0;
-            Emit(new { Event = "run-started", DurationMs = duration, AutomaticRulesContinue = continueRules,
+            Emit(new { Event = "run-started", DurationMs = duration, AutomaticRulesContinue = continueRules, TimedInputEnabled = timedInputEnabled,
                 NotificationGraceMs = VisualProgressReviewMonitor.NotificationGraceMs });
             var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)
                 ? await RunProgressAsync(stop.Token)
@@ -489,7 +490,7 @@ public static class VisualKeyAssistRuntime
                             if (keepMonitoring)
                             {
                                 BeginMonitoring(flowCandidate ?? new(VisualProgressAction.Normal), frame,
-                                    flowChoice.Detail!, flowChoice.Options, ocr?.Text, token);
+                                    flowChoice.Detail!, flowChoice.Options, ocr?.Text, token, flowChoice.AskUserImmediately);
                                 flowChoice = VisualProgressContinuation.AfterReview(
                                     flowCandidate ?? new(VisualProgressAction.Normal), continueRules);
                                 if (flowChoice.Action == VisualProgressAction.Wait)
@@ -678,7 +679,7 @@ public static class VisualKeyAssistRuntime
             }
 
             void BeginMonitoring(VisualProgressChoice candidate, CapturedFrame frame, string detail,
-                VisualProgressOption[]? options, string? ocrText, CancellationToken token)
+                VisualProgressOption[]? options, string? ocrText, CancellationToken token, bool askUser = false)
             {
                 if (reviewMonitor.IsHolding) return;
                 var detectedAt = clock.ElapsedMilliseconds;
@@ -694,9 +695,28 @@ public static class VisualKeyAssistRuntime
                     NeedsReview = true, MonitoringContinues = true, AutomaticRulesContinue = continueRules, Detail = detail, ReviewOptions = options,
                     OcrText = ocrText, Image = image, AiCallCount = 0 });
                 File.WriteAllText(Path.Combine(folder, "review.json"), review.GetRawText());
-                Emit(new { Event = "progress-review-grace", AtMs = detectedAt,
-                    Detail = detail, GracePeriodMs = VisualProgressReviewMonitor.NotificationGraceMs,
-                    AutomaticRulesContinue = continueRules, EvidenceDirectory = folder });
+                if (askUser)
+                {
+                    // 利用者だけが選ぶ表示は、様子見と担当AIを経由せず検出した回に決裁箱へ出す。
+                    // 申請に失敗した時は印を付けず、1分後の詰まり通知で担当AIへ知らせる。
+                    Emit(new { Event = "progress-review-monitoring", AtMs = detectedAt,
+                        Detail = detail + " 決裁箱へ選択肢を申請します。", AutomaticRulesContinue = continueRules, EvidenceDirectory = folder });
+                    QueueNotification(async () =>
+                    {
+                        if (reviewNotifier is null) throw new InvalidOperationException("決裁箱の接続設定がないため、利用者へ直接申請できません。");
+                        reviewDecisionId = await reviewNotifier.AskUserAsync(folder, review, token);
+                        reviewMonitor.MarkNotified();
+                        File.WriteAllText(Path.Combine(folder, "notification.json"), JsonSerializer.Serialize(new { DecisionId = reviewDecisionId }));
+                        Emit(new { Event = "review-notified", DecisionId = reviewDecisionId, MonitoringContinues = true, AskedUser = true,
+                            ElapsedMs = clock.ElapsedMilliseconds - detectedAt });
+                    }, token);
+                }
+                else
+                {
+                    Emit(new { Event = "progress-review-grace", AtMs = detectedAt,
+                        Detail = detail, GracePeriodMs = VisualProgressReviewMonitor.NotificationGraceMs,
+                        AutomaticRulesContinue = continueRules, EvidenceDirectory = folder });
+                }
                 pendingReviewNotification = (latestFrame, latestOcr) =>
                 {
                     File.WriteAllBytes(image, new WindowsGameFramePngEncoder().Encode(latestFrame).Bytes.ToArray());

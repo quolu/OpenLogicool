@@ -72,6 +72,7 @@ public sealed class HostBotScriptIntentsTests
     public void 配布物には既存の判定設定と参照画像が揃っている()
     {
         var package = BotScriptPackage.Load(Path.Combine(AppContext.BaseDirectory, "BotScripts", "MabinogiMobile", "bot.json"));
+        Assert.False(package.TimedInputEnabled);
         var recovery = VisualRecoveryProfile.Load(package.File("profile.json"));
         _ = VisualProgressProfile.Load(package.File("progress.json"));
         Assert.Equal(0.7, recovery.PotionThreshold);

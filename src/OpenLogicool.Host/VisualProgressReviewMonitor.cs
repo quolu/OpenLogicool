@@ -24,6 +24,9 @@ internal sealed class VisualProgressReviewMonitor
         blockedInhibited = inhibited;
     }
 
+    /// <summary>利用者へ直接申請できた表示は、様子見後の担当AIへの通知を出さない。</summary>
+    public void MarkNotified() => notificationTaken = true;
+
     public bool TryTakeNotification(long now)
     {
         if (!IsHolding || notificationTaken || now - heldAt < NotificationGraceMs) return false;

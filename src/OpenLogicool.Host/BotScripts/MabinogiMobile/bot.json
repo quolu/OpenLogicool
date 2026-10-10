@@ -1,5 +1,6 @@
 {
   "Id": "mabinogi-mobile",
   "Name": "マビノギモバイル 自動進行",
-  "ProcessName": "MabinogiMobile"
+  "ProcessName": "MabinogiMobile",
+  "TimedInputEnabled": false
 }
