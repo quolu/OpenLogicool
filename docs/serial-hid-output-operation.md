@@ -117,6 +117,8 @@ pwsh.exe -NoLogo -NoProfile -File scripts/flash-serial-hid.ps1 -ExpectedDeviceIn
 
 flash scriptはexact target identity、固定toolchain、upload verify、CDC＋keyboard＋mouseの再列挙を検証する。自動bootloader捕捉が失敗した場合だけ、Pro Microをdouble-resetしてCaterina bootloaderを開く。targetが一意に決まらない状態ではflashしない。
 
+通常動作時のUSB識別子はsketchが設定するため、bootloaderのメーカー識別に流用しない。手動待機は対象本体の物理接続口と一致する書込み機器だけを選ぶ。対応するAVR109機器はSparkFun（VID 1B4F / PID 9205）と実録Arduino Leonardo（VID 2341 / PID 0036）。未知の機器・複数候補は明示エラーにし、過去の非接続履歴と別の接続口は選ばない。
+
 旧firmwareのwatchdogが自動resetを妨げる場合は、同じ正規scriptへ`-WaitForReset`を付ける。scriptが同じ物理USB接続のbootloaderを待ち、手動double-reset後に自動で書き込む。USBを抜き挿しせず、HIDの無効化やPC再起動を代行手段にしない。書込み用1200-baud close中にwatchdogを給餌しない修理はfirmwareが所有する。
 
 以前の第三者firmwareへ戻すには、そのfirmwareの保持済みsketchまたはhexが別途必要である。OpenLogicool repoには第三者firmwareを同梱しない。

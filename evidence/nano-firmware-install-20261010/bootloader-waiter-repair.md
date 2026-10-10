@@ -1,0 +1,13 @@
+# 書込み機器の識別子限定を修理
+
+2026-10-10 10:53 JST、利用者が基板操作を実行したと回答した。書込み結果ファイルはなく、待機は継続中だった。追加操作を依頼せず、待機だけを停止して列挙履歴を調べた。
+
+通常動作中の機器は1B4F/9206・COM3で、直近arrivalは01:37のままだった。同じ親USB接続口の履歴に2341/0036・Arduino Leonardo・COM5があり、arrivalは9/26 11:21、removalは同日11:21だった。今回の基板操作による新規arrivalを確認した記録ではない。
+
+旧WaitForResetは1B4F/9205だけを対象にしていたため、この書込み機器を必ず取りこぼす。通常動作時の識別子はsketchが設定するもので、実機bootloaderのメーカーを証明しない。固定boards.txtでArduino LeonardoとSparkFun Pro Microがともにavr109・57600を使うことを確認した。
+
+物理接続口の一致を維持し、実測済みの2識別子を一箇所のselectorへまとめた。未知の同じ接続口の機器はNotSupportedException、複数候補はInvalidOperationExceptionで停止する。過去履歴・別の接続口・通常動作中の機器は選ばない。COM番号が確定していない列挙途中は待つ。
+
+実録の接続口・識別子をfixtureにし、Present状態を再生するfocused testを8件実施して全成功。手動待機のPowerShell構文確認も成功。firmware本体は変更していない。修正版でのlive bootloader捕捉・書込みはまだ未確認。
+
+Fableへ観測と前提の再検証を依頼した。K-S426G8は会話での実行回答を受領したため取り下げ、修正版の待機を準備するまで追加操作を依頼しない。

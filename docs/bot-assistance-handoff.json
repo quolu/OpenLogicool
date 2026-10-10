@@ -131,8 +131,8 @@
     "objective": "Nanoの通信停止を修理してBotを動かす",
     "sourceCommit": "9f53d60",
     "rootCauseReproduced": "旧firmwareで全解放後200ms通信を空けるとSequenceViolation。修正版とnative試験・AVR build済み",
-    "firmwareInstallation": "前の30分待機は時間切れでupload未実施。2026-10-10 10:52頃、同じAiterm PTY nano-firmware-uploadで正規WaitForResetを再開し、新しいbuild完了・待機表示・pwsh process4928を確認。K-S426G8をversion2へ更新し、つなぐ→離すを素早く2回、最後も離す手順を明記。返答時はPTYの最新結果を最初に確認する。",
-    "manualDecisionId": "K-S426G8",
+    "firmwareInstallation": "利用者がRST/GND操作を実行したと回答。flash evidenceなし、現在はruntime COM3 1B4F/9206。Windowsには同じ物理接続のArduino Leonardo 2341/0036 COM5履歴があり、PID9205だけの旧待機が必ず取りこぼす欠陥を修理した。今回の新規arrivalは未確認。待機だけCtrl-Cして停止、追加操作を待つよう通知済み。",
+    "manualDecisionId": null,
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
@@ -158,7 +158,7 @@
       "sourceCommit": "5d3445786b5e735ea969f29b881e6d222ead40c3",
       "hex": "evidence/nano-firmware-install-20261010/firmware-1.1.4.hex",
       "sha256": "b50c316a6776dd46692c8ec8575105c514d7cfbbff2607140beab0d9f11e3751",
-      "status": "waiting-for-external-double-reset",
+      "status": "built-bootloader-waiter-repair-tested",
       "uploadStarted": false
     },
     "advisor": {
@@ -167,22 +167,22 @@
       "effort": "high",
       "sessionId": "nano-firmware-fable",
       "parentThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-      "deliveryId": "57d3e265-047a-4af4-b89b-bc8a754c696e",
-      "status": "done",
+      "deliveryId": "c2ccd339-89f5-463e-b417-d110d04a9faa",
+      "status": "running",
       "completion": "Aiterm managed_completionによる自動配送。ポーリングしない。",
       "mission": "親の自動reset阻害の判断を反証し、既存記録と旧firmware・Arduino coreを照合して、利用者の写真や未理解の操作なしに正規更新できるか助言する。",
       "authority": "調査だけ。ファイル変更・Bot操作・serial接続・device操作・flash禁止をpromptへ明記。",
       "readOnlyEnforcement": "Claude入口ではツールによる強制は非対応。promptによる範囲指定。",
-      "replyPending": false,
+      "replyPending": true,
       "acceptedConclusion": "親が固定CDC.cpp・Caterina.c・旧版導入実測を照合。旧版の給餌が1200-baud watchdog resetを阻害。現行正規入口では本体のdouble-resetが必要。1.1.4導入後の標準自動upload再実測を受入に追加。"
     },
     "waitingAitermSessionId": "nano-firmware-upload",
-    "waitingProcessId": 4928,
+    "waitingProcessId": null,
     "waitingObservedAt": "2026-10-10T10:52:37+09:00"
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-10T01:53:03.8940405+00:00",
+    "updatedUtc": "2026-10-10T01:58:21.7105545+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -194,12 +194,10 @@
       "379225d3-7ac8-4a7b-a293-55c09ab9f0ab",
       "e4367d3f-c5d1-4359-8f82-3ae8af00b24f"
     ],
-    "pendingDecisionIds": [
-      "K-S426G8"
-    ],
+    "pendingDecisionIds": [],
     "botPhase": "Stopped",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "K-S426G8の回答後、Aiterm PTY nano-firmware-uploadを読んで実際のupload結果を確認し、1.1.4診断・標準自動upload・idle診断・Bot再開へ進む。",
+    "nextAction": "実行回答受領後にflashの識別子限定欠陥を発見。待機は停止し、Arduino Leonardoの同じ接続口を扱う修理と8件試験済み。Fableの追加反証（delivery c2ccd339-89f5-463e-b417-d110d04a9faa）を受け、修正版の正規待機を開始してから追加操作を依頼する。",
     "firmware": "1.1.3のまま。手動リセット依頼は取り下げ済みで再依頼しない。",
     "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。",
     "captureRepair": {

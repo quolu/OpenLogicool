@@ -13,6 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+Import-Module (Join-Path $PSScriptRoot 'SerialHidFlashTarget.psm1') -Force
 
 $fqbn = 'SparkFun:avr:promicro:cpu=16MHzatmega32U4'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
@@ -88,14 +89,16 @@ function Wait-TargetBootloader {
     Write-Host '書込み待機中です。USBを抜かず、基板の「RST」と「GND」の2点を金属で一瞬つなぎ、0.75秒以内にもう一度つないでください。'
     $deadline = [DateTime]::UtcNow.AddMinutes(30)
     do {
-        $bootPorts = @(Get-PnpDevice -PresentOnly -Class Ports | Where-Object {
-            $_.InstanceId -like 'USB\VID_1B4F&PID_9205\*' -and $_.Status -eq 'OK'
-        } | Where-Object {
-            $bootLocations = @((Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName 'DEVPKEY_Device_LocationPaths').Data)
-            @($bootLocations | Where-Object { $_ -in $locations }).Count -gt 0
+        $candidates = @(Get-PnpDevice -PresentOnly -Class Ports | ForEach-Object {
+            [pscustomobject]@{
+                InstanceId = $_.InstanceId
+                FriendlyName = $_.FriendlyName
+                Status = $_.Status
+                LocationPaths = @((Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName 'DEVPKEY_Device_LocationPaths').Data)
+            }
         })
-        if ($bootPorts.Count -gt 1) { throw '同じ物理接続のbootloaderが複数あります。' }
-        if ($bootPorts.Count -eq 1 -and $bootPorts[0].FriendlyName -match '\((COM\d+)\)$') { return $Matches[1] }
+        $bootPort = Find-SerialHidBootloaderPort -LocationPaths $locations -Candidates $candidates
+        if ($bootPort) { return $bootPort }
         Start-Sleep -Milliseconds 100
     } while ([DateTime]::UtcNow -lt $deadline)
     throw '同じNanoのdouble-resetを確認できませんでした。書き込んでいません。'

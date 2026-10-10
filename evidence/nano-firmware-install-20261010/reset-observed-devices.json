@@ -1,0 +1,60 @@
+[
+  {
+    "Id": "USB\\VID_1B4F&PID_9206&MI_00\\A&3662A262&0&0000",
+    "Name": "USB シリアル デバイス (COM3)",
+    "Status": "OK",
+    "Properties": [
+      {
+        "KeyName": "DEVPKEY_Device_Parent",
+        "Data": "USB\\VID_1B4F&PID_9206\\HIDFG"
+      },
+      {
+        "KeyName": "DEVPKEY_Device_BusReportedDeviceDesc",
+        "Data": "OpenLogicool Serial HID"
+      },
+      {
+        "KeyName": "DEVPKEY_Device_LastArrivalDate",
+        "Data": "2026-10-10T01:37:11.049633+09:00"
+      },
+      {
+        "KeyName": "DEVPKEY_Device_LocationPaths",
+        "Data": [
+          "PCIROOT(0)#PCI(0202)#PCI(0000)#PCI(0200)#PCI(0000)#USBROOT(0)#USB(3)#USB(3)#USBMI(0)",
+          "PCIROOT(0)#PCI(0202)#PCI(0000)#PCI(0200)#PCI(0000)#USBROOT(0)#USB(3)#USB(3)#USB(3)",
+          "ACPI(_SB_)#ACPI(PCI0)#ACPI(GPP8)#ACPI(U4UP)#ACPI(U4P2)#ACPI(UXHC)#ACPI(UHUB)#ACPI(UHS1)#USB(3)#USBMI(0)",
+          "ACPI(_SB_)#ACPI(PCI0)#ACPI(GPP8)#ACPI(U4UP)#ACPI(U4P2)#ACPI(UXHC)#ACPI(UHUB)#ACPI(UHS1)#USB(3)#USB(3)"
+        ]
+      }
+    ]
+  },
+  {
+    "Id": "USB\\VID_2341&PID_0036\\9&2E5F6FA0&0&3",
+    "Name": "USB シリアル デバイス (COM5)",
+    "Status": "Unknown",
+    "Properties": [
+      {
+        "KeyName": "DEVPKEY_Device_Parent",
+        "Data": "USB\\VID_2109&PID_2822\\MSFT20000000001"
+      },
+      {
+        "KeyName": "DEVPKEY_Device_BusReportedDeviceDesc",
+        "Data": "Arduino Leonardo"
+      },
+      {
+        "KeyName": "DEVPKEY_Device_LastArrivalDate",
+        "Data": "2026-09-26T11:21:34.832736+09:00"
+      },
+      {
+        "KeyName": "DEVPKEY_Device_LastRemovalDate",
+        "Data": "2026-09-26T11:21:39.568187+09:00"
+      },
+      {
+        "KeyName": "DEVPKEY_Device_LocationPaths",
+        "Data": [
+          "PCIROOT(0)#PCI(0202)#PCI(0000)#PCI(0200)#PCI(0000)#USBROOT(0)#USB(3)#USB(3)",
+          "ACPI(_SB_)#ACPI(PCI0)#ACPI(GPP8)#ACPI(U4UP)#ACPI(U4P2)#ACPI(UXHC)#ACPI(UHUB)#ACPI(UHS1)#USB(3)"
+        ]
+      }
+    ]
+  }
+]

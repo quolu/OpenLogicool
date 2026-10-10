@@ -19,3 +19,9 @@ Arduino coreは1200-baud closeでboot keyを置き、120ms watchdog resetを要�
 WindowsのHID停止は、Nano一台に限定しても即時停止にならず再起動予約となった。Enable-PnpDeviceで取り消し、ConfigFlags=0・ProblemCode=0を確認した。この経路はflash scriptから撤去した。
 
 正規の`-WaitForReset`は同じ物理USB接続のbootloaderだけを待つ。SparkFunのdouble-reset手順で書込みモードになった後、公式Arduino CLIでverify付きuploadする。USB抜き挿しやPC再起動は必要としない。受入結果と現在地は[実測記録](../../evidence/nano-idle-lease-20261009/acceptance.md)と構造化した引き継ぎ状態を読む。
+
+## 書込み機器の識別
+
+2026-10-10、通常動作時のVID 1B4F / PID 9206と同じLocationPathsに、Arduino Leonardo（VID 2341 / PID 0036、COM5）のWindows列挙履歴があった。通常動作時のUSB名はsketch由来であり、実機のbootloaderがSparkFun純正である根拠にはならない。導入済みのSparkFun bootloader sourceも、実機のbootloader sourceそのものを証明しない。
+
+PID 9205だけに限定していた待機処理は、この正規AVR109機器を取りこぼす。Arduino LeonardoとSparkFun Pro Microの固定boards.txtはともにavr109 / 57600を指定する。物理接続口を維持したまま対応する識別子を追加し、実録を使った選択・非接続履歴・別の接続口・未知機器・複数候補・通常動作中・COM番号未確定の8件を確認した。今回の利用者操作後の新規arrivalは未確認で、履歴の発見を今回のreset成功とは扱わない。

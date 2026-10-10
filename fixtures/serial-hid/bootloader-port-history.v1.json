@@ -1,0 +1,12 @@
+{
+  "RuntimeLocationPaths": [
+    "PCIROOT(0)#PCI(0202)#PCI(0000)#PCI(0200)#PCI(0000)#USBROOT(0)#USB(3)#USB(3)",
+    "ACPI(_SB_)#ACPI(PCI0)#ACPI(GPP8)#ACPI(U4UP)#ACPI(U4P2)#ACPI(UXHC)#ACPI(UHUB)#ACPI(UHS1)#USB(3)"
+  ],
+  "BootloaderInstanceId": "USB\\VID_2341&PID_0036\\9&2E5F6FA0&0&3",
+  "BootloaderFriendlyName": "USB シリアル デバイス (COM5)",
+  "BootloaderLocationPaths": [
+    "PCIROOT(0)#PCI(0202)#PCI(0000)#PCI(0200)#PCI(0000)#USBROOT(0)#USB(3)#USB(3)",
+    "ACPI(_SB_)#ACPI(PCI0)#ACPI(GPP8)#ACPI(U4UP)#ACPI(U4P2)#ACPI(UXHC)#ACPI(UHUB)#ACPI(UHS1)#USB(3)"
+  ]
+}
