@@ -18,7 +18,7 @@ internal static class BotWorkerCommand
         // 通常終了は読取の終了を待たない。readerとstopの寿命はこのprocessの寿命に揃える。
         var stop = new CancellationTokenSource();
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _ = Task.Run(() => WatchStandardInputAsync(Console.In, stop, CancellationToken.None, ready));
+        _ = Task.Run(() => WatchStandardInputAsync(Console.In, stop, ready));
         try
         {
             if (arguments.SequenceEqual(new[] { "--self-test" }))
@@ -57,23 +57,22 @@ internal static class BotWorkerCommand
         }
     }
 
-    internal static async Task WatchStandardInputAsync(TextReader reader, CancellationTokenSource stop, CancellationToken token,
+    internal static async Task WatchStandardInputAsync(TextReader reader, CancellationTokenSource stop,
         TaskCompletionSource? ready = null)
     {
         try
         {
             if (ready is not null)
             {
-                var first = await reader.ReadLineAsync(token);
+                var first = await reader.ReadLineAsync();
                 if (first is null) { await stop.CancelAsync(); return; }
                 if (first != "start") throw new InvalidDataException("Botの起動合図が不正です。");
                 ready.SetResult();
             }
             var buffer = new char[256];
-            while (await reader.ReadAsync(buffer.AsMemory(), token) != 0) { }
+            while (await reader.ReadAsync(buffer.AsMemory()) != 0) { }
             await stop.CancelAsync();
         }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception error) when (error is IOException or InvalidDataException)
         {
             Console.Error.WriteLine("Botの標準入力の監視に失敗しました: " + error.Message);

@@ -126,20 +126,6 @@ public sealed class ResidentOutputSessionTests
         Assert.Equal(1, exchange.DisposeCount);
     }
 
-    [Fact]
-    public void Botの専有接続も有限入力の完了後は一括解放を送らず閉じる()
-    {
-        var exchange = new FakeExchange();
-        var session = CreateSession(exchange);
-        session.Start();
-        session.Emitter.Emit([Down("Key:A"), Up("Key:A")]);
-        session.CloseAfterFiniteInput();
-        session.Dispose();
-        Assert.DoesNotContain(SerialHidMessageKind.AllUp, exchange.RequestKinds());
-        Assert.Contains(SerialHidMessageKind.SetState, exchange.RequestKinds());
-        Assert.Equal(1, exchange.DisposeCount);
-    }
-
     private static SerialHidResidentOutputSession CreateSession(
         FakeExchange exchange,
         TimeSpan? heartbeatInterval = null) =>

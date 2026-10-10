@@ -6,6 +6,10 @@ using System.Security.Cryptography;
 
 namespace OpenLogicool.Host;
 
+internal sealed record BotWorkerChild(
+    TextWriter StandardInput, TextReader StandardOutput, TextReader StandardError,
+    Task Exited, Func<int> ExitCode, Action AttachJob, Action CloseJob, Action Kill, int ProcessId);
+
 internal static class BotWorkerProcess
 {
     private static readonly TimeSpan StopDeadline = TimeSpan.FromSeconds(5);
@@ -48,56 +52,66 @@ internal static class BotWorkerProcess
             start.ArgumentList.Add(argument);
         token.ThrowIfCancellationRequested();
         using var child = Process.Start(start) ?? throw new IOException("Botの子processを起動できませんでした。");
-        var exited = child.WaitForExitAsync();
-        // 排出は停止待ちと独立して続ける。子の出力をファイルへ残し、コンソールの詰まりへ依存しない。
+        return await RunAsync(run, server, new(child.StandardInput, child.StandardOutput, child.StandardError,
+            child.WaitForExitAsync(), () => child.ExitCode, () => job.Add(child), job.Dispose,
+            () => { if (!child.HasExited) child.Kill(entireProcessTree: true); }, child.Id), token);
+    }
+
+    // 起動済みの子の入出力と終了通知だけを受ける。本番とにせの子は同じ終了処理を通る。
+    internal static async Task<BotScriptResult> RunAsync(BotWorkerRun run, BotWorkerPipeServer server,
+        BotWorkerChild child, CancellationToken token)
+    {
         var stdout = DrainAsync(child.StandardOutput, Path.Combine(run.EvidenceDirectory, "worker-stdout.log"));
         var stderr = DrainAsync(child.StandardError, Path.Combine(run.EvidenceDirectory, "worker-stderr.log"));
         try
         {
-            job.Add(child);
+            child.AttachJob();
             await child.StandardInput.WriteLineAsync("start");
             await child.StandardInput.FlushAsync();
             using var registration = token.Register(server.Stop);
-            await Task.WhenAny(exited, server.Stopped, stdout, stderr);
-            server.Stop();
-            child.StandardInput.Close();
-            await FinishChildAsync(child, exited, run.EvidenceDirectory);
-            await server.Completion;
-            await Task.WhenAll(stdout, stderr);
-            token.ThrowIfCancellationRequested();
-            if (child.ExitCode != 0) throw new IOException($"Botが異常終了しました（終了コード {child.ExitCode}）。{run.EvidenceDirectory}");
-            if (server.Fault is { } fault) throw new IOException("Botとの通信が終了しました: " + fault.Message, fault);
-            var resultPath = Path.Combine(run.EvidenceDirectory, "result.json");
-            var json = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(resultPath));
-            return new(json.TryGetProperty("NeedsReview", out var review) && review.GetBoolean(),
-                json.TryGetProperty("Detail", out var detail) ? detail.GetString()! : "実行が終了しました。");
+            await Task.WhenAny(child.Exited, server.Stopped, stdout, stderr);
         }
         finally
         {
             server.Stop();
             child.StandardInput.Close();
-            await FinishChildAsync(child, exited, run.EvidenceDirectory);
-            // 子の終了では番を空けない。受付済み入力と両パイプの処理を回収してから呼出元へ戻す。
+            try { await FinishChildAsync(child, run.EvidenceDirectory); }
+            finally { child.CloseJob(); }
+            // Jobを先に閉じ、標準出力を受け継いだ孫も終了させてから排出を待つ。
+            // 子の終了では番を空けない。受付済み入力も回収してから呼出元へ戻す。
             await server.Completion;
             await Task.WhenAll(stdout, stderr);
         }
+        token.ThrowIfCancellationRequested();
+        if (server.Fault is { } fault) throw new IOException("Botとの通信が終了しました: " + fault.Message, fault);
+        var exitCode = child.ExitCode();
+        if (exitCode != 0)
+        {
+            var error = File.ReadAllText(Path.Combine(run.EvidenceDirectory, "worker-stderr.log")).Trim();
+            if (error.Length > 4096) error = "（標準エラーの末尾4096文字）\n" + error[^4096..];
+            throw new IOException($"Botが異常終了しました（終了コード {exitCode}）。{run.EvidenceDirectory}"
+                + (error.Length == 0 ? "" : "\n" + error));
+        }
+        var json = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(run.EvidenceDirectory, "result.json")));
+        return new(json.TryGetProperty("NeedsReview", out var review) && review.GetBoolean(),
+            json.TryGetProperty("Detail", out var detail) ? detail.GetString()! : "実行が終了しました。");
     }
 
-    private static async Task FinishChildAsync(Process child, Task exited, string evidence)
+    private static async Task FinishChildAsync(BotWorkerChild child, string evidence)
     {
-        if (await Task.WhenAny(exited, Task.Delay(StopDeadline)) != exited)
+        if (await Task.WhenAny(child.Exited, Task.Delay(StopDeadline)) != child.Exited)
         {
             File.WriteAllText(Path.Combine(evidence, "worker-stop-timeout.json"), JsonSerializer.Serialize(new
             {
                 Reason = "停止の合図から5秒以内にBotが終了しなかったため、子processを終了します。",
-                ProcessId = child.Id, DeadlineMilliseconds = StopDeadline.TotalMilliseconds,
+                child.ProcessId, DeadlineMilliseconds = StopDeadline.TotalMilliseconds,
             }));
-            if (!child.HasExited) child.Kill(entireProcessTree: true);
+            child.Kill();
         }
-        await exited;
+        await child.Exited;
     }
 
-    private static async Task DrainAsync(StreamReader reader, string path)
+    private static async Task DrainAsync(TextReader reader, string path)
     {
         await using var file = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, useAsync: true);
         await using var writer = new StreamWriter(file, new UTF8Encoding(false));

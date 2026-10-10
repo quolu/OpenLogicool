@@ -123,7 +123,7 @@ public sealed class BotWorkerPipeTests
     }
 
     [Fact]
-    public async Task 子の異常終了でもドラッグの解放まで番を保ち直後に次を始められる()
+    public async Task パイプ切断後も入力完了までserverの処理と番を保ち直後に次を始められる()
     {
         var device = new FakeDevice { BlockDrag = true };
         var available = new TaskCompletionSource<BotWorkerPipeServer>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -179,7 +179,7 @@ public sealed class BotWorkerPipeTests
         using var stop = new CancellationTokenSource();
         var connecting = BotWorkerPipeClient.ConnectAsync("missing-input-" + Guid.NewGuid(),
             "missing-query-" + Guid.NewGuid(), "dpi", stop.Token);
-        await BotWorkerCommand.WatchStandardInputAsync(new StringReader(""), stop, CancellationToken.None);
+        await BotWorkerCommand.WatchStandardInputAsync(new StringReader(""), stop);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => connecting.WaitAsync(Deadline));
     }
 
@@ -201,7 +201,7 @@ public sealed class BotWorkerPipeTests
         await device.Entered.Task.WaitAsync(Deadline);
         try
         {
-            await BotWorkerCommand.WatchStandardInputAsync(new StringReader(""), stop, CancellationToken.None);
+            await BotWorkerCommand.WatchStandardInputAsync(new StringReader(""), stop);
             server.Stop();
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => drag.WaitAsync(Deadline));
             Assert.False(server.Completion.IsCompleted);
@@ -241,7 +241,7 @@ public sealed class BotWorkerPipeTests
     {
         using var stop = new CancellationTokenSource();
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        await BotWorkerCommand.WatchStandardInputAsync(new StringReader(input), stop, CancellationToken.None, ready);
+        await BotWorkerCommand.WatchStandardInputAsync(new StringReader(input), stop, ready);
         Assert.Equal(input.Length != 0, ready.Task.IsCompleted);
         Assert.True(stop.IsCancellationRequested);
     }
@@ -303,6 +303,110 @@ public sealed class BotWorkerPipeTests
     [Fact]
     public void 自己試験で配布済み設定を全部読み込める() => BotWorkerCommand.ValidatePackages(AppContext.BaseDirectory);
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task 子の標準エラーの原因を異常終了の例外へ含め長い時は末尾を残す(bool lengthy)
+    {
+        const string cause = "対象window 'X' は0件です。";
+        var fake = new FakeChild((lengthy ? new string('a', 6000) : "Botの実行に失敗しました: ") + cause);
+        fake.Exited.SetResult();
+        var evidence = TestDirectory();
+        await using var server = new BotWorkerPipeServer(new FakeDevice(), Nano, "dpi", null, () => null, _ => { });
+        var error = await Assert.ThrowsAsync<IOException>(() => BotWorkerProcess.RunAsync(
+            new("test", BotFunctionPlan.Main, "test.db", evidence, evidence), server, fake.Child, CancellationToken.None).WaitAsync(Deadline));
+        Assert.Contains(cause, error.Message);
+        Assert.Contains("終了コード 2", error.Message);
+        Assert.True(error.Message.Length < 4600);
+        Assert.Equal(lengthy, error.Message.Contains("末尾4096文字", StringComparison.Ordinal));
+        Assert.True(fake.JobClosed);
+        Assert.True(fake.Output.Ended && fake.Error.Ended);
+    }
+
+    [Fact]
+    public async Task 子が先に終わっても入力完了までRunAsyncは戻らず排出前にJobを閉じる()
+    {
+        var device = new FakeDevice { BlockDrag = true };
+        var fake = new FakeChild("子が終了しました。");
+        var evidence = TestDirectory();
+        await using var server = new BotWorkerPipeServer(device, Nano, "dpi", null, () => null, _ => { });
+        var running = BotWorkerProcess.RunAsync(new("test", BotFunctionPlan.Main, "test.db", evidence, evidence),
+            server, fake.Child, CancellationToken.None);
+        using var pair = await RawPair.ConnectAsync(server);
+        await BotWorkerPipe.WriteAsync(pair.Input, new BotWorkerRequest("drag"), CancellationToken.None);
+        await device.Entered.Task.WaitAsync(Deadline);
+        try
+        {
+            fake.Exited.SetResult();
+            await server.Stopped.WaitAsync(Deadline);
+            await fake.JobWasClosed.Task.WaitAsync(Deadline);
+            Assert.True(fake.JobClosed);
+            Assert.False(running.IsCompleted);
+            Assert.False(device.Released);
+        }
+        finally { device.Release.TrySetResult(); fake.Exited.TrySetResult(); }
+        await Assert.ThrowsAsync<IOException>(() => running.WaitAsync(Deadline));
+        Assert.True(device.Released);
+        Assert.True(fake.Output.Ended && fake.Error.Ended);
+        Assert.Single(device.Calls);
+    }
+
+    [Fact]
+    public async Task 本体の装置の失敗は子の終了コードより先に例外へ出す()
+    {
+        var fake = new FakeChild("子の終了理由");
+        var evidence = TestDirectory();
+        await using var server = new BotWorkerPipeServer(new FakeDevice { DeviceFault = "装置との通信が失敗しました。" },
+            Nano, "dpi", null, () => null, _ => { });
+        var running = BotWorkerProcess.RunAsync(new("test", BotFunctionPlan.Main, "test.db", evidence, evidence),
+            server, fake.Child, CancellationToken.None);
+        using var client = await BotWorkerPipeClient.ConnectAsync(server.InputName, server.QueryName, "dpi", CancellationToken.None);
+        Assert.Throws<IOException>(() => client.Click(new(1, 2)));
+        await server.Stopped.WaitAsync(Deadline);
+        fake.Exited.SetResult();
+        var error = await Assert.ThrowsAsync<IOException>(() => running.WaitAsync(Deadline));
+        Assert.Contains("装置との通信が失敗しました。", error.Message);
+        Assert.DoesNotContain("終了コード", error.Message);
+    }
+
+    private sealed class FakeChild(string error)
+    {
+        public TaskCompletionSource Exited { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource JobWasClosed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public InheritedOutputReader Output { get; } = new("");
+        public InheritedOutputReader Error { get; } = new(error);
+        public bool JobClosed { get; private set; }
+        public BotWorkerChild Child => new(new StringWriter(), Output, Error, Exited.Task, () => 2,
+            () => { }, () =>
+            {
+                JobClosed = true;
+                Output.CloseInheritedWriter(); Error.CloseInheritedWriter();
+                JobWasClosed.TrySetResult();
+            }, () => Exited.TrySetResult(), 123);
+    }
+
+    // 孫が書込み口を保持している間はEOFにならず、Jobの終了で初めて排出が終わる。
+    private sealed class InheritedOutputReader(string text) : TextReader
+    {
+        private readonly TaskCompletionSource closed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int position;
+        public bool Ended { get; private set; }
+        public void CloseInheritedWriter() => closed.TrySetResult();
+        public override async ValueTask<int> ReadAsync(Memory<char> buffer, CancellationToken cancellationToken = default)
+        {
+            if (position < text.Length)
+            {
+                var count = Math.Min(buffer.Length, text.Length - position);
+                text.AsMemory(position, count).CopyTo(buffer);
+                position += count;
+                return count;
+            }
+            await closed.Task.WaitAsync(cancellationToken);
+            Ended = true;
+            return 0;
+        }
+    }
+
     private static string TestDirectory()
     {
         var directory = Path.Combine(AppContext.BaseDirectory, "bot-worker-tests", Guid.NewGuid().ToString("N"));
@@ -338,6 +442,7 @@ public sealed class BotWorkerPipeTests
     {
         public List<string> Calls { get; } = [];
         public bool PointerUnmoved { get; init; }
+        public string? DeviceFault { get; init; }
         public bool BlockDrag { get; init; }
         public bool Released { get; private set; }
         public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -347,6 +452,7 @@ public sealed class BotWorkerPipeTests
         public string Click(SerialHidCursorPoint target)
         {
             Calls.Add("click:" + Point(target));
+            if (DeviceFault is { } message) throw new IOException(message);
             if (PointerUnmoved) throw new SerialHidPointerMoveException("利用者が矢印を握っています。");
             return "click";
         }

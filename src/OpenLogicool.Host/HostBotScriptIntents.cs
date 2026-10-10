@@ -209,14 +209,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                         ?? throw new InvalidOperationException("手入力の識別に必要なNanoのデバイス情報がありません。"),
                     physicalInput, () => intents!.RunningMode(id), report, token);
             }
-            finally
-            {
-                if (owned is not null)
-                {
-                    try { owned.CloseAfterFiniteInput(); }
-                    finally { owned.Dispose(); }
-                }
-            }
+            finally { owned?.Dispose(); }
         }, async (evidence, detail) =>
         {
             if (!new BotAssistanceStore(databasePath).Exists) return;
