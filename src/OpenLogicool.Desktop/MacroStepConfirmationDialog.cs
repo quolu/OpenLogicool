@@ -21,7 +21,7 @@ public sealed class MacroStepConfirmationDialog : Window
         Title = $"操作結果の確認 — 手順 {request.StepNumber}";
         Width = 1180; Height = 680; MinWidth = 780; MinHeight = 480;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        Background = Theme.Bg; Foreground = Theme.Text; Topmost = true;
+        Theme.ApplyDialog(this); Topmost = true;
         var root = new DockPanel { Margin = new Thickness(20) };
         var heading = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
         heading.Children.Add(new TextBlock { Text = $"手順 {request.StepNumber} を操作しました（{request.ActionLabel}）",

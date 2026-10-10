@@ -84,9 +84,9 @@ public sealed class GameOperatorMacroUiTests
                     new WebIntent(),
                     macroAutomationIntents: new MacroIntents());
                 var tabs = Assert.IsType<TabControl>(window.Content);
-                Assert.Equal(["STEP 0　Web調査", "マクロ"],
+                Assert.Equal(["マクロ", "STEP 0　Web調査"],
                     tabs.Items.Cast<TabItem>().Select(item => item.Header!.ToString()!).ToArray());
-                Assert.IsAssignableFrom<UserControl>(((TabItem)tabs.Items[1]).Content);
+                Assert.IsAssignableFrom<UserControl>(((TabItem)tabs.Items[0]).Content);
                 window.Close();
             }
             catch (Exception error) { failure = error; }
@@ -134,7 +134,7 @@ public sealed class GameOperatorMacroUiTests
                     macroAutomationIntents: new MacroIntents(),
                     demonstrationRecordingIntents: new RecordingIntents());
                 var tabs = Assert.IsType<TabControl>(window.Content);
-                Assert.Equal(["STEP 0　Web調査", "記録", "マクロ"],
+                Assert.Equal(["マクロ", "記録", "STEP 0　Web調査"],
                     tabs.Items.Cast<TabItem>().Select(item => item.Header!.ToString()!).ToArray());
                 Assert.IsAssignableFrom<UserControl>(((TabItem)tabs.Items[1]).Content);
                 window.Close();

@@ -22,8 +22,7 @@ internal sealed class MacroAssignmentDialog : Window
         MinWidth = 500;
         MinHeight = 360;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = Theme.Bg;
-        Foreground = Theme.Text;
+        Theme.ApplyDialog(this);
         macros.ItemsSource = items;
         if (items.Count > 0) macros.SelectedIndex = 0;
         mode.ItemsSource = new[]

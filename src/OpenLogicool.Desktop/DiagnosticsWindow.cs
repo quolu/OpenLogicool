@@ -11,8 +11,7 @@ public sealed class DiagnosticsWindow : Window
     public DiagnosticsWindow(InputStudioReport report)
     {
         Title = "OpenLogicool Input Studio — 診断";
-        Background = Theme.Bg;
-        Foreground = Theme.Text;
+        Theme.Apply(this);
         Width = 900;
         Height = 700;
         Content = new DeviceLedgerView(report);

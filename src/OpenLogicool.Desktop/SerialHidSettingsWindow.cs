@@ -28,9 +28,7 @@ public sealed class SerialHidSettingsWindow : Window
         Height = 390;
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = Theme.Bg;
-        Foreground = Theme.Text;
-        Resources[typeof(Button)] = Theme.CreateFlatButtonStyle();
+        Theme.ApplyDialog(this);
 
         var root = new StackPanel { Margin = new Thickness(24) };
         root.Children.Add(new TextBlock { Text = "出力方式", FontSize = 18, FontWeight = FontWeights.Bold });

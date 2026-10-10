@@ -46,13 +46,12 @@ public sealed class GameOperatorWindow : Window
         ArgumentNullException.ThrowIfNull(intent);
         _workspace = new WebResearchWorkspace(intent);
         Title = "OpenLogicool — Game Operator";
-        Width = 980;
-        Height = 760;
-        MinWidth = 820;
+        // 左の一覧（208）の分だけ、以前の上タブの頃より幅を広げる。
+        Width = 1190;
+        Height = 780;
+        MinWidth = 1030;
         MinHeight = 640;
-        Background = Theme.Bg;
-        Foreground = Theme.Text;
-        Resources[typeof(Button)] = Theme.CreateFlatButtonStyle();
+        Theme.Apply(this);
 
         _terms.ItemsSource = new[]
         {
@@ -81,13 +80,13 @@ public sealed class GameOperatorWindow : Window
             supervisedMacroIntents,
             supervisedUnavailableReason,
             macroAutomationIntents,
-            openMacroTab,
             demonstrationRecordingIntents);
         RefreshDocuments();
         if (botScriptIntents is not null && Content is TabControl botTabs)
         {
             var botPanel = new BotScriptPanel(botScriptIntents);
-            botTabs.Items.Add(new TabItem { Header = "Bot", Content = botPanel, MinWidth = 90 });
+            botTabs.Items.Insert(0, new TabItem { Header = "Bot", Content = botPanel });
+            if (!openMacroTab) botTabs.SelectedIndex = 0;
             var closingAfterStop = false;
             var stoppingForClose = false;
             Closing += async (_, eventArgs) =>
@@ -110,18 +109,23 @@ public sealed class GameOperatorWindow : Window
         ISupervisedMacroIntents? supervisedMacroIntents,
         string? supervisedUnavailableReason,
         IMacroAutomationIntents? macroAutomationIntents,
-        bool openMacroTab,
         IDemonstrationRecordingIntents? demonstrationRecordingIntents)
     {
-        var tabs = new TabControl
+        // 左の一覧で画面を切り替える（並びはよく使う順: Bot・マクロ・記録・学習した操作・構造探索・Web調査）。
+        // TabControl のまま見た目だけを左の一覧へ変えるので、選択の仕組みは変わらない。
+        var tabs = new TabControl { Style = (Style)FindResource("NavRailTabs") };
+        if (macroAutomationIntents is not null)
         {
-            Background = Theme.Bg,
-            Foreground = Theme.Text,
-        };
-        tabs.Items.Add(new TabItem { Header = "STEP 0　Web調査", Content = BuildResearchContent(), MinWidth = 130 });
-        if (explorerIntents is not null)
+            _macroPanel = new MacroAutomationPanel(macroAutomationIntents);
+            tabs.Items.Add(new TabItem { Header = "マクロ", Content = _macroPanel });
+        }
+        if (demonstrationRecordingIntents is not null)
         {
-            tabs.Items.Add(new TabItem { Header = "構造探索", Content = new ExplorerPanel(explorerIntents), MinWidth = 130 });
+            tabs.Items.Add(new TabItem
+            {
+                Header = "記録",
+                Content = new DemonstrationRecordingPanel(demonstrationRecordingIntents, OnMacroCreatedFromDemonstration),
+            });
         }
         if (learningRouteIntents is not null)
         {
@@ -132,30 +136,14 @@ public sealed class GameOperatorWindow : Window
                     learningRouteIntents,
                     supervisedMacroIntents,
                     supervisedUnavailableReason),
-                MinWidth = 130,
             });
         }
-        if (demonstrationRecordingIntents is not null)
+        if (explorerIntents is not null)
         {
-            tabs.Items.Add(new TabItem
-            {
-                Header = "記録",
-                Content = new DemonstrationRecordingPanel(demonstrationRecordingIntents, OnMacroCreatedFromDemonstration),
-                MinWidth = 130,
-            });
+            tabs.Items.Add(new TabItem { Header = "構造探索", Content = new ExplorerPanel(explorerIntents) });
         }
-        if (macroAutomationIntents is not null)
-        {
-            _macroPanel = new MacroAutomationPanel(macroAutomationIntents);
-            var macroTab = new TabItem
-            {
-                Header = "マクロ",
-                Content = _macroPanel,
-                MinWidth = 130,
-            };
-            tabs.Items.Add(macroTab);
-            if (openMacroTab) tabs.SelectedItem = macroTab;
-        }
+        tabs.Items.Add(new TabItem { Header = "STEP 0　Web調査", Content = BuildResearchContent() });
+        tabs.SelectedIndex = 0;
         return tabs;
     }
 

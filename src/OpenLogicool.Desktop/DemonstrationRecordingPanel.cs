@@ -340,9 +340,10 @@ internal sealed class DemonstrationRecordingPanel : UserControl
         var dialog = new Window
         {
             Title = $"手順 {selected.StepNumber} の確認・修復", Owner = Window.GetWindow(this),
-            Width = 980, Height = 630, Background = Theme.Bg, Foreground = Theme.Text,
+            Width = 980, Height = 630,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
         };
+        Theme.ApplyDialog(dialog);
         var root = new DockPanel { Margin = new Thickness(18) };
         var heading = new TextBlock { Text = $"{selected.DisplayLabel}\n{selected.Reason}",
             TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };

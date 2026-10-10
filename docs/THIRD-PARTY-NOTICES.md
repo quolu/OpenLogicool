@@ -9,5 +9,7 @@
 | Vortice.Direct3D11 | 3.6.2 | MIT | [NuGet](https://www.nuget.org/packages/Vortice.Direct3D11/3.6.2) |
 | Vortice.DXGI | 3.6.2 | MIT | [NuGet](https://www.nuget.org/packages/Vortice.DXGI/3.6.2) |
 | SharpGen.Runtime | 2.2.0-beta | MIT | [NuGet](https://www.nuget.org/packages/SharpGen.Runtime/2.2.0-beta) |
+| Oxanium (font) | 2.000 | OFL-1.1 | [GitHub](https://github.com/sevmeyer/oxanium) |
+| JetBrains Mono (font) | 2.305 | OFL-1.1 | [GitHub](https://github.com/JetBrains/JetBrainsMono) |
 
 artifact の SHA-256 は SBOM に記録する。これは Authenticode 署名や timestamp の代替ではない。

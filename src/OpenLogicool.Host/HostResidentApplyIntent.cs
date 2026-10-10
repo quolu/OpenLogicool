@@ -60,7 +60,7 @@ public sealed class HostResidentApplyIntent(
                     : $"{kindLabel} の {entry.ControlId} を押した → {string.Join(" ", entry.OutputTokens)} を送りました";
             }
 
-            events.Add(new ResidentTraceEvent(kindLabel, entry.ControlId, isDown, entry.InputMonotonicMs, displayLine));
+            events.Add(new ResidentTraceEvent(kindLabel, entry.ControlId, isDown, entry.InputMonotonicMs, displayLine, entry.OutputTokens));
         }
 
         return events;

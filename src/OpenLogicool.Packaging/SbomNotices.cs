@@ -32,6 +32,8 @@ public static class SbomNotices
         new("Vortice.Direct3D11", "3.6.2", "MIT", "https://www.nuget.org/packages/Vortice.Direct3D11/3.6.2"),
         new("Vortice.DXGI", "3.6.2", "MIT", "https://www.nuget.org/packages/Vortice.DXGI/3.6.2"),
         new("SharpGen.Runtime", "2.2.0-beta", "MIT", "https://www.nuget.org/packages/SharpGen.Runtime/2.2.0-beta"),
+        new("Oxanium (font)", "2.000", "OFL-1.1", "https://github.com/sevmeyer/oxanium"),
+        new("JetBrains Mono (font)", "2.305", "OFL-1.1", "https://github.com/JetBrains/JetBrainsMono"),
     ];
 
     public static SbomNoticeBundle CreateForCurrentDevelopment(IEnumerable<ArtifactInput> artifacts) =>

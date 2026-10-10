@@ -13,12 +13,12 @@ using OpenLogicool.Contracts.Profiles;
 namespace OpenLogicool.Desktop;
 
 /// <summary>
-/// Input Studio メイン画面（t09 第4段・オーナー承認済みモック docs/ui-mocks/main.html・states.html 準拠）。
-/// 上部バー（設定中のアプリ pill・いまゲームに届いている割当・保存状態）＋
-/// 左＝操作一覧・中央＝G13/G600 模式図・右＝割当パネル（唯一の editor）＋下部＝動作チェック strip。
+/// Input Studio メイン画面（オーナー承認済みの見本 docs/ui-mocks/v2/input-studio.html 準拠）。
+/// 上の帯（設定中のアプリ・いまゲームに届いている割当）＋左＝操作一覧・中央＝G13/G600 の図・
+/// 右＝割当パネル（唯一の editor・保存）＋下の帯＝動作チェック。
 /// Desktop は I/O を持たないため、document の読み込み・compile・保存・破棄はすべて
-/// <see cref="IWorkspaceEditorIntents"/>（実装は Host）を通す。旧 device 台帳（<see cref="DeviceLedgerView"/>）は
-/// この画面から撤去した（class 自体は次段の診断画面向けに残す）。
+/// <see cref="IWorkspaceEditorIntents"/>（実装は Host）を通す。device 台帳（<see cref="DeviceLedgerView"/>）は
+/// 診断画面が持つ。
 /// </summary>
 public sealed class InputStudioWindow : Window
 {
@@ -36,6 +36,8 @@ public sealed class InputStudioWindow : Window
     private readonly IBotScriptIntents? _botScriptIntents;
     private readonly WindowPlacementMemory? _windowPlacementMemory;
     private readonly string? _supervisedUnavailableReason;
+    // 窓の最小幅を広げたため、以前の幅で覚えた配置を引き継がない名前にする。
+    private const string GameOperatorPlacementKey = "game-operator-rail";
     private DiagnosticsWindow? _diagnosticsWindow;
     private GameOperatorWindow? _gameOperatorWindow;
     private DispatcherTimer? _traceTimer;
@@ -55,144 +57,151 @@ public sealed class InputStudioWindow : Window
 
     // 上部バー
     private readonly Button _appPillButton = new();
+    private readonly TextBlock _appPillIcon = new()
+    {
+        FontFamily = Theme.Display,
+        FontWeight = FontWeights.Bold,
+        FontSize = 12,
+        Foreground = Theme.G13,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center,
+    };
     private readonly TextBlock _appPillLabel = new()
     {
-        FontWeight = FontWeights.SemiBold,
+        FontWeight = FontWeights.Bold,
         Foreground = Theme.Text,
-        FontSize = 13,
-        MaxWidth = 220,
+        FontSize = 13.5,
+        MaxWidth = 200,
         TextTrimming = TextTrimming.CharacterEllipsis,
     };
-    // Background を明示しないと ListBox は OS 既定の白下地になり、白文字の項目が読めなくなる
-    // （popup の中は Window の配色を継がない前提で全部明示する）。
-    private readonly ListBox _appPickerList = new()
-    {
-        Background = Theme.Raised,
-        Foreground = Theme.Text,
-        BorderThickness = new Thickness(0),
-    };
-    private readonly Popup _appPickerPopup = new() { StaysOpen = false, Placement = PlacementMode.Bottom };
+    private readonly ListBox _appPickerList = new() { BorderThickness = new Thickness(0), Width = 300, MaxHeight = 360 };
+    private readonly Popup _appPickerPopup = new() { StaysOpen = false, Placement = PlacementMode.Bottom, AllowsTransparency = true, VerticalOffset = 6 };
     private readonly TextBlock _liveAssignmentValueText = new()
     {
         Foreground = Theme.Text,
+        FontWeight = FontWeights.Bold,
         VerticalAlignment = VerticalAlignment.Center,
         MaxWidth = 260,
         TextTrimming = TextTrimming.CharacterEllipsis,
     };
-    private readonly Border _saveChip = new() { CornerRadius = new CornerRadius(3), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 8, 0) };
-    private readonly TextBlock _saveChipText = new() { FontWeight = FontWeights.SemiBold, FontSize = 12 };
-    private readonly Button _saveButton = new() { Content = "保存", Padding = new Thickness(14, 6, 14, 6) };
-    private readonly Button _revertButton = new() { Content = "元に戻す", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(8, 0, 0, 0) };
-    private readonly Button _outputSettingsButton = new()
+    private readonly Button _outputSettingsButton = Theme.Quiet(new Button
     {
         Content = "出力方式",
-        Padding = new Thickness(12, 6, 12, 6),
-        Margin = new Thickness(12, 0, 0, 0),
-    };
+        Height = 32,
+        Padding = new Thickness(12, 0, 12, 0),
+        Margin = new Thickness(8, 0, 0, 0),
+    });
     private readonly TextBlock _outputStatusText = new()
     {
         Foreground = Theme.Muted,
         FontSize = 11,
         VerticalAlignment = VerticalAlignment.Center,
-        Margin = new Thickness(8, 0, 0, 0),
+        Margin = new Thickness(0, 0, 4, 0),
         MaxWidth = 210,
         TextTrimming = TextTrimming.CharacterEllipsis,
     };
 
-    // G600 本体書き込み（方式A）: 合成入力を受け付けないゲームでも割当を効かせる
+    // G600 本体書き込み（方式A）: 合成入力を受け付けないゲームでも割当を効かせる。入口は G600 の図の右上。
     private readonly IG600OnboardIntent? _onboardIntent;
+    private readonly Button _onboardMenuButton = Theme.Quiet(new Button
+    {
+        Content = "G600本体 ▾",
+        Height = 30,
+        Padding = new Thickness(12, 0, 12, 0),
+        Margin = new Thickness(10, 0, 0, 0),
+    });
+    private readonly Popup _onboardPopup = new() { StaysOpen = false, Placement = PlacementMode.Bottom, AllowsTransparency = true, VerticalOffset = 6 };
     private readonly Button _onboardWriteButton = new()
     {
         Content = "G600本体に書き込む",
-        Padding = new Thickness(12, 6, 12, 6),
-        Margin = new Thickness(16, 0, 0, 0),
+        Height = 32,
+        Padding = new Thickness(12, 0, 12, 0),
         ToolTip = "この設定の G600 割当を G600 本体のメモリに書き込みます。ハードウェアのキー入力として"
             + "送信されるため、割当が効かないゲームでも動作します（G600 のみ・書き込み前の状態は記録されいつでも解除できます）。",
     };
-    private readonly Button _onboardRestoreButton = new()
+    private readonly Button _onboardRestoreButton = Theme.Quiet(new Button
     {
         Content = "本体の書き込みを解除",
-        Padding = new Thickness(12, 6, 12, 6),
-        Margin = new Thickness(8, 0, 0, 0),
-    };
+        Height = 32,
+        Padding = new Thickness(12, 0, 12, 0),
+        Margin = new Thickness(0, 6, 0, 0),
+    });
     private readonly TextBlock _onboardStatusText = new()
     {
         Foreground = Theme.Muted,
-        FontSize = 11,
-        VerticalAlignment = VerticalAlignment.Center,
-        Margin = new Thickness(8, 0, 0, 0),
+        FontSize = 11.5,
+        TextWrapping = TextWrapping.Wrap,
+        MaxWidth = 280,
+        Margin = new Thickness(0, 0, 0, 8),
     };
     private bool _onboardBusy;
 
     // 左ペイン: 操作一覧
-    private readonly ListBox _actionList = new();
+    private readonly ListBox _actionList = new() { BorderThickness = new Thickness(0), Background = Brushes.Transparent };
+    private readonly Button _recordAddButton = new();
 
-    // 中央ペイン: device タブ・配置チップ・模式図
+    // 中央ペイン: デバイスの切替・配置の切替・図
     private readonly Button _g13TabButton = new();
     private readonly Button _g600TabButton = new();
-    private readonly StackPanel _layerChipRow = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+    private readonly StackPanel _layerChipRow = new() { Orientation = Orientation.Horizontal };
+    private readonly Button _shiftSwitchButton = new();
+    private readonly Button _lcdMenuButton = Theme.Quiet(new Button
+    {
+        Content = "LCD表示 ▾",
+        Height = 30,
+        Padding = new Thickness(12, 0, 12, 0),
+        Margin = new Thickness(10, 0, 0, 0),
+    });
+    private readonly Popup _lcdPopup = new() { StaysOpen = false, Placement = PlacementMode.Bottom, AllowsTransparency = true, VerticalOffset = 6 };
     private readonly Border _g13LcdSettingsPanel = new()
     {
-        Background = Theme.Sunken,
-        BorderBrush = Theme.Line,
-        BorderThickness = new Thickness(1),
-        CornerRadius = new CornerRadius(4),
-        Padding = new Thickness(10, 8, 10, 8),
-        Margin = new Thickness(0, 0, 0, 10),
-    };
-    private readonly TextBlock _g13LcdSummary = new() { Foreground = Theme.Muted, FontSize = 11, TextWrapping = TextWrapping.Wrap };
-    private readonly TextBox _g13LcdTextBox = new()
-    {
         Background = Theme.Raised,
-        Foreground = Theme.Text,
-        BorderBrush = Theme.Line,
-        CaretBrush = Theme.Text,
-        Padding = new Thickness(6, 4, 6, 4),
-        MaxLength = 120,
-        MinWidth = 150,
-    };
-    private readonly Button _g13LcdImageButton = new() { Content = "画像を選ぶ", Padding = new Thickness(9, 4, 9, 4) };
-    private readonly Button _g13LcdTextButton = new() { Content = "テキストを表示", Padding = new Thickness(9, 4, 9, 4), Margin = new Thickness(6, 0, 0, 0) };
-    private readonly Button _g13LcdClearButton = new() { Content = "共通表示に戻す", Padding = new Thickness(9, 4, 9, 4), Margin = new Thickness(6, 0, 0, 0), Background = Brushes.Transparent };
-    private readonly Border _figureHost = new()
-    {
-        Background = Theme.Raised,
-        BorderBrush = Theme.Line,
+        BorderBrush = Theme.Line2,
         BorderThickness = new Thickness(1),
-        CornerRadius = new CornerRadius(0, 4, 4, 4),
-        Padding = new Thickness(14, 12, 14, 10),
+        CornerRadius = new CornerRadius(12),
+        Padding = new Thickness(14, 12, 14, 12),
+        Width = 500,
     };
-    private readonly TextBlock _figureNoteText = new() { Foreground = Theme.Muted, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0), TextAlignment = TextAlignment.Center };
+    private readonly TextBlock _g13LcdSummary = new() { Foreground = Theme.Muted, FontSize = 11.5, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBox _g13LcdTextBox = new() { MaxLength = 120, MinWidth = 150 };
+    private readonly Button _g13LcdImageButton = new() { Content = "画像を選ぶ", Height = 32, Padding = new Thickness(10, 0, 10, 0) };
+    private readonly Button _g13LcdTextButton = new() { Content = "テキストを表示", Height = 32, Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(6, 0, 0, 0) };
+    private readonly Button _g13LcdClearButton = Theme.Quiet(new Button { Content = "共通表示に戻す", Height = 32, Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(6, 0, 0, 0) });
+    private readonly Border _figureHost = new() { Margin = new Thickness(18, 10, 18, 4) };
+    private readonly TextBlock _figureNoteText = new()
+    {
+        Foreground = Theme.Muted,
+        FontSize = 12,
+        TextWrapping = TextWrapping.Wrap,
+        TextAlignment = TextAlignment.Center,
+        Margin = new Thickness(18, 0, 18, 10),
+    };
+    private InputStudioFigures.FigureView? _figureView;
 
     // 右ペイン: 割当パネル（唯一の editor）
-    private readonly Button _inspectorTitleButton = new() { HorizontalContentAlignment = HorizontalAlignment.Left, Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
-    // 操作の削除入口。Delete キーだけでは見つけられない（実利用の指摘 2026-08-22）ため画面に置く。
-    private readonly Button _deleteActionButton = new()
+    private readonly Button _inspectorTitleButton = new()
     {
-        Content = "この操作を削除",
-        Foreground = Theme.Danger,
+        HorizontalContentAlignment = HorizontalAlignment.Left,
         Background = Brushes.Transparent,
-        BorderThickness = new Thickness(0),
-        Padding = new Thickness(6, 2, 6, 2),
-        VerticalAlignment = VerticalAlignment.Center,
+        BorderBrush = Brushes.Transparent,
+        Padding = new Thickness(0, 2, 0, 2),
+        ToolTip = "クリックで名前を変えます",
     };
-    private readonly TextBox _inspectorNameBox = new()
+    // 操作の削除入口。Delete キーだけでは見つけられない（実利用の指摘 2026-08-22）ため画面に置く。
+    private readonly Button _deleteActionButton = Theme.DangerQuiet(new Button { Content = "この操作を削除", Height = 32 });
+    private readonly TextBox _inspectorNameBox = new() { FontSize = 15 };
+    private readonly StackPanel _sendKeyRow = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+    private readonly Button _recordUpdateButton = new()
     {
-        Background = Theme.Sunken,
-        Foreground = Theme.Text,
-        BorderBrush = Theme.Line,
-        CaretBrush = Theme.Text,
-        Padding = new Thickness(4, 3, 4, 3),
+        Content = "キーを録る",
+        Height = 32,
+        Padding = new Thickness(12, 0, 12, 0),
+        FontWeight = FontWeights.Bold,
+        HorizontalAlignment = HorizontalAlignment.Right,
     };
-    private readonly Button _recordAddButton = new() { Content = "録って追加", Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(0, 0, 8, 0) };
-    private readonly Button _recordUpdateButton = new() { Content = "録って更新", Padding = new Thickness(10, 6, 10, 6) };
-    private readonly Button _selectMacroButton = new()
-    {
-        Content = "保存済みマクロを選ぶ",
-        Padding = new Thickness(10, 6, 10, 6),
-        HorizontalAlignment = HorizontalAlignment.Stretch,
-        Margin = new Thickness(0, 0, 0, 12),
-    };
+    private readonly Button _selectMacroButton = Theme.Quiet(new Button { Content = "保存済みマクロを選ぶ", Height = 32 });
+    private readonly Border _selectMacroHostInCard = new();
+    private readonly Border _selectMacroHostWhenEmpty = new() { Margin = new Thickness(0, 10, 0, 0) };
     // 実機ボタン押しで割当先を指定する待機状態（録画確定後に自動で入る。常駐同居時のみ機能）。
     private bool _pendingAssign;
     private KeyCaptureDialog? _activeKeyCaptureDialog;
@@ -202,17 +211,41 @@ public sealed class InputStudioWindow : Window
         Foreground = Theme.Warn,
         FontSize = 12,
         TextWrapping = TextWrapping.Wrap,
-        Margin = new Thickness(0, 0, 0, 10),
         Visibility = Visibility.Collapsed,
     };
     private readonly StackPanel _conflictNotePanel = new();
+    private readonly StackPanel _inspectorBody = new();
     private readonly StackPanel _g13BindingsPanel = new();
     private readonly StackPanel _g600BindingsPanel = new();
     private readonly StackPanel _actionNotesPanel = new();
     private readonly StackPanel _inspectorEmptyPanel = new();
 
-    // 下部: 動作チェック
-    private readonly TextBlock _testFieldHint = new() { Foreground = Theme.Muted, FontSize = 12 };
+    // 保存の状態と操作
+    private readonly Border _saveDot = new() { Width = 7, Height = 7, CornerRadius = new CornerRadius(3.5), Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _saveChipText = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+    private readonly Button _saveButton = Theme.Primary(new Button { Content = "保存", Height = 38 });
+    private readonly Button _revertButton = Theme.Quiet(new Button { Content = "元に戻す", Height = 38 });
+    private bool _saveGlowBreathing;
+
+    // 下部: 動作チェック（実機の押下が左から流れる）
+    private readonly StackPanel _tickerPanel = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _testFieldHint = new() { Foreground = Theme.Muted, FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+    private int _traceTick;
+
+    // 短い知らせ（割当・保存の結果）
+    private readonly TextBlock _toastText = new() { Foreground = Theme.KeycapInk, FontWeight = FontWeights.Bold, FontSize = 12.5 };
+    private readonly Border _toast = new()
+    {
+        Background = Theme.Freeze(Color.FromRgb(0xf2, 0xf5, 0xfb)),
+        CornerRadius = new CornerRadius(10),
+        Padding = new Thickness(16, 9, 16, 9),
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Bottom,
+        Margin = new Thickness(0, 0, 0, 62),
+        Visibility = Visibility.Collapsed,
+        IsHitTestVisible = false,
+    };
+    private DispatcherTimer? _toastTimer;
 
     public InputStudioWindow(
         WorkspaceScreenSnapshot snapshot,
@@ -252,14 +285,11 @@ public sealed class InputStudioWindow : Window
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
 
         Title = "OpenLogicool Input Studio";
-        Background = Theme.Bg;
-        Foreground = Theme.Text;
-        // OS 既定 Button テンプレートの無効時・ホバー時のライト塗り直しを全窓（modal 含む）で無効化する。
-        var flatButtonStyle = Theme.CreateFlatButtonStyle();
-        Resources[typeof(Button)] = flatButtonStyle;
+        Theme.Apply(this);
+        // この窓を親にしない窓（MessageBox 以外の小窓）でも、OS 既定 Button の明色塗り直しを起こさない。
         if (Application.Current is { } application && !application.Resources.Contains(typeof(Button)))
         {
-            application.Resources[typeof(Button)] = flatButtonStyle;
+            application.Resources[typeof(Button)] = Theme.CreateFlatButtonStyle();
         }
         MinWidth = 1100;
         MinHeight = 720;
@@ -268,18 +298,18 @@ public sealed class InputStudioWindow : Window
         _windowPlacementMemory?.Attach(this, "input-studio");
 
         var root = new Grid();
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(58) });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(46) });
 
         var header = BuildHeader();
         Grid.SetRow(header, 0);
         root.Children.Add(header);
 
-        var body = new Grid { Margin = new Thickness(0, 1, 0, 1) };
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(268) });
+        var body = new Grid();
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(296) });
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(292) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(316) });
 
         var actionPane = BuildActionListPane();
         Grid.SetColumn(actionPane, 0);
@@ -300,6 +330,10 @@ public sealed class InputStudioWindow : Window
         Grid.SetRow(footer, 2);
         root.Children.Add(footer);
 
+        _toast.Child = _toastText;
+        Grid.SetRowSpan(_toast, 3);
+        root.Children.Add(_toast);
+
         Content = root;
 
         WireEvents();
@@ -310,7 +344,8 @@ public sealed class InputStudioWindow : Window
 
         if (_residentApply is not null)
         {
-            _traceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+            // 実機の押下を図へすぐ返すため短い間隔で読む（前面 window の追従は PollResidentTrace 側で間引く）。
+            _traceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
             _traceTimer.Tick += (_, _) => PollResidentTrace();
             _traceTimer.Start();
         }
@@ -322,6 +357,7 @@ public sealed class InputStudioWindow : Window
             if (_macroAutomationIntents is not null)
                 _macroAutomationIntents.StateChanged -= OnMacroStateChanged;
             _traceTimer?.Stop();
+            _toastTimer?.Stop();
             _diagnosticsWindow?.Close();
             _gameOperatorWindow?.Close();
         };
@@ -336,6 +372,14 @@ public sealed class InputStudioWindow : Window
             {
                 continue;
             }
+
+            // 実機で押したボタンと同じ場所を図で光らせ、下の帯へ流す。
+            if (traceEvent.DeviceKind == _selectedFigureDeviceKind)
+            {
+                _figureView?.Pulse(traceEvent.ControlId);
+            }
+
+            AddTickerEntry(traceEvent);
 
             if (_activeKeyCaptureDialog is not null)
             {
@@ -360,10 +404,11 @@ public sealed class InputStudioWindow : Window
             }
         }
 
-        var lastLine = events.LastOrDefault(traceEvent => traceEvent.DisplayLine is not null)?.DisplayLine;
-        if (lastLine is not null)
+        // 前面 window の追従は 300ms ごとで足りる（60ms ごとに OS へ問い合わせない）。
+        _traceTick++;
+        if (_traceTick % 5 != 0)
         {
-            _testFieldHint.Text = lastLine;
+            return;
         }
 
         // 「いまゲームに届いている割当」を前面 window に追従させる（配送の切替本体は常駐 fast path が
@@ -377,6 +422,131 @@ public sealed class InputStudioWindow : Window
             _liveAssignmentValueText.Text = label;
             _liveAssignmentValueText.ToolTip = label;
         }
+    }
+
+    /// <summary>動作チェックの帯へ1件流す（押したボタン → 操作 → 送ったキー）。新しいものが左。</summary>
+    private void AddTickerEntry(ResidentTraceEvent traceEvent)
+    {
+        _testFieldHint.Visibility = Visibility.Collapsed;
+        var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        row.Children.Add(new TextBlock
+        {
+            Text = traceEvent.DeviceKind,
+            FontFamily = Theme.Display,
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 10.5,
+            Foreground = traceEvent.DeviceKind == "G13" ? Theme.G13 : Theme.G600,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 7, 0),
+        });
+        row.Children.Add(new TextBlock { Text = ControlLabel(traceEvent.DeviceKind, traceEvent.ControlId), FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
+
+        var tokens = traceEvent.OutputTokens ?? [];
+        if (tokens.Count == 0)
+        {
+            row.Children.Add(new TextBlock { Text = "割当なし", Foreground = Theme.Muted, FontSize = 12, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+        }
+        else
+        {
+            var actionIndex = _document.Actions.ToList().FindIndex(action =>
+                action.Outputs.SequenceEqual(tokens, StringComparer.Ordinal)
+                && _document.Bindings.Any(binding =>
+                    binding.ActionId == action.ActionId
+                    && binding.DeviceKind == traceEvent.DeviceKind
+                    && binding.ControlId == traceEvent.ControlId));
+            if (actionIndex >= 0)
+            {
+                row.Children.Add(TickerArrow());
+                row.Children.Add(new TextBlock
+                {
+                    Text = _document.Actions[actionIndex].Name,
+                    Foreground = Theme.ActionColorAt(actionIndex),
+                    FontWeight = FontWeights.Bold,
+                    FontSize = 12,
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+            }
+
+            row.Children.Add(TickerArrow());
+            row.Children.Add(new Border
+            {
+                Background = Theme.Raised,
+                BorderBrush = Theme.Line2,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(5),
+                Padding = new Thickness(6, 1, 6, 1),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock { Text = KeyLegend(tokens), FontFamily = Theme.Mono, FontWeight = FontWeights.Bold, FontSize = 11 },
+            });
+        }
+
+        var slide = new TranslateTransform(-14, 0);
+        var chip = new Border
+        {
+            Height = 28,
+            CornerRadius = new CornerRadius(14),
+            BorderBrush = Theme.Line,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(10, 0, 10, 0),
+            Margin = new Thickness(0, 0, 8, 0),
+            Child = row,
+            RenderTransform = slide,
+        };
+        _tickerPanel.Children.Insert(0, chip);
+        while (_tickerPanel.Children.Count > 6)
+        {
+            _tickerPanel.Children.RemoveAt(_tickerPanel.Children.Count - 1);
+        }
+
+        var duration = TimeSpan.FromMilliseconds(250);
+        slide.BeginAnimation(TranslateTransform.XProperty, new System.Windows.Media.Animation.DoubleAnimation(-14, 0, duration));
+        chip.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, duration));
+    }
+
+    private static TextBlock TickerArrow() => new()
+    {
+        Text = "→",
+        Foreground = Theme.Faint,
+        FontSize = 12,
+        Margin = new Thickness(7, 0, 7, 0),
+        VerticalAlignment = VerticalAlignment.Center,
+    };
+
+    /// <summary>送るキーをキーキャップへ書く短い文字（「Key:W」→「W」、同時押しは「+」でつなぐ）。</summary>
+    private static string KeyLegend(IReadOnlyList<string> outputs)
+    {
+        if (outputs.Count == 0)
+        {
+            return "—";
+        }
+
+        if (outputs.Count == 1 && MacroInvocationTokens.IsMacro(outputs[0]))
+        {
+            return "マクロ";
+        }
+
+        return string.Join("+", outputs.Select(output => WorkspaceEditorProjection.OutputsDisplayName([output])));
+    }
+
+    /// <summary>画面の下へ短い知らせを出す（数秒で消える）。</summary>
+    private void ShowToast(string message)
+    {
+        _toastText.Text = message;
+        _toast.Visibility = Visibility.Visible;
+        _toastTimer ??= CreateToastTimer();
+        _toastTimer.Stop();
+        _toastTimer.Start();
+    }
+
+    private DispatcherTimer CreateToastTimer()
+    {
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2400) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            _toast.Visibility = Visibility.Collapsed;
+        };
+        return timer;
     }
 
     /// <summary>「録って追加」: 新しい操作を作って録画に入る。取り消されたら空の操作を残さない。</summary>
@@ -446,7 +616,7 @@ public sealed class InputStudioWindow : Window
             return;
         }
 
-        var currentLabel = WorkspaceEditorProjection.FormatOutputs(action.Outputs) is { Length: > 0 } label ? label : "（未設定）";
+        var currentLabel = action.Outputs.Count > 0 ? WorkspaceEditorProjection.OutputsDisplayName(action.Outputs) : "（未設定）";
         var dialog = new KeyCaptureDialog(
             action.Name,
             currentLabel,
@@ -675,7 +845,7 @@ public sealed class InputStudioWindow : Window
                 openMacroTab,
                 _demonstrationRecordingIntents,
                 _botScriptIntents) { Owner = this };
-            _windowPlacementMemory?.Attach(_gameOperatorWindow, "game-operator");
+            _windowPlacementMemory?.Attach(_gameOperatorWindow, GameOperatorPlacementKey);
             _gameOperatorWindow.Show();
         }
         else
@@ -700,7 +870,7 @@ public sealed class InputStudioWindow : Window
             _gameOperatorWindow = new GameOperatorWindow(_webResearchIntent, _explorerIntents, _learningRouteIntents,
                 _supervisedMacroIntents, _supervisedUnavailableReason, _macroAutomationIntents, false,
                 _demonstrationRecordingIntents, _botScriptIntents) { Owner = this, ShowActivated = activate };
-            _windowPlacementMemory?.Attach(_gameOperatorWindow, "game-operator");
+            _windowPlacementMemory?.Attach(_gameOperatorWindow, GameOperatorPlacementKey);
             _gameOperatorWindow.Show();
         }
         _gameOperatorWindow.SelectControlPanel(panel);
@@ -748,6 +918,16 @@ public sealed class InputStudioWindow : Window
 
         _g13TabButton.Click += (_, _) => { _selectedFigureDeviceKind = "G13"; Render(); };
         _g600TabButton.Click += (_, _) => { _selectedFigureDeviceKind = "G600"; Render(); };
+        _lcdMenuButton.Click += (_, _) =>
+        {
+            _lcdPopup.PlacementTarget = _lcdMenuButton;
+            _lcdPopup.IsOpen = true;
+        };
+        _onboardMenuButton.Click += (_, _) =>
+        {
+            _onboardPopup.PlacementTarget = _onboardMenuButton;
+            _onboardPopup.IsOpen = true;
+        };
 
         _inspectorTitleButton.Click += (_, _) =>
         {
@@ -773,11 +953,10 @@ public sealed class InputStudioWindow : Window
         _inspectorNameBox.LostFocus += (_, _) => OnInspectorNameCommitted();
         _inspectorNameBox.KeyDown += (_, e) => { if (e.Key == Key.Enter) { OnInspectorNameCommitted(); e.Handled = true; } };
 
-
         _saveButton.Click += (_, _) => SaveCurrentDocument();
         _revertButton.Click += (_, _) => DiscardUnsavedChanges();
-        _onboardWriteButton.Click += (_, _) => RunOnboardOperation(isApply: true);
-        _onboardRestoreButton.Click += (_, _) => RunOnboardOperation(isApply: false);
+        _onboardWriteButton.Click += (_, _) => { _onboardPopup.IsOpen = false; RunOnboardOperation(isApply: true); };
+        _onboardRestoreButton.Click += (_, _) => { _onboardPopup.IsOpen = false; RunOnboardOperation(isApply: false); };
         _outputSettingsButton.Click += (_, _) => OpenOutputSettings();
 
         PreviewKeyDown += OnWindowPreviewKeyDown;
@@ -891,141 +1070,314 @@ public sealed class InputStudioWindow : Window
         }
     }
 
-    // ─────────────────────────── header ───────────────────────────
+    // ─────────────────────────── 上の帯 ───────────────────────────
 
     private UIElement BuildHeader()
     {
-        var bar = new Border { Background = Theme.Chrome, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(16, 8, 16, 8) };
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var bar = new Border { Background = Theme.BarFill, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(16, 0, 16, 0) };
+        var dock = new DockPanel { LastChildFill = false };
 
-        var left = new StackPanel { Orientation = Orientation.Horizontal };
-        left.Children.Add(new TextBlock
+        var brand = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 16, 0) };
+        brand.Children.Add(new Border
+        {
+            Width = 16,
+            Height = 16,
+            CornerRadius = new CornerRadius(4),
+            Margin = new Thickness(0, 0, 9, 0),
+            Background = new LinearGradientBrush(
+                [new GradientStop(Theme.G13Color, 0), new GradientStop(Theme.AccentColor, 0.5), new GradientStop(Theme.G600Color, 1)],
+                new Point(0, 0),
+                new Point(1, 1)),
+        });
+        brand.Children.Add(new TextBlock
         {
             Text = "INPUT STUDIO",
+            FontFamily = Theme.Display,
             FontWeight = FontWeights.Bold,
-            FontSize = 14,
+            FontSize = 15,
             VerticalAlignment = VerticalAlignment.Center,
         });
-        left.Children.Add(new TextBlock
-        {
-            Text = "G13 ＋ G600",
-            Foreground = Theme.Muted,
-            FontSize = 12,
-            Margin = new Thickness(8, 2, 20, 0),
-            VerticalAlignment = VerticalAlignment.Center,
-        });
+        DockPanel.SetDock(brand, Dock.Left);
+        dock.Children.Add(brand);
 
         AutomationProperties.SetName(_appPillButton, "設定中のアプリ");
-        _appPillButton.Background = Theme.Raised;
-        _appPillButton.BorderBrush = Theme.Line;
-        _appPillButton.Padding = new Thickness(10, 5, 10, 5);
+        _appPillButton.Style = Theme.CreateFlatButtonStyle(10);
+        _appPillButton.Height = 40;
+        _appPillButton.Padding = new Thickness(10, 0, 12, 0);
+        _appPillButton.VerticalAlignment = VerticalAlignment.Center;
         var pillContent = new StackPanel { Orientation = Orientation.Horizontal };
-        var pillLabel = new StackPanel();
-        pillLabel.Children.Add(new TextBlock { Text = "設定中のアプリ", Foreground = Theme.Muted, FontSize = 10 });
+        pillContent.Children.Add(new Border
+        {
+            Width = 24,
+            Height = 24,
+            CornerRadius = new CornerRadius(6),
+            Background = Theme.Sunken,
+            Margin = new Thickness(0, 0, 10, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = _appPillIcon,
+        });
+        var pillLabel = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        pillLabel.Children.Add(new TextBlock { Text = "設定中のアプリ", Foreground = Theme.Muted, FontSize = 10.5, Margin = new Thickness(0, 0, 0, 3) });
         pillLabel.Children.Add(_appPillLabel);
         pillContent.Children.Add(pillLabel);
-        pillContent.Children.Add(new TextBlock { Text = " ▾", Foreground = Theme.Muted, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) });
+        pillContent.Children.Add(new TextBlock { Text = "▾", Foreground = Theme.Muted, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) });
         _appPillButton.Content = pillContent;
-        left.Children.Add(_appPillButton);
-
-        var liveRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        liveRow.Children.Add(new TextBlock { Text = "いまゲームに届いている割当: ", Foreground = Theme.Muted, VerticalAlignment = VerticalAlignment.Center });
-        liveRow.Children.Add(_liveAssignmentValueText);
-        left.Children.Add(liveRow);
-        grid.Children.Add(left);
+        DockPanel.SetDock(_appPillButton, Dock.Left);
+        dock.Children.Add(_appPillButton);
 
         _appPickerPopup.Child = new Border
         {
             Background = Theme.Raised,
-            BorderBrush = Theme.Line,
+            BorderBrush = Theme.Line2,
             BorderThickness = new Thickness(1),
-            Child = new ScrollViewer { MaxHeight = 320, MinWidth = 260, Content = _appPickerList },
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(3),
+            Margin = new Thickness(0, 0, 12, 12),
+            Child = _appPickerList,
         };
 
-        var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var liveRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        liveRow.Children.Add(BuildLiveDot());
+        liveRow.Children.Add(new TextBlock { Text = "いまゲームに届いている割当", Foreground = Theme.Muted, FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 8, 0) });
+        liveRow.Children.Add(_liveAssignmentValueText);
+        DockPanel.SetDock(liveRow, Dock.Left);
+        dock.Children.Add(liveRow);
+
+        var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        if (_serialHidSettingsIntent is not null)
+        {
+            right.Children.Add(_outputStatusText);
+        }
+
+        if (_macroAutomationIntents is not null)
+        {
+            var macroButton = TopBarButton("マクロを作る", "マクロ作成画面を開く");
+            macroButton.Click += (_, _) => OpenGameOperator(openMacroTab: true);
+            right.Children.Add(macroButton);
+        }
+
+        if (_webResearchIntent is not null)
+        {
+            var gameOperatorButton = TopBarButton("Game Operator", "Game Operator画面を開く");
+            gameOperatorButton.Click += (_, _) => OpenGameOperator();
+            right.Children.Add(gameOperatorButton);
+        }
+
         if (_serialHidSettingsIntent is not null)
         {
             right.Children.Add(_outputSettingsButton);
-            right.Children.Add(_outputStatusText);
-        }
-        if (_onboardIntent is not null)
-        {
-            right.Children.Add(_onboardWriteButton);
-            right.Children.Add(_onboardRestoreButton);
-            right.Children.Add(_onboardStatusText);
         }
 
-        Grid.SetColumn(right, 1);
-        grid.Children.Add(right);
+        DockPanel.SetDock(right, Dock.Right);
+        dock.Children.Add(right);
 
-        bar.Child = grid;
+        bar.Child = dock;
         return bar;
     }
 
-    // ─────────────────────────── 左ペイン: 操作 ───────────────────────────
+    private static Button TopBarButton(string label, string automationName)
+    {
+        var button = Theme.Quiet(new Button { Content = label, Height = 32, Padding = new Thickness(12, 0, 12, 0), Margin = new Thickness(8, 0, 0, 0) });
+        AutomationProperties.SetName(button, automationName);
+        return button;
+    }
+
+    /// <summary>稼働中の印（緑の丸から輪が広がり続ける）。</summary>
+    private static UIElement BuildLiveDot()
+    {
+        var scale = new ScaleTransform(1, 1);
+        var ring = new Border
+        {
+            Width = 8,
+            Height = 8,
+            CornerRadius = new CornerRadius(4),
+            BorderBrush = Theme.Ok,
+            BorderThickness = new Thickness(1.5),
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            RenderTransform = scale,
+        };
+        var grid = new Grid { Width = 18, Height = 18, VerticalAlignment = VerticalAlignment.Center };
+        grid.Children.Add(ring);
+        grid.Children.Add(new Border { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), Background = Theme.Ok });
+        if (SystemParameters.ClientAreaAnimation)
+        {
+            var duration = TimeSpan.FromSeconds(2.2);
+            var grow = new System.Windows.Media.Animation.DoubleAnimation(1, 2.3, duration) { RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever };
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+            scale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+            ring.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0.7, 0, duration) { RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever });
+        }
+        else
+        {
+            ring.Visibility = Visibility.Collapsed;
+        }
+
+        return grid;
+    }
+
+    // ─────────────────────────── 左: 操作 ───────────────────────────
 
     private UIElement BuildActionListPane()
     {
-        var pane = new Border { Background = Theme.Panel, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 1, 0) };
-        var dock = new DockPanel { Margin = new Thickness(0, 10, 0, 10) };
+        var pane = new Border { Background = Theme.SideFill, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 0, 1, 0) };
+        var dock = new DockPanel();
 
-        var header = new StackPanel { Margin = new Thickness(14, 0, 14, 8) };
-        header.Children.Add(new TextBlock { Text = "操作", FontWeight = FontWeights.Bold, FontSize = 12 });
-        header.Children.Add(new TextBlock { Text = "このアプリでやりたいこと", Foreground = Theme.Muted, FontSize = 11 });
+        var header = PaneHeader("操作", "このアプリでやりたいこと");
         DockPanel.SetDock(header, Dock.Top);
         dock.Children.Add(header);
 
+        // 追加の入口は破線の枠（まだ無いものを足す場所）。
+        var addFace = new Grid();
+        addFace.Children.Add(new System.Windows.Shapes.Rectangle
+        {
+            Stroke = Theme.Line2,
+            StrokeThickness = 1,
+            StrokeDashArray = [4, 3],
+            RadiusX = 10,
+            RadiusY = 10,
+        });
+        addFace.Children.Add(new TextBlock
+        {
+            Text = "＋ キーを録って操作を追加",
+            Foreground = Theme.Muted,
+            FontSize = 12.5,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        _recordAddButton.Style = Theme.CreateFlatButtonStyle(10);
+        _recordAddButton.Content = addFace;
+        _recordAddButton.Height = 36;
+        _recordAddButton.Margin = new Thickness(12, 0, 12, 8);
+        _recordAddButton.Padding = new Thickness(0);
+        _recordAddButton.Background = Brushes.Transparent;
+        _recordAddButton.BorderBrush = Brushes.Transparent;
+        _recordAddButton.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+        _recordAddButton.VerticalContentAlignment = VerticalAlignment.Stretch;
+        AutomationProperties.SetName(_recordAddButton, "キーを録って新しい操作を追加する");
+        _recordAddButton.ToolTip = "キーを録画して、新しい操作として追加します";
+        _recordAddButton.Click += (_, _) => RecordNewAction();
+        DockPanel.SetDock(_recordAddButton, Dock.Top);
+        dock.Children.Add(_recordAddButton);
+
         AutomationProperties.SetName(_actionList, "操作一覧");
-        _actionList.Background = Brushes.Transparent;
-        _actionList.BorderThickness = new Thickness(0);
+        _actionList.Margin = new Thickness(5, 0, 5, 10);
         dock.Children.Add(_actionList);
 
         pane.Child = dock;
         return pane;
     }
 
-    // ─────────────────────────── 中央ペイン: 模式図 ───────────────────────────
+    private static UIElement PaneHeader(string title, string caption)
+    {
+        var header = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(16, 14, 16, 10) };
+        header.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.Bold, FontSize = 14, VerticalAlignment = VerticalAlignment.Bottom });
+        header.Children.Add(new TextBlock { Text = caption, Foreground = Theme.Muted, FontSize = 11.5, Margin = new Thickness(10, 0, 0, 1), VerticalAlignment = VerticalAlignment.Bottom });
+        return header;
+    }
+
+    // ─────────────────────────── 中央: 図 ───────────────────────────
 
     private UIElement BuildFigurePane()
     {
-        var pane = new Border { Background = Theme.Panel };
-        var dock = new DockPanel { Margin = new Thickness(14, 10, 14, 10) };
+        var grid = new Grid();
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        var tabs = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 0) };
-        ConfigureTabButton(_g13TabButton, Theme.G13);
-        ConfigureTabButton(_g600TabButton, Theme.G600);
-        tabs.Children.Add(_g13TabButton);
-        tabs.Children.Add(_g600TabButton);
-        DockPanel.SetDock(tabs, Dock.Top);
-        dock.Children.Add(tabs);
+        var head = new DockPanel { Margin = new Thickness(18, 12, 18, 0), LastChildFill = false };
+        var deviceButtons = new StackPanel { Orientation = Orientation.Horizontal };
+        deviceButtons.Children.Add(_g13TabButton);
+        deviceButtons.Children.Add(_g600TabButton);
+        var deviceSegment = Segment(deviceButtons);
+        DockPanel.SetDock(deviceSegment, Dock.Left);
+        head.Children.Add(deviceSegment);
 
-        var stageBorder = new Border
+        var layerCaption = new TextBlock { Text = "いま見ている配置", Foreground = Theme.Muted, FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(18, 0, 8, 0) };
+        DockPanel.SetDock(layerCaption, Dock.Left);
+        head.Children.Add(layerCaption);
+        var layerSegment = Segment(_layerChipRow);
+        DockPanel.SetDock(layerSegment, Dock.Left);
+        head.Children.Add(layerSegment);
+
+        // 図ごとの補助の操作は、切替の下の段へ右寄せで置く（G600 は配置名が長く、1段に収まらない）。
+        var headRight = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(18, 6, 18, 0) };
+        _shiftSwitchButton.Background = Brushes.Transparent;
+        _shiftSwitchButton.BorderBrush = Brushes.Transparent;
+        _shiftSwitchButton.Padding = new Thickness(6, 4, 6, 4);
+        _shiftSwitchButton.Click += (_, _) => ToggleG600Shift();
+        headRight.Children.Add(_shiftSwitchButton);
+        AutomationProperties.SetName(_onboardMenuButton, "G600 本体への書き込み");
+        headRight.Children.Add(_onboardMenuButton);
+        AutomationProperties.SetName(_lcdMenuButton, "G13 の LCD 表示");
+        headRight.Children.Add(_lcdMenuButton);
+        var headStack = new StackPanel();
+        headStack.Children.Add(head);
+        headStack.Children.Add(headRight);
+        grid.Children.Add(headStack);
+
+        BuildG13LcdSettingsPanel();
+        _lcdPopup.Child = new Border { Child = _g13LcdSettingsPanel, Margin = new Thickness(0, 0, 12, 12) };
+
+        var onboardStack = new StackPanel();
+        onboardStack.Children.Add(_onboardStatusText);
+        onboardStack.Children.Add(_onboardWriteButton);
+        onboardStack.Children.Add(_onboardRestoreButton);
+        _onboardPopup.Child = new Border
         {
             Background = Theme.Raised,
-            BorderBrush = Theme.Line,
+            BorderBrush = Theme.Line2,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(0, 4, 4, 4),
-            Padding = new Thickness(14, 12, 14, 10),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(14, 12, 14, 12),
+            Margin = new Thickness(0, 0, 12, 12),
+            Child = onboardStack,
         };
-        var stageStack = new StackPanel();
-        stageStack.Children.Add(_layerChipRow);
-        BuildG13LcdSettingsPanel();
-        stageStack.Children.Add(_g13LcdSettingsPanel);
 
-        var figureScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxHeight = 520 };
-        var figureCenter = new Grid { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 8, 0, 0) };
-        _figureHost.Child = null;
-        figureCenter.Children.Add(_figureHost);
-        figureScroll.Content = figureCenter;
-        stageStack.Children.Add(figureScroll);
-        stageStack.Children.Add(_figureNoteText);
-        stageBorder.Child = stageStack;
-        dock.Children.Add(stageBorder);
+        Grid.SetRow(_figureHost, 1);
+        grid.Children.Add(_figureHost);
+        Grid.SetRow(_figureNoteText, 2);
+        grid.Children.Add(_figureNoteText);
+        return grid;
+    }
 
-        pane.Child = dock;
-        return pane;
+    /// <summary>切替の入れ物（暗い溝の中に選択肢が並ぶ）。</summary>
+    private static Border Segment(UIElement content) => new()
+    {
+        Background = Theme.Sunken,
+        BorderBrush = Theme.Line,
+        BorderThickness = new Thickness(1),
+        CornerRadius = new CornerRadius(11),
+        Padding = new Thickness(3),
+        VerticalAlignment = VerticalAlignment.Center,
+        Child = content,
+    };
+
+    private static void StyleSegmentButton(Button button, bool isOn)
+    {
+        button.Height = 30;
+        button.Padding = new Thickness(14, 0, 14, 0);
+        button.FontWeight = FontWeights.Bold;
+        button.FontSize = 12.5;
+        button.Background = isOn ? Theme.Raised : Brushes.Transparent;
+        button.BorderBrush = isOn ? Theme.Line2 : Brushes.Transparent;
+        button.Foreground = isOn ? Theme.Text : Theme.Muted;
+    }
+
+    private void ToggleG600Shift()
+    {
+        var layout = _document.Devices.FirstOrDefault(device => device.DeviceKind == "G600");
+        if (layout is null)
+        {
+            return;
+        }
+
+        var shiftIsButton = layout.HoldSelectors.Count == 0;
+        if (TryMutateDocument(shiftIsButton
+                ? WorkspaceDocumentEditor.SetG600ShiftAsSelector
+                : WorkspaceDocumentEditor.SetG600ShiftAsButton))
+        {
+            Render();
+        }
     }
 
     private void BuildG13LcdSettingsPanel()
@@ -1037,19 +1389,19 @@ public sealed class InputStudioWindow : Window
             Text = "LCD表示",
             Foreground = Theme.Text,
             FontWeight = FontWeights.Bold,
-            FontSize = 12,
+            FontSize = 13,
             VerticalAlignment = VerticalAlignment.Center,
         });
         titleRow.Children.Add(new TextBlock
         {
             Text = "このプリセットが前面の時",
             Foreground = Theme.Muted,
-            FontSize = 11,
+            FontSize = 11.5,
             Margin = new Thickness(8, 1, 0, 0),
             VerticalAlignment = VerticalAlignment.Center,
         });
         stack.Children.Add(titleRow);
-        _g13LcdSummary.Margin = new Thickness(0, 3, 0, 7);
+        _g13LcdSummary.Margin = new Thickness(0, 4, 0, 9);
         stack.Children.Add(_g13LcdSummary);
 
         var editRow = new Grid();
@@ -1079,7 +1431,6 @@ public sealed class InputStudioWindow : Window
         };
         _g13LcdSettingsPanel.Child = stack;
     }
-
     private void SelectG13LcdImage()
     {
         if (_g13LcdSettingsIntent is null)
@@ -1136,93 +1487,70 @@ public sealed class InputStudioWindow : Window
         }
     }
 
-    private static void ConfigureTabButton(Button button, Brush accent)
-    {
-        button.Padding = new Thickness(16, 7, 16, 7);
-        button.Background = Theme.Raised;
-        button.BorderBrush = Theme.Line;
-        button.BorderThickness = new Thickness(1, 1, 1, 0);
-        button.Margin = new Thickness(0, 0, 4, 0);
-        button.Foreground = Theme.Text;
-        button.Tag = accent;
-    }
-
-    // ─────────────────────────── 右ペイン: 割当パネル ───────────────────────────
+    // ─────────────────────────── 右: 割当 ───────────────────────────
 
     private UIElement BuildBindingPane()
     {
-        var pane = new Border { Background = Theme.Panel, BorderBrush = Theme.Line, BorderThickness = new Thickness(1, 0, 0, 0) };
+        var pane = new Border { Background = Theme.SideFill, BorderBrush = Theme.Line, BorderThickness = new Thickness(1, 0, 0, 0) };
         var layout = new Grid();
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
+        layout.Children.Add(PaneHeader("割当", "選んだ操作をボタンへ"));
+
         var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-        var stack = new StackPanel { Margin = new Thickness(14, 10, 14, 14) };
-
-        var header = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
-        header.Children.Add(new TextBlock { Text = "割当", FontWeight = FontWeights.Bold, FontSize = 12 });
-        header.Children.Add(new TextBlock { Text = "選んだ操作をボタンへ", Foreground = Theme.Muted, FontSize = 11 });
-        stack.Children.Add(header);
-
+        var stack = new StackPanel { Margin = new Thickness(16, 0, 16, 12) };
         stack.Children.Add(_conflictNotePanel);
-
-        _inspectorTitleButton.FontSize = 16;
-        _inspectorTitleButton.FontWeight = FontWeights.Bold;
-        _inspectorNameBox.Margin = new Thickness(0, 0, 0, 10);
-        var titleRow = new Grid();
-        titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        titleRow.Children.Add(_inspectorTitleButton);
-        Grid.SetColumn(_deleteActionButton, 1);
-        titleRow.Children.Add(_deleteActionButton);
-        stack.Children.Add(titleRow);
-        stack.Children.Add(_inspectorNameBox);
-
         stack.Children.Add(_inspectorEmptyPanel);
+        stack.Children.Add(_inspectorBody);
 
-        var recordRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 12) };
-        AutomationProperties.SetName(_recordAddButton, "キーを録って新しい操作を追加する");
-        _recordAddButton.ToolTip = "キーを録画して、新しい操作として追加します";
-        _recordAddButton.Click += (_, _) => RecordNewAction();
-        recordRow.Children.Add(_recordAddButton);
+        _inspectorTitleButton.Margin = new Thickness(0, 0, 0, 10);
+        _inspectorBody.Children.Add(_inspectorTitleButton);
+        _inspectorNameBox.Margin = new Thickness(0, 0, 0, 10);
+        _inspectorBody.Children.Add(_inspectorNameBox);
+
+        var sendStack = new StackPanel();
+        sendStack.Children.Add(CardCaption("ゲームに送るキー"));
+        var sendRow = new Grid { Margin = new Thickness(0, 8, 0, 8) };
+        sendRow.Children.Add(_sendKeyRow);
         AutomationProperties.SetName(_recordUpdateButton, "選んだ操作のキーを録り直す");
         _recordUpdateButton.ToolTip = "選んでいる操作のキーを、新しく録ったキーで上書きします";
         _recordUpdateButton.Click += (_, _) => RecordUpdateSelected();
-        recordRow.Children.Add(_recordUpdateButton);
-        stack.Children.Add(recordRow);
+        sendRow.Children.Add(_recordUpdateButton);
+        sendStack.Children.Add(sendRow);
         _selectMacroButton.Click += (_, _) => SelectMacroForCurrentAction();
         _selectMacroButton.ToolTip = "保存済みマクロを、この操作の機能として使います";
         AutomationProperties.SetName(_selectMacroButton, "選んだ操作へマクロを設定する");
-        stack.Children.Add(_selectMacroButton);
-        stack.Children.Add(_assignHint);
+        sendStack.Children.Add(_selectMacroHostInCard);
+        _inspectorBody.Children.Add(Theme.Card(sendStack));
 
-        stack.Children.Add(BuildDeviceBlockHeader("G13 キーパッド", Theme.G13));
-        stack.Children.Add(_g13BindingsPanel);
-        stack.Children.Add(BuildDeviceBlockHeader("G600 マウス", Theme.G600));
-        stack.Children.Add(_g600BindingsPanel);
+        _assignHint.Margin = new Thickness(2, 10, 2, 0);
+        _inspectorBody.Children.Add(_assignHint);
 
-        stack.Children.Add(_actionNotesPanel);
+        _inspectorBody.Children.Add(DeviceCard("G13 キーパッド", Theme.G13Color, _g13BindingsPanel));
+        _inspectorBody.Children.Add(DeviceCard("G600 マウス", Theme.G600Color, _g600BindingsPanel));
+
+        _actionNotesPanel.Margin = new Thickness(2, 10, 2, 0);
+        _inspectorBody.Children.Add(_actionNotesPanel);
+        _deleteActionButton.Margin = new Thickness(0, 12, 0, 0);
+        _inspectorBody.Children.Add(_deleteActionButton);
 
         scroll.Content = stack;
+        Grid.SetRow(scroll, 1);
         layout.Children.Add(scroll);
 
-        var saveArea = new Border
-        {
-            Background = Theme.Chrome,
-            BorderBrush = Theme.Line,
-            BorderThickness = new Thickness(0, 1, 0, 0),
-            Padding = new Thickness(14, 10, 14, 10),
-        };
+        var saveArea = new Border { BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(16, 12, 16, 12) };
         var saveStack = new StackPanel();
-        _saveChip.Child = _saveChipText;
-        _saveChip.Margin = new Thickness(0, 0, 0, 8);
-        saveStack.Children.Add(_saveChip);
+        var stateRow = new DockPanel { Margin = new Thickness(0, 0, 0, 9) };
+        DockPanel.SetDock(_saveDot, Dock.Left);
+        stateRow.Children.Add(_saveDot);
+        stateRow.Children.Add(_saveChipText);
+        saveStack.Children.Add(stateRow);
 
         var saveRow = new Grid();
+        saveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.4, GridUnitType.Star) });
         saveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        saveRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        _saveButton.Background = Theme.Accent;
-        _saveButton.Foreground = Brushes.White;
         _saveButton.Margin = new Thickness(0, 0, 4, 0);
         AutomationProperties.SetName(_saveButton, "編集内容を保存");
         saveRow.Children.Add(_saveButton);
@@ -1232,86 +1560,54 @@ public sealed class InputStudioWindow : Window
         saveRow.Children.Add(_revertButton);
         saveStack.Children.Add(saveRow);
         saveArea.Child = saveStack;
-        Grid.SetRow(saveArea, 1);
+        Grid.SetRow(saveArea, 2);
         layout.Children.Add(saveArea);
 
         pane.Child = layout;
         return pane;
     }
 
-    private static Border BuildDeviceBlockHeader(string label, Brush accent)
+    private static TextBlock CardCaption(string text) => new() { Text = text, Foreground = Theme.Muted, FontWeight = FontWeights.Bold, FontSize = 11.5 };
+
+    private static Border DeviceCard(string label, Color deviceColor, StackPanel rows)
     {
-        var header = new Border { Background = Theme.Raised, BorderBrush = Theme.Line, BorderThickness = new Thickness(1, 1, 1, 0), Padding = new Thickness(8, 6, 8, 6), Margin = new Thickness(0, 10, 0, 0) };
-        var row = new StackPanel { Orientation = Orientation.Horizontal };
-        row.Children.Add(new Ellipse2(accent));
-        row.Children.Add(new TextBlock { Text = label, FontWeight = FontWeights.SemiBold, FontSize = 12, Margin = new Thickness(8, 0, 0, 0) });
-        header.Child = row;
-        return header;
+        var stack = new StackPanel();
+        var title = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 5) };
+        title.Children.Add(Theme.Dot(deviceColor));
+        title.Children.Add(new TextBlock { Text = label, FontWeight = FontWeights.Bold, FontSize = 12.5, Margin = new Thickness(8, 0, 0, 0) });
+        stack.Children.Add(title);
+        stack.Children.Add(rows);
+        var card = Theme.Card(stack, new Thickness(8, 11, 8, 7));
+        title.Margin = new Thickness(4, 0, 0, 5);
+        card.Margin = new Thickness(0, 12, 0, 0);
+        return card;
     }
 
-    // ─────────────────────────── footer ───────────────────────────
+    // ─────────────────────────── 下の帯 ───────────────────────────
 
     private UIElement BuildFooter()
     {
-        var bar = new Border { Background = Theme.Chrome, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(16, 8, 16, 8) };
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var bar = new Border { Background = Theme.BarFill, BorderBrush = Theme.Line, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(16, 0, 16, 0) };
+        var dock = new DockPanel();
 
-        var row = new StackPanel { Orientation = Orientation.Horizontal };
-        row.Children.Add(new TextBlock { Text = "動作チェック", FontWeight = FontWeights.Bold, FontSize = 12, Margin = new Thickness(0, 0, 12, 0) });
-        _testFieldHint.Text = "デバイスのボタンを押すと、ここに結果が流れます";
-        _testFieldHint.TextTrimming = TextTrimming.CharacterEllipsis;
-        row.Children.Add(_testFieldHint);
-        grid.Children.Add(row);
+        var title = new TextBlock { Text = "動作チェック", FontWeight = FontWeights.Bold, FontSize = 12.5, Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
+        DockPanel.SetDock(title, Dock.Left);
+        dock.Children.Add(title);
 
-        var right = new StackPanel { Orientation = Orientation.Horizontal };
-        if (_webResearchIntent is not null)
-        {
-            var gameOperatorButton = new Button
-            {
-                Content = "Game Operator",
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Foreground = Theme.Accent,
-                Padding = new Thickness(8, 2, 8, 2),
-            };
-            AutomationProperties.SetName(gameOperatorButton, "Game Operator画面を開く");
-            gameOperatorButton.Click += (_, _) => OpenGameOperator();
-            right.Children.Add(gameOperatorButton);
-        }
-
-        if (_macroAutomationIntents is not null)
-        {
-            var macroButton = new Button
-            {
-                Content = "マクロを作る",
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Foreground = Theme.Accent,
-                Padding = new Thickness(8, 2, 8, 2),
-            };
-            AutomationProperties.SetName(macroButton, "マクロ作成画面を開く");
-            macroButton.Click += (_, _) => OpenGameOperator(openMacroTab: true);
-            right.Children.Add(macroButton);
-        }
-
-        var diagnosticsButton = new Button
-        {
-            Content = "診断",
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Foreground = Theme.Muted,
-            Padding = new Thickness(8, 2, 8, 2),
-            HorizontalAlignment = HorizontalAlignment.Right,
-        };
+        var diagnosticsButton = Theme.Quiet(new Button { Content = "診断", Height = 30, Padding = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center });
         AutomationProperties.SetName(diagnosticsButton, "診断画面を開く");
         diagnosticsButton.Click += (_, _) => OpenDiagnostics();
-        right.Children.Add(diagnosticsButton);
-        Grid.SetColumn(right, 1);
-        grid.Children.Add(right);
+        DockPanel.SetDock(diagnosticsButton, Dock.Right);
+        dock.Children.Add(diagnosticsButton);
 
-        bar.Child = grid;
+        _testFieldHint.Text = "デバイスのボタンを押すと、ここに結果が流れます";
+        _testFieldHint.TextTrimming = TextTrimming.CharacterEllipsis;
+        var flow = new Grid { ClipToBounds = true, Margin = new Thickness(0, 0, 12, 0) };
+        flow.Children.Add(_testFieldHint);
+        flow.Children.Add(_tickerPanel);
+        dock.Children.Add(flow);
+
+        bar.Child = dock;
         return bar;
     }
 
@@ -1408,16 +1704,36 @@ public sealed class InputStudioWindow : Window
     private void OnFigureKeyClicked(string deviceKind, string controlId)
     {
         _pendingAssign = false;
+        var layerId = CurrentLayerFor(deviceKind);
+        var occupant = _document.Bindings.FirstOrDefault(binding =>
+            binding.DeviceKind == deviceKind && binding.LayerId == layerId && binding.ControlId == controlId);
+        if (occupant is not null)
+        {
+            // 光っているキーを押したら、そのキーに載っている操作を選ぶ（別の操作を重ねて衝突させない）。
+            if (occupant.ActionId != _selectedActionId)
+            {
+                _selectedActionId = occupant.ActionId;
+                _isRenamingAction = false;
+                Render();
+            }
+
+            _figureView?.Pulse(controlId);
+            return;
+        }
+
         if (_selectedActionId is null)
         {
+            ShowToast("先に左の一覧から操作を選んでください");
             return;
         }
 
         var actionId = _selectedActionId;
-        var layerId = _figureLayerByDevice.TryGetValue(deviceKind, out var currentLayer) ? currentLayer : "base";
         if (TryMutateDocument(document => WorkspaceDocumentEditor.SetBinding(document, actionId, deviceKind, controlId, layerId)))
         {
             Render();
+            _figureView?.Pulse(controlId);
+            var name = _document.Actions.First(action => action.ActionId == actionId).Name;
+            ShowToast($"「{name}」を {deviceKind} の {ControlLabel(deviceKind, controlId)} に載せました");
         }
     }
 
@@ -1437,6 +1753,7 @@ public sealed class InputStudioWindow : Window
             _justSaved = true;
             _saveErrorMessage = null;
             Render();
+            ShowToast(_residentApply is not null ? "保存しました。ゲームへ反映済みです" : "保存しました");
         }
         catch (InvalidOperationException error)
         {
@@ -1541,118 +1858,138 @@ public sealed class InputStudioWindow : Window
     {
         _appPillLabel.Text = view.Chrome.EditingLabel;
         _appPillLabel.ToolTip = view.Chrome.EditingLabel;
+        _appPillIcon.Text = view.Chrome.EditingLabel.Length > 0 ? view.Chrome.EditingLabel[..1] : string.Empty;
         _liveAssignmentValueText.Text = view.Chrome.LiveAssignmentLabel;
         _liveAssignmentValueText.ToolTip = view.Chrome.LiveAssignmentLabel;
 
+        // Items の Clear/Add は SelectionChanged を発火させるため、再構築中はハンドラを外す。
+        _appPickerList.SelectionChanged -= OnAppPickerSelectionChanged;
         _appPickerList.Items.Clear();
-        foreach (var row in view.RailRows)
-        {
-            var item = new ListBoxItem
-            {
-                Content = row.IsRunning ? $"{row.DisplayName}（実行中）" : row.DisplayName,
-                Tag = row.ApplicationFullPath,
-                IsSelected = row.IsSelected,
-                Padding = new Thickness(10, 6, 10, 6),
-                // 非アクティブ選択時に OS 既定の黒へ落ちないよう明示する（操作一覧と同じ欠陥）。
-                Foreground = Theme.Text,
-            };
-            AutomationProperties.SetName(item, row.DisplayName);
-            _appPickerList.Items.Add(item);
-        }
+        AddAppPickerGroup("設定を持っているアプリ", view.RailRows.Where(row => row.IsAssociated || row.IsSelected));
+        AddAppPickerGroup("いま動いているアプリから選ぶ", view.RailRows.Where(row => !row.IsAssociated && !row.IsSelected));
+        _appPickerList.SelectionChanged += OnAppPickerSelectionChanged;
 
-        var chipText = !_compileOutcome.IsValid
-            ? "保存できません"
+        var (stateText, stateColor) = !_compileOutcome.IsValid
+            ? ("保存できません", Theme.DangerColor)
             : _hasUnsavedChanges
-                ? "未保存の変更あり"
+                ? ("未保存の変更あり", Theme.WarnColor)
                 : _justSaved
-                    ? "保存しました。ゲーム側への反映は再起動後"
-                    : null;
-
-        _saveChip.Visibility = chipText is null ? Visibility.Collapsed : Visibility.Visible;
-        if (chipText is not null)
-        {
-            _saveChipText.Text = chipText;
-            var brush = !_compileOutcome.IsValid ? Theme.Danger : _hasUnsavedChanges ? Theme.Warn : Theme.Ok;
-            _saveChipText.Foreground = brush;
-            _saveChip.BorderBrush = brush;
-            _saveChip.BorderThickness = new Thickness(1);
-        }
+                    ? (_residentApply is not null ? "保存しました。ゲームへ反映済みです" : "保存しました。ゲーム側への反映は再起動後", Theme.OkColor)
+                    : ("変更はありません", Theme.FaintColor);
+        _saveChipText.Text = stateText;
+        _saveChipText.Foreground = stateColor == Theme.FaintColor ? Theme.Muted : Theme.Freeze(stateColor);
+        _saveDot.Background = Theme.Freeze(stateColor);
+        _saveDot.Effect = _hasUnsavedChanges ? Theme.Glow(stateColor, 10, 0.9) : null;
 
         _saveButton.IsEnabled = _compileOutcome.IsValid && _hasUnsavedChanges;
         UpdateOnboardButtons();
         _revertButton.IsEnabled = _hasUnsavedChanges;
-        // 無効時の見た目は共通 flat style の不透明度 trigger が担う（Opacity の手動設定は trigger を
-        // 打ち消すためここでは触らない）。
+        // 無効時の見た目は共通 style の不透明度 trigger が担う（Opacity の手動設定は trigger を打ち消すため触らない）。
+
+        // 保存できる変更がある間、保存ボタンの光をゆっくり明滅させる。
+        var shouldBreathe = _saveButton.IsEnabled && SystemParameters.ClientAreaAnimation;
+        if (shouldBreathe != _saveGlowBreathing && _saveButton.Effect is System.Windows.Media.Effects.DropShadowEffect glow)
+        {
+            _saveGlowBreathing = shouldBreathe;
+            glow.BeginAnimation(
+                System.Windows.Media.Effects.DropShadowEffect.OpacityProperty,
+                shouldBreathe
+                    ? new System.Windows.Media.Animation.DoubleAnimation(0.35, 0.95, TimeSpan.FromSeconds(0.9))
+                    {
+                        AutoReverse = true,
+                        RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever,
+                    }
+                    : null);
+        }
+    }
+
+    private void AddAppPickerGroup(string caption, IEnumerable<ApplicationRailRowView> rows)
+    {
+        var materialized = rows.ToArray();
+        if (materialized.Length == 0)
+        {
+            return;
+        }
+
+        _appPickerList.Items.Add(new ListBoxItem
+        {
+            Content = new TextBlock { Text = caption, Foreground = Theme.Faint, FontSize = 11 },
+            IsEnabled = false,
+            IsHitTestVisible = false,
+            Padding = new Thickness(10, 6, 10, 2),
+        });
+        foreach (var row in materialized)
+        {
+            var line = new DockPanel();
+            if (row.IsRunning)
+            {
+                var running = new TextBlock { Text = "実行中", Foreground = Theme.Ok, FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) };
+                DockPanel.SetDock(running, Dock.Right);
+                line.Children.Add(running);
+            }
+
+            line.Children.Add(new TextBlock { Text = row.DisplayName, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center });
+            var item = new ListBoxItem { Content = line, Tag = row.ApplicationFullPath, IsSelected = row.IsSelected };
+            AutomationProperties.SetName(item, row.DisplayName);
+            _appPickerList.Items.Add(item);
+        }
     }
 
     private void RenderActionList(ActionBoardView boardView)
     {
-        var actionIndexById = _document.Actions
-            .Select((action, index) => (action.ActionId, index))
-            .ToDictionary(pair => pair.ActionId, pair => pair.index, StringComparer.Ordinal);
+        var tintedItemStyle = (Style)FindResource("TintedListItem");
+        var defaultLayerByDevice = _document.Devices.ToDictionary(device => device.DeviceKind, device => device.DefaultLayerId, StringComparer.Ordinal);
 
         // Items の Clear/Add は ListBox の SelectionChanged を都度発火させる。ここで Render() へ
         // 再入すると（Clear 直後の SelectedItem=null による偽の選択変更など）無限再帰になるため、
         // 再構築中はハンドラを外す（選択状態そのものは IsSelected で個別に張り直すので機能は変わらない）。
         _actionList.SelectionChanged -= OnActionListSelectionChanged;
         _actionList.Items.Clear();
-        foreach (var row in boardView.Rows)
+        for (var index = 0; index < _document.Actions.Count; index++)
         {
-            var colorIndex = actionIndexById.TryGetValue(row.ActionId, out var index) ? index : 0;
+            var action = _document.Actions[index];
+            var row = boardView.Rows.First(candidate => candidate.ActionId == action.ActionId);
+            var color = Theme.ActionColorValueAt(index);
 
-            var grid = new Grid { Margin = new Thickness(4, 4, 4, 4) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var line = new DockPanel();
+            var keycap = Theme.Keycap(KeyLegend(action.Outputs), color);
+            keycap.Margin = new Thickness(0, 0, 11, 0);
+            DockPanel.SetDock(keycap, Dock.Left);
+            line.Children.Add(keycap);
 
-            var bar = new Border { Background = Theme.ActionColorAt(colorIndex), CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 10, 0) };
-            grid.Children.Add(bar);
+            var where = _document.Bindings
+                .Where(binding => binding.ActionId == action.ActionId)
+                .OrderBy(binding => binding.DeviceKind, StringComparer.Ordinal)
+                .ThenBy(binding => defaultLayerByDevice.TryGetValue(binding.DeviceKind, out var defaultLayer) && binding.LayerId == defaultLayer ? 0 : 1)
+                .Select(binding =>
+                {
+                    var place = $"{binding.DeviceKind} {ControlLabel(binding.DeviceKind, binding.ControlId)}";
+                    return defaultLayerByDevice.TryGetValue(binding.DeviceKind, out var defaultLayer) && binding.LayerId == defaultLayer
+                        ? place
+                        : $"{place}（{LayerLabel(binding.DeviceKind, binding.LayerId)}）";
+                })
+                .ToArray();
 
-            var labels = new StackPanel();
-            // Foreground を明示しないと、一覧がフォーカスを失った時に選択行が
-            // OS 既定の非アクティブ選択色（黒）へ落ちて暗背景で読めなくなる。
-            labels.Children.Add(new TextBlock { Text = row.Name, FontWeight = FontWeights.SemiBold, FontSize = 13, Foreground = Theme.Text });
+            var labels = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            labels.Children.Add(new TextBlock { Text = row.Name, FontWeight = FontWeights.Bold, FontSize = 13.5, Foreground = Theme.Text, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 0, 0, 4) });
             labels.Children.Add(new TextBlock
             {
-                Text = row.OutputsLabel.Length == 0 ? "（送るキー未設定）" : $"{row.OutputsLabel} を送る",
-                Foreground = Theme.Muted,
-                FontSize = 11,
+                Text = where.Length == 0 ? "まだどのボタンにも載せていません" : string.Join("　", where),
+                Foreground = where.Length == 0 ? Theme.Warn : Theme.Muted,
+                FontSize = 11.5,
+                TextTrimming = TextTrimming.CharacterEllipsis,
             });
-            Grid.SetColumn(labels, 1);
-            grid.Children.Add(labels);
-
-            var badges = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            foreach (var cell in row.DeviceAssignments)
-            {
-                var isBound = cell.AssignmentLabel != "—";
-                var accent = cell.DeviceKind == "G13" ? Theme.G13 : Theme.G600;
-                badges.Children.Add(new Border
-                {
-                    BorderBrush = isBound ? accent : Theme.Line2,
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(3),
-                    Padding = new Thickness(4, 1, 4, 1),
-                    Margin = new Thickness(2, 0, 0, 0),
-                    Child = new TextBlock
-                    {
-                        Text = isBound ? cell.DeviceKind : $"{cell.DeviceKind} なし",
-                        Foreground = isBound ? accent : Theme.Muted,
-                        FontSize = 9,
-                        FontWeight = FontWeights.Bold,
-                    },
-                });
-            }
-
-            Grid.SetColumn(badges, 2);
-            grid.Children.Add(badges);
+            line.Children.Add(labels);
 
             var item = new ListBoxItem
             {
-                Content = grid,
+                Style = tintedItemStyle,
+                Content = line,
                 Tag = row.ActionId,
                 IsSelected = row.IsSelected,
-                Background = row.IsSelected ? Theme.Raised : Brushes.Transparent,
-                Padding = new Thickness(6, 4, 6, 4),
+                Background = row.IsSelected ? Theme.Freeze(Theme.WithAlpha(color, 0.13)) : Brushes.Transparent,
+                BorderBrush = row.IsSelected ? Theme.Freeze(Theme.WithAlpha(color, 0.55)) : Brushes.Transparent,
+                ToolTip = action.Outputs.Count == 0 ? "送るキーが未設定です" : $"{WorkspaceEditorProjection.OutputsDisplayName(action.Outputs)} を送る",
             };
             AutomationProperties.SetName(item, $"操作 {row.Name}");
             _actionList.Items.Add(item);
@@ -1664,15 +2001,16 @@ public sealed class InputStudioWindow : Window
     private void RenderFigurePane()
     {
         var isG13 = _selectedFigureDeviceKind == "G13";
-        _g13TabButton.Content = "G13 キーパッド　" + (_snapshot.G13ConnectedCount > 0 ? "接続中" : "未接続");
-        _g600TabButton.Content = "G600 マウス　" + (_snapshot.G600ConnectedCount > 0 ? "接続中" : "未接続");
-        StyleTab(_g13TabButton, isG13, Theme.G13);
-        StyleTab(_g600TabButton, !isG13, Theme.G600);
+        RenderDeviceTab(_g13TabButton, "G13 キーパッド", Theme.G13Color, _snapshot.G13ConnectedCount > 0, isG13);
+        RenderDeviceTab(_g600TabButton, "G600 マウス", Theme.G600Color, _snapshot.G600ConnectedCount > 0, !isG13);
         RenderG13LcdSettings(isG13);
+        _onboardMenuButton.Visibility = !isG13 && _onboardIntent is not null ? Visibility.Visible : Visibility.Collapsed;
+        _shiftSwitchButton.Visibility = isG13 ? Visibility.Collapsed : Visibility.Visible;
 
         var layout = _document.Devices.FirstOrDefault(device => device.DeviceKind == _selectedFigureDeviceKind);
         _layerChipRow.Children.Clear();
-        _layerChipRow.Children.Add(new TextBlock { Text = "いま見ている配置", Foreground = Theme.Muted, FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
+        _figureView = null;
+        _figureHost.Child = null;
         if (layout is not null)
         {
             var currentLayerId = _figureLayerByDevice.TryGetValue(_selectedFigureDeviceKind, out var layer) ? layer : layout.DefaultLayerId;
@@ -1685,81 +2023,111 @@ public sealed class InputStudioWindow : Window
 
             foreach (var layerId in layout.LayerIds)
             {
-                var isOn = layerId == currentLayerId;
-                var chip = new Border
-                {
-                    BorderBrush = isOn ? (_selectedFigureDeviceKind == "G13" ? Theme.G13 : Theme.G600) : Theme.Line,
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(3),
-                    Padding = new Thickness(10, 3, 10, 3),
-                    Margin = new Thickness(0, 0, 4, 0),
-                    Background = isOn ? Theme.Sunken : Brushes.Transparent,
-                    Child = new TextBlock
-                    {
-                        Text = LayerLabel(_selectedFigureDeviceKind, layerId),
-                        Foreground = isOn ? Theme.Text : Theme.Muted,
-                        FontWeight = FontWeights.SemiBold,
-                        FontSize = 12,
-                    },
-                };
+                var chip = new Button { Content = LayerLabel(_selectedFigureDeviceKind, layerId) };
+                StyleSegmentButton(chip, layerId == currentLayerId);
+                AutomationProperties.SetName(chip, $"配置 {LayerLabel(_selectedFigureDeviceKind, layerId)}");
                 var capturedLayerId = layerId;
-                chip.MouseLeftButtonUp += (_, _) => { _figureLayerByDevice[_selectedFigureDeviceKind] = capturedLayerId; Render(); };
-                chip.Cursor = Cursors.Hand;
+                chip.Click += (_, _) => ShowFigureLayer(_selectedFigureDeviceKind, capturedLayerId);
                 _layerChipRow.Children.Add(chip);
             }
 
             var shiftIsButton = !isG13 && layout.HoldSelectors.Count == 0;
             if (!isG13)
             {
-                var toggle = new Border
-                {
-                    BorderBrush = Theme.Line,
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(3),
-                    Padding = new Thickness(10, 3, 10, 3),
-                    Margin = new Thickness(12, 0, 0, 0),
-                    Background = Brushes.Transparent,
-                    Child = new TextBlock
-                    {
-                        Text = shiftIsButton ? "G-Shift を層切替に戻す" : "G-Shift をボタンにする",
-                        Foreground = Theme.Muted,
-                        FontSize = 12,
-                    },
-                    Cursor = Cursors.Hand,
-                    ToolTip = shiftIsButton
-                        ? "G6 を層切替に戻します（G6 の割当が残っている間は戻せません）"
-                        : "G6 を通常のボタンとして割当可能にします（「G-Shift を押している間」の配置は無くなります。割当が残っている間は変えられません）",
-                };
-                toggle.MouseLeftButtonUp += (_, _) =>
-                {
-                    if (TryMutateDocument(shiftIsButton
-                            ? WorkspaceDocumentEditor.SetG600ShiftAsSelector
-                            : WorkspaceDocumentEditor.SetG600ShiftAsButton))
-                    {
-                        Render();
-                    }
-                };
-                _layerChipRow.Children.Add(toggle);
+                RenderShiftSwitch(shiftIsButton);
             }
 
-            var bindings = BuildFigureBindingLookup(_selectedFigureDeviceKind, currentLayerId);
-            _figureHost.Child = isG13
-                ? InputStudioFigures.BuildG13(bindings, controlId => OnFigureKeyClicked("G13", controlId))
-                : InputStudioFigures.BuildG600(bindings, controlId => OnFigureKeyClicked("G600", controlId), shiftIsButton);
+            var request = new InputStudioFigures.FigureRequest(
+                BuildFigureBindingLookup(_selectedFigureDeviceKind, currentLayerId),
+                _selectedActionId,
+                controlId => OnFigureKeyClicked(_selectedFigureDeviceKind, controlId),
+                ShowToast);
+            _figureView = isG13
+                ? InputStudioFigures.BuildG13(
+                    request,
+                    layout.LatchSelectors.ToDictionary(selector => selector.ControlId, selector => selector.LayerId, StringComparer.Ordinal),
+                    currentLayerId,
+                    layerId => ShowFigureLayer("G13", layerId))
+                : InputStudioFigures.BuildG600(request, shiftIsButton);
+            _figureHost.Child = _figureView.Root;
         }
 
-        _figureNoteText.Text = isG13
-            ? "空のキーをクリックすると、左で選んでいる操作を載せます。色は左の操作と同じです。窪みは指のホーム位置です。"
-            : "左が親指で押す 12 ボタンです。同じ色は左の操作と対応します。突起は親指のホーム位置です。";
+        var selectedName = _selectedActionId is null
+            ? null
+            : _document.Actions.FirstOrDefault(action => action.ActionId == _selectedActionId)?.Name;
+        var target = selectedName is null ? "左で選んだ操作" : $"「{selectedName}」";
+        _figureNoteText.Text = _pendingAssign
+            ? $"空のキーをクリックすると{target}を載せます。デバイスのボタンを押しても載せられます。"
+            : $"空のキーをクリックすると{target}を載せます。光っているキーを押すと、その操作を選びます。";
+    }
+
+    private void ShowFigureLayer(string deviceKind, string layerId)
+    {
+        _selectedFigureDeviceKind = deviceKind;
+        _figureLayerByDevice[deviceKind] = layerId;
+        Render();
+    }
+
+    private static void RenderDeviceTab(Button button, string label, Color deviceColor, bool connected, bool isOn)
+    {
+        StyleSegmentButton(button, isOn);
+        var content = new StackPanel { Orientation = Orientation.Horizontal };
+        var dot = Theme.Dot(connected ? deviceColor : Theme.FaintColor, 7);
+        if (!connected)
+        {
+            dot.Effect = null;
+        }
+
+        content.Children.Add(dot);
+        content.Children.Add(new TextBlock { Text = label, Margin = new Thickness(7, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+        if (!connected)
+        {
+            content.Children.Add(new TextBlock { Text = "未接続", Foreground = Theme.Faint, FontWeight = FontWeights.Normal, FontSize = 11, Margin = new Thickness(7, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+        }
+
+        button.Content = content;
+        button.ToolTip = connected ? $"{label}：接続中" : $"{label}：未接続（編集はできます）";
+        AutomationProperties.SetName(button, $"{label}（{(connected ? "接続中" : "未接続")}）");
+    }
+
+    private void RenderShiftSwitch(bool shiftIsButton)
+    {
+        var track = new Border
+        {
+            Width = 30,
+            Height = 17,
+            CornerRadius = new CornerRadius(8.5),
+            Background = shiftIsButton ? Theme.Freeze(Theme.Mix(Theme.SunkenColor, Theme.G600Color, 0.35)) : Theme.Sunken,
+            BorderBrush = Theme.Line2,
+            BorderThickness = new Thickness(1),
+            Margin = new Thickness(0, 0, 8, 0),
+            Child = new Border
+            {
+                Width = 11,
+                Height = 11,
+                CornerRadius = new CornerRadius(5.5),
+                Background = shiftIsButton ? Theme.G600 : Theme.Muted,
+                HorizontalAlignment = shiftIsButton ? HorizontalAlignment.Right : HorizontalAlignment.Left,
+                Margin = new Thickness(2, 0, 2, 0),
+            },
+        };
+        var content = new StackPanel { Orientation = Orientation.Horizontal };
+        content.Children.Add(track);
+        content.Children.Add(new TextBlock { Text = "G-Shift をボタンにする", Foreground = Theme.Muted, FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
+        _shiftSwitchButton.Content = content;
+        _shiftSwitchButton.ToolTip = shiftIsButton
+            ? "G6 を層切替に戻します（G6 の割当が残っている間は戻せません）"
+            : "G6 を通常のボタンとして割当可能にします（「G-Shift を押している間」の配置は無くなります。割当が残っている間は変えられません）";
+        AutomationProperties.SetName(_shiftSwitchButton, shiftIsButton ? "G-Shift をボタンにする（入）" : "G-Shift をボタンにする（切）");
     }
 
     private void RenderG13LcdSettings(bool isG13)
     {
-        _g13LcdSettingsPanel.Visibility = isG13 && _g13LcdSettingsIntent is not null
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-        if (_g13LcdSettingsPanel.Visibility != Visibility.Visible)
+        var available = isG13 && _g13LcdSettingsIntent is not null;
+        _lcdMenuButton.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
+        if (!available)
         {
+            _lcdPopup.IsOpen = false;
             return;
         }
 
@@ -1779,19 +2147,8 @@ public sealed class InputStudioWindow : Window
         _g13LcdClearButton.IsEnabled = _document.G13Lcd is not null;
     }
 
-    private static void StyleTab(Button button, bool isOn, Brush accent)
-    {
-        button.Background = isOn ? Theme.Raised : Theme.Sunken;
-        button.Foreground = isOn ? Theme.Text : Theme.Muted;
-        button.BorderBrush = isOn ? accent : Theme.Line;
-    }
-
     private Dictionary<string, InputStudioFigures.FigureBinding> BuildFigureBindingLookup(string deviceKind, string layerId)
     {
-        var colors = _document.Actions
-            .Select((action, index) => (action.ActionId, Color: Theme.ActionColorAt(index)))
-            .ToDictionary(pair => pair.ActionId, pair => pair.Color, StringComparer.Ordinal);
-
         var result = new Dictionary<string, InputStudioFigures.FigureBinding>(StringComparer.Ordinal);
         foreach (var binding in _document.Bindings)
         {
@@ -1800,13 +2157,18 @@ public sealed class InputStudioWindow : Window
                 continue;
             }
 
-            var action = _document.Actions.FirstOrDefault(candidate => candidate.ActionId == binding.ActionId);
-            if (action is null)
+            var actionIndex = _document.Actions.ToList().FindIndex(candidate => candidate.ActionId == binding.ActionId);
+            if (actionIndex < 0)
             {
                 continue;
             }
 
-            result[binding.ControlId] = new InputStudioFigures.FigureBinding(action.Name, colors[binding.ActionId]);
+            var action = _document.Actions[actionIndex];
+            result[binding.ControlId] = new InputStudioFigures.FigureBinding(
+                action.ActionId,
+                action.Name,
+                KeyLegend(action.Outputs),
+                Theme.ActionColorValueAt(actionIndex));
         }
 
         return result;
@@ -1831,9 +2193,8 @@ public sealed class InputStudioWindow : Window
         _g13BindingsPanel.Children.Clear();
         _g600BindingsPanel.Children.Clear();
         _actionNotesPanel.Children.Clear();
+        _sendKeyRow.Children.Clear();
 
-        _deleteActionButton.Visibility = inspector is null ? Visibility.Collapsed : Visibility.Visible;
-        _recordUpdateButton.IsEnabled = inspector is not null;
         _selectMacroButton.IsEnabled = _macroAutomationIntents is not null;
         if (_pendingAssign && inspector is not null)
         {
@@ -1852,21 +2213,31 @@ public sealed class InputStudioWindow : Window
             _assignHint.Visibility = Visibility.Collapsed;
         }
 
+        // 「保存済みマクロを選ぶ」は操作を選んでいなくても使える（新しい操作として追加する）ため、置き場所を移す。
+        var macroHost = inspector is null ? _selectMacroHostWhenEmpty : _selectMacroHostInCard;
+        if (!ReferenceEquals(macroHost.Child, _selectMacroButton))
+        {
+            _selectMacroHostWhenEmpty.Child = null;
+            _selectMacroHostInCard.Child = null;
+            macroHost.Child = _selectMacroButton;
+        }
+
+        _inspectorBody.Visibility = inspector is null ? Visibility.Collapsed : Visibility.Visible;
         if (inspector is null)
         {
-            _inspectorTitleButton.Visibility = Visibility.Collapsed;
-            _inspectorNameBox.Visibility = Visibility.Collapsed;
             _inspectorEmptyPanel.Children.Add(new TextBlock
             {
                 Text = "左の一覧から操作を選ぶと、ここに割当を出します。",
                 Foreground = Theme.Muted,
                 TextWrapping = TextWrapping.Wrap,
             });
+            _inspectorEmptyPanel.Children.Add(_selectMacroHostWhenEmpty);
             return;
         }
 
-        var colorIndex = _document.Actions.ToList().FindIndex(action => action.ActionId == inspector.ActionId);
-        var color = Theme.ActionColorAt(Math.Max(colorIndex, 0));
+        var actionIndex = Math.Max(_document.Actions.ToList().FindIndex(action => action.ActionId == inspector.ActionId), 0);
+        var color = Theme.ActionColorValueAt(actionIndex);
+        var selectedAction = _document.Actions[actionIndex];
 
         if (_isRenamingAction)
         {
@@ -1879,10 +2250,34 @@ public sealed class InputStudioWindow : Window
             _inspectorTitleButton.Visibility = Visibility.Visible;
             _inspectorNameBox.Visibility = Visibility.Collapsed;
             var titleContent = new StackPanel { Orientation = Orientation.Horizontal };
-            titleContent.Children.Add(new Border { Width = 10, Height = 10, Background = color, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 8, 0) });
-            titleContent.Children.Add(new TextBlock { Text = inspector.Name, FontSize = 16, FontWeight = FontWeights.Bold });
+            var swatch = Theme.Dot(color, 12);
+            swatch.CornerRadius = new CornerRadius(4);
+            swatch.Margin = new Thickness(0, 0, 10, 0);
+            titleContent.Children.Add(swatch);
+            titleContent.Children.Add(new TextBlock { Text = inspector.Name, FontSize = 17, FontWeight = FontWeights.Bold, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 250 });
             _inspectorTitleButton.Content = titleContent;
             AutomationProperties.SetName(_inspectorTitleButton, $"操作名: {inspector.Name}（クリックで変更）");
+        }
+
+        if (selectedAction.Outputs.Count == 0)
+        {
+            _sendKeyRow.Children.Add(new TextBlock { Text = "（未設定）", Foreground = Theme.Faint, VerticalAlignment = VerticalAlignment.Center });
+        }
+        else if (selectedAction.Outputs.Count == 1 && MacroInvocationTokens.IsMacro(selectedAction.Outputs[0]))
+        {
+            _sendKeyRow.Children.Add(Theme.Keycap(WorkspaceEditorProjection.OutputsDisplayName(selectedAction.Outputs), color, height: 40, minWidth: 46, fontSize: 12));
+        }
+        else
+        {
+            for (var index = 0; index < selectedAction.Outputs.Count; index++)
+            {
+                if (index > 0)
+                {
+                    _sendKeyRow.Children.Add(new TextBlock { Text = "+", Foreground = Theme.Muted, FontFamily = Theme.Mono, FontWeight = FontWeights.Bold, Margin = new Thickness(6, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+                }
+
+                _sendKeyRow.Children.Add(Theme.Keycap(KeyLegend([selectedAction.Outputs[index]]), color, height: 40, minWidth: 46, fontSize: 14));
+            }
         }
 
         // 片方の device だけで使う操作は普通のため、警告は「どのボタンにも割り当てていない時だけ」1回にする
@@ -1896,43 +2291,64 @@ public sealed class InputStudioWindow : Window
         foreach (var deviceOptions in inspector.DeviceOptions)
         {
             var panel = deviceOptions.DeviceKind == "G13" ? _g13BindingsPanel : _g600BindingsPanel;
-            var deviceBindings = inspector.Bindings.Where(binding => binding.DeviceKind == deviceOptions.DeviceKind).ToArray();
-
-            if (deviceBindings.Length == 0)
+            foreach (var layerId in deviceOptions.LayerIds)
             {
-                panel.Children.Add(new TextBlock { Text = "（未割当）", Foreground = Theme.Muted, Margin = new Thickness(0, 4, 0, 4) });
-            }
-
-            foreach (var binding in deviceBindings)
-            {
-                var row = new Grid { Margin = new Thickness(0, 4, 0, 4) };
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                var slot = new StackPanel();
-                slot.Children.Add(new TextBlock { Text = ControlLabel(deviceOptions.DeviceKind, binding.ControlId), FontWeight = FontWeights.Bold, FontSize = 13 });
-                slot.Children.Add(new TextBlock { Text = LayerLabel(deviceOptions.DeviceKind, binding.LayerId), Foreground = Theme.Muted, FontSize = 11 });
-                row.Children.Add(slot);
-
-                var removeButton = new Button { Content = "外す", Background = Brushes.Transparent, BorderThickness = new Thickness(0), Foreground = Theme.Accent, VerticalAlignment = VerticalAlignment.Top };
-                var capturedDeviceKind = deviceOptions.DeviceKind;
-                var capturedLayerId = binding.LayerId;
-                removeButton.Click += (_, _) =>
-                {
-                    var actionId = inspector.ActionId;
-                    if (TryMutateDocument(document => WorkspaceDocumentEditor.RemoveBinding(document, actionId, capturedDeviceKind, capturedLayerId)))
-                    {
-                        Render();
-                    }
-                };
-                Grid.SetColumn(removeButton, 1);
-                row.Children.Add(removeButton);
-
-                panel.Children.Add(row);
+                var binding = inspector.Bindings.FirstOrDefault(candidate =>
+                    candidate.DeviceKind == deviceOptions.DeviceKind && candidate.LayerId == layerId);
+                panel.Children.Add(BuildBindingRow(inspector.ActionId, deviceOptions.DeviceKind, layerId, binding?.ControlId));
             }
 
             // 割当先の指定は「実機のボタンを押す」または絵のボタンをクリック（pulldown は撤去・オーナー指示 2026-08-22）。
         }
+    }
+
+    /// <summary>配置ひとつ分の行。行を押すと、その配置を図で見る。割当があれば「外す」を出す。</summary>
+    private Button BuildBindingRow(string actionId, string deviceKind, string layerId, string? controlId)
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var labels = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        labels.Children.Add(new TextBlock { Text = LayerLabel(deviceKind, layerId), Foreground = Theme.Muted, FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 0, 0, 3) });
+        labels.Children.Add(new TextBlock
+        {
+            Text = controlId is null ? "空き" : ControlLabel(deviceKind, controlId),
+            Foreground = controlId is null ? Theme.Faint : Theme.Text,
+            FontWeight = controlId is null ? FontWeights.Normal : FontWeights.Bold,
+            FontSize = 12.5,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        });
+        grid.Children.Add(labels);
+
+        if (controlId is not null)
+        {
+            var removeButton = Theme.Quiet(new Button { Content = "外す", FontSize = 11, Padding = new Thickness(8, 2, 8, 2), Margin = new Thickness(8, 0, 0, 0) });
+            AutomationProperties.SetName(removeButton, $"{deviceKind} {LayerLabel(deviceKind, layerId)} の割当を外す");
+            removeButton.Click += (_, _) =>
+            {
+                if (TryMutateDocument(document => WorkspaceDocumentEditor.RemoveBinding(document, actionId, deviceKind, layerId)))
+                {
+                    Render();
+                }
+            };
+            removeButton.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(removeButton, 1);
+            grid.Children.Add(removeButton);
+        }
+
+        var row = new Button
+        {
+            Content = grid,
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            Padding = new Thickness(8, 5, 8, 5),
+            MinHeight = 32,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            ToolTip = "この配置を図で見る",
+        };
+        AutomationProperties.SetName(row, $"{deviceKind} {LayerLabel(deviceKind, layerId)}：{(controlId is null ? "空き" : ControlLabel(deviceKind, controlId))}");
+        row.Click += (_, _) => ShowFigureLayer(deviceKind, layerId);
+        return row;
     }
 
     private static TextBlock NoteBlock(string text, Brush accent) => new()
@@ -1978,17 +2394,4 @@ public sealed class InputStudioWindow : Window
         ("G600", "shift") => "G-Shift を押している間",
         _ => layerId,
     };
-}
-
-/// <summary>device dot（mock の .devdot）を表す小さな丸。Ellipse を直接使わず単純化した Border ラッパー。</summary>
-internal sealed class Ellipse2 : Border
-{
-    public Ellipse2(Brush color)
-    {
-        Width = 8;
-        Height = 8;
-        CornerRadius = new CornerRadius(4);
-        Background = color;
-        VerticalAlignment = VerticalAlignment.Center;
-    }
 }

@@ -22,10 +22,12 @@ public interface IResidentApplyIntent
 /// <summary>
 /// fast path が処理した1件の物理 input。DisplayLine は動作チェック strip 向けの表示行
 /// （down のみ。up は null）。DeviceKind は "G13"／"G600"（判定不能なら instance ID のまま）。
+/// OutputTokens はその input で送った出力（割当なしなら空）。
 /// </summary>
 public sealed record ResidentTraceEvent(
     string DeviceKind,
     string ControlId,
     bool IsDown,
     double InputMonotonicMs,
-    string? DisplayLine);
+    string? DisplayLine,
+    IReadOnlyList<string>? OutputTokens = null);
