@@ -1,0 +1,665 @@
+<title>Input Studio 新デザイン案</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* layout: 上に案の説明、中央に実寸 1360x840 のアプリ画面（表示幅に合わせて等倍縮小）、下に変更点。暗色ひとつに決めた意匠。 */
+:root {
+  color-scheme: dark;
+  --ground: #0b0d13;
+  --ground-2: #10131b;
+  --panel: #141822;
+  --panel-2: #1a1f2c;
+  --well: #080a0f;
+  --line: rgba(255, 255, 255, .08);
+  --line-2: rgba(255, 255, 255, .17);
+  --text: #eef1f7;
+  --muted: #8f98ac;
+  --faint: #5b6377;
+  --g13: #3ec9f0;
+  --g600: #f0a44a;
+  --primary: #4c7dff;
+  --ok: #4ed08a;
+  --warn: #f0c04a;
+  --display: "Oxanium", "BIZ UDPGothic", "Yu Gothic UI", sans-serif;
+  --body: "BIZ UDPGothic", "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --mono: "JetBrains Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--text); font: 14px/1.7 var(--body); padding-inline: 16px; padding-block: 28px 56px; }
+.page { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+h1 { font: 700 26px/1.25 var(--display); letter-spacing: .02em; margin: 0; text-wrap: balance; }
+h2 { font: 700 15px/1.4 var(--body); margin: 0 0 8px; color: var(--text); }
+.lead { color: var(--muted); max-width: 68ch; margin: 6px 0 0; }
+.try { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.try li { border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; color: var(--muted); font-size: 12.5px; }
+.try b { color: var(--text); font-weight: 700; }
+.screens { display: flex; flex-wrap: wrap; gap: 6px; }
+.screens button { font: 700 13px var(--body); color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+.screens button[aria-pressed="true"] { color: var(--text); background: var(--panel-2); border-color: var(--line-2); }
+.screens button:focus-visible, .app button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.fit { width: 100%; overflow: hidden; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px 36px; }
+.notes > div { min-width: 0; }
+.notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+.notes li { margin-bottom: 4px; }
+.notes li b { color: var(--text); }
+
+/* ───────────── アプリ画面（実寸） ───────────── */
+.win { width: 1360px; transform-origin: 0 0; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; background: var(--ground-2); box-shadow: 0 30px 80px -30px #000; }
+.titlebar { height: 32px; display: flex; align-items: center; gap: 10px; padding: 0 0 0 12px; background: #0a0c11; color: var(--muted); font-size: 12px; }
+.titlebar .caps { margin-left: auto; display: flex; }
+.titlebar .caps span { width: 46px; height: 32px; display: grid; place-items: center; font: 500 13px var(--mono); color: var(--muted); }
+.app { position: relative; height: 840px; display: grid; grid-template-rows: 58px 1fr 46px; font-size: 13px; line-height: 1.45;
+  background: radial-gradient(900px 520px at 50% 46%, #1b2338 0%, transparent 70%), var(--ground-2); }
+.app button { font-family: var(--body); cursor: pointer; }
+.app [hidden] { display: none !important; }
+
+/* 上の帯 */
+.top { display: flex; align-items: center; gap: 14px; padding: 0 16px; border-bottom: 1px solid var(--line); background: rgba(9, 11, 16, .72); }
+.brand { font: 700 15px var(--display); letter-spacing: .14em; display: flex; align-items: center; gap: 9px; }
+.brand i { width: 16px; height: 16px; border-radius: 4px; background: conic-gradient(from 210deg, var(--g13), var(--primary), var(--g600), var(--g13)); }
+.app-pill { position: relative; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 10px; color: var(--text); text-align: left; }
+.app-pill small { display: block; color: var(--muted); font-size: 10.5px; line-height: 1.2; }
+.app-pill b { font-size: 13.5px; }
+.app-pill .ico { width: 24px; height: 24px; border-radius: 6px; background: var(--well); display: grid; place-items: center; font: 700 12px var(--display); color: var(--g13); }
+.app-menu { position: absolute; top: 52px; left: 168px; z-index: 30; width: 300px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 12px; padding: 6px; box-shadow: 0 18px 50px -10px #000; }
+.app-menu p { margin: 6px 10px 4px; color: var(--faint); font-size: 11px; }
+.app-menu button { display: flex; width: 100%; gap: 10px; align-items: center; padding: 8px 10px; background: transparent; border: 0; border-radius: 8px; color: var(--text); font-size: 13px; text-align: left; }
+.app-menu button:hover { background: rgba(255, 255, 255, .06); }
+.app-menu em { margin-left: auto; font-style: normal; font-size: 11px; color: var(--ok); }
+.live { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; }
+.live b { color: var(--text); }
+.live .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 rgba(78, 208, 138, .6); animation: beat 2.2s infinite; }
+@keyframes beat { 70% { box-shadow: 0 0 0 9px rgba(78, 208, 138, 0); } 100% { box-shadow: 0 0 0 0 rgba(78, 208, 138, 0); } }
+.spacer { flex: 1; }
+.ghost { height: 32px; padding: 0 12px; background: transparent; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); font-size: 12.5px; transition: color .15s, border-color .15s, background .15s; }
+.ghost:hover { color: var(--text); border-color: var(--line-2); background: rgba(255, 255, 255, .05); }
+
+/* 本体3列 */
+.body { display: grid; grid-template-columns: 296px 1fr 316px; min-height: 0; }
+.col { min-height: 0; display: flex; flex-direction: column; }
+.col.left { border-right: 1px solid var(--line); background: rgba(12, 14, 20, .55); }
+.col.right { border-left: 1px solid var(--line); background: rgba(12, 14, 20, .55); }
+.col-head { padding: 14px 16px 10px; display: flex; align-items: flex-end; gap: 10px; }
+.col-head h3 { margin: 0; font: 700 14px var(--body); }
+.col-head small { color: var(--muted); font-size: 11.5px; }
+.add { margin: 0 12px 8px; height: 36px; border: 1px dashed var(--line-2); border-radius: 10px; background: transparent; color: var(--muted); font-size: 12.5px; }
+.add:hover { color: var(--text); border-color: var(--primary); background: rgba(76, 125, 255, .1); }
+.acts { flex: 1; overflow: auto; padding: 0 8px 12px; display: flex; flex-direction: column; gap: 2px; }
+.act { display: flex; align-items: center; gap: 11px; width: 100%; padding: 8px; border: 1px solid transparent; border-radius: 11px; background: transparent; color: var(--text); text-align: left; transition: background .15s, border-color .15s; }
+.act:hover { background: rgba(255, 255, 255, .045); }
+.act[aria-current="true"] { background: color-mix(in srgb, var(--c) 13%, transparent); border-color: color-mix(in srgb, var(--c) 55%, transparent); }
+.cap { flex: none; min-width: 38px; height: 34px; padding: 0 8px; display: grid; place-items: center; border-radius: 8px; font: 700 12px var(--mono); color: #0a0c11; background: var(--c);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .25), inset 0 1px 0 rgba(255, 255, 255, .45), 0 4px 14px -4px var(--c); }
+.act-main { min-width: 0; display: flex; flex-direction: column; }
+.act-main b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.act-main small { color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.act-main small.none { color: var(--warn); }
+
+/* 中央の舞台 */
+.stage-head { display: flex; align-items: center; gap: 12px; padding: 12px 18px 0; }
+.seg { display: inline-flex; padding: 3px; background: var(--well); border: 1px solid var(--line); border-radius: 11px; }
+.seg button { height: 30px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 12.5px; font-weight: 700; transition: background .18s, color .18s; display: flex; align-items: center; gap: 7px; }
+.seg button i { width: 7px; height: 7px; border-radius: 50%; background: var(--d); box-shadow: 0 0 8px var(--d); }
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
+.seg-label { color: var(--muted); font-size: 11.5px; margin-left: 6px; }
+.switch { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; background: transparent; border: 0; }
+.switch i { width: 30px; height: 17px; border-radius: 10px; background: var(--well); border: 1px solid var(--line-2); position: relative; transition: background .18s; }
+.switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: var(--muted); transition: transform .18s, background .18s; }
+.switch[aria-pressed="true"] i { background: color-mix(in srgb, var(--g600) 35%, var(--well)); }
+.switch[aria-pressed="true"] i::after { transform: translateX(13px); background: var(--g600); }
+.stage { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; }
+.hint { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; color: var(--muted); font-size: 12px; }
+.hint b { color: var(--text); }
+.figure { position: relative; animation: enter .28s ease-out; }
+@keyframes enter { from { opacity: .0; transform: translateY(8px) scale(.985); } }
+.art { position: absolute; pointer-events: none; filter: brightness(1.3); }
+
+/* キーキャップ */
+.key { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0 2px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--text);
+  font: 700 11px/1.15 var(--body); transition: transform .08s, box-shadow .22s, background .22s, opacity .22s, border-color .22s; }
+.key span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.key kbd { font: 700 9px var(--mono); opacity: .8; }
+.key:hover { border-color: var(--line-2); background: rgba(255, 255, 255, .07); }
+.key:active { transform: translateY(1.5px) scale(.97); }
+.key.on { background: color-mix(in srgb, var(--c) 26%, #0c0f17); border-color: var(--c);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), inset 0 -3px 0 rgba(0, 0, 0, .28), 0 8px 20px -6px color-mix(in srgb, var(--c) 70%, transparent); }
+.key.on kbd { color: var(--c); }
+.figure.has-sel .key.on:not(.sel) { opacity: .62; }
+.key.sel { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 0 0 2px var(--c), 0 0 28px 3px color-mix(in srgb, var(--c) 75%, transparent); }
+.key.round { border-radius: 50%; }
+.key.mode { color: var(--muted); font: 600 10px var(--display); border-color: var(--line); background: rgba(8, 10, 15, .7); }
+.key.mode[aria-pressed="true"] { color: #0a0c11; background: var(--g13); border-color: var(--g13); box-shadow: 0 0 16px -2px var(--g13); }
+.key.pulse::after { content: ""; position: absolute; inset: -3px; border-radius: inherit; border: 2px solid var(--c, #fff); animation: ring .55s ease-out forwards; pointer-events: none; }
+@keyframes ring { to { inset: -16px; opacity: 0; } }
+.dpad-label { position: absolute; display: grid; place-items: center; color: var(--muted); font-size: 10.5px; text-align: center; line-height: 1.25; }
+.leader { position: absolute; inset: 0; pointer-events: none; }
+
+/* G600 上面の対応表 */
+.legend { display: flex; flex-direction: column; gap: 3px; width: 260px; }
+.legend button { display: flex; align-items: center; gap: 9px; height: 31px; padding: 0 9px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--text); font-size: 12px; text-align: left; transition: background .15s, border-color .15s, opacity .2s; }
+.legend button:hover, .legend button.hot { background: rgba(255, 255, 255, .06); border-color: var(--line-2); }
+.legend .gn { font: 600 10.5px var(--display); color: var(--muted); width: 22px; }
+.legend .nm { color: var(--muted); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.legend .as { font-weight: 700; }
+.legend button.on { border-color: color-mix(in srgb, var(--c) 60%, transparent); background: color-mix(in srgb, var(--c) 13%, transparent); }
+.legend button.on .as { color: var(--c); }
+.legend button.sel { box-shadow: 0 0 0 1px var(--c), 0 0 18px -2px var(--c); }
+.g600 { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.g600-low { display: flex; align-items: center; gap: 26px; }
+.cap-note { color: var(--faint); font-size: 11px; align-self: flex-start; margin-left: 12px; }
+
+/* 右: 割当 */
+.insp { flex: 1; overflow: auto; padding: 0 16px 12px; display: flex; flex-direction: column; gap: 12px; }
+.insp > * { flex: none; }
+.insp-empty { color: var(--muted); padding: 4px 0; }
+.name-row { display: flex; align-items: center; gap: 10px; }
+.name-row b { font-size: 17px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.swatch { width: 12px; height: 12px; border-radius: 4px; background: var(--c); box-shadow: 0 0 12px var(--c); }
+.card { border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .025); padding: 11px 12px; display: flex; flex-direction: column; gap: 7px; }
+.card h4 { margin: 0; font: 700 11.5px var(--body); color: var(--muted); letter-spacing: .04em; }
+.sendkey { display: flex; align-items: center; gap: 10px; }
+.sendkey .cap { height: 40px; min-width: 46px; font-size: 14px; }
+.sendkey .plus { color: var(--muted); font: 700 13px var(--mono); }
+.btn { height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-size: 12.5px; font-weight: 700; transition: filter .15s, transform .08s; }
+.btn:hover { filter: brightness(1.2); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--primary); border-color: transparent; color: #fff; box-shadow: 0 8px 22px -8px var(--primary); }
+.btn.quiet { background: transparent; color: var(--muted); border-color: var(--line); font-weight: 400; }
+.btn.danger { background: transparent; color: #ff8a8a; border-color: rgba(255, 138, 138, .3); font-weight: 400; }
+.btn:disabled { opacity: .38; cursor: default; filter: none; box-shadow: none; }
+.dev-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 12.5px; }
+.dev-title i { width: 8px; height: 8px; border-radius: 50%; background: var(--d); box-shadow: 0 0 8px var(--d); }
+.bind { display: grid; grid-template-columns: 112px 1fr auto; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--text); text-align: left; width: 100%; font-size: 12px; }
+.bind:hover { background: rgba(255, 255, 255, .05); border-color: var(--line); }
+.bind small { color: var(--muted); font-size: 11px; }
+.bind b { font-size: 12.5px; }
+.bind b.none { color: var(--faint); font-weight: 400; }
+.bind .x { color: var(--muted); font-size: 11px; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; }
+.bind .x:hover { color: #ff8a8a; border-color: rgba(255, 138, 138, .4); }
+.tip { color: var(--muted); font-size: 11.5px; }
+.savebar { border-top: 1px solid var(--line); padding: 12px 16px; display: flex; flex-direction: column; gap: 9px; }
+.save-state { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+.save-state i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+.save-state.dirty { color: var(--warn); }
+.save-state.dirty i { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+.save-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; }
+.save-row .btn { height: 38px; }
+.save-row .btn.primary.glow { animation: breathe 1.8s ease-in-out infinite; }
+@keyframes breathe { 50% { box-shadow: 0 8px 30px -4px var(--primary); } }
+
+/* 下: 動作チェック */
+.foot { display: flex; align-items: center; gap: 12px; padding: 0 16px; border-top: 1px solid var(--line); background: rgba(9, 11, 16, .72); }
+.foot h3 { margin: 0; font: 700 12.5px var(--body); flex: none; }
+.ticker { flex: 1; min-width: 0; display: flex; gap: 8px; overflow: hidden; align-items: center; }
+.tk { flex: none; display: flex; align-items: center; gap: 7px; height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; animation: slide .25s ease-out; }
+@keyframes slide { from { opacity: 0; transform: translateX(-14px); } }
+.tk i { font: 600 10.5px var(--display); font-style: normal; color: var(--d); }
+.tk em { color: var(--faint); font-style: normal; }
+.tk kbd { font: 700 11px var(--mono); padding: 1px 6px; border-radius: 5px; background: var(--panel-2); border: 1px solid var(--line-2); }
+.tk small { color: var(--faint); font: 500 10.5px var(--mono); }
+.ticker .idle { color: var(--muted); font-size: 12px; }
+
+/* キーを録る画面 */
+.overlay { position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(5, 6, 10, .66); animation: fade .16s; }
+@keyframes fade { from { opacity: 0; } }
+.dialog { width: 470px; padding: 24px 26px 20px; border-radius: 16px; border: 1px solid var(--line-2); background: var(--panel); box-shadow: 0 30px 80px -20px #000; display: flex; flex-direction: column; gap: 12px; animation: enter .2s ease-out; }
+.dialog h3 { margin: 0; font: 700 18px var(--body); }
+.dialog p { margin: 0; color: var(--muted); font-size: 12.5px; }
+.well { height: 124px; border-radius: 12px; background: var(--well); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.well.armed { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary), 0 0 28px -8px var(--primary); }
+.well small { color: var(--muted); font-size: 11.5px; }
+.well .keys { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.well .keys .cap { height: 44px; min-width: 50px; font-size: 15px; --c: #dfe5f2; animation: pop .16s ease-out; }
+@keyframes pop { from { transform: scale(.7); opacity: 0; } }
+.well .keys .plus { color: var(--muted); font: 700 14px var(--mono); }
+.well .keys .none { color: var(--faint); font-size: 14px; }
+.mouse-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+/* Game Operator */
+.go { height: 840px; display: grid; grid-template-columns: 208px 1fr; background: radial-gradient(800px 480px at 62% 30%, #1b2338 0%, transparent 70%), var(--ground-2); font-size: 13px; line-height: 1.5; }
+.rail { border-right: 1px solid var(--line); background: rgba(9, 11, 16, .72); padding: 16px 10px; display: flex; flex-direction: column; gap: 3px; }
+.rail .brand { padding: 0 8px 14px; font-size: 13px; }
+.rail button { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted); font-size: 13px; text-align: left; }
+.rail button:hover { color: var(--text); background: rgba(255, 255, 255, .05); }
+.rail button[aria-current="true"] { color: var(--text); background: var(--panel-2); border-color: var(--line-2); }
+.rail button i { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+.rail button[aria-current="true"] i { background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+.rail .fine { margin-top: auto; padding: 10px 8px 0; color: var(--faint); font-size: 11px; line-height: 1.6; border-top: 1px solid var(--line); }
+.go-main { padding: 22px 28px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.go-main h3 { margin: 0; font: 700 20px var(--body); }
+.go-main p { margin: 0; color: var(--muted); max-width: 70ch; }
+.status { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent); background: color-mix(in srgb, var(--ok) 8%, transparent); }
+.status .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ok); animation: beat 2.2s infinite; }
+.status b { font-size: 15px; }
+.status small { display: block; color: var(--muted); font: 500 11.5px var(--mono); }
+.go-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.go-row .btn { height: 38px; padding: 0 18px; }
+
+.toast { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); z-index: 50; padding: 9px 16px; border-radius: 10px; background: #f2f5fb; color: #0b0d13; font-weight: 700; font-size: 12.5px; box-shadow: 0 14px 40px -10px #000; animation: enter .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { .app *, .go * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="page">
+  <header>
+    <h1>Input Studio 新デザイン案</h1>
+    <p class="lead">キーを本物のキーキャップのように光らせる案です。操作を選ぶと、そのボタンが両方のデバイスで光ります。絵のボタンは押すと沈み、実機のボタンを押した時も同じ場所が光って下の帯に流れます。下の画面は実際に触れます。</p>
+  </header>
+
+  <ul class="try">
+    <li><b>左の操作</b>を選ぶ</li>
+    <li><b>空のキー</b>をクリックして割り当てる</li>
+    <li><b>光っているキー</b>を押して実機の押下を再現する</li>
+    <li><b>M1〜M3</b> や上の切替で配置を変える</li>
+    <li><b>キーを録る</b>で Esc を録る</li>
+  </ul>
+
+  <div class="screens" role="group" aria-label="見る画面">
+    <button type="button" id="scrMain" aria-pressed="true">メイン画面</button>
+    <button type="button" id="scrKey" aria-pressed="false">キーを録る画面</button>
+    <button type="button" id="scrGo" aria-pressed="false">Game Operator</button>
+  </div>
+
+  <div class="fit" id="fit">
+    <div class="win" id="win">
+      <div class="titlebar"><span id="winTitle">OpenLogicool Input Studio</span><div class="caps"><span>─</span><span>□</span><span>✕</span></div></div>
+
+      <div class="app" id="app">
+        <div class="top">
+          <div class="brand"><i></i>INPUT STUDIO</div>
+          <button type="button" class="app-pill" id="appPill"><span class="ico" id="appIco">共</span><span><small>設定中のアプリ</small><b id="appName">共通設定</b></span><span>▾</span></button>
+          <div class="live"><span class="dot"></span>いまゲームに届いている割当 <b>共通設定</b></div>
+          <div class="spacer"></div>
+          <button type="button" class="ghost">マクロを作る</button>
+          <button type="button" class="ghost" id="openGo">Game Operator</button>
+          <button type="button" class="ghost">出力方式</button>
+        </div>
+        <div class="app-menu" id="appMenu" hidden>
+          <p>設定を持っているアプリ</p>
+          <button type="button" data-app="共通設定" data-ico="共"><span>共通設定</span><em>適用中</em></button>
+          <button type="button" data-app="NIKKE" data-ico="N"><span>NIKKE</span></button>
+          <p>いま動いているアプリから選ぶ</p>
+          <button type="button" data-app="マビノギモバイル" data-ico="マ"><span>マビノギモバイル</span></button>
+          <button type="button" data-app="メモ帳" data-ico="メ"><span>メモ帳</span></button>
+        </div>
+
+        <div class="body">
+          <div class="col left">
+            <div class="col-head"><h3>操作</h3><small>このアプリでやりたいこと</small></div>
+            <button type="button" class="add" id="addAct">＋ キーを録って操作を追加</button>
+            <div class="acts" id="acts"></div>
+          </div>
+
+          <div class="col">
+            <div class="stage-head">
+              <div class="seg" id="devSeg">
+                <button type="button" data-dev="G13" style="--d:var(--g13)"><i></i>G13 キーパッド</button>
+                <button type="button" data-dev="G600" style="--d:var(--g600)"><i></i>G600 マウス</button>
+              </div>
+              <span class="seg-label">いま見ている配置</span>
+              <div class="seg" id="layerSeg"></div>
+              <button type="button" class="switch" id="shiftBtn" aria-pressed="false" hidden><i></i>G-Shift をボタンにする</button>
+            </div>
+            <div class="stage" id="stage"></div>
+          </div>
+
+          <div class="col right">
+            <div class="col-head"><h3>割当</h3><small>選んだ操作をボタンへ</small></div>
+            <div class="insp" id="insp"></div>
+            <div class="savebar">
+              <div class="save-state" id="saveState"><i></i><span>保存済み・ゲームへ反映済み</span></div>
+              <div class="save-row">
+                <button type="button" class="btn primary" id="saveBtn" disabled>保存</button>
+                <button type="button" class="btn quiet" id="revertBtn" disabled>元に戻す</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="foot">
+          <h3>動作チェック</h3>
+          <div class="ticker" id="ticker"><span class="idle">デバイスのボタンを押すと、ここに結果が流れます</span></div>
+          <button type="button" class="ghost">診断</button>
+        </div>
+
+        <div class="overlay" id="overlay" hidden>
+          <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+            <p id="dlgAct">操作「回避」</p>
+            <h3 id="dlgTitle">ゲームに送るキー</h3>
+            <p>キーボードのキーを押してください。同時押し（Ctrl + C など）も Esc もそのまま録ります。やめる時は「取り消す」を押してください。</p>
+            <div class="well armed" id="well" tabindex="0">
+              <small>いま押されたキー</small>
+              <div class="keys" id="capKeys"><span class="none">（未入力）</span></div>
+            </div>
+            <p id="dlgNow">いまの割当: Space</p>
+            <div class="mouse-row">
+              <span class="tip">マウスボタン</span>
+              <button type="button" class="btn quiet" data-mouse="左クリック">左</button>
+              <button type="button" class="btn quiet" data-mouse="右クリック">右</button>
+              <button type="button" class="btn quiet" data-mouse="中央クリック">中央</button>
+              <button type="button" class="btn quiet" data-mouse="戻る">戻る</button>
+              <button type="button" class="btn quiet" data-mouse="進む">進む</button>
+            </div>
+            <div class="dlg-actions">
+              <button type="button" class="btn quiet" id="capReset" disabled>録り直す</button>
+              <button type="button" class="btn quiet" id="capCancel">取り消す</button>
+              <button type="button" class="btn primary" id="capOk" disabled>これに決める</button>
+            </div>
+          </div>
+        </div>
+        <div class="toast" id="toast" hidden></div>
+      </div>
+
+      <div class="go" id="go" hidden>
+        <div class="rail">
+          <div class="brand"><i></i>GAME OPERATOR</div>
+          <button type="button" aria-current="true"><i></i>Bot</button>
+          <button type="button"><i></i>マクロ</button>
+          <button type="button"><i></i>記録</button>
+          <button type="button"><i></i>学習した操作</button>
+          <button type="button"><i></i>構造探索</button>
+          <button type="button"><i></i>Web調査</button>
+          <div class="fine">AI処理: このPC内<br>外部AI送信: なし<br>外部AI API費用: 0円</div>
+        </div>
+        <div class="go-main">
+          <h3>Bot</h3>
+          <p>確認事項があっても、通常の操作規則と回復監視を続けます。回答が必要な選択だけを待ちます。停止表示がある時は入力しません。Game Operatorやアプリを閉じた時もBotを停止します。</p>
+          <div class="status"><span class="dot"></span><div><b>画面観測と回復監視を継続中です。</b><small>HP: 82%　｜　回復観測: 1,204回　｜　直近間隔: 248ms</small></div></div>
+          <div class="go-row">
+            <button type="button" class="btn primary" disabled>Botを開始</button>
+            <button type="button" class="btn">Botを停止</button>
+            <button type="button" class="btn quiet">記録フォルダーを開く</button>
+          </div>
+          <p>Game Operator の各画面は、項目と文言を今のまま保ち、左の一覧・ボタン・入力欄・一覧表の見た目をこの案へ揃えます。数値は見本です。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div>
+      <h2>いまの画面から変わること</h2>
+      <ul>
+        <li><b>図を大きくする。</b>キーの上の操作名が読める大きさになります（今は約6pxの文字）。</li>
+        <li><b>割り当てたキーが操作の色で光る。</b>操作を選ぶと、そのキーだけが強く光り、ほかは暗くなります。</li>
+        <li><b>絵のボタンが押せる手応えを持つ。</b>押すと沈み、輪が広がります。実機のボタンを押した時も同じ表示になります。</li>
+        <li><b>図の M1〜M3 で配置を切り替えられる。</b>上の切替と同じ動きです。</li>
+        <li><b>操作の一覧に送るキーをキーキャップで出す。</b>「Key:W を送る」という内部の書き方は出しません。</li>
+        <li><b>操作の色を8色にする。</b>今は4色の使い回しで、別の操作が同じ色になっています。</li>
+        <li><b>G600 上面の小さいボタンは対応表で読む。</b>表の行と絵の位置が連動して光ります。</li>
+        <li><b>保存の状態を1か所で示す。</b>未保存があると保存ボタンがゆっくり光ります。</li>
+        <li><b>タイトルバーを暗色にする。</b>白い枠が浮かなくなります。</li>
+      </ul>
+    </div>
+    <div>
+      <h2>変えないこと</h2>
+      <ul>
+        <li>画面の3列構成（操作・図・割当）と下の動作チェック。</li>
+        <li>機能と文言。G13 の LCD 表示、G600 本体への書き込み、出力方式、診断の入口も残します（この見本では省略）。</li>
+        <li>デバイスの色（G13 は水色、G600 は橙）。</li>
+        <li>線画の絵。今の絵をそのまま使います。</li>
+      </ul>
+    </div>
+    <div>
+      <h2>この見本の決まり</h2>
+      <ul>
+        <li>アプリ名・操作・数値は見本です。クオ君の設定ではありません。</li>
+        <li>文字は Windows に入っている BIZ UDPゴシックを使います。英数字の見出しとキーの文字だけ、専用の書体を同梱します。</li>
+        <li>スマホでは全体を縮小して表示します。触って試すのは PC が向いています。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const COLORS = ['#46d6a4', '#a98bff', '#ff7ab8', '#5aa8ff', '#ffd166', '#ff9a5a', '#ff6b6b', '#c4e56a'];
+  const NAMES = {
+    G13: { STICK_PRESS: 'スティック押込み', STICK_UP: 'スティック上', STICK_DOWN: 'スティック下', STICK_LEFT: 'スティック左', STICK_RIGHT: 'スティック右' },
+    G600: { G1: 'G1 左クリック', G2: 'G2 右クリック', G3: 'G3 ホイール押込み', G4: 'G4 左チルト', G5: 'G5 右チルト', G6: 'G6 G-Shift', G7: 'G7 上面ボタン', G8: 'G8 上面ボタン' }
+  };
+  const LAYERS = { G13: [['base', 'いつも'], ['m2', 'M2'], ['m3', 'M3']], G600: [['base', 'いつも'], ['shift', 'G-Shift を押している間']] };
+  const DEV_LABEL = { G13: 'G13 キーパッド', G600: 'G600 マウス' };
+  const initial = () => [
+    { id: 'a1', name: '前進', keys: ['W'], b: { G13: { base: 'STICK_UP' }, G600: {} } },
+    { id: 'a2', name: '後退', keys: ['S'], b: { G13: { base: 'STICK_DOWN' }, G600: {} } },
+    { id: 'a3', name: '左移動', keys: ['A'], b: { G13: { base: 'STICK_LEFT' }, G600: {} } },
+    { id: 'a4', name: '右移動', keys: ['D'], b: { G13: { base: 'STICK_RIGHT' }, G600: {} } },
+    { id: 'a5', name: '回避', keys: ['Space'], b: { G13: { base: 'G4' }, G600: { base: 'G9' } } },
+    { id: 'a6', name: 'メニュー', keys: ['Esc'], b: { G13: { base: 'G22' }, G600: { base: 'G12' } } },
+    { id: 'a7', name: 'スキル1', keys: ['Q'], b: { G13: { base: 'STICK_PRESS', m2: 'G11' }, G600: { base: 'G13' } } },
+    { id: 'a8', name: 'コピー', keys: ['Ctrl', 'C'], b: { G13: {}, G600: {} } }
+  ];
+  const st = { acts: initial(), sel: 'a5', dev: 'G13', layer: { G13: 'base', G600: 'base' }, dirty: 0, shiftAsButton: false, capture: [], held: new Set() };
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const colorOf = (a) => COLORS[st.acts.indexOf(a) % COLORS.length];
+  const ctlName = (dev, c) => (NAMES[dev] && NAMES[dev][c]) || c;
+  const layerName = (dev, l) => LAYERS[dev].find((x) => x[0] === l)[1];
+  const actAt = (dev, layer, c) => st.acts.find((a) => a.b[dev][layer] === c);
+  const selAct = () => st.acts.find((a) => a.id === st.sel);
+  const art = (name) => { const i = el('img', 'art'); i.alt = ''; i.src = (window.MOCK_ART && window.MOCK_ART[name]) || 'lineart/' + name; i.onerror = () => { i.onerror = null; i.src = '../../../src/OpenLogicool.Desktop/Assets/' + name; }; return i; };
+
+  function toast(text) { const t = $('toast'); t.textContent = text; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, 2200); }
+  function touch() { st.dirty++; }
+
+  // ───── 左: 操作 ─────
+  function renderActs() {
+    const box = $('acts'); box.textContent = '';
+    st.acts.forEach((a) => {
+      const row = el('button', 'act'); row.type = 'button'; row.style.setProperty('--c', colorOf(a));
+      row.setAttribute('aria-current', String(a.id === st.sel));
+      row.append(el('span', 'cap', a.keys.join('+')));
+      const main = el('span', 'act-main'); main.append(el('b', '', a.name));
+      const where = [];
+      ['G13', 'G600'].forEach((d) => Object.values(a.b[d]).forEach((c) => where.push(d + ' ' + ctlName(d, c).replace(/^G\d+ /, (m) => m.trim() + '・'))));
+      const sub = el('small', where.length ? '' : 'none', where.length ? where.join('　') : 'まだどのボタンにも載せていません');
+      main.append(sub); row.append(main);
+      row.onclick = () => { st.sel = a.id; render(); };
+      box.append(row);
+    });
+  }
+
+  // ───── 中央: 図 ─────
+  function keyBtn(dev, c, x, y, w, h, opt) {
+    opt = opt || {};
+    const layer = st.layer[dev]; const a = actAt(dev, layer, c);
+    const k = el('button', 'key' + (opt.round ? ' round' : '')); k.type = 'button';
+    Object.assign(k.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
+    if (opt.rot) k.style.transform = 'rotate(' + opt.rot + 'deg)';
+    k.dataset.ctl = c;
+    k.title = ctlName(dev, c) + (a ? '：' + a.name : '：空き（クリックで、左で選んでいる操作を載せます）');
+    if (a) {
+      k.classList.add('on'); k.style.setProperty('--c', colorOf(a));
+      if (a.id === st.sel) k.classList.add('sel');
+      if (!opt.bare) { k.append(el('span', '', a.name)); if (h >= 36) k.append(el('kbd', '', a.keys.join('+'))); }
+    } else if (opt.label) { k.append(el('span', '', opt.label)); k.style.color = 'var(--muted)'; k.style.fontWeight = '400'; }
+    k.onclick = () => clickCtl(dev, c, k);
+    return k;
+  }
+  function clickCtl(dev, c, node) {
+    const layer = st.layer[dev]; const a = actAt(dev, layer, c);
+    if (a) { press(dev, c, a, node); if (st.sel !== a.id) { st.sel = a.id; setTimeout(render, 260); } return; }
+    const s = selAct();
+    if (!s) { toast('先に左の一覧から操作を選んでください'); return; }
+    s.b[dev][layer] = c; touch(); render();
+    const fresh = document.querySelector('.key[data-ctl="' + c + '"]'); if (fresh) pulse(fresh);
+    toast('「' + s.name + '」を ' + dev + ' の ' + ctlName(dev, c) + ' に載せました');
+  }
+  function pulse(node) { node.classList.remove('pulse'); void node.offsetWidth; node.classList.add('pulse'); setTimeout(() => node.classList.remove('pulse'), 600); }
+  function press(dev, c, a, node) {
+    if (node) pulse(node);
+    const t = $('ticker'); const idle = t.querySelector('.idle'); if (idle) idle.remove();
+    const row = el('span', 'tk'); const d = el('i', '', dev); d.style.setProperty('--d', dev === 'G13' ? 'var(--g13)' : 'var(--g600)');
+    const nm = el('b', '', a.name); nm.style.color = colorOf(a);
+    row.append(d, el('span', '', ctlName(dev, c)), el('em', '', '→'), nm, el('em', '', '→'), el('kbd', '', a.keys.join('+')), el('small', '', (0.3 + Math.random() * 0.5).toFixed(1) + 'ms'));
+    t.prepend(row); while (t.children.length > 6) t.lastChild.remove();
+  }
+
+  function figureG13() {
+    const S = 0.92, TOP = 40, BOTTOM = 748;
+    const wrap = el('div', 'figure'); Object.assign(wrap.style, { width: 554 * S + 'px', height: (BOTTOM - TOP) * S + 'px' });
+    const inner = el('div'); Object.assign(inner.style, { position: 'absolute', left: 0, top: 0, width: '554px', height: '854px', transformOrigin: '0 0', transform: 'scale(' + S + ') translateY(-' + TOP + 'px)' });
+    const img = art('g13-lineart.png'); Object.assign(img.style, { left: 0, top: 0, width: '554px', height: '854px', maskImage: 'linear-gradient(#000 78%, transparent 88%)', webkitMaskImage: 'linear-gradient(#000 78%, transparent 88%)' });
+    inner.append(img);
+    [['M1', 'base', 122], ['M2', 'm2', 200], ['M3', 'm3', 283]].forEach((m) => {
+      const b = el('button', 'key mode', m[0]); b.type = 'button'; Object.assign(b.style, { left: m[2] + 'px', top: '217px', width: '62px', height: '22px' });
+      b.setAttribute('aria-pressed', String(st.layer.G13 === m[1])); b.title = '配置を「' + layerName('G13', m[1]) + '」へ切り替えます';
+      b.onclick = () => { st.layer.G13 = m[1]; render(); }; inner.append(b);
+    });
+    inner.append(keyBtn('G13', 'MR', 362, 217, 62, 22, { bare: true }));
+    const keys = [['G1', 97, 289], ['G2', 160, 289], ['G3', 220, 290], ['G4', 278, 291], ['G5', 335, 290], ['G6', 392, 289], ['G7', 458, 288],
+      ['G8', 97, 344], ['G9', 156, 345], ['G10', 216, 346], ['G11', 276, 347], ['G12', 335, 346], ['G13', 395, 345], ['G14', 456, 343],
+      ['G15', 146, 404], ['G16', 212, 405], ['G17', 276, 406], ['G18', 337, 405], ['G19', 407, 403],
+      ['G20', 200, 462], ['G21', 273, 463], ['G22', 350, 462]];
+    keys.forEach((k) => inner.append(keyBtn('G13', k[0], k[1] - 28, k[2] - 21, 56, 42)));
+    inner.append(keyBtn('G13', 'STICK_PRESS', 446, 503, 68, 68, { round: true }));
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('class', 'leader'); svg.setAttribute('viewBox', '0 0 554 854'); svg.style.width = '554px'; svg.style.height = '854px';
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', 'M 392,668 L 424,668 L 458,572'); p.setAttribute('fill', 'none'); p.setAttribute('stroke', 'rgba(255,255,255,.28)'); p.setAttribute('stroke-width', '1.5'); p.setAttribute('stroke-dasharray', '3 4');
+    svg.append(p); inner.append(svg);
+    [['STICK_UP', 261, 600, '↑ 上'], ['STICK_LEFT', 195, 646, '← 左'], ['STICK_RIGHT', 327, 646, '右 →'], ['STICK_DOWN', 261, 692, '↓ 下']]
+      .forEach((d) => inner.append(keyBtn('G13', d[0], d[1], d[2], 64, 44, { label: d[3] })));
+    const lab = el('div', 'dpad-label', 'スティックを倒す向き'); Object.assign(lab.style, { left: '261px', top: '646px', width: '64px', height: '44px' });
+    inner.append(lab); wrap.append(inner);
+    return wrap;
+  }
+
+  function figureG600() {
+    const box = el('div', 'figure g600');
+    box.append(el('div', 'cap-note', '親指側（左が手首側）の 12 ボタン'));
+    const S = 0.95; const side = el('div'); Object.assign(side.style, { position: 'relative', width: 727 * S + 'px', height: 270 * S + 'px' });
+    const inner = el('div'); Object.assign(inner.style, { position: 'absolute', left: 0, top: 0, width: '727px', height: '270px', transformOrigin: '0 0', transform: 'scale(' + S + ')' });
+    const img = art('g600-side-lineart.png'); Object.assign(img.style, { left: 0, top: 0, width: '727px', height: '262px' }); inner.append(img);
+    [['G11', 333, 97], ['G14', 382, 79], ['G17', 437, 73], ['G20', 492, 72], ['G10', 333, 139], ['G13', 392, 131], ['G16', 445, 124], ['G19', 501, 119], ['G9', 343, 186], ['G12', 400, 184], ['G15', 453, 180], ['G18', 508, 171]]
+      .forEach((k) => inner.append(keyBtn('G600', k[0], k[1] - 24, k[2] - 20, 48, 40, { rot: -5 })));
+    side.append(inner); box.append(side);
+
+    const low = el('div', 'g600-low'); const T = 0.72; const top = el('div'); Object.assign(top.style, { position: 'relative', width: 283 * T + 'px', height: 466 * T + 'px', flex: 'none' });
+    const tin = el('div'); Object.assign(tin.style, { position: 'absolute', left: 0, top: 0, width: '300px', height: '466px', transformOrigin: '0 0', transform: 'scale(' + T + ')' });
+    const timg = art('g600-top-lineart.png'); Object.assign(timg.style, { left: 0, top: 0, width: '283px', height: '466px' }); tin.append(timg);
+    const spots = [['G1', 50, 62, 64, 96], ['G2', 158, 62, 64, 96], ['G3', 117, 92, 40, 72], ['G4', 90, 112, 24, 32], ['G5', 160, 112, 24, 32], ['G8', 117, 175, 40, 28], ['G7', 117, 205, 40, 28], ['G6', 208, 334, 70, 34]];
+    spots.forEach((s) => { const k = keyBtn('G600', s[0], s[1], s[2], s[3], s[4], { bare: true }); if (s[0] === 'G6' && !st.shiftAsButton) { k.className = 'key mode'; k.textContent = 'G-Shift'; k.onclick = () => toast('G-Shift は配置の切替です。ボタンとして使う時は上のスイッチを入れてください'); } tin.append(k); });
+    top.append(tin); low.append(top);
+    const lg = el('div', 'legend');
+    ['G1', 'G2', 'G3', 'G4', 'G5', 'G7', 'G8', 'G6'].forEach((c) => {
+      const a = actAt('G600', st.layer.G600, c); const r = el('button'); r.type = 'button'; r.dataset.ctl = c;
+      const parts = ctlName('G600', c).split(' '); r.append(el('span', 'gn', parts[0]), el('span', 'nm', parts.slice(1).join(' ')));
+      if (c === 'G6' && !st.shiftAsButton) { r.append(el('span', 'as', '配置の切替')); r.style.opacity = '.55'; r.onclick = () => toast('G-Shift は配置の切替です。ボタンとして使う時は上のスイッチを入れてください'); }
+      else {
+        if (a) { r.classList.add('on'); r.style.setProperty('--c', colorOf(a)); if (a.id === st.sel) r.classList.add('sel'); r.append(el('span', 'as', a.name)); } else r.append(el('span', 'nm', '空き')).style.textAlign = 'right';
+        r.onclick = () => clickCtl('G600', c, tin.querySelector('[data-ctl="' + c + '"]'));
+      }
+      r.onmouseenter = () => { const k = tin.querySelector('[data-ctl="' + c + '"]'); if (k) k.style.borderColor = 'var(--text)'; };
+      r.onmouseleave = () => { const k = tin.querySelector('[data-ctl="' + c + '"]'); if (k) k.style.borderColor = ''; };
+      lg.append(r);
+    });
+    low.append(lg); box.append(low);
+    return box;
+  }
+
+  function renderStage() {
+    document.querySelectorAll('#devSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.dev === st.dev)));
+    const ls = $('layerSeg'); ls.textContent = '';
+    LAYERS[st.dev].forEach((l) => { const b = el('button', '', l[1]); b.type = 'button'; b.setAttribute('aria-pressed', String(st.layer[st.dev] === l[0])); b.onclick = () => { st.layer[st.dev] = l[0]; render(); }; ls.append(b); });
+    $('shiftBtn').hidden = st.dev !== 'G600'; $('shiftBtn').setAttribute('aria-pressed', String(st.shiftAsButton));
+    const stage = $('stage'); const key = st.dev + st.layer[st.dev] + st.shiftAsButton;
+    const fig = st.dev === 'G13' ? figureG13() : figureG600();
+    if (stage.dataset.key === key) fig.style.animation = 'none';
+    stage.dataset.key = key; stage.textContent = '';
+    const s = selAct(); if (s && Object.keys(s.b[st.dev]).length) fig.classList.add('has-sel');
+    stage.append(fig);
+    const hint = el('div', 'hint'); const who = s ? '「' + s.name + '」' : '左で選んだ操作';
+    hint.innerHTML = '空のキーをクリックすると <b></b> を載せます。デバイスのボタンを押しても載せられます。'; hint.querySelector('b').textContent = who;
+    stage.append(hint);
+  }
+
+  // ───── 右: 割当 ─────
+  function renderInsp() {
+    const box = $('insp'); box.textContent = ''; const a = selAct();
+    if (!a) { box.append(el('div', 'insp-empty', '左の一覧から操作を選ぶと、ここに割当を出します。')); return; }
+    box.style.setProperty('--c', colorOf(a));
+    const nr = el('div', 'name-row'); nr.append(el('span', 'swatch'), el('b', '', a.name)); box.append(nr);
+    const send = el('div', 'card'); send.append(el('h4', '', 'ゲームに送るキー'));
+    const sk = el('div', 'sendkey'); a.keys.forEach((k, i) => { if (i) sk.append(el('span', 'plus', '+')); sk.append(el('span', 'cap', k)); });
+    const rec = el('button', 'btn', 'キーを録る'); rec.type = 'button'; rec.style.marginLeft = 'auto'; rec.onclick = () => openCapture(a); sk.append(rec);
+    const mac = el('button', 'btn quiet', '保存済みマクロを選ぶ'); mac.type = 'button';
+    send.append(sk, mac); box.append(send);
+    ['G13', 'G600'].forEach((d) => {
+      const card = el('div', 'card'); const t = el('div', 'dev-title'); const dot = el('i'); t.style.setProperty('--d', d === 'G13' ? 'var(--g13)' : 'var(--g600)'); t.append(dot, el('span', '', DEV_LABEL[d])); card.append(t);
+      LAYERS[d].forEach((l) => {
+        const c = a.b[d][l[0]]; const row = el('button', 'bind'); row.type = 'button';
+        row.append(el('small', '', l[1]), el('b', c ? '' : 'none', c ? ctlName(d, c) : '空き'));
+        if (c) { const x = el('span', 'x', '外す'); x.onclick = (e) => { e.stopPropagation(); delete a.b[d][l[0]]; touch(); render(); }; row.append(x); }
+        row.title = 'この配置を図で見る'; row.onclick = () => { st.dev = d; st.layer[d] = l[0]; render(); };
+        card.append(row);
+      });
+      box.append(card);
+    });
+    box.append(el('div', 'tip', 'デバイスのボタンを押すと、選んでいる操作をそのボタンへ載せます。'));
+    const del = el('button', 'btn danger', 'この操作を削除'); del.type = 'button'; del.onclick = () => { st.acts = st.acts.filter((x) => x !== a); st.sel = st.acts.length ? st.acts[0].id : null; touch(); render(); }; box.append(del);
+  }
+  function renderSave() {
+    const s = $('saveState'); const dirty = st.dirty > 0;
+    s.className = 'save-state' + (dirty ? ' dirty' : ''); s.querySelector('span').textContent = dirty ? 'まだ保存していない変更が ' + st.dirty + ' 件あります' : '保存済み・ゲームへ反映済み';
+    $('saveBtn').disabled = !dirty; $('revertBtn').disabled = !dirty; $('saveBtn').classList.toggle('glow', dirty);
+  }
+  function render() { renderActs(); renderStage(); renderInsp(); renderSave(); }
+
+  // ───── キーを録る ─────
+  const KEYNAME = { ' ': 'Space', Escape: 'Esc', Control: 'Ctrl', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Meta: 'Win' };
+  let capFor = null;
+  function openCapture(a) {
+    capFor = a; st.capture = []; st.held.clear();
+    $('dlgAct').textContent = '操作「' + (a ? a.name : '新しい操作') + '」'; $('dlgNow').textContent = a ? 'いまの割当: ' + a.keys.join(' + ') + '（録ったキーで上書きします）' : '録ったキーで新しい操作を追加します';
+    drawCapture(); $('overlay').hidden = false; $('well').focus();
+  }
+  function drawCapture() {
+    const box = $('capKeys'); box.textContent = '';
+    if (!st.capture.length) box.append(el('span', 'none', '（未入力）'));
+    st.capture.forEach((k, i) => { if (i) box.append(el('span', 'plus', '+')); box.append(el('span', 'cap', k)); });
+    const ready = st.capture.length > 0; $('capOk').disabled = !ready; $('capReset').disabled = !ready;
+    $('well').classList.toggle('armed', !(ready && st.held.size === 0));
+  }
+  function closeCapture() { $('overlay').hidden = true; capFor = null; }
+  function commitCapture(keys) {
+    if (capFor) { capFor.keys = keys; toast('「' + capFor.name + '」の送るキーを ' + keys.join(' + ') + ' にしました'); }
+    else { const a = { id: 'n' + Date.now(), name: '新しい操作 ' + (st.acts.length + 1), keys: keys, b: { G13: {}, G600: {} } }; st.acts.push(a); st.sel = a.id; toast('操作を追加しました。載せたいキーをクリックしてください'); }
+    touch(); closeCapture(); render();
+  }
+  window.addEventListener('keydown', (e) => {
+    if ($('overlay').hidden || $('app').hidden) return;
+    e.preventDefault();
+    const locked = st.capture.length > 0 && st.held.size === 0;
+    if (locked || e.repeat) return;
+    const name = KEYNAME[e.key] || (e.key.length === 1 ? e.key.toUpperCase() : e.key);
+    st.held.add(e.code); if (!st.capture.includes(name)) st.capture.push(name); drawCapture();
+  }, true);
+  window.addEventListener('keyup', (e) => { if ($('overlay').hidden) return; e.preventDefault(); st.held.delete(e.code); drawCapture(); }, true);
+  $('capCancel').onclick = closeCapture;
+  $('capReset').onclick = () => { st.capture = []; st.held.clear(); drawCapture(); $('well').focus(); };
+  $('capOk').onclick = () => commitCapture(st.capture.slice());
+  document.querySelectorAll('[data-mouse]').forEach((b) => { b.onclick = () => commitCapture([b.dataset.mouse]); });
+
+  // ───── 上の帯・保存 ─────
+  $('addAct').onclick = () => openCapture(null);
+  $('appPill').onclick = () => { $('appMenu').hidden = !$('appMenu').hidden; };
+  document.querySelectorAll('#appMenu button').forEach((b) => { b.onclick = () => { $('appName').textContent = b.dataset.app; $('appIco').textContent = b.dataset.ico; $('appMenu').hidden = true; toast('設定中のアプリを「' + b.dataset.app + '」にしました'); }; });
+  document.querySelectorAll('#devSeg button').forEach((b) => { b.onclick = () => { st.dev = b.dataset.dev; render(); }; });
+  $('shiftBtn').onclick = () => { st.shiftAsButton = !st.shiftAsButton; touch(); render(); };
+  $('saveBtn').onclick = () => { st.dirty = 0; render(); toast('保存しました。ゲームへ反映済みです'); };
+  $('revertBtn').onclick = () => { const keep = st.sel; st.acts = initial(); st.sel = st.acts.some((a) => a.id === keep) ? keep : 'a5'; st.dirty = 0; st.shiftAsButton = false; render(); toast('保存してある内容へ戻しました'); };
+
+  // ───── 見る画面の切替 ─────
+  function show(which) {
+    $('scrMain').setAttribute('aria-pressed', String(which === 'main')); $('scrKey').setAttribute('aria-pressed', String(which === 'key')); $('scrGo').setAttribute('aria-pressed', String(which === 'go'));
+    $('app').hidden = which === 'go'; $('go').hidden = which !== 'go';
+    $('winTitle').textContent = which === 'go' ? 'OpenLogicool — Game Operator' : 'OpenLogicool Input Studio';
+    if (which === 'key') openCapture(selAct() || st.acts[0]); else closeCapture();
+  }
+  $('scrMain').onclick = () => show('main'); $('scrKey').onclick = () => show('key'); $('scrGo').onclick = () => show('go'); $('openGo').onclick = () => show('go');
+
+  // ───── 表示幅に合わせて縮小 ─────
+  function fit() { const w = $('fit').clientWidth; const s = Math.min(1, w / 1362); $('win').style.transform = 'scale(' + s + ')'; $('fit').style.height = Math.ceil(874 * s) + 'px'; }
+  window.addEventListener('resize', fit); fit(); render();
+})();
+</script>
