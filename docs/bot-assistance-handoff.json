@@ -14,9 +14,9 @@
       "memberName": "ルピー",
       "memberId": "bot-ca9fed97",
       "role": "マビモバ攻略ポータル更新担当",
-      "sessionId": "1116d255-1d69-4293-a38c-fe9c497965e8",
-      "previousSessionId": "671e840a-16f9-403a-af2b-41621b06facb",
-      "localId": "codex:01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
+      "sessionId": "312a385c-a739-485c-a2d1-e55d8cba3631",
+      "previousSessionId": "1116d255-1d69-4293-a38c-fe9c497965e8",
+      "localId": "claude:139bd3b5-97c0-45ee-9738-3ea86a598d74",
       "lastSentSequence": 1,
       "lastReceivedSequence": 0,
       "delivery": "BellTeam accepted",
@@ -47,8 +47,8 @@
         "日本版のボス戦がソロか、戦闘中の敵名と倒れた時の扱い",
         "サキュバス討伐とクエスト完了時の表示名"
       ],
-      "handoffAction": "新しい会話でcall_openし、旧通話へ移動先を知らせ、新通話へ返答待ちを引き継いで旧通話を閉じる。返信のポーリングは行わない",
-      "replyThreadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2"
+      "handoffAction": "新しい会話でcall_openし、旧通話へ移動先を知らせ、新通話へ返答待ちを引き継いで旧通話を閉じる。返信のポーリングは行わない。Claudeの会話では返信が自動で届かないため、返答を待つ依頼を出した時だけcall_pollで読む",
+      "replyThreadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74"
     }
   ],
   "currentAssistance": {
@@ -181,7 +181,7 @@
   },
   "continuation": {
     "threadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74",
-    "updatedUtc": "2026-10-10T06:05:25.093436+00:00",
+    "updatedUtc": "2026-10-10T06:07:52.426589+00:00",
     "assistanceGeneration": 7,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -210,7 +210,7 @@
       "evidence": "evidence/bot-resume-20261010/acceptance.md",
       "behavior": "captureはDB・Nano・ALL_UP・前面化を使わずWGC画像だけを読む。"
     },
-    "developmentPolicy": "開発中のBot停止をしない。更新を反映する再起動だけ事前に伝えて実施し、すぐ再開する。",
+    "developmentPolicy": "開発中のBot停止をしない。更新を反映する再起動だけ事前に伝えて実施し、すぐ再開する。再起動の前に bot status でBotが動いているかを確かめ、止まっていた時は再開せず、止まった理由を先に確かめる。",
     "featherTRule": {
       "status": "installed-and-live-verified",
       "intervalMs": 1000,
@@ -346,7 +346,8 @@
     },
     "coreSession": {
       "note": "本体の改良は別の会話が別worktreeで進めている。mainへ入ったcommitは担当AIの次回導入に乗せる。導入前にgit pull --rebaseする。",
-      "hostLaunchRule": "bot start の前にOpenLogicool.Hostのprocessが0であることを確かめる。常駐でない画面も同じ操作用の通信口で待ち受ける。"
+      "hostLaunchRule": "bot start の前にOpenLogicool.Hostのprocessが0であることを確かめる。常駐でない画面も同じ操作用の通信口で待ち受ける。",
+      "testRule": "Botが動いている間は tests/OpenLogicool.Desktop.Tests と tests/OpenLogicool.Capture.Tests を走らせない。実際の窓を最前面へ出すテストがあり、ゲームから前面を奪う。本体側が見えない場所で走らせる形へ直している。"
     },
     "lootImmediate": {
       "sourceCommit": "160745e",
@@ -354,6 +355,14 @@
       "behavior": "「発見した戦利品」を読めた回にSpaceを1回送る（以前は10秒待っていた）。",
       "live": "導入後の戦利品の画面はまだ出ていない。1回のSpaceで閉じるかは次の表示で確かめる。",
       "evidence": "evidence/bot-loot-immediate-20261010/acceptance.json"
+    },
+    "botRestartCheck": {
+      "decisionId": "K-DV3WG8",
+      "status": "answered",
+      "answer": "stopped_by_me_keep",
+      "fact": "14:54:27にBotが止まり14:54:35にアプリの窓が閉じていた。担当AIは止まっていたことを確かめずに15:03に再開した。",
+      "cause": "利用者が自分で止めた（決裁箱の回答）。本体側の画面のテストが原因ではなかった。",
+      "afterAnswer": "回答は「自分で止めたが、もう動かしてよい」。Botは動かしたままにする。"
     }
   }
 }
