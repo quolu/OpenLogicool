@@ -45,6 +45,8 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 - **Throughline後もBot支援を継続する。** 新しい会話は[Bot支援の運用と現在地](docs/bot-assistance-workflow.md)を読み、担当・返信先・未処理の詰まりを引き継いでから続行する。旧会話への通知を取り残さない。ユーザーが既に承認した対応方針を再確認しない。
 
 - **画面の見た目の確認は `OpenLogicool.Host ui-snapshot --out <フォルダー>` を使う。** 窓を出さずに、Input Studio・「LCDと明かり」の設定・キーを録る画面・Game Operator を見本データで PNG に描く。操作用の通信口と実機に触れないので、常駐 Host が動いている間も使える。実機の押下に反応する動きだけは実際の窓で確かめる。
+- **管理者権限で動くゲームの手入力は、管理者権限の監視processで見る。** Windowsは、高い権限の窓が前面の間、通常権限のHostへキーボードとマウスの入力を渡さない。Botは対象のゲームが自分より高い権限で動く時、登録済みのタスク `\OpenLogicool\UserInputWatch` から監視process（`OpenLogicool.Host.exe user-input-watch`）を起動し、押下の数と無入力の時間だけを受け取る。登録は `scripts/register-user-input-watch.ps1`（導入スクリプトが未登録の時だけ呼び、UACの確認が1回出る）。経緯は[障害記録](docs/incidents/2026-10-10-bot-user-input-blind-under-uac.md)。
+- **動作中のBotの記録（`events.jsonl`）は `Get-Content` で読む。** 書き込みと両立しない開き方（`File.ReadLines` など）で読むと、Botが記録を追記できずに止まる。
 - 通し試験は個別機能の動作確認・原因調査に使わない（最終確認だけ）。focused test で閉じる。
 - contract ownership・Lane分割・Definition of Ready/Done は計画 §7 に従う。
 - 調査した外部仕様は `rag/` へ、価値ある出力は `docs/` へ還流する。

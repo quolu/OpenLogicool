@@ -7,15 +7,16 @@ using System.Windows.Threading;
 
 namespace OpenLogicool.Host;
 
-/// <summary>Raw Inputの入力元でNanoを除外し、手入力とリモートの合成入力を観測する。</summary>
-internal sealed class WindowsUserInputMonitor : IDisposable
+/// <summary>
+/// Raw Inputの入力元でNanoを除外し、キーボードとマウスの手入力とリモートの合成入力を観測する。
+/// 自分より高い権限の窓が前面の間は、OSがこのprocessへ入力を渡さない。その時は管理者権限の監視processの中で使う。
+/// </summary>
+internal sealed class WindowsUserInputMonitor : IRawUserInputSource
 {
     private readonly SerialHidCandidate nano;
     private readonly Guid nanoContainer;
     private readonly Stopwatch clock = Stopwatch.StartNew();
     private readonly UserInputPauseState state;
-    private readonly PhysicalInputPauseBridge physicalBridge;
-    private readonly Func<ResidentPhysicalInput?>? physicalInput;
     private readonly Thread thread;
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Dictionary<nint, bool> nanoDevices = [];
@@ -33,18 +34,12 @@ internal sealed class WindowsUserInputMonitor : IDisposable
     private long softwarePositionChanges;
     private (int X, int Y)? softwarePosition;
 
-    public WindowsUserInputMonitor(SerialHidCandidate nano, Func<ResidentPhysicalInput?>? physicalInput = null)
+    public WindowsUserInputMonitor(SerialHidCandidate nano)
     {
         this.nano = nano;
-        this.physicalInput = physicalInput;
         nanoContainer = ContainerForInstance(nano.DeviceInstanceId);
         // 押下状態の符号は、マウスのボタンだけ0x10000を足してある。OSへは仮想キーの番号で聞く。
-        // G13／G600の物理ボタンは仮想キーではないので、OSでなく常駐の観測で確かめる。
-        PhysicalInputPauseBridge? bridge = null;
-        state = new(() => clock.ElapsedMilliseconds, code => code == PhysicalInputPauseBridge.Code
-            ? bridge!.IsHeld
-            : (GetAsyncKeyState(code & 0xFFFF) & 0x8000) != 0);
-        physicalBridge = bridge = new(state);
+        state = new(() => clock.ElapsedMilliseconds, code => (GetAsyncKeyState(code & 0xFFFF) & 0x8000) != 0);
         keyboardHook = Keyboard;
         mouseHook = Mouse;
         thread = new Thread(Run) { IsBackground = true, Name = "Botの手入力監視" };
@@ -57,16 +52,9 @@ internal sealed class WindowsUserInputMonitor : IDisposable
     public int StartupHeldCount { get; private set; }
     public long SoftwareMoves => Interlocked.Read(ref softwareMoves);
     public long SoftwarePositionChanges => Interlocked.Read(ref softwarePositionChanges);
-    /// <summary>
-    /// Botがpointerを動かせなかった時に呼ぶ。矢印は利用者か別の操作が握っているので、手入力があった時と同じだけ待つ。
-    /// </summary>
-    public void PointerHeldByOther() => state.Activity();
-
     public UserInputPauseSnapshot Snapshot()
     {
         if (failure is { } error) throw new InvalidOperationException("手入力監視に失敗しました。", error);
-        // G13／G600の物理ボタンは、Raw Inputでなく常駐の観測から取る（Raw Inputの登録は増やさない）。
-        if (physicalInput is not null) physicalBridge.Apply(physicalInput());
         return state.Snapshot();
     }
 

@@ -332,8 +332,8 @@ public static class VisualKeyAssistRuntime
                 : null);
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using var userInput = arguments.Contains("--pause-on-user-input", StringComparer.Ordinal)
-            ? new WindowsUserInputMonitor(nano.DeviceIdentity
-                ?? throw new InvalidOperationException("手入力の識別に必要なNanoのデバイス情報がありません。"), physicalInput) : null;
+            ? BotUserInputGate.Create(nano.DeviceIdentity
+                ?? throw new InvalidOperationException("手入力の識別に必要なNanoのデバイス情報がありません。"), physicalInput, target.ProcessId) : null;
         ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; stop.Cancel(); };
         Console.CancelKeyPress += cancel;
         try
@@ -364,7 +364,7 @@ public static class VisualKeyAssistRuntime
             var askQueued = false;
             var reviewNumber = 0;
             Emit(new { Event = "run-started", DurationMs = duration, AutomaticRulesContinue = continueRules, TimedInputEnabled = timedInputEnabled,
-                NotificationGraceMs = VisualProgressReviewMonitor.NotificationGraceMs });
+                NotificationGraceMs = VisualProgressReviewMonitor.NotificationGraceMs, UserInputSource = userInput?.SourceDescription });
             var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)
                 ? await RunProgressAsync(stop.Token)
                 : await VisualKeyAssistWorkers.RunAsync(RunRecoveryAsync, RunProgressAsync, stop.Token, recoveryOnly);
