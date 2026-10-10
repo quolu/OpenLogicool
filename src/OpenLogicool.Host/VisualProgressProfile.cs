@@ -54,7 +54,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             throw new InvalidDataException("進行設定の形式が不正です。");
         foreach (var rule in value.Rules)
         {
-            if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null || (rule.When.Length == 0 && rule.Image is null && rule.Number is null)
+            if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null
+                || (rule.When.Length == 0 && rule.Image is null && rule.Number is null && rule.Areas is null)
                 || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) + (rule.ClickImage ? 1 : 0)
                     + (rule.Flick is null ? 0 : 1) != 1)
                 throw new InvalidDataException("進行規則には条件と、キー・クリック・払う操作・待機のいずれか一つが必要です。");
@@ -77,8 +78,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             // 粗い探索の後は周囲2pxを正確に照合する。刻みはその範囲に収まる3までとする。
             if (rule.ImageSearchStep is < 1 or > 3 || rule.ImageSearchStep > 1 && rule.ImageStableRegions is null)
                 throw new InvalidDataException("画像探索の刻みは、固定部分の照合に1〜3で指定します。");
-            if (rule.RepeatAfterChange && (rule.Key is null || rule.Immediate || rule.Timed || rule.RepeatIntervalMs > 0))
-                throw new InvalidDataException("画面が進むたびに送り直す指定は、時間待ちと反復のないキー規則に指定します。");
+            if (rule.RepeatAfterChange && (rule.Key is null && rule.Flick is null || rule.Immediate || rule.Timed || rule.RepeatIntervalMs > 0))
+                throw new InvalidDataException("画面が進むたびに送り直す指定は、時間待ちと反復のない、キーか払う操作の規則に指定します。");
             if (rule.ImageClipsAtBottom && rule.ImageStableRegions is not { Length: > 2 })
                 throw new InvalidDataException("下端で切れる画像には、固定部分の領域を3つ以上指定します。");
             if (rule.ImageRotates && (rule.Image is null || rule.ImageSilhouette))

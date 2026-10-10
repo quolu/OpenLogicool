@@ -63,9 +63,8 @@ public sealed class SideQuestModeTests
         Assert.InRange(middle.FlickTo![0], 0.79, 0.81);
         Assert.InRange(middle.FlickTo[1], 0.64, 0.66);
         Assert.False(middle.EndStage);
-        // 一覧の文字が変われば、次の払う操作として扱う。
-        Assert.StartsWith("side-quest-to-top:", middle.Signature);
-        Assert.True(middle.Signature!.Length > "side-quest-to-top:".Length + 8);
+        // 文字の読み取りに頼らず、画素の条件だけで選ぶ（読み取りは同じ画面でも揺れる）。
+        Assert.Equal("side-quest-to-top:", middle.Signature);
 
         foreach (var top in new[] { "side-quest-list-top.png", "side-quest-list-top-progress.png" })
             Assert.NotEqual(VisualProgressAction.Flick, (await Recognize(top, Stage)).Action);
@@ -137,6 +136,34 @@ public sealed class SideQuestModeTests
         schedule.Decide(10000, normal, false, true, true);
         schedule.Decide(20000, normal, false, true, true);
         Assert.Null(schedule.Stage);
+    }
+
+    [Fact]
+    public void 払う操作は画面が動いて止まるたびに次を送り動かない間は送り直さない()
+    {
+        var schedule = new VisualProgressSchedule(Profile());
+        var flick = new VisualProgressChoice(VisualProgressAction.Flick, "side-quest-to-top", "side-quest-to-top:",
+            Point: [0.8, 0.5], FlickTo: [0.8, 0.65], AllowWhileInhibited: true);
+        // 最初は、表示が0.6秒続いてから送る。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, flick, false, false, true).Action);
+        Assert.Same(flick, schedule.Decide(600, flick, false, false, true));
+        schedule.RecordInput(700, flick);
+        // 払った直後、画面がまだ動いていない間は送らない。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(900, flick, false, false, true).Action);
+        // 一覧が流れている間は送らず、止まった観測で次を送る。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1500, flick, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2100, flick, false, false, true, sceneChanged: true).Action);
+        Assert.Same(flick, schedule.Decide(2700, flick, false, false, true));
+        schedule.RecordInput(2800, flick);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(3400, flick, false, false, true, sceneChanged: true).Action);
+        Assert.Same(flick, schedule.Decide(4000, flick, false, false, true));
+        schedule.RecordInput(4100, flick);
+        // 払っても画面が動かないまま5秒たったら、送り直さずに詰まりとして扱う。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(4700, flick, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(7000, flick, false, false, true).Action);
+        var stuck = schedule.Decide(9200, flick, false, false, true);
+        Assert.Equal(VisualProgressAction.Review, stuck.Action);
+        Assert.Contains("side-quest-to-top", stuck.Detail);
     }
 
     [Fact]

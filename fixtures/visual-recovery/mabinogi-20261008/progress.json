@@ -333,8 +333,8 @@
       "Click": { "Text": "サイド", "Bounds": [0.76, 0.133, 0.06, 0.032] }
     },
     {
-      "Id": "side-quest-to-top", "Stage": "side-quest", "Priority": 3, "AllowWhileInhibited": true,
-      "When": [ { "Text": "", "Bounds": [0.64, 0.3, 0.33, 0.52] } ],
+      "Id": "side-quest-to-top", "Stage": "side-quest", "Priority": 3, "AllowWhileInhibited": true, "RepeatAfterChange": true,
+      "When": [],
       "Areas": [
         { "Bounds": [0.76, 0.139, 0.01, 0.018], "Rgb": [13, 179, 118], "Tolerance": 30 },
         { "Bounds": [0.648, 0.2415, 0.31, 0.023], "Flat": false }
