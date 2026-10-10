@@ -1,3 +1,4 @@
+using System.Globalization;
 using OpenLogicool.Contracts.Playbooks;
 
 namespace OpenLogicool.Host;
@@ -17,6 +18,12 @@ public sealed record RemoteViewQualityProfile(int Width, int Height, int Fps, in
 /// 遠隔表示の ffmpeg の引数を組み立てる pure な関数。
 /// 映像は ffmpeg が窓を自分で取り込み、音は stdin から s16le の 48kHz ステレオで受ける。
 /// 停止は stdin を閉じて行うので、時間の上限（-t）は付けない。
+/// <para>
+/// 映像と音の時刻は、どちらも ffmpeg が読んだ時の現在時刻で振らせ、同じ起点（起動した時刻）を引く。
+/// 音は時刻を持たずに届くので、届いた量から時刻を数えると、渡せなかった間に失った音のぶんだけ映像より遅れたままになる。
+/// ffmpeg は遅れている音を待って映像の取り込みを止めるため、同じ絵の繰り返しが配信の終わりまで続く
+/// （中継サーバーとつなぐ最初の約1秒で起きる。20秒で593コマ中416コマの実測。同じ時計にすると最初の43コマだけ）。
+/// </para>
 /// </summary>
 public static class RemoteViewFfmpegArguments
 {
@@ -34,7 +41,8 @@ public static class RemoteViewFfmpegArguments
     /// </summary>
     public const int WhipSendBufferBytes = 4 * 1024 * 1024;
 
-    public static IReadOnlyList<string> Build(RemoteViewSettings settings, nint window, string authorization)
+    public static IReadOnlyList<string> Build(
+        RemoteViewSettings settings, nint window, string authorization, DateTimeOffset clockOrigin)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentException.ThrowIfNullOrEmpty(authorization);
@@ -44,18 +52,24 @@ public static class RemoteViewFfmpegArguments
         }
 
         var profile = RemoteViewQualityProfile.For(settings.Quality);
+        var originOffset = "-" + (clockOrigin.ToUnixTimeMilliseconds() / 1000.0).ToString("F3", CultureInfo.InvariantCulture);
         return
         [
             "-hide_banner",
             "-loglevel", "info",
+            "-use_wallclock_as_timestamps", "1",
+            "-itsoffset", originOffset,
             "-f", "lavfi",
             "-i",
             $"gfxcapture=hwnd={window}:max_framerate={profile.Fps * CaptureOversampling}:width={profile.Width}:height={profile.Height}" +
             ":resize_mode=scale_aspect:capture_cursor=1",
+            "-use_wallclock_as_timestamps", "1",
+            "-itsoffset", originOffset,
             "-f", "s16le",
             "-ar", AudioSampleRate.ToString(),
             "-ch_layout", "stereo",
             "-i", "pipe:0",
+            "-copyts",
             "-fps_mode", "cfr",
             "-r", profile.Fps.ToString(),
             "-c:v", "h264_nvenc",
@@ -66,6 +80,7 @@ public static class RemoteViewFfmpegArguments
             "-b:v", $"{profile.VideoKbps}k",
             "-bf", "0",
             "-g", (profile.Fps * 2).ToString(),
+            "-af", "aresample=async=1",
             "-c:a", "libopus",
             "-b:a", "96k",
             "-application", "lowdelay",

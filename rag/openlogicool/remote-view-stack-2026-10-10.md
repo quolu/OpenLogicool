@@ -24,6 +24,11 @@
 - **実測（2026-10-11）**: WHIP の UDP 送信の溜め場（`-ts_buffer_size`・既定 -1）を指定しないと、別の機器の MediaMTX（家の中の LAN）へ送った時に、接続の確立の直後・最初の数コマで `UDP send blocked, please increase the buffer via -ts_buffer_size`（-11）で終了する。同じ PC の中の MediaMTX へ送る時は起きない。`-ts_buffer_size 4194304` で 720p・3Mbps・20秒（600コマ）を送り切った。
 - **実測（2026-10-11）**: ffmpeg の WHIP は、answer の候補（`a=candidate`）のうち先頭の1つだけへ接続する。先頭が届かない address だと DTLS の handshake が 5 秒で時間切れになる。MediaMTX 1.21.2 は `webrtcAdditionalHosts` の最後に書いた address を先頭の候補にする（2通りの並びで計5回の観測）。家の中の address を最後に書く。
 - **実測（2026-10-11）**: 終了時の WHIP の DELETE は、Cloudflare のトンネル経由だと応答を読めずに `Failed to dispose resource`（-5）が出る。MediaMTX は session を `terminated` で閉じている。
+- **実測（2026-10-11）: 音の時間が映像より遅れると、同じ絵の繰り返しが終わりまで続く**。ffmpeg は出力へ混ぜる前に入力どうしの時刻を揃え、進んでいる側の読み取りを止めて遅れている側を待つ。映像（`gfxcapture`）は取り込みの時計で時刻が進み、stdin の生の音（`s16le`）は届いた量から時刻を数える。音を渡せない時間があると（WHIP の接続の確立に約1.1秒かかり、その間は読まれない。process loopback の溜め場は200ms）、失った音のぶんだけ音の時刻が遅れたままになる。ffmpeg は映像の取り込みを止めて待ち、`-fps_mode cfr` が止まった間を同じコマで埋める。視聴側ではコマは毎秒30届くのに、絵が0.3〜0.9秒おきにしか変わらない。
+  - 本物の中継サーバーへ20秒: 593コマ中416コマが繰り返し。送信なし（`-f null`）で音が実時間で届く時は0。音を途中で0.9秒失わせると、送信なしでも450コマ中253コマ。
+  - 修理: 映像と音の両方の入力へ `-use_wallclock_as_timestamps 1` と同じ `-itsoffset -<起動時刻の unix 秒>` を付け、`-copyts` で入力ごとの時刻の引き直しを止める。音は `-af aresample=async=1` で時刻に合わせて埋める・切る。同じ条件で繰り返しは600コマ中43コマ（つなぎ始めの約1.4秒ぶん）。音を失った時は、その間だけ絵が止まって元へ戻る。
+  - `-isync` は使えない。生の音の入力は開いた時点で始まりの時刻を持たず、「Unable to identify start times」で調整されない。`-itsoffset` なしの `-copyts` は時刻が大きすぎて `frame duplication too large` で何も出ない。
+  - 確かめ方: コマの数ではなく、受けた映像の絵が前のコマから変わったかを数える。コマ数と間隔だけを見ると正常に見える。
 - 低遅延の指定: `-tune ull -zerolatency 1 -rc cbr -bf 0`、libopus は `-application lowdelay`。
 - 音の入力に process loopback は無い。stdin から `-f f32le -ar 48000 -ch_layout mono -i pipe:0` で渡す。
 - **実測**: RTSP を ffmpeg で読み戻すと約 1.2 秒遅れて見える（読む側の溜め）。遅れの測定には WebRTC の視聴を使う（0.15〜0.17 秒）。

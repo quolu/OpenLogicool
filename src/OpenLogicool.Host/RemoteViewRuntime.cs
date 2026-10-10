@@ -171,18 +171,21 @@ public sealed class RemoteViewRuntime : IDisposable
     private readonly Func<IReadOnlyList<string>, IRemoteViewEncoderProcess> processFactory;
     private readonly Func<int, IRemoteViewAudioSource> audioSourceFactory;
     private readonly Func<TimeSpan> clock;
+    private readonly Func<DateTimeOffset> wallClock;
     private readonly object lifecycle = new();
     private volatile Session? session;
 
     public RemoteViewRuntime(
         Func<IReadOnlyList<string>, IRemoteViewEncoderProcess> processFactory,
         Func<int, IRemoteViewAudioSource> audioSourceFactory,
-        Func<TimeSpan>? clock = null)
+        Func<TimeSpan>? clock = null,
+        Func<DateTimeOffset>? wallClock = null)
     {
         this.processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
         this.audioSourceFactory = audioSourceFactory ?? throw new ArgumentNullException(nameof(audioSourceFactory));
         var watch = Stopwatch.StartNew();
         this.clock = clock ?? (() => watch.Elapsed);
+        this.wallClock = wallClock ?? (() => DateTimeOffset.UtcNow);
     }
 
     public RemoteViewRuntimeStatus Status
@@ -232,7 +235,7 @@ public sealed class RemoteViewRuntime : IDisposable
                 Teardown(previous);
             }
 
-            var arguments = RemoteViewFfmpegArguments.Build(settings, window, authorization);
+            var arguments = RemoteViewFfmpegArguments.Build(settings, window, authorization, wallClock());
             var process = processFactory(arguments)
                 ?? throw new InvalidOperationException("ffmpeg の起動がnullを返しました。");
             var current = new Session(process, processName, authorization, clock());
