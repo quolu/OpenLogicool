@@ -48,7 +48,7 @@
         "サキュバス討伐とクエスト完了時の表示名"
       ],
       "handoffAction": "新しい会話でcall_openし、旧通話へ移動先を知らせ、新通話へ返答待ちを引き継いで旧通話を閉じる。返信のポーリングは行わない。Claudeの会話では返信が自動で届かないため、返答を待つ依頼を出した時だけcall_pollで読む",
-      "replyThreadId": "1ea870ae-2414-470b-b685-df055274159a",
+      "replyThreadId": "22cdbbed-a3fa-433c-99d8-68ab390606ba",
       "note": "後継の会話ではCall Bridgeへ接続できている。通話312a385cをそのまま使い、返答を待つ依頼を出した時だけcall_pollで読む。ルピーへの移動の連絡は、返答待ちが無いため送っていない。"
     }
   ],
@@ -203,9 +203,32 @@
     "residualUnknown": "過去のHELLO無応答を含む全通信停止の根本原因は特定済みと扱わない。今回の実機hard kill再測定は未実施。"
   },
   "continuation": {
-    "threadId": "1ea870ae-2414-470b-b685-df055274159a",
-    "updatedUtc": "2026-10-10T13:10:00+00:00",
-    "assistanceGeneration": 9,
+    "threadId": "22cdbbed-a3fa-433c-99d8-68ab390606ba",
+    "updatedUtc": "2026-10-10T16:45:00+00:00",
+    "assistanceGeneration": 10,
+    "claimedIncidentIds": [
+      "2348baf0-92eb-4412-9d77-58fa3dc7b252"
+    ],
+    "screenJudge": {
+      "status": "installed-live-unverified",
+      "sourceCommit": "b7a7c3f",
+      "ownerRule": "利用者の指示（2026-10-11 01:10〜01:25）: 規則に無い画面の判断はJevにやらせる。渡すのは今の目的と、背景（クエストのカードの全文）と、画面の文字。進め方の原則は問いへ書かない。うまく動かない画面だけ、Jevの前に規則を置く。",
+      "trigger": "案件 2348baf0。女神の庭の結果の画面（退出・滞在する・新しい任務を選択）に規則が無く、01:05 からBotが止まった。目的は「スチュアートに調査の結果を報告」で、押すべきは「退出」。",
+      "measured": "止まった実機の画面を製品の入口（game-index judge-image）で5回測り、5回とも「退出」（確率 0.44〜0.67）。押す場所はボタンの中。1回約0.4秒。",
+      "unverified": "Botを動かして、止まった画面でJevが選んで押すこと。01:38 の版へ入れ替えた時、ゲームは同じ結果の画面のままだった。Botを始める操作は利用者が止めたので、始めていない。",
+      "afterLiveCheck": "実機で通ったら、案件 2348baf0 を assistant resolve で閉じ、docs/bot-assistance-workflow.md の現在地を直す。",
+      "priorMeasurement": "rag/openlogicool/jev-press-target-2026-10-10.md（案内の文を素朴に聞く形の実測）",
+      "settings": "~/.openlogicool/bot-screen-judge.json（鍵のファイルの場所とモデル）"
+    },
+    "inputWatchUac": {
+      "status": "source-fixed-install-pending",
+      "sourceCommit": "53a56ad",
+      "ownerComplaint": "利用者の指摘（2026-10-11 01:40）: Botの修理を頼むたびにUACが出るのは困る。リモートでBotを直させる。",
+      "cause": "監視の実行ファイルへ commit の番号が入り、commit のたびに中身が変わって、導入のたびに昇格していた。",
+      "measured": "直した後は、commit を2回またいでも出力の SHA-256 が同じ（D9A41A0F…）。",
+      "decisionId": "K-7YEQ2C",
+      "afterAnswer": "「今出してよい」の回答で、Botが止まっている間に scripts/install-user-input-watch.ps1 だけを実行する（UACが1回出る。アプリは再起動しない）。続けて同じ手順をもう1回流し、UACが出ずに「導入済み」になることを確かめて報告する。"
+    },
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
       "842bfff3-1588-44f9-88ab-8b0fe08c2610",
@@ -219,10 +242,12 @@
       "e85a937d-3912-41c8-a156-9afca48cc5b5",
       "567762f6-372e-46a8-b2e0-3e5ee137adcb"
     ],
-    "pendingDecisionIds": [],
-    "botPhase": "Running",
-    "botStoppedReason": null,
-    "botRunNote": "2026-10-10 23:09 に利用者がBotを始めた。23:27 に担当AIが入れ替えた版で始め直した。利用者の手入力が続いている間、Botは送出を止めて待つ。",
+    "pendingDecisionIds": [
+      "K-7YEQ2C"
+    ],
+    "botPhase": "Stopped",
+    "botStoppedReason": "2026-10-11 01:10:45 に止まった（実行 20261011-010050-973-4f5d45fb）。担当AIは止めていない。止めた理由は利用者に未確認。理由を確かめるまで始めない。",
+    "botRunNote": "2026-10-11 01:27 と 01:38 に、Botが止まっている間に開発版を入れ替えた（遠隔表示の修理とJevの判断）。01:40 に担当AIがBotを始めようとした操作は、利用者が止めた。",
     "botFunctions": {
       "status": "installed-start-verified",
       "userInstruction": "利用者の指示（2026-10-10 23:53〜23:57）: やり方を変える。今までのBot（サイドクエストは別）を機能別に分解し、組み合わせて元通りにする。必要に応じて機能ごとに組み合わせて使う。",

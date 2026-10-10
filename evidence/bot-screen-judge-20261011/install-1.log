@@ -1,0 +1,33 @@
+  復元対象のプロジェクトを決定しています...
+  復元対象のすべてのプロジェクトは最新です。
+  OpenLogicool.Contracts -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Contracts\bin\Release\net10.0-windows\OpenLogicool.Contracts.dll
+  OpenLogicool.Capture -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Capture\bin\Release\net10.0-windows10.0.22621.0\OpenLogicool.Capture.dll
+  OpenLogicool.Devices.G600 -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Devices.G600\bin\Release\net10.0-windows\OpenLogicool.Devices.G600.dll
+  OpenLogicool.Devices.G13 -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Devices.G13\bin\Release\net10.0-windows\OpenLogicool.Devices.G13.dll
+  OpenLogicool.Domain -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Domain\bin\Release\net10.0-windows\OpenLogicool.Domain.dll
+  OpenLogicool.Perception -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Perception\bin\Release\net10.0-windows\OpenLogicool.Perception.dll
+  OpenLogicool.AI -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.AI\bin\Release\net10.0-windows\OpenLogicool.AI.dll
+  OpenLogicool.Profiles -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Profiles\bin\Release\net10.0-windows\OpenLogicool.Profiles.dll
+  OpenLogicool.Input -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Input\bin\Release\net10.0-windows\OpenLogicool.Input.dll
+  OpenLogicool.Persistence -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Persistence\bin\Release\net10.0-windows\OpenLogicool.Persistence.dll
+  OpenLogicool.Playbooks -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Playbooks\bin\Release\net10.0-windows\OpenLogicool.Playbooks.dll
+  OpenLogicool.Exploration -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Exploration\bin\Release\net10.0-windows\OpenLogicool.Exploration.dll
+  OpenLogicool.Desktop -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Desktop\bin\Release\net10.0-windows\OpenLogicool.Desktop.dll
+  OpenLogicool.Host -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Host\bin\Release\net10.0-windows10.0.22621.0\OpenLogicool.Host.dll
+  OpenLogicool.Host -> C:\Users\kite_\Developer\OpenLogicool\artifacts\development\OpenLogicool\
+  復元対象のプロジェクトを決定しています...
+  復元対象のすべてのプロジェクトは最新です。
+  OpenLogicool.Watchdog -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Watchdog\bin\Release\net10.0-windows\OpenLogicool.Watchdog.dll
+  OpenLogicool.Watchdog -> C:\Users\kite_\Developer\OpenLogicool\artifacts\development\OpenLogicool\
+  復元対象のプロジェクトを決定しています...
+  復元対象のすべてのプロジェクトは最新です。
+  OpenLogicool.Launcher -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.Launcher\bin\Release\net10.0-windows10.0.22621.0\OpenLogicool.Launcher.dll
+  OpenLogicool.Launcher -> C:\Users\kite_\Developer\OpenLogicool\artifacts\development\OpenLogicool\
+  復元対象のプロジェクトを決定しています...
+  復元対象のすべてのプロジェクトは最新です。
+  OpenLogicool.InputWatch -> C:\Users\kite_\Developer\OpenLogicool\src\OpenLogicool.InputWatch\bin\Release\net10.0-windows\win-x64\OpenLogicool.InputWatch.dll
+  Generating native code
+  OpenLogicool.InputWatch -> C:\Users\kite_\Developer\OpenLogicool\artifacts\input-watch\
+手入力の監視を導入しました: C:\Program Files\OpenLogicool\InputWatch\OpenLogicool.InputWatch.exe
+Development application: C:\Users\kite_\Developer\OpenLogicool\artifacts\development\OpenLogicool
+Desktop shortcut: C:\Users\kite_\Desktop\OpenLogicool.lnk

@@ -48,6 +48,7 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 - **画面の見た目の確認は `OpenLogicool.Host ui-snapshot --out <フォルダー>` を使う。** 窓を出さずに、Input Studio・「LCDと明かり」の設定・キーを録る画面・Game Operator を見本データで PNG に描く。操作用の通信口と実機に触れないので、常駐 Host が動いている間も使える。実機の押下に反応する動きだけは実際の窓で確かめる。
 - **管理者権限で動くゲームの手入力は、管理者権限の監視processで見る。** Windowsは、高い権限の窓が前面の間、通常権限のHostへキーボードとマウスの入力を渡さない。Botは対象のゲームが自分より高い権限で動く時、タスク `\OpenLogicool\UserInputWatch` から監視process（`OpenLogicool.InputWatch.exe`）を起動し、押下の数と無入力の時間だけを受け取る。昇格するのはこの実行ファイルだけで、置き場所は管理者だけが書ける `%ProgramFiles%\OpenLogicool\InputWatch\`。導入は `scripts/install-user-input-watch.ps1`（導入スクリプトが呼ぶ。監視の中身が変わった時とタスクが正しくない時だけ、UACの確認が1回出る）。
 - **監視processへ、利用者が書ける場所のものを渡さない。** タスクの引数・Hostからの連絡・環境変数で読む実行時の部品（.NETの実行時を使う形）を、監視processへ持ち込まない。監視processは Native AOT の単体の実行ファイルとし、手入力の監視の実装は `src/OpenLogicool.InputWatch/Shared/` を Host と共有してコンパイルする。経緯は[障害記録](docs/incidents/2026-10-10-bot-user-input-blind-under-uac.md)、決定は計画 §16。
+- **Botと本体の修理の導入で、UACの確認を出さない。** 監視の実行ファイルは、監視のソースが同じなら同じ中身で出力する。出力へ git の情報（commit の番号）を入れない。UACの確認が出るのは、監視のソースを変えた時とタスクが正しくない時だけ。
 - **動作中のBotの記録（`events.jsonl`）は `Get-Content` で読む。** 書き込みと両立しない開き方（`File.ReadLines` など）で読むと、Botが記録を追記できずに止まる。
 - 通し試験は個別機能の動作確認・原因調査に使わない（最終確認だけ）。focused test で閉じる。
 - contract ownership・Lane分割・Definition of Ready/Done は計画 §7 に従う。
