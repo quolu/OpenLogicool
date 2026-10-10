@@ -131,7 +131,7 @@
     "objective": "Nanoの通信停止を修理してBotを動かす",
     "sourceCommit": "9f53d60",
     "rootCauseReproduced": "旧firmwareで全解放後200ms通信を空けるとSequenceViolation。修正版とnative試験・AVR build済み",
-    "firmwareInstallation": "Aitermの正規pwsh PTYでflash-serial-hid.ps1 -WaitForResetを実行しbuild完了と書込み待機表示を確認。Botとアプリの入力接続は回収済み。K-S426G8でRST/GNDの一瞬接続を0.75秒以内に2回行う操作を依頼。まだupload完了とは扱わない。待機はscript内の30分deadline。返答時は最初にPTYの結果を確認し、期限切れなら勝手に基板操作を促さない。",
+    "firmwareInstallation": "前の30分待機は時間切れでupload未実施。2026-10-10 10:52頃、同じAiterm PTY nano-firmware-uploadで正規WaitForResetを再開し、新しいbuild完了・待機表示・pwsh process4928を確認。K-S426G8をversion2へ更新し、つなぐ→離すを素早く2回、最後も離す手順を明記。返答時はPTYの最新結果を最初に確認する。",
     "manualDecisionId": "K-S426G8",
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
@@ -176,11 +176,13 @@
       "replyPending": false,
       "acceptedConclusion": "親が固定CDC.cpp・Caterina.c・旧版導入実測を照合。旧版の給餌が1200-baud watchdog resetを阻害。現行正規入口では本体のdouble-resetが必要。1.1.4導入後の標準自動upload再実測を受入に追加。"
     },
-    "waitingAitermSessionId": "nano-firmware-upload"
+    "waitingAitermSessionId": "nano-firmware-upload",
+    "waitingProcessId": 4928,
+    "waitingObservedAt": "2026-10-10T10:52:37+09:00"
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-09T23:37:09.4588214+00:00",
+    "updatedUtc": "2026-10-10T01:53:03.8940405+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
