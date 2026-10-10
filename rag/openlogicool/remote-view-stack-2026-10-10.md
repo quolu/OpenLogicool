@@ -20,6 +20,8 @@
 - `gfxcapture`: Windows.Graphics.Capture で窓を取り込む filter。`hwnd`・`max_framerate`・`width`／`height`・`resize_mode=scale_aspect`・`capture_cursor`・`display_border`（既定 false）。d3d11 の frame を出し、`h264_nvenc` へそのまま渡る。公式に「安定した FPS を保たない」「窓が閉じると EOF」。<https://ffmpeg.org/ffmpeg-filters.html#gfxcapture>
 - **実測**: 動かない窓では送出コマが 0 のまま進まず、音も出ない（`color`＋`realtime` へ `overlay` で重ねる形、`-fps_mode passthrough` でも同じ）。
 - WHIP の muxer は公式に「experimental」。`-authorization` に `user:pass` を渡す。<https://ffmpeg.org/ffmpeg-formats.html#whip>
+- **実測（2026-10-11）**: WHIP の UDP 送信の溜め場（`-ts_buffer_size`・既定 -1）を指定しないと、別の機器の MediaMTX（家の中の LAN）へ送った時に、接続の確立の直後・最初の数コマで `UDP send blocked, please increase the buffer via -ts_buffer_size`（-11）で終了する。同じ PC の中の MediaMTX へ送る時は起きない。`-ts_buffer_size 4194304` で 720p・3Mbps・20秒（600コマ）を送り切った。
+- **実測（2026-10-11）**: 終了時の WHIP の DELETE は、Cloudflare のトンネル経由だと応答を読めずに `Failed to dispose resource`（-5）が出る。MediaMTX は session を `terminated` で閉じている。
 - 低遅延の指定: `-tune ull -zerolatency 1 -rc cbr -bf 0`、libopus は `-application lowdelay`。
 - 音の入力に process loopback は無い。stdin から `-f f32le -ar 48000 -ch_layout mono -i pipe:0` で渡す。
 - **実測**: RTSP を ffmpeg で読み戻すと約 1.2 秒遅れて見える（読む側の溜め）。遅れの測定には WebRTC の視聴を使う（0.15〜0.17 秒）。

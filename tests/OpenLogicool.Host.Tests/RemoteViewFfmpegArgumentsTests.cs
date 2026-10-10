@@ -43,6 +43,7 @@ public sealed class RemoteViewFfmpegArgumentsTests
         var arguments = RemoteViewFfmpegArguments.Build(Settings(RemoteViewQuality.Fine), 1, "publisher:secret");
 
         Assert.Equal("whip", ValueAfter(arguments, "-f", occurrence: 3));
+        Assert.Equal("4194304", ValueAfter(arguments, "-ts_buffer_size"));
         Assert.Equal("publisher:secret", ValueAfter(arguments, "-authorization"));
         Assert.Equal(Url, arguments[^1]);
         Assert.Equal("-authorization", arguments[^3]);

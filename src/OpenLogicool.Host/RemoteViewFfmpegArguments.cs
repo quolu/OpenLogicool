@@ -22,6 +22,12 @@ public static class RemoteViewFfmpegArguments
 {
     public const int AudioSampleRate = 48000;
 
+    /// <summary>
+    /// WHIP の UDP 送信の溜め場。ffmpeg の既定のままだと、別の機器の中継サーバーへ送る時に
+    /// 最初のコマで送信が詰まって終了する（4MiB で 720p・3Mbps を20秒送り切った実測）。
+    /// </summary>
+    public const int WhipSendBufferBytes = 4 * 1024 * 1024;
+
     public static IReadOnlyList<string> Build(RemoteViewSettings settings, nint window, string authorization)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -57,6 +63,7 @@ public static class RemoteViewFfmpegArguments
             "-application", "lowdelay",
             "-ac", "2",
             "-f", "whip",
+            "-ts_buffer_size", WhipSendBufferBytes.ToString(),
             "-authorization", authorization,
             settings.PublishUrl,
         ];

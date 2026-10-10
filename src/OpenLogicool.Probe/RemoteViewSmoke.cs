@@ -405,6 +405,9 @@ internal static partial class RemoteViewSmoke
             yield return settings.Seconds.ToString();
             yield return "-f";
             yield return "whip";
+            // 既定の UDP 送信の溜め場では、別の機器の中継サーバーへ送る時に最初のコマで詰まって終了する。
+            yield return "-ts_buffer_size";
+            yield return "4194304";
             yield return "-authorization";
             yield return settings.Authorization;
             yield return settings.WhipUrl;
