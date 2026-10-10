@@ -34,6 +34,7 @@ public sealed class InputStudioWindow : Window
     private readonly ISupervisedMacroIntents? _supervisedMacroIntents;
     private readonly IMacroAutomationIntents? _macroAutomationIntents;
     private readonly IBotScriptIntents? _botScriptIntents;
+    private readonly IRemoteViewIntents? _remoteViewIntents;
     private readonly WindowPlacementMemory? _windowPlacementMemory;
     private readonly string? _supervisedUnavailableReason;
     // 窓の最小幅を広げたため、以前の幅で覚えた配置を引き継がない名前にする。
@@ -271,7 +272,8 @@ public sealed class InputStudioWindow : Window
         IMacroAutomationIntents? macroAutomationIntents = null,
         IDemonstrationRecordingIntents? demonstrationRecordingIntents = null,
         IBotScriptIntents? botScriptIntents = null,
-        WindowPlacementMemory? windowPlacementMemory = null)
+        WindowPlacementMemory? windowPlacementMemory = null,
+        IRemoteViewIntents? remoteViewIntents = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
@@ -286,6 +288,7 @@ public sealed class InputStudioWindow : Window
         _supervisedMacroIntents = supervisedMacroIntents;
         _macroAutomationIntents = macroAutomationIntents;
         _botScriptIntents = botScriptIntents;
+        _remoteViewIntents = remoteViewIntents;
         _windowPlacementMemory = windowPlacementMemory;
         _supervisedUnavailableReason = supervisedUnavailableReason;
         _snapshot = snapshot;
@@ -851,7 +854,8 @@ public sealed class InputStudioWindow : Window
                 _macroAutomationIntents,
                 openMacroTab,
                 _demonstrationRecordingIntents,
-                _botScriptIntents) { Owner = this };
+                _botScriptIntents,
+                _remoteViewIntents) { Owner = this };
             _windowPlacementMemory?.Attach(_gameOperatorWindow, GameOperatorPlacementKey);
             _gameOperatorWindow.Show();
         }
@@ -876,7 +880,7 @@ public sealed class InputStudioWindow : Window
             if (_webResearchIntent is null) throw new InvalidOperationException("Game Operatorは利用できません。");
             _gameOperatorWindow = new GameOperatorWindow(_webResearchIntent, _explorerIntents, _learningRouteIntents,
                 _supervisedMacroIntents, _supervisedUnavailableReason, _macroAutomationIntents, false,
-                _demonstrationRecordingIntents, _botScriptIntents) { Owner = this, ShowActivated = activate };
+                _demonstrationRecordingIntents, _botScriptIntents, _remoteViewIntents) { Owner = this, ShowActivated = activate };
             _windowPlacementMemory?.Attach(_gameOperatorWindow, GameOperatorPlacementKey);
             _gameOperatorWindow.Show();
         }

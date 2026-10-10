@@ -17,7 +17,7 @@ $cli = './artifacts/development/OpenLogicool/OpenLogicool.Host.exe'
 
 `bot start`は、受付だけで完了せず、開始処理を終えて実行中・手入力一時停止中などになった状態を返す。`bot stop`は入力と監視の終了を待つ。`app close`はBotと実行中の操作を回収し、アプリのプロセス終了まで待つ。未保存の画面編集がある時は終了を拒否する。破棄する場合だけ`--discard-unsaved-changes true`を指定する。
 
-`app open`と`app snapshot`の`--view`は`input-studio`、`bot`、`macro`、`recording`、`explorer`、`learning`、`research`。画像保存はゲームを前面から外さず、アプリ自身のWPF表示をPNGにする。
+`app open`と`app snapshot`の`--view`は`input-studio`、`bot`、`remoteview`、`macro`、`recording`、`explorer`、`learning`、`research`。画像保存はゲームを前面から外さず、アプリ自身のWPF表示をPNGにする。
 
 ## 全操作の一覧と引数
 

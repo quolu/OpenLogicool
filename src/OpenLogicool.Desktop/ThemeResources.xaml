@@ -90,6 +90,36 @@
         </Setter>
     </Style>
 
+    <!-- パスワード入力欄（TextBox と同じ見た目） -->
+    <Style TargetType="PasswordBox">
+        <Setter Property="Background" Value="{x:Static local:Theme.Sunken}" />
+        <Setter Property="Foreground" Value="{x:Static local:Theme.Text}" />
+        <Setter Property="CaretBrush" Value="{x:Static local:Theme.Text}" />
+        <Setter Property="SelectionBrush" Value="{x:Static local:Theme.Accent}" />
+        <Setter Property="BorderBrush" Value="{x:Static local:Theme.Line2}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="PasswordBox">
+                    <Border x:Name="frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="frame" Property="BorderBrush" Value="{x:Static local:Theme.Accent}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- 一覧 -->
     <Style TargetType="ListBox">
         <Setter Property="Background" Value="Transparent" />

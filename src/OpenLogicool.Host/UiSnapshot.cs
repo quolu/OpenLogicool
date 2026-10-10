@@ -62,6 +62,9 @@ public static class UiSnapshot
                 {
                     written.Add(Save(GameOperator(panel), outputDirectory, $"game-operator-{panel}"));
                 }
+
+                written.Add(Save(GameOperator("remoteview"), outputDirectory, "game-operator-remoteview"));
+                written.Add(Save(GameOperator("remoteview", streaming: true), outputDirectory, "game-operator-remoteview-streaming"));
             }
             catch (Exception exception)
             {
@@ -155,7 +158,7 @@ public static class UiSnapshot
         return window;
     }
 
-    private static Window GameOperator(string panel)
+    private static Window GameOperator(string panel, bool streaming = false)
     {
         var window = new GameOperatorWindow(
             SampleIntents.Create<IWebResearchIntent>(),
@@ -174,6 +177,16 @@ public static class UiSnapshot
             {
                 nameof(IBotScriptIntents.ListScripts) => new BotScriptItem[] { new("sample", "見本のBot", "見本の説明") },
                 nameof(IBotScriptIntents.Current) => new BotScriptSnapshot(BotScriptPhase.Stopped, "停止しています。"),
+                _ => null,
+            }),
+            remoteViewIntents: SampleIntents.Create<IRemoteViewIntents>(method => method.Name switch
+            {
+                nameof(IRemoteViewIntents.Current) => streaming
+                    ? new RemoteViewSnapshot(RemoteViewPhase.Streaming, "配信中", RemoteViewQuality.Fine, "見本のゲーム", 754, 22620, false, "https://view.example.com/sample")
+                    : new RemoteViewSnapshot(RemoteViewPhase.Stopped, "止まっています", RemoteViewQuality.Standard, null, 0, 0, false, null),
+                nameof(IRemoteViewIntents.LoadSettings) => streaming
+                    ? new RemoteViewSettingsView("https://relay.example.com/sample", "https://view.example.com/sample", "sample-user", true, RemoteViewQuality.Fine)
+                    : new RemoteViewSettingsView(null, null, null, false, RemoteViewQuality.Standard),
                 _ => null,
             }));
         window.SelectControlPanel(panel);

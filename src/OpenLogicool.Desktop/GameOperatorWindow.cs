@@ -41,7 +41,8 @@ public sealed class GameOperatorWindow : Window
         IMacroAutomationIntents? macroAutomationIntents = null,
         bool openMacroTab = false,
         IDemonstrationRecordingIntents? demonstrationRecordingIntents = null,
-        IBotScriptIntents? botScriptIntents = null)
+        IBotScriptIntents? botScriptIntents = null,
+        IRemoteViewIntents? remoteViewIntents = null)
     {
         ArgumentNullException.ThrowIfNull(intent);
         _workspace = new WebResearchWorkspace(intent);
@@ -100,6 +101,14 @@ public sealed class GameOperatorWindow : Window
                 closingAfterStop = true;
                 Close();
             };
+        }
+        if (remoteViewIntents is not null && Content is TabControl remoteViewTabs)
+        {
+            // Bot の次に置く。足しても最初に開く項目は変えない。
+            var selected = remoteViewTabs.SelectedItem;
+            remoteViewTabs.Items.Insert(botScriptIntents is not null ? 1 : 0,
+                new TabItem { Header = "遠隔表示", Content = new RemoteViewPanel(remoteViewIntents) });
+            remoteViewTabs.SelectedItem = selected;
         }
     }
 
@@ -163,7 +172,7 @@ public sealed class GameOperatorWindow : Window
 
     public void SelectControlPanel(string panel)
     {
-        var header = panel switch { "bot" => "Bot", "macro" => "マクロ", "recording" => "記録",
+        var header = panel switch { "bot" => "Bot", "remoteview" => "遠隔表示", "macro" => "マクロ", "recording" => "記録",
             "explorer" => "構造探索", "learning" => "学習した操作", "research" => "STEP 0　Web調査",
             _ => throw new ArgumentException($"表示先がありません: {panel}") };
         var tabs = (TabControl)Content;

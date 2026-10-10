@@ -797,7 +797,8 @@ static int Ui(string[] arguments)
             macroAutomationIntents,
             demonstrationRecordingIntents,
             botScriptIntents,
-            WindowPlacementStore.ForDatabase(databasePath).ToMemory());
+            WindowPlacementStore.ForDatabase(databasePath).ToMemory(),
+            remoteViewIntents);
         var (controlRegistry, controlJobs) = ApplicationControlRegistration.Create(window, databasePath, residentHost,
             new(editorIntents, residentApply, onboardIntent, serialHidSettingsIntent, new HostG13LcdSettingsIntent(),
                 webResearchIntent, explorerIntents, learningRouteIntents, supervisedMacroIntents, supervisedUnavailableReason,

@@ -17,6 +17,7 @@ public sealed class UiSnapshotTests
             [
                 "input-studio-g13.png", "input-studio-g600.png", "input-studio-no-selection.png", "input-studio-lcd-and-light.png", "key-capture.png",
                 "game-operator-bot.png", "game-operator-macro.png", "game-operator-recording.png", "game-operator-research.png",
+                "game-operator-remoteview.png", "game-operator-remoteview-streaming.png",
             ];
             Assert.Equal(expected.Order(), Directory.GetFiles(directory).Select(Path.GetFileName).Order());
             Assert.All(Directory.GetFiles(directory), path => Assert.True(new FileInfo(path).Length > 10_000, path));
