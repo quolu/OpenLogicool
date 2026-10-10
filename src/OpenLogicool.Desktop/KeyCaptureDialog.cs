@@ -9,7 +9,7 @@ namespace OpenLogicool.Desktop;
 /// 「ゲームに送るキー」を録る modal（docs/ui-mocks/flows.html #key 準拠）。
 /// キーボードは <see cref="Window.PreviewKeyDown"/>/<see cref="Window.PreviewKeyUp"/> で同時押しを録り、
 /// マウスボタンは選択肢ボタンで選ぶ（グローバル hook は導入しない）。
-/// 確定した output token 文字列は <see cref="Result"/> に入る（キャンセル・Esc なら null のまま）。
+/// 確定した output token 文字列は <see cref="Result"/> に入る（取り消しなら null のまま）。Esc は閉じる操作にせず、送るキーとして録る。
 /// </summary>
 public sealed class KeyCaptureDialog : Window
 {
@@ -65,7 +65,7 @@ public sealed class KeyCaptureDialog : Window
         });
         stack.Children.Add(new TextBlock
         {
-            Text = "キーボードのキーを押してください。同時押し（Ctrl + C など）もそのまま録ります。",
+            Text = "キーボードのキーを押してください。同時押し（Ctrl + C など）も Esc もそのまま録ります。やめる時は「取り消す」を押してください。",
             Foreground = Theme.Muted,
             FontSize = 13,
             TextWrapping = TextWrapping.Wrap,
@@ -142,14 +142,7 @@ public sealed class KeyCaptureDialog : Window
 
     private void OnPreviewKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape)
-        {
-            Result = null;
-            DialogResult = false;
-            e.Handled = true;
-            return;
-        }
-
+        // Esc も送るキーとして録る（Esc で閉じると Esc を割り当てられない）。閉じるのは「取り消す」と窓の×だけ。
         _session.KeyDown(ResolveKey(e));
         RefreshCaptureState();
         e.Handled = true;
