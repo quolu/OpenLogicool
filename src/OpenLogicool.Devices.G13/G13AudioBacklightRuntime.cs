@@ -20,6 +20,7 @@ public sealed record G13AudioBacklightStatus(
 public sealed class G13AudioBacklightRuntime : IDisposable
 {
     private static readonly TimeSpan Tick = TimeSpan.FromMilliseconds(30);
+    private static readonly TimeSpan IdleTick = TimeSpan.FromMilliseconds(200);
     private static readonly TimeSpan ReconnectInterval = TimeSpan.FromSeconds(1);
 
     private readonly IG13BacklightTransport transport;
@@ -28,6 +29,7 @@ public sealed class G13AudioBacklightRuntime : IDisposable
     private readonly object cycleGate = new();
     private Thread? worker;
     private volatile bool stopRequested;
+    private volatile bool idle = true;
     private bool started;
     private bool stopped;
     private int? requestedTarget;
@@ -156,7 +158,9 @@ public sealed class G13AudioBacklightRuntime : IDisposable
             var now = watch.Elapsed;
             RunOnce(now - previous);
             previous = now;
-            Thread.Sleep(Tick);
+
+            // 追従しておらず戻す色も無い間は、対象の指定を待つだけにする。
+            Thread.Sleep(idle ? IdleTick : Tick);
         }
 
         lock (cycleGate)
@@ -166,6 +170,12 @@ public sealed class G13AudioBacklightRuntime : IDisposable
     }
 
     private void RunOnceCore(TimeSpan elapsed)
+    {
+        RunCycle(elapsed);
+        idle = audio is null && baseline is null;
+    }
+
+    private void RunCycle(TimeSpan elapsed)
     {
         clock += elapsed;
         int? desired;
