@@ -86,6 +86,7 @@ function Get-EnumerationSnapshot {
 
 function Wait-TargetBootloader {
     $locations = @((Get-PnpDeviceProperty -InstanceId $ExpectedDeviceInstanceId -KeyName 'DEVPKEY_Device_LocationPaths').Data)
+    $runtimeWasPresent = $true
     Write-Host '書込み待機中です。USBを抜かず、基板の「RST」と「GND」の2点を金属で一瞬つなぎ、0.75秒以内にもう一度つないでください。'
     $deadline = [DateTime]::UtcNow.AddMinutes(30)
     do {
@@ -97,8 +98,17 @@ function Wait-TargetBootloader {
                 LocationPaths = @((Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName 'DEVPKEY_Device_LocationPaths').Data)
             }
         })
+        $runtimePresent = @($candidates | Where-Object { $_.InstanceId -ieq $before.cdc[0].instanceId }).Count -gt 0
+        if ($runtimePresent -ne $runtimeWasPresent) {
+            if ($runtimePresent) { Write-Host '通常動作のUSBが戻りました。書込みはまだ始まっていません。' }
+            else { Write-Host '通常動作のUSBが見えなくなりました。書込み機器の出現を確認しています。' }
+            $runtimeWasPresent = $runtimePresent
+        }
         $bootPort = Find-SerialHidBootloaderPort -LocationPaths $locations -Candidates $candidates
-        if ($bootPort) { return $bootPort }
+        if ($bootPort) {
+            Write-Host "同じ接続口の書込み機器 $bootPort を検出しました。"
+            return $bootPort
+        }
         Start-Sleep -Milliseconds 100
     } while ([DateTime]::UtcNow -lt $deadline)
     throw '同じNanoのdouble-resetを確認できませんでした。書き込んでいません。'
