@@ -15,7 +15,8 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false,
     int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null,
     double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false,
-    int RepeatIntervalMs = 0, string? AfterClickKey = null, double[]? ClickImagePoint = null, int ImageSearchStep = 1);
+    int RepeatIntervalMs = 0, string? AfterClickKey = null, double[]? ClickImagePoint = null, int ImageSearchStep = 1,
+    bool ImageClipsAtBottom = false);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000,
     double[][]? WhiteTextBounds = null)
@@ -52,6 +53,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             // 粗い探索の後は周囲2pxを正確に照合する。刻みはその範囲に収まる3までとする。
             if (rule.ImageSearchStep is < 1 or > 3 || rule.ImageSearchStep > 1 && rule.ImageStableRegions is null)
                 throw new InvalidDataException("画像探索の刻みは、固定部分の照合に1〜3で指定します。");
+            if (rule.ImageClipsAtBottom && rule.ImageStableRegions is not { Length: > 2 })
+                throw new InvalidDataException("下端で切れる画像には、固定部分の領域を3つ以上指定します。");
             if (rule.ImageRotates && (rule.Image is null || rule.ImageSilhouette))
                 throw new InvalidDataException("回転する印には単色画像を指定します。");
             if (rule.ImageForegroundRgb is not null && (!rule.ImageRotates
@@ -115,7 +118,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
 {
     private readonly Dictionary<string, VisualKeyTemplate> templates = profile.Rules.Where(rule => rule.Image is not null && !rule.ImageRotates)
         .ToDictionary(rule => rule.Id, rule => VisualKeyTemplate.Load(rule.Image!, silhouette: rule.ImageSilhouette,
-            stableRegions: rule.ImageStableRegions, searchStep: rule.ImageSearchStep));
+            stableRegions: rule.ImageStableRegions, searchStep: rule.ImageSearchStep, clipsAtBottom: rule.ImageClipsAtBottom));
     private readonly Dictionary<string, VisualRotatingTemplate> rotatingTemplates = profile.Rules.Where(rule => rule.ImageRotates)
         .ToDictionary(rule => rule.Id, rule => new VisualRotatingTemplate(rule.Image!, rule.ImageForegroundRgb));
 

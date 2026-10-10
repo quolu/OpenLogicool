@@ -57,9 +57,12 @@ public sealed record VisualKeyTemplateMatch(double Difference, IReadOnlyList<dou
 
 /// <summary>周囲の背景を除いた利用者画像を、小さく平滑化したRGB標本で照合する。</summary>
 public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool relativeColor = false, bool silhouette = false,
-    double[][]? stableRegions = null, int searchStep = 1)
+    double[][]? stableRegions = null, int searchStep = 1, bool clipsAtBottom = false)
 {
     private const int Samples = 16;
+    // 描画領域の下端で切れた画像も探す。外へ出てよいのは、最も下の照合領域1つ分までとする。
+    private readonly double bottomClip = clipsAtBottom && stableRegions is { Length: > 2 }
+        ? 1 - stableRegions.Select(area => area[1] + area[3]).OrderDescending().ElementAt(1) : 0;
     private readonly byte[] samples = Sample(bgra, width, height, relativeColor, silhouette);
     private readonly (double X, double Y, byte[] Color)[][]? stableSamples = stableRegions?.Select(area =>
         Enumerable.Range(0, 64).Select(index =>
@@ -73,7 +76,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         }).ToArray()).ToArray();
 
     public static VisualKeyTemplate Load(string path, bool relativeColor = false, bool silhouette = false,
-        double[][]? stableRegions = null, int searchStep = 1)
+        double[][]? stableRegions = null, int searchStep = 1, bool clipsAtBottom = false)
     {
         using var stream = File.OpenRead(path);
         var bitmap = new FormatConvertedBitmap(
@@ -83,7 +86,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
             throw new ArgumentException("画像条件には縦横8px以上の画像が必要です。", nameof(path));
         var bytes = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4];
         bitmap.CopyPixels(bytes, bitmap.PixelWidth * 4, 0);
-        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor, silhouette, stableRegions, searchStep);
+        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor, silhouette, stableRegions, searchStep, clipsAtBottom);
     }
 
     public VisualKeyTemplateMatch Find(CapturedFrame frame, IReadOnlyList<double> searchBounds) =>
@@ -108,7 +111,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 var resized = new TransformedBitmap(source, new ScaleTransform(w / (double)width, h / (double)height));
                 var bytes = new byte[resized.PixelWidth * resized.PixelHeight * 4];
                 resized.CopyPixels(bytes, resized.PixelWidth * 4, 0);
-                matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor, silhouette, stableRegions, searchStep)
+                matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor, silhouette, stableRegions, searchStep, clipsAtBottom)
                     .FindNativeSize(frame, searchBounds));
             }
         return matches.MinBy(match => match.Difference)!;
@@ -132,11 +135,12 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         foreach (var (sampleWidth, sampleHeight) in sizes)
         {
             var scaleBest = double.PositiveInfinity;
-            for (var y = top; y + sampleHeight <= bottom; y += step)
+            var overhang = Math.Max(0, (int)(sampleHeight * bottomClip) - 2);
+            for (var y = top; y + sampleHeight - overhang <= bottom; y += step)
                 for (var x = left; x + sampleWidth <= right; x += step)
                 {
-                    if (!Candidate(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight)) continue;
-                    var difference = Difference(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight, scaleBest);
+                    if (!Candidate(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight, bottom)) continue;
+                    var difference = Difference(bytes, pixels.Stride, x, y, sampleWidth, sampleHeight, scaleBest, bottom);
                     if (difference >= scaleBest) continue;
                     scaleBest = difference;
                     bestX = x;
@@ -146,10 +150,10 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 }
             // 粗い探索で隣の倍率が勝っても、各倍率の正確な座標まで照合する。
             if (double.IsPositiveInfinity(scaleBest)) continue;
-            for (var y = Math.Max(top, bestY - 2); y <= Math.Min(bottom - bestHeight, bestY + 2); y++)
+            for (var y = Math.Max(top, bestY - 2); y <= Math.Min(bottom - bestHeight + overhang, bestY + 2); y++)
                 for (var x = Math.Max(left, bestX - 2); x <= Math.Min(right - bestWidth, bestX + 2); x++)
                 {
-                    var difference = Difference(bytes, pixels.Stride, x, y, bestWidth, bestHeight, best);
+                    var difference = Difference(bytes, pixels.Stride, x, y, bestWidth, bestHeight, best, bottom);
                     if (difference >= best) continue;
                     best = difference;
                     bestBounds = [x / (double)frame.Width, y / (double)frame.Height,
@@ -159,9 +163,9 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         return new(double.IsPositiveInfinity(best) ? 255 : best, bestBounds);
     }
 
-    private bool Candidate(ReadOnlySpan<byte> bytes, int stride, int x, int y, int w, int h)
+    private bool Candidate(ReadOnlySpan<byte> bytes, int stride, int x, int y, int w, int h, int bottom)
     {
-        if (stableSamples is not null) return StableDifference(bytes, stride, x, y, w, h, 32, coarse: true) <= 32;
+        if (stableSamples is not null) return StableDifference(bytes, stride, x, y, w, h, 32, bottom, coarse: true) <= 32;
         var total = 0;
         for (var sy = 1; sy < Samples; sy += 4)
             for (var sx = 1; sx < Samples; sx += 4)
@@ -176,9 +180,9 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         return true;
     }
 
-    private double Difference(ReadOnlySpan<byte> bytes, int stride, int x, int y, int w, int h, double best)
+    private double Difference(ReadOnlySpan<byte> bytes, int stride, int x, int y, int w, int h, double best, int bottom)
     {
-        if (stableSamples is not null) return StableDifference(bytes, stride, x, y, w, h, best);
+        if (stableSamples is not null) return StableDifference(bytes, stride, x, y, w, h, best, bottom);
         var total = 0;
         var count = Samples * Samples * 3;
         for (var sy = 0; sy < Samples; sy++)
@@ -194,12 +198,14 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         return total / (double)count;
     }
 
-    private double StableDifference(ReadOnlySpan<byte> bytes, int stride, int x, int y, int w, int h, double best, bool coarse = false)
+    private double StableDifference(ReadOnlySpan<byte> bytes, int stride, int x, int y, int w, int h, double best, int bottom, bool coarse = false)
     {
         var maximum = 0d;
         // 動く針や背景を含めず、指定した各領域がそれぞれ一致することを要求する。
         foreach (var region in stableSamples!)
         {
+            // 下端より外へ出た領域は照合しない。探索範囲が、外へ出る領域を最も下の1つまでに限っている。
+            if (y + h > bottom && y + (int)(region[^1].Y * h) + 1 >= bottom) continue;
             var total = 0;
             foreach (var point in region)
             {

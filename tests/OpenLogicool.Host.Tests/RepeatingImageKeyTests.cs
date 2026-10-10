@@ -176,6 +176,18 @@ public sealed class RepeatingImageKeyTests
         Assert.StartsWith("pointer-guide:@", choice.Signature);
     }
 
+    [Fact]
+    public void 手の下側が描画領域の下端で切れた実画面でも指先をクリック先に選ぶ()
+    {
+        // 実測: 右下のバッグを指す手は、手首が窓の下端の外へ出る。指先は(1500, 1047)。
+        var frame = Read("pointer-guide-clipped-screen.png");
+        var choice = new VisualProgressRecognizer(Profile()).Recognize(new("", "ja", 0, []), frame.Width, frame.Height, Viewport(frame), frame);
+        Assert.Equal(VisualProgressAction.Click, choice.Action);
+        Assert.Equal("pointer-guide", choice.RuleId);
+        Assert.InRange(choice.Point![0] * frame.Width, 1492, 1508);
+        Assert.InRange(choice.Point[1] * frame.Height, 1040, 1056);
+    }
+
     [Theory]
     [InlineData("before.png")]
     [InlineData("combat.png")]
