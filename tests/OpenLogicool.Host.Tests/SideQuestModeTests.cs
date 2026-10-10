@@ -24,7 +24,8 @@ public sealed class SideQuestModeTests
         return Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008", name);
     }
 
-    private static VisualProgressProfile Profile() => VisualProgressProfile.Load(Fixture("progress.json"));
+    // サイドクエストはメインの組み合わせに入っていない。メインに足して読む。
+    private static VisualProgressProfile Profile() => VisualProgressProfile.Load(Fixture("progress.json"), ["side-quest"], withMain: true);
 
     // 帯の地の色は追跡中のクエストで変わる（緑・青・オレンジ）。帯の文字を拡大して読んで見つける。
     [Theory]

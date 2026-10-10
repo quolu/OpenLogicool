@@ -1,0 +1,41 @@
+{
+  "Id": "guide",
+  "Name": "案内に従う（レベルガイド・指さし案内・キーの案内）",
+  "Rules": [
+    {
+      "Id": "level-guide-recommended", "Priority": 55,
+      "When": [
+        { "Text": "レベルガイド", "Bounds": [0, 0, 0.4, 0.12] },
+        { "Text": "キャラクターを成長させるためのポイント", "Bounds": [0.05, 0.04, 0.7, 0.1] },
+        { "Text": "一推しアクティビティ", "Bounds": [0.15, 0.32, 0.8, 0.07] }
+      ],
+      "Click": { "Text": "今すぐ移動", "Bounds": [0.15, 0.48, 0.8, 0.18] }
+    },
+    {
+      "Id": "level-guide-wait", "WaitForChange": true, "Priority": 50,
+      "When": [
+        { "Text": "レベルガイド", "Bounds": [0, 0, 0.4, 0.12] },
+        { "Text": "キャラクターを成長させるためのポイント", "Bounds": [0.05, 0.04, 0.7, 0.1] }
+      ]
+    },
+    {
+      "Id": "feather-t", "Key": "Key:T", "Immediate": true, "RepeatIntervalMs": 1000,
+      "When": [], "Image": "feather-t.png", "ImageBounds": [0.86, 0.76, 0.13, 0.2],
+      "ImageClientWidth": 1506
+    },
+    {
+      "Id": "top-left-b", "Key": "Key:B", "Immediate": true, "RepeatIntervalMs": 1000,
+      "When": [], "Image": "top-left-b.png", "ImageBounds": [0.09, 0, 0.13, 0.12],
+      "ImageClientWidth": 1711,
+      "ImageStableRegions": [[0.425, 0.5, 0.325, 0.353], [0.1125, 0.088, 0.175, 0.22]]
+    },
+    {
+      "Id": "pointer-guide", "ClickImage": true, "Priority": 70,
+      "When": [], "Image": "pointer-guide.png", "ImageBounds": [0, 0, 1, 1],
+      "ImageClientWidth": 1711, "ClickImagePoint": [0.326, 0.053], "ImageSearchStep": 3,
+      "ImageClipsAtBottom": true,
+      "ImageStableRegions": [[0.283, 0.553, 0.543, 0.184], [0.196, 0.105, 0.283, 0.237],
+        [0.283, 0.868, 0.391, 0.132], [0.022, 0.5, 0.174, 0.132]]
+    }
+  ]
+}

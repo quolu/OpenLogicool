@@ -1,0 +1,46 @@
+{
+  "Id": "dungeon",
+  "Name": "ダンジョン（入場・クリア・戦利品・退出）",
+  "Rules": [
+    {
+      "Id": "dungeon-clear-prompt", "Key": "Key:Space", "Priority": 62, "Immediate": true,
+      "When": [
+        { "Text": "ダンジョンクリア", "Bounds": [0, 0, 1, 1] },
+        { "Text": "画面を押してください", "Bounds": [0, 0, 1, 1] }
+      ]
+    },
+    {
+      "Id": "dungeon-entry", "Key": "Key:Space", "Priority": 20,
+      "When": [
+        { "Text": "任務報酬リスト", "Bounds": [0.5, 0.7, 0.4, 0.12] },
+        { "Text": "Space", "Bounds": [0.6, 0.88, 0.15, 0.08] },
+        { "Text": "入場", "Bounds": [0.65, 0.9, 0.25, 0.1] }
+      ]
+    },
+    {
+      "Id": "loot-continue", "Key": "Key:Space", "Priority": -5, "MinimumVisibleMs": 0, "RepeatAfterChange": true,
+      "When": [{ "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] }]
+    },
+    {
+      "Id": "loot-wait", "WaitForChange": true, "Priority": -10,
+      "When": [{ "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] }]
+    },
+    {
+      "Id": "loot-auto-equip", "Priority": 10,
+      "When": [ { "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] } ],
+      "Click": { "Text": "自動着用", "Bounds": [0.2, 0.6, 0.8, 0.4] }
+    },
+    {
+      "Id": "auto-equip-confirm", "Key": "Key:Space", "Priority": 20,
+      "When": [
+        { "Text": "より良い装備", "Bounds": [0.25, 0.5, 0.5, 0.25] },
+        { "Text": "以下の装備を着用", "Bounds": [0.25, 0.5, 0.5, 0.25] }
+      ]
+    },
+    {
+      "Id": "dungeon-exit",
+      "When": [ { "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] } ],
+      "Click": { "Text": "退出", "Bounds": [0.2, 0.6, 0.8, 0.4] }
+    }
+  ]
+}

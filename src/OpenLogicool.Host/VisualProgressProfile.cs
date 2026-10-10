@@ -40,15 +40,104 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     bool ImageClipsAtBottom = false, bool RepeatAfterChange = false, VisualProgressNumber? Number = null,
     string? Stage = null, string? NextStage = null, string[]? ThenKeys = null,
     VisualProgressArea[]? Areas = null, VisualProgressFlick? Flick = null, VisualProgressRemember? Remember = null,
-    bool EndStage = false);
+    bool EndStage = false, string? Function = null);
+/// <summary>
+/// 機能。Botの動きを、単独でも組み合わせても使える単位に分けたもの。進行設定の隣の functions/ に、機能ごとのファイルで置く。
+/// Requires は、この機能と一緒に読む機能。
+/// </summary>
+public sealed record VisualProgressFunction(string Id, string Name, VisualProgressRule[]? Rules = null,
+    VisualProgressText[]? ReviewWhen = null, double[][]? WhiteTextBounds = null, VisualProgressMode[]? Modes = null,
+    string[]? Requires = null);
+/// <summary>機能の一覧の1件。Main は、指定なしで読むメインの組み合わせに入っているか。</summary>
+public sealed record VisualProgressFunctionInfo(string Id, string Name, bool Main, string[] Modes);
+/// <summary>
+/// 進行設定。Functions を書いた設定は、機能の組み合わせだけを持ち、規則は機能ごとのファイルから読む。
+/// Functions がメインの組み合わせ、OptionalFunctions は選んだ時だけ読む機能。
+/// </summary>
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000,
-    double[][]? WhiteTextBounds = null, VisualProgressMode[]? Modes = null)
+    double[][]? WhiteTextBounds = null, VisualProgressMode[]? Modes = null,
+    string[]? Functions = null, string[]? OptionalFunctions = null)
 {
-    public static VisualProgressProfile Load(string path)
-    {
-        var value = JsonSerializer.Deserialize<VisualProgressProfile>(File.ReadAllText(path))
+    private static VisualProgressProfile Read(string path) =>
+        JsonSerializer.Deserialize<VisualProgressProfile>(File.ReadAllText(path))
             ?? throw new InvalidDataException("進行設定が空です。");
+
+    private static Dictionary<string, VisualProgressFunction> ReadFunctions(string path, VisualProgressProfile composition)
+    {
+        var directory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path))!, "functions");
+        var listed = composition.Functions!.Concat(composition.OptionalFunctions ?? []).ToArray();
+        var files = Directory.Exists(directory)
+            ? Directory.GetFiles(directory, "*.json").Select(file => Path.GetFileNameWithoutExtension(file)).ToArray() : [];
+        // 一覧に無いファイルと、ファイルの無い機能は、読み落としにせず設定の誤りとして止める。
+        if (listed.Distinct().Count() != listed.Length || listed.Except(files).Any() || files.Except(listed).Any())
+            throw new InvalidDataException("機能の一覧と functions/ のファイルが一致しません。"
+                + $" 一覧だけ: {string.Join("、", listed.Except(files))} ファイルだけ: {string.Join("、", files.Except(listed))}");
+        var functions = new Dictionary<string, VisualProgressFunction>();
+        foreach (var id in listed)
+        {
+            var function = JsonSerializer.Deserialize<VisualProgressFunction>(File.ReadAllText(Path.Combine(directory, id + ".json")))
+                ?? throw new InvalidDataException($"機能 {id} の設定が空です。");
+            if (function.Id != id || string.IsNullOrWhiteSpace(function.Name)
+                || (function.Requires ?? []).Any(required => !listed.Contains(required)))
+                throw new InvalidDataException($"機能 {id} の名前か、一緒に読む機能の指定が不正です。");
+            functions[id] = function;
+        }
+        return functions;
+    }
+
+    /// <summary>機能の一覧。機能に分けていない進行設定では空。</summary>
+    public static IReadOnlyList<VisualProgressFunctionInfo> ListFunctions(string path)
+    {
+        var composition = Read(path);
+        if (composition.Functions is null) return [];
+        var functions = ReadFunctions(path, composition);
+        return composition.Functions.Concat(composition.OptionalFunctions ?? []).Select(id => new VisualProgressFunctionInfo(
+            id, functions[id].Name, composition.Functions.Contains(id),
+            (functions[id].Modes ?? []).Select(mode => mode.Id).ToArray())).ToArray();
+    }
+
+    /// <summary>メインの組み合わせを読む。</summary>
+    public static VisualProgressProfile Load(string path) => Load(path, null);
+
+    /// <summary>
+    /// 選んだ機能だけを組み合わせて読む。指定なしはメインの組み合わせ。withMain は、メインに選んだ機能を足す。機能は、設定に書いた順に並べる
+    /// （同じ優先度の規則の先後を、選び方で変えないため）。
+    /// </summary>
+    public static VisualProgressProfile Load(string path, IReadOnlyCollection<string>? selected, bool withMain = false)
+    {
+        var value = Read(path);
+        if (value.Functions is null)
+        {
+            if (selected is not null) throw new InvalidDataException("機能に分けていない進行設定では、機能を選べません。");
+        }
+        else
+        {
+            if (value.Rules is not null || value.ReviewWhen is not null || value.WhiteTextBounds is not null || value.Modes is not null)
+                throw new InvalidDataException("機能の組み合わせを書く進行設定には、規則を直接書きません。");
+            var functions = ReadFunctions(path, value);
+            var wanted = new HashSet<string>();
+            void Add(string id)
+            {
+                if (!functions.TryGetValue(id, out var function))
+                    throw new InvalidDataException($"機能 {id} がありません。指定できる機能: {string.Join("、", functions.Keys)}");
+                if (!wanted.Add(id)) return;
+                foreach (var required in function.Requires ?? []) Add(required);
+            }
+            foreach (var id in (selected is null || withMain ? value.Functions : []).Concat(selected ?? [])) Add(id);
+            var loaded = value.Functions.Concat(value.OptionalFunctions ?? []).Where(wanted.Contains)
+                .Select(id => functions[id]).ToArray();
+            var white = loaded.SelectMany(function => function.WhiteTextBounds ?? []).ToArray();
+            var modes = loaded.SelectMany(function => function.Modes ?? []).ToArray();
+            value = value with
+            {
+                Rules = loaded.SelectMany(function => (function.Rules ?? []).Select(rule => rule with { Function = function.Id })).ToArray(),
+                ReviewWhen = loaded.SelectMany(function => function.ReviewWhen ?? []).ToArray(),
+                WhiteTextBounds = white.Length == 0 ? null : white,
+                Modes = modes.Length == 0 ? null : modes,
+                Functions = loaded.Select(function => function.Id).ToArray(),
+            };
+        }
         if (value.SchemaVersion != 1 || value.Rules is null || value.ReviewWhen is null
             || value.ResultTimeoutMs <= 0 || value.UnknownTimeoutMs <= 0
             || value.Rules.Select(rule => rule.Id).Distinct().Count() != value.Rules.Length)

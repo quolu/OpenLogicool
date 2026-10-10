@@ -312,8 +312,12 @@ public static class VisualKeyAssistRuntime
         var recoveryIndex = Array.IndexOf(arguments, "--recovery-profile");
         var recoveryProfile = recoveryIndex < 0 ? null : VisualRecoveryProfile.Load(Required("--recovery-profile"));
         var recoveryRecognizer = recoveryProfile is null ? null : new VisualRecoveryRecognizer(recoveryProfile);
+        // --functions は動かす機能。指定なしはメインの組み合わせ。--functions-with-main はメインに足す。
         var progressProfile = Array.IndexOf(arguments, "--progress-profile") < 0 ? null
-            : VisualProgressProfile.Load(Required("--progress-profile"));
+            : VisualProgressProfile.Load(Required("--progress-profile"),
+                Array.IndexOf(arguments, "--functions") < 0 ? null
+                    : Required("--functions").Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries),
+                arguments.Contains("--functions-with-main", StringComparer.Ordinal));
         if (recoveryOnly && (recoveryProfile is null || progressProfile is not null
             || arguments.Contains("--observe-only", StringComparer.Ordinal)))
             throw new ArgumentException("--recovery-only には --recovery-profile が必要です。進行設定・--observe-only とは併用できません。");
@@ -326,7 +330,11 @@ public static class VisualKeyAssistRuntime
             Array.IndexOf(arguments, "--review-mcp") < 0 ? null : Required("--review-mcp"),
             Array.IndexOf(arguments, "--assistance-db") < 0 ? null : Required("--assistance-db"));
         var recoveryStatePath = Path.GetFullPath(Required("--db")) + ".visual-recovery.json";
-        var recovery = recoveryProfile is null ? null : new VisualRecoverySchedule(recoveryProfile,
+        // --no-recovery-input は、回復の機能を外す。描画領域とHUDの認識には回復設定を使い続ける。
+        if (recoveryOnly && arguments.Contains("--no-recovery-input", StringComparer.Ordinal))
+            throw new ArgumentException("--recovery-only と --no-recovery-input は併用できません。");
+        var recovery = recoveryProfile is null || arguments.Contains("--no-recovery-input", StringComparer.Ordinal) ? null
+            : new VisualRecoverySchedule(recoveryProfile,
             File.Exists(recoveryStatePath)
                 ? JsonSerializer.Deserialize<VisualRecoveryState>(File.ReadAllText(recoveryStatePath))
                     ?? throw new InvalidDataException("保存した回復状態が空です。")
@@ -365,6 +373,7 @@ public static class VisualKeyAssistRuntime
             var askQueued = false;
             var reviewNumber = 0;
             Emit(new { Event = "run-started", DurationMs = duration, AutomaticRulesContinue = continueRules, TimedInputEnabled = timedInputEnabled,
+                Functions = progressProfile?.Functions, Recovery = recovery is not null,
                 NotificationGraceMs = VisualProgressReviewMonitor.NotificationGraceMs, UserInputSource = userInput?.SourceDescription });
             var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)
                 ? await RunProgressAsync(stop.Token)

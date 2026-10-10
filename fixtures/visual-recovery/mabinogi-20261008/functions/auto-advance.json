@@ -1,0 +1,16 @@
+{
+  "Id": "auto-advance",
+  "Name": "追跡中のクエストを進める（コンパスのSpace）",
+  "Rules": [
+    {
+      "Id": "compass-space", "Key": "Key:Space", "Priority": 40, "Immediate": true,
+      "When": [], "Image": "compass-space.png", "ImageBounds": [0.84, 0.76, 0.16, 0.24],
+      "ImageClientWidth": 1712,
+      "ImageStableRegions": [
+        [0.4, 0.17, 0.2, 0.06], [0.13, 0.45, 0.065, 0.22],
+        [0.83, 0.42, 0.065, 0.2], [0.39, 0.87, 0.22, 0.04],
+        [0.59, 0.75, 0.28, 0.1]
+      ]
+    }
+  ]
+}

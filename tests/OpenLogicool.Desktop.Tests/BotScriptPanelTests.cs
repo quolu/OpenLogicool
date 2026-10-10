@@ -67,7 +67,8 @@ public sealed class BotScriptPanelTests
         public BotScriptSnapshot State = new(BotScriptPhase.Stopped, "停止しています。");
         public IReadOnlyList<BotScriptItem> ListScripts() => [new("test", "マビノギモバイル", "ポーション70％・包帯20％")];
         public BotScriptSnapshot Current() => State;
-        public void Start(string id) { Started = id; State = new(BotScriptPhase.Running, "実行中"); }
+        public void Start(string id, string? functions = null) { Started = id; State = new(BotScriptPhase.Running, "実行中"); }
+        public IReadOnlyList<BotScriptFunction> ListFunctions() => [];
         public Task StopAsync() { Stopped = true; State = new(BotScriptPhase.Stopped, "停止済み"); return Task.CompletedTask; }
         public void OpenEvidence() { }
         public IReadOnlyList<BotScriptMode> ListModes() => [];

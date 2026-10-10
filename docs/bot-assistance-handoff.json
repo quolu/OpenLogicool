@@ -223,8 +223,17 @@
     "botPhase": "Running",
     "botStoppedReason": null,
     "botRunNote": "2026-10-10 23:09 に利用者がBotを始めた。23:27 に担当AIが入れ替えた版で始め直した。利用者の手入力が続いている間、Botは送出を止めて待つ。",
+    "botFunctions": {
+      "status": "split-main-equivalent-not-live-run",
+      "userInstruction": "利用者の指示（2026-10-10 23:53〜23:57）: やり方を変える。今までのBot（サイドクエストは別）を機能別に分解し、組み合わせて元通りにする。必要に応じて機能ごとに組み合わせて使う。",
+      "layout": "規則は fixtures/visual-recovery/mabinogi-20261008/functions/<機能>.json。progress.json はメインの組み合わせ（Functions）と選んだ時だけ読む機能（OptionalFunctions）だけを書く。",
+      "use": "bot functions で一覧。bot start mabinogi-mobile --functions a,b で選んだ機能だけ。指定なしはメイン。recovery は監視の側の機能。",
+      "verified": "分ける前と後で規則48本・確認の表示・設定値が同じ中身（1回きりの機械照合）。Host 826件・画面 130件・構成 9件・同梱 14件が成功。",
+      "unverified": "機能を選んで始めたBotの実機での動き。"
+    },
     "sideQuestMode": {
-      "status": "installed-no-scroll-variant-not-live-run",
+      "status": "parked-accept-click-unresolved",
+      "parked": "利用者の指示で脇へ置いた。モードは解除済み。「進行」を押す所が未解決（実機で位置がずれた画面で、拡大しても白文字の抜き出しでも文字を読めない。試験に画面を足して未解決と明記）。",
       "sourceCommit": "6e77274",
       "flow": "クエスト＋の帯 → サイド → 一番上に見える「進行」（内容を覚えてから押す）。一覧は送らない（利用者の指示 2026-10-10 23:18）。",
       "scrollVariantLiveRun": "一覧を一番上まで払っていた版は、23:09 の実行で受注まで通った（315秒）。遅すぎるとの指摘と指示で、払う規則を外した。",

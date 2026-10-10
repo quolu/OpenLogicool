@@ -1,0 +1,56 @@
+{
+  "Id": "npc",
+  "Name": "NPCと納品（クエストの選択肢・商店を出る・納品の登録）",
+  "Rules": [
+    {
+      "Id": "item-handover-complete", "Priority": 50,
+      "When": [ { "Text": "渡す", "Bounds": [0, 0, 0.2, 0.1] }, { "Text": "自動登録", "Bounds": [0.1, 0.5, 0.3, 0.2] } ],
+      "FilledQuantitiesBounds": [0.2, 0.29, 0.23, 0.04],
+      "Click": { "Text": "渡す", "Bounds": [0.15, 0.5, 0.35, 0.12] }
+    },
+    {
+      "Id": "item-handover-register", "Priority": 45,
+      "When": [ { "Text": "渡す", "Bounds": [0, 0, 0.2, 0.1] }, { "Text": "自動登録", "Bounds": [0.1, 0.5, 0.3, 0.2] } ],
+      "Image": "toggle-off.png", "ImageBounds": [0.12, 0.56, 0.09, 0.12], "ImageClientWidth": 1711,
+      "ClickImage": true
+    },
+    {
+      "Id": "item-handover-wait", "Priority": 40, "WaitForChange": true,
+      "When": [ { "Text": "渡す", "Bounds": [0, 0, 0.2, 0.1] }, { "Text": "自動登録", "Bounds": [0.1, 0.5, 0.3, 0.2] } ]
+    },
+    {
+      "Id": "missing-quest-items", "WaitForChange": true, "Priority": 50,
+      "When": [{ "Text": "クエストに必要なアイテムがありません", "Bounds": [0.2, 0.5, 0.6, 0.25] }]
+    },
+    {
+      "Id": "npc-quest-option", "Priority": 35,
+      "When": [
+        { "Text": "商店", "Bounds": [0, 0.88, 1, 0.12] },
+        { "Text": "世間話", "Bounds": [0, 0.88, 1, 0.12] },
+        { "Text": "会話終了", "Bounds": [0, 0.88, 1, 0.12] }
+      ],
+      "Image": "quest-marker.png", "ImageBounds": [0, 0.915, 1, 0.045],
+      "ImageClientWidth": 1711, "ImageStableRegions": [[0, 0, 1, 1]],
+      "ClickImage": true
+    },
+    {
+      "Id": "merchant-greeting-skip", "Priority": 55, "MinimumVisibleMs": 0,
+      "When": [
+        { "Text": "ネコ商品", "Bounds": [0, 0, 1, 1] },
+        { "Text": "こんニャちわ", "Bounds": [0, 0, 1, 1] },
+        { "Text": "スキップ", "Bounds": [0.8, 0, 0.2, 0.15] }
+      ],
+      "Click": { "Text": "スキップ", "Bounds": [0.8, 0, 0.2, 0.15] },
+      "AfterClickKey": "Key:Esc"
+    },
+    {
+      "Id": "merchant-exit", "Key": "Key:Esc", "Priority": 30,
+      "When": [
+        { "Text": "商店", "Bounds": [0.3, 0.88, 0.16, 0.12] },
+        { "Text": "世間話", "Bounds": [0.48, 0.88, 0.15, 0.12] },
+        { "Text": "会話終了", "Bounds": [0.58, 0.88, 0.16, 0.12] },
+        { "Text": "ESC", "Bounds": [0.58, 0.88, 0.16, 0.12] }
+      ]
+    }
+  ]
+}

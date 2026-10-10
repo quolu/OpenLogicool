@@ -1,0 +1,46 @@
+{
+  "Id": "results",
+  "Name": "結果と確認の画面を進める（クエストクリア・レベルアップ・確認）",
+  "Rules": [
+    {
+      "Id": "quest-reward-prompt", "Key": "Key:Space", "Priority": 61, "Immediate": true,
+      "When": [
+        { "Text": "クエストクリア！", "Bounds": [0, 0, 1, 1] },
+        { "Text": "アイテムを押すと、詳細情報を確認できます。", "Bounds": [0, 0, 1, 1] }
+      ]
+    },
+    {
+      "Id": "quest-reward", "Key": "Key:Space",
+      "When": [
+        { "Text": "クエストクリア", "Bounds": [0.25, 0.1, 0.5, 0.25] },
+        { "Text": "確認", "Bounds": [0.3, 0.85, 0.4, 0.15] }
+      ]
+    },
+    {
+      "Id": "class-level", "Key": "Key:Space",
+      "When": [
+        { "Text": "ダンサ", "Bounds": [0.3, 0.18, 0.4, 0.18] },
+        { "Text": "レベル", "Bounds": [0.3, 0.18, 0.4, 0.18] },
+        { "Text": "フィナーレ", "Bounds": [0.25, 0.35, 0.5, 0.2] }
+      ]
+    },
+    {
+      "Id": "space-confirm", "Key": "Key:Space", "Priority": 5,
+      "When": [
+        { "Text": "Space", "Bounds": [0.2, 0.65, 0.6, 0.35] },
+        { "Text": "確認", "Bounds": [0.2, 0.65, 0.6, 0.35] }
+      ]
+    },
+    {
+      "Id": "screen-prompt", "Key": "Key:Space", "Priority": 60, "Immediate": true,
+      "When": [ { "Text": "画面を押してください", "Bounds": [0, 0, 1, 1] } ]
+    },
+    {
+      "Id": "equipment-confirm", "Key": "Key:Space",
+      "When": [
+        { "Text": "装備変更", "Bounds": [0.2, 0.1, 0.6, 0.65] },
+        { "Text": "確認", "Bounds": [0.3, 0.65, 0.5, 0.35] }
+      ]
+    }
+  ]
+}

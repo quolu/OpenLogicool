@@ -74,7 +74,9 @@ public sealed class HostBotScriptIntentsTests
         var package = BotScriptPackage.Load(Path.Combine(AppContext.BaseDirectory, "BotScripts", "MabinogiMobile", "bot.json"));
         Assert.False(package.TimedInputEnabled);
         var recovery = VisualRecoveryProfile.Load(package.File("profile.json"));
-        _ = VisualProgressProfile.Load(package.File("progress.json"));
+        // 進行設定は機能の組み合わせで、機能ごとのファイルも一緒に配る。
+        Assert.Equal(45, VisualProgressProfile.Load(package.File("progress.json")).Rules.Length);
+        Assert.Equal(10, VisualProgressProfile.ListFunctions(package.File("progress.json")).Count);
         Assert.Equal(0.7, recovery.PotionThreshold);
         Assert.Equal(0.2, recovery.BandageThreshold);
         Assert.Equal("MabinogiMobile", package.ProcessName);

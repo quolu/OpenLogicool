@@ -77,7 +77,7 @@ internal static class ApplicationControlCli
                 { "list" => "profiles.list", "load" => "workspace.load-document", "save" => "workspace.save", "compile" => "workspace.compile", "undo" => "workspace.undo", _ => operation };
                 if (group == "bot")
                 {
-                    operation = verb switch { "list" => "bot.list-scripts", "status" => "bot.current", "modes" => "bot.list-modes", _ => operation };
+                    operation = verb switch { "list" => "bot.list-scripts", "status" => "bot.current", "modes" => "bot.list-modes", "functions" => "bot.list-functions", _ => operation };
                     if (verb == "start" && arguments.Length > 1 && !arguments[1].StartsWith("--", StringComparison.Ordinal)) parameters["scriptId"] = arguments[1];
                     // bot mode <モード> で入り、bot mode off で解除する。
                     if (verb == "mode")
