@@ -90,6 +90,7 @@ var command = args.Length > 0 ? args[0] : "run";
 
 return command switch
 {
+    "bot-worker" => BotWorkerCommand.Run(args[1..]),
     "run" => Run(args[1..]),
     "import" when args.Length >= 2 => Import(args[1], args[2..]),
     "ui" => Ui(args[1..]),

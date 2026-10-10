@@ -195,7 +195,12 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
         _heartbeatThread.Start();
     }
 
-    public void Stop()
+    public void Stop() => Stop(releaseAll: true);
+
+    /// <summary>専有Bot接続の有限入力を回収した後に閉じる。一括解放は送らない。</summary>
+    internal void CloseAfterFiniteInput() => Stop(releaseAll: false);
+
+    private void Stop(bool releaseAll)
     {
         if (_stopped)
         {
@@ -213,7 +218,7 @@ public sealed class SerialHidResidentOutputSession : IResidentOutputSession
         // background fault後はprotocol sessionがterminalである。再送せずcloseし、firmware leaseへreleaseを委ねる。
         try
         {
-            if (_protocol is not null && _protocol.TerminalFault is null && BackgroundFailure is null)
+            if (releaseAll && _protocol is not null && _protocol.TerminalFault is null && BackgroundFailure is null)
             {
                 _protocol.SendAllUp();
             }

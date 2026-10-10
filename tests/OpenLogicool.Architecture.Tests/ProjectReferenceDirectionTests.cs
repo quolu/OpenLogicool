@@ -224,6 +224,33 @@ public sealed class ProjectReferenceDirectionTests
         Assert.Empty(offenders);
     }
 
+    [Fact]
+    public void Inputのfast_pathは名前付きパイプを参照しない()
+    {
+        var directory = Path.Combine(FindRepositoryRoot(), "src", "OpenLogicool.Input");
+        var sources = Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"));
+        foreach (var path in sources) Assert.DoesNotContain("System.IO.Pipes", File.ReadAllText(path), StringComparison.Ordinal);
+        Assert.DoesNotContain("System.IO.Pipes", File.ReadAllText(Path.Combine(directory, "OpenLogicool.Input.csproj")), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Bot_workerの入口と入力代理はNanoの接続や本体の操作口を開かない()
+    {
+        var directory = Path.Combine(FindRepositoryRoot(), "src", "OpenLogicool.Host");
+        var program = File.ReadAllText(Path.Combine(directory, "Program.cs"));
+        Assert.Contains("\"bot-worker\" => BotWorkerCommand.Run(args[1..])", program, StringComparison.Ordinal);
+        foreach (var name in new[] { "BotWorkerCommand.cs", "BotWorkerPipe.cs", "VisualKeyAssistRuntime.cs" })
+        {
+            var source = File.ReadAllText(Path.Combine(directory, name));
+            Assert.DoesNotContain("SerialHidDiscoveryService", source, StringComparison.Ordinal);
+            Assert.DoesNotContain(".Resolve(", source, StringComparison.Ordinal);
+            Assert.DoesNotContain("new SingleInstanceGuard", source, StringComparison.Ordinal);
+            Assert.DoesNotContain("new ApplicationControlPipe", source, StringComparison.Ordinal);
+        }
+    }
+
     private static Dictionary<string, HashSet<string>> LoadReferences()
     {
         return EnumerateSliceOneProjects()

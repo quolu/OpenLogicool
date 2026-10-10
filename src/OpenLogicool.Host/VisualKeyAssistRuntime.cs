@@ -381,7 +381,7 @@ public static class VisualKeyAssistRuntime
             VisualProgressOption[]? settlingOptions = null;
             var askQueued = false;
             var reviewNumber = 0;
-            Emit(new { Event = "run-started", DurationMs = duration, AutomaticRulesContinue = continueRules, TimedInputEnabled = timedInputEnabled,
+            Emit(new { Event = "run-started", BotVersion = AppContext.BaseDirectory, DurationMs = duration, AutomaticRulesContinue = continueRules, TimedInputEnabled = timedInputEnabled,
                 Functions = progressProfile?.Functions, Recovery = recovery is not null, ScreenJudge = screenJudge is not null,
                 NotificationGraceMs = VisualProgressReviewMonitor.NotificationGraceMs, UserInputSource = userInput?.SourceDescription });
             var result = recovery is null || arguments.Contains("--observe-only", StringComparer.Ordinal)

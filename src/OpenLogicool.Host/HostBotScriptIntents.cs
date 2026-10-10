@@ -188,11 +188,8 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
         }).ToArray();
         var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-runs");
         var reviewSettings = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-review-mcp.json");
-        var screenJudgeSettings = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, ScreenJudgeSettings.FileName);
         return intents = new(scripts, dataDirectory, executionGate, async (id, evidence, report, token) =>
         {
-            var package = packages[id];
-            var target = WindowsGameTargetLocator.Locate(package.ProcessName);
             SerialHidResidentOutputSession? owned = null;
             var nano = borrowedNano();
             try
@@ -207,26 +204,19 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                 token.ThrowIfCancellationRequested();
                 var emitter = nano.Emitter as SerialHidEmitter
                     ?? throw new InvalidOperationException("Nanoの入力送出を取得できません。");
-                var arguments = new List<string> { "--db", Path.Combine(dataDirectory, id + ".db"),
-                    "--inhibit-image", package.File("stop.png"), "--cue-text", "Space",
-                    "--cue-text", "画面を押してください", "--keys", "Key:Space",
-                    "--recovery-profile", package.File("profile.json"),
-                    "--evidence", evidence, "--continue-on-review", "--pause-on-user-input", "--assistance-db", databasePath };
-                arguments.AddRange(BotFunctionPlanner.Arguments(intents!.CurrentPlan, package.File("progress.json")));
-                if (!package.TimedInputEnabled) arguments.Add("--no-timed-input");
-                if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
-                // 規則に一致しない画面の判断（Jev）は、接続設定を置いた時だけ使う。
-                if (System.IO.File.Exists(screenJudgeSettings)) arguments.AddRange(["--screen-judge", screenJudgeSettings]);
-                // Botの実行へは、入力装置の口とNanoの識別だけを渡す（Nanoの接続そのものは渡さない）。
-                var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(),
-                    new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()), nano.DeviceIdentity, target,
-                    $"window:bot:{target.ProcessId}", token, report, physicalInput, () => intents!.RunningMode(id));
-                var json = JsonSerializer.SerializeToElement(result);
-                System.IO.File.WriteAllText(Path.Combine(evidence, "result.json"), json.GetRawText());
-                return new(json.TryGetProperty("NeedsReview", out var review) && review.GetBoolean(),
-                    json.TryGetProperty("Detail", out var detail) ? detail.GetString()! : "実行が終了しました。");
+                return await BotWorkerProcess.RunAsync(new(id, intents!.CurrentPlan, databasePath, dataDirectory, evidence),
+                    new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()), nano.DeviceIdentity
+                        ?? throw new InvalidOperationException("手入力の識別に必要なNanoのデバイス情報がありません。"),
+                    physicalInput, () => intents!.RunningMode(id), report, token);
             }
-            finally { owned?.Dispose(); }
+            finally
+            {
+                if (owned is not null)
+                {
+                    try { owned.CloseAfterFiniteInput(); }
+                    finally { owned.Dispose(); }
+                }
+            }
         }, async (evidence, detail) =>
         {
             if (!new BotAssistanceStore(databasePath).Exists) return;
