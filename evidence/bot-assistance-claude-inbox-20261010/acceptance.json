@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "9548414",
+  "decisions": ["K-X9E7Z7", "K-ED6JST"],
+  "request": "Botの詰まり通知を、担当のClaudeの会話へ届ける。CodexとClaudeの両方を起こさない。",
+  "behavior": {
+    "attach": "会話の標準shellでassistant attachを呼ぶ。会話の種類は環境から決まり、Claudeなら受信箱の宛先と鍵を登録する。宛先確認の文を1通送り、書き込めた時だけ登録する。",
+    "delivery": "公開部品aiterm-steer-deliveryのsendClaudeInboxで、登録した1会話の受信箱へ1通書く。自動再送と別経路への切替はしない。",
+    "secret": "受信箱の鍵は状態の隣のinbox-target.jsonだけに保存する。状態・命令の出力・gitへ出さない。",
+    "receipt": "通信では受領を確かめられないため、担当AIのassistant claimを受領の印にする。",
+    "escalation": "送信の失敗と、5分たっても引き受けが無く画面も回復していない時は、決裁箱で利用者へ知らせる。案件ごとに1回で、画面が回復したら未回答のうちに取り下げる。"
+  },
+  "tests": {
+    "hostAll": 657,
+    "failed": 0,
+    "assistanceFocused": 38,
+    "architecture": 8
+  },
+  "live": {
+    "outsideAppProcess": "親がWmiPrvSEの、Claudeのアプリの外で起動したprocessから送った試験の文が、作業中の会話へ届いた。",
+    "attachSmoke": "build済みの実行ファイルと一時の保存先でattachし、宛先確認の文が会話へ届いた。鍵は出力とstate.jsonに無く、inbox-target.jsonにだけあった。一時の保存先は削除した。",
+    "attach": "導入版でattachし、担当は世代7・種類claude・会話139bd3b5-97c0-45ee-9738-3ea86a598d74になった。宛先確認の文が会話へ届いた。出力に鍵は無い。",
+    "claimResolve": "案件b1cc2557-d9cc-46d2-9a5c-3621bcad936fを、Claudeの会話からclaimし、根拠を添えてresolveできた。",
+    "botRestart": "導入後に実行20261010-150302-986-da29e181でBotを再開した。"
+  },
+  "unverified": [
+    "Botが検出した実際の詰まり通知が、この経路で会話へ届くこと。",
+    "待機中の会話が、受信箱の通知で新しい番を始めること。",
+    "決裁箱への「担当AIへ届いていません」の申請と、画面回復時の取り下げ（試験では決裁箱の接続が無い場合の失敗の記録までを確認）。"
+  ],
+  "knownLimits": [
+    "Claudeのアプリの再起動や会話の作り直しで宛先は無効になる。送信は明示エラーになり、決裁箱で利用者へ知らせる。",
+    "5分の見届けはBotのprocessの中で動く。その間にHostを終了すると、その案件の知らせは出ない。"
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "periodicAiMonitoring": "paused",
-  "assistanceDeliveryImplementation": "implemented-and-live-wake-verified",
+  "assistanceDeliveryImplementation": "implemented-codex-steer-and-claude-inbox",
   "activeWork": "Botを継続。詰まり時だけ担当AIへ配達する。Throughlineで会話が切り替わるたびにBot通知先・ルピーの通話・Approval Boxの回答先を新しい会話へ引き継ぐ",
   "approvedSources": [
     "https://mabimoba.kitepon.dev/",
@@ -53,9 +53,9 @@
   ],
   "currentAssistance": {
     "incidentId": "b1cc2557-d9cc-46d2-9a5c-3621bcad936f",
-    "status": "claimed",
+    "status": "resolved",
     "detail": "クエストクリアの確認画面でspace-confirm後に静止。quest-reward-prompt規則の導入後、実機で確認画面を抜けた。",
-    "nextAction": "宛先対応後に、根拠を添えてresolveする。",
+    "nextAction": null,
     "resolutionEvidence": "evidence/bot-quest-reward-prompt-20261010/acceptance.json"
   },
   "gameFacts": {
@@ -180,9 +180,9 @@
     "residualUnknown": "過去のHELLO無応答を含む全通信停止の根本原因は特定済みと扱わない。今回の実機hard kill再測定は未実施。"
   },
   "continuation": {
-    "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
-    "updatedUtc": "2026-10-10T05:18:36.2057598+00:00",
-    "assistanceGeneration": 6,
+    "threadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74",
+    "updatedUtc": "2026-10-10T06:05:25.093436+00:00",
+    "assistanceGeneration": 7,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
       "842bfff3-1588-44f9-88ab-8b0fe08c2610",
@@ -190,12 +190,16 @@
       "29d93e1a-a45c-44f9-97a8-1e454277b2c8",
       "2417c9af-5a61-4011-8f3d-6bc4c9da5482",
       "96ecd868-6107-41de-acec-ca8fdb476833",
-      "379225d3-7ac8-4a7b-a293-55c09ab9f0ab"
+      "a0ef37af-587a-4052-bfb0-b0075b3540e0",
+      "ebf99c2e-5a91-421b-9fb1-a975c058d0f5",
+      "cb19d16e-ea18-4d47-a53e-6a933979e61d",
+      "e85a937d-3912-41c8-a156-9afca48cc5b5",
+      "567762f6-372e-46a8-b2e0-3e5ee137adcb"
     ],
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "次のボーナス画面で、読める申請とBot自身による選択の実行を確認する。通知の宛先対応（Aitermの設計草案は受領済み・未検証）。Jevの実測結果への利用者の判断。",
+    "nextAction": "次の自然な詰まり通知がこの会話へ届くこと、待機中の会話が起きること、5分の未受領で決裁箱へ知らせが出ることを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。次のボーナス画面で、読める申請とBot自身による選択の実行を確かめる。Jevの実測結果への利用者の判断。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -239,8 +243,8 @@
     "assistant": {
       "harness": "claude-desktop",
       "takeover": "Codexの不調により、利用者の指示でベル（Claude）が作業を引き継いだ。",
-      "notificationBinding": "Botの詰まり通知の宛先はCodexの会話のまま。Claudeの会話を宛先にする正規入口は未実装（K-X9E7Z7で範囲を裁定待ち）。",
-      "incidentCommands": "assistant claim/resolveはCODEX_THREAD_ID前提で、Claudeの会話からは実行できない。"
+      "notificationBinding": "Botの詰まり通知の宛先は、assistant attachで登録したClaudeの会話1つ。会話が替わったら新しい会話でattachし直す。",
+      "incidentCommands": "assistant claim/resolveは、Claudeの会話の標準shellからそのまま実行できる。"
     },
     "hostLaunch": {
       "entry": "bot start mabinogi-mobile",
@@ -310,12 +314,19 @@
       "evidence": "evidence/bot-bonus-ask-user-20261010/acceptance.json"
     },
     "assistantTakeover": {
-      "status": "data-root-done-delivery-not-started",
+      "status": "done",
       "decisionId": "K-X9E7Z7",
+      "deliveryDecisionId": "K-ED6JST",
       "ownerNote": "判定のたびに、両方のAIを起こすことのないように。",
       "dataRoot": "完了（K-V3MUU2）。",
-      "delivery": "未着手。Aitermの公開入口（aiterm-parent-delivery）はCodex宛てだけ。Claude宛ては、共通部品のchannelと受信箱の仕組みが既にあるので、それを公開入口へ出す形で設計する。別のAIの反証を通してから公開する。",
-      "measured": "この会話は待機中でも起こせる（決裁箱の回答が待機中に届いて新しいターンを起こした）。"
+      "delivery": "会話の受信箱へ直接送る方式で実装・導入済み（commit 9548414）。宛先は登録した1会話だけ。受領の印は担当AIのclaim。送信の失敗と5分の未受領は決裁箱で利用者へ知らせる。",
+      "measured": "attachの宛先確認の文が作業中の会話へ届いた。アプリの外のprocessからの送信も届いた。claimとresolveをClaudeの会話から実行できた。",
+      "unverified": [
+        "Botからの実際の詰まり通知の到着",
+        "待機中の会話が受信箱の通知で起きること",
+        "決裁箱への「届いていません」の申請と、画面回復時の取り下げ"
+      ],
+      "evidence": "evidence/bot-assistance-claude-inbox-20261010/acceptance.json"
     },
     "dungeonClearPrompt": {
       "status": "installed-and-live-verified",
@@ -336,6 +347,13 @@
     "coreSession": {
       "note": "本体の改良は別の会話が別worktreeで進めている。mainへ入ったcommitは担当AIの次回導入に乗せる。導入前にgit pull --rebaseする。",
       "hostLaunchRule": "bot start の前にOpenLogicool.Hostのprocessが0であることを確かめる。常駐でない画面も同じ操作用の通信口で待ち受ける。"
+    },
+    "lootImmediate": {
+      "sourceCommit": "160745e",
+      "status": "installed",
+      "behavior": "「発見した戦利品」を読めた回にSpaceを1回送る（以前は10秒待っていた）。",
+      "live": "導入後の戦利品の画面はまだ出ていない。1回のSpaceで閉じるかは次の表示で確かめる。",
+      "evidence": "evidence/bot-loot-immediate-20261010/acceptance.json"
     }
   }
 }
