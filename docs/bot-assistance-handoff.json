@@ -347,7 +347,7 @@
     "coreSession": {
       "note": "本体の改良は別の会話が別worktreeで進めている。mainへ入ったcommitは担当AIの次回導入に乗せる。導入前にgit pull --rebaseする。",
       "hostLaunchRule": "bot start の前にOpenLogicool.Hostのprocessが0であることを確かめる。常駐でない画面も同じ操作用の通信口で待ち受ける。",
-      "testRule": "Botが動いている間は tests/OpenLogicool.Desktop.Tests と tests/OpenLogicool.Capture.Tests を走らせない。実際の窓を最前面へ出すテストがあり、ゲームから前面を奪う。本体側が見えない場所で走らせる形へ直している。"
+      "testRule": "Botが動いている間は tests/OpenLogicool.Capture.Tests を走らせない。実際の窓を表示するテストが2つあり、ゲームから前面を奪う。tests/OpenLogicool.Desktop.Tests は 35ebfc4 から見えない別デスクトップで走るため、Botの動作中も走らせてよい（本体改良の会話の報告）。Host.Tests に窓を表示するテストは無い。"
     },
     "lootImmediate": {
       "sourceCommit": "160745e",
