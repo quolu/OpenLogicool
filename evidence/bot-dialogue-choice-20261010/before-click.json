@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-dialogue-choice-20261010\\before-click.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "1243b814b079cfbd86a67f1ee3c24c56e8d08d7a313b871faca61e3691867248",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

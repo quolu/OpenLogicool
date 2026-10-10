@@ -48,7 +48,8 @@
         "サキュバス討伐とクエスト完了時の表示名"
       ],
       "handoffAction": "新しい会話でcall_openし、旧通話へ移動先を知らせ、新通話へ返答待ちを引き継いで旧通話を閉じる。返信のポーリングは行わない。Claudeの会話では返信が自動で届かないため、返答を待つ依頼を出した時だけcall_pollで読む",
-      "replyThreadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74"
+      "replyThreadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74",
+      "note": "この会話ではCall Bridgeの接続が切れている（CONNECTION_CLOSED）。ルピーへの連絡が要る時は接続を確かめる。"
     }
   ],
   "currentAssistance": {
@@ -181,7 +182,7 @@
   },
   "continuation": {
     "threadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74",
-    "updatedUtc": "2026-10-10T06:07:52.426589+00:00",
+    "updatedUtc": "2026-10-10T06:46:41.094115+00:00",
     "assistanceGeneration": 7,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -199,7 +200,7 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "次の自然な詰まり通知がこの会話へ届くこと、待機中の会話が起きること、5分の未受領で決裁箱へ知らせが出ることを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。次のボーナス画面で、読める申請とBot自身による選択の実行を確かめる。Jevの実測結果への利用者の判断。",
+    "nextAction": "次の「届いていません」の知らせで、回答の読み取りと送り直しを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。次のボーナス画面で、読める申請とBot自身による選択の実行を確かめる。Jevの実測結果への利用者の判断。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -319,12 +320,12 @@
       "deliveryDecisionId": "K-ED6JST",
       "ownerNote": "判定のたびに、両方のAIを起こすことのないように。",
       "dataRoot": "完了（K-V3MUU2）。",
-      "delivery": "会話の受信箱へ直接送る方式で実装・導入済み（commit 9548414）。宛先は登録した1会話だけ。受領の印は担当AIのclaim。送信の失敗と5分の未受領は決裁箱で利用者へ知らせる。",
-      "measured": "attachの宛先確認の文が作業中の会話へ届いた。アプリの外のprocessからの送信も届いた。claimとresolveをClaudeの会話から実行できた。",
+      "delivery": "会話の受信箱へ直接送る方式で実装・導入済み（commit 9548414、回答の読み取りは 55b8163）。宛先は登録した1会話だけ。受領の印は担当AIのclaim。送信の失敗と5分の未受領は決裁箱で利用者へ知らせ、Botがその回答を読んで「担当AIへもう一度送る」なら送り直す。",
+      "measured": "attachの宛先確認の文が会話へ届いた。Botの実際の詰まり通知が2通届き、claimできた。待機中の会話が受信箱の通知で新しい番を始めた。会話が開き直されて宛先が切れた時、送信は明示エラーになり、Botが決裁箱へ知らせを出した（K-WFK59Y）。",
       "unverified": [
-        "Botからの実際の詰まり通知の到着",
-        "待機中の会話が受信箱の通知で起きること",
-        "決裁箱への「届いていません」の申請と、画面回復時の取り下げ"
+        "知らせへの回答「担当AIへもう一度送る」をBotが読んで送り直すこと（55b8163。試験は差し替えで確認、本物の決裁箱では未確認）",
+        "5分の未受領で知らせが出ること",
+        "画面回復時の知らせの取り下げ"
       ],
       "evidence": "evidence/bot-assistance-claude-inbox-20261010/acceptance.json"
     },
@@ -363,6 +364,25 @@
       "fact": "14:54:27にBotが止まり14:54:35にアプリの窓が閉じていた。担当AIは止まっていたことを確かめずに15:03に再開した。",
       "cause": "利用者が自分で止めた（決裁箱の回答）。本体側の画面のテストが原因ではなかった。",
       "afterAnswer": "回答は「自分で止めたが、もう動かしてよい」。Botは動かしたままにする。"
-    }
+    },
+    "controlPipeOwner": {
+      "status": "resolved-by-environment",
+      "fact": "UACが無効（EnableLUA=0）の間、Claudeの会話のシェルごとに「作る物の持ち主」が利用者個人と管理者グループに分かれ、Botのアプリへの命令が「通信口の持ち主が違う」で断られた。",
+      "resolution": "利用者がUACを有効へ戻して再起動した。シェルは通常権限・持ち主は利用者個人に揃い、命令が通った。",
+      "openProposal": "通信口の検査を「同じ利用者か」で見る形へ直す案は未着手。本体の通信口の安全の検査なので、利用者の指示があれば本体改良の会話と反証を通して入れる。"
+    },
+    "repeatedIncidents": {
+      "status": "observed-not-fixed",
+      "fact": "同じ会話の2択で止まっている間に、約2分おきに別の案件として通知が出た（4件）。",
+      "guess": "手入力でBotが一時停止するたびに止まりの検出がやり直しになり、根拠フォルダーが替わって別件扱いになる（記録の並びからの推測）。"
+    },
+    "dialogueChoice": {
+      "decisionId": "K-9JQBN5",
+      "status": "executed",
+      "choice": "運がいいほう",
+      "execution": "Botを止めてgame-index click-pointで1回クリックし、会話が進んだ画面を確認してBotを再開した。",
+      "evidence": "evidence/bot-dialogue-choice-20261010/click.json"
+    },
+    "botRun": "bot-runs/mabinogi-mobile/20261010-154613-810-fa952cec"
   }
 }
