@@ -1,0 +1,19 @@
+{
+  "Mode": "key-tap",
+  "ProductHostEntry": true,
+  "dispatch": {
+    "SchemaVersion": "0.3.0",
+    "Operation": "key-tap",
+    "Status": "Dispatched",
+    "ObservationId": "observation:window:game-index:33892:2",
+    "TargetWindowSourceId": "window:game-index:33892",
+    "Route": "NanoSerialHid",
+    "DispatchCount": 1,
+    "StartedUtc": "2026-10-10T09:32:36.4999983+00:00",
+    "CompletedUtc": "2026-10-10T09:32:36.5187584+00:00",
+    "CandidateId": null,
+    "TransportReceiptId": "keys:Key:Space:down-up",
+    "FailureReason": null
+  },
+  "AiCallCount": 0
+}

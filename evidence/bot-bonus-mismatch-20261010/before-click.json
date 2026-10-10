@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-bonus-mismatch-20261010\\before-click.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "b0d6331838e5ec4adab0677e4347ffa6c0ddaee2d55bdc94065f44a3662481bd",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
