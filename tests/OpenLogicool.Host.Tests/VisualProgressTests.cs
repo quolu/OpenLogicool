@@ -566,6 +566,31 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public void 同じ待機画面で文字認識の読みがゆれても静止が続けば通知する()
+    {
+        // 実測: 同じ会話の3択を0.7秒おきに8枚読むと、余分な文字や語順の入れ替わりで読みが3通りにゆれた。
+        var schedule = new VisualProgressSchedule(Profile());
+        string[] readings =
+        [
+            "dialogue-choice-wait:丿シタだよな目を見れば分かるよお前の目どんな風に見えてると思う0|純真無垢な目星々が煌めくような目眠そうな目眠そうな目純真無垢な目星々が煌めくような目",
+            "dialogue-choice-wait:第丿シタだよな目を見れば分かるよお前の目どんな風に見えてると思う0ロ|純真無垢な目星々が煌めくような目眠そうな目眠そうな目純真無垢な目星々が煌めくような目",
+            "dialogue-choice-wait:丿シタだよな目を見れば分かるよ見えてると思う0お前の目どんな風に|眠そうな目純真無垢な目星々が煌めくような目",
+        ];
+        VisualProgressChoice At(int index) => new(VisualProgressAction.Wait, "dialogue-choice-wait", readings[index % readings.Length]);
+        for (var i = 0; i < 12; i++)
+            Assert.Equal(VisualProgressAction.Wait, schedule.Decide(i * 800, At(i), false, false, true).Action);
+        var review = schedule.Decide(10_400, At(13), false, false, true);
+        Assert.Equal(VisualProgressAction.Review, review.Action);
+        Assert.Contains("dialogue-choice-wait", review.Detail);
+        // 読みが別の会話のものへ変わった時は、同じ規則でも別の待機として静止時間を数え直す。
+        var another = new VisualProgressChoice(VisualProgressAction.Wait, "dialogue-choice-wait",
+            "dialogue-choice-wait:リシタその前に1つ聞かせてもらおうなぜこの試験をするのか分かるか|何かの準備受験料をもらうため試験が好きだから");
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(11_200, another, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(20_000, another, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(21_200, another, false, false, true).Action);
+    }
+
+    [Fact]
     public void 固定ラベルの周囲のOCR変動は操作候補を変えず会話本文の変更は区別する()
     {
         var rule = new VisualProgressRule("prompt", [new("画面を押してください", [0, 0, 1, 1])], "Key:Space");

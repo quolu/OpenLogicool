@@ -410,6 +410,9 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     private long? immediateMissingAt;
     private bool wasInhibited;
     private readonly Dictionary<string, long> repeatedAt = [];
+    // 同じ待機画面とみなす読みの類似度の境。利用者の指定で0.5とする。
+    // 実測: 同じ会話の選択画面を続けて読んだ読みどうしは0.61以上、別の会話の画面の読みとは0.12以下。
+    private const double SameWaitSimilarity = 0.5;
 
     public bool RepeatIsDue(long now, VisualProgressRule rule) =>
         !repeatedAt.TryGetValue(rule.Id, out var last) || now - last >= rule.RepeatIntervalMs;
@@ -462,7 +465,11 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
         }
         if (candidate.Action == VisualProgressAction.Wait)
         {
-            if (waitingSignature != candidate.Signature) { waitingSignature = candidate.Signature; ResetUnresolved(); }
+            // 同じ待機画面かは、読みの類似度で見分ける。文字認識の読みは、同じ画面でも余分な文字や語順でゆれる。
+            var reading = candidate.Signature ?? candidate.RuleId ?? candidate.Detail ?? "";
+            if (waitingSignature is null || waitingSignature != reading
+                && OpenLogicool.Contracts.Perception.OcrTextMatcher.Similarity(waitingSignature, reading) < SameWaitSimilarity)
+            { waitingSignature = reading; ResetUnresolved(); }
             return ObserveUnresolved(now, sceneChanged, profile.UnknownTimeoutMs,
                 $"{candidate.RuleId ?? candidate.Detail} の待機中、複数回観測して画面の変化が止まったままです。追加入力はしていません。");
         }
