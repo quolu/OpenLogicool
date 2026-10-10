@@ -1,11 +1,12 @@
 namespace OpenLogicool.Host;
 
 internal sealed record UserInputPauseSnapshot(bool Paused, int HeldCount, long IdleMilliseconds,
-    long UserEvents, long NanoEvents);
+    long UserEvents, long NanoEvents, long LostReleases = 0, int[]? HeldCodes = null);
 
 /// <summary>入力元別の押下状態と、全解放後3秒の無入力を管理する。</summary>
-internal sealed class UserInputPauseState(Func<long> milliseconds)
+internal sealed class UserInputPauseState(Func<long> milliseconds, Func<int, bool>? isDown = null)
 {
+    private long lostReleases;
     private readonly Lock gate = new();
     private readonly HashSet<(nint Source, int Code)> held = [];
     private long lastActivity = milliseconds();
@@ -17,7 +18,12 @@ internal sealed class UserInputPauseState(Func<long> milliseconds)
         lock (gate)
         {
             var idle = milliseconds() - lastActivity;
-            return new(held.Count > 0 || idle < 3000, held.Count, idle, userEvents, nanoEvents);
+            // 離した合図は、昇格した窓や保護された画面が前面の間は届かない。押下状態の正本はOSなので、
+            // 入力が3秒途絶えた時にOSへ確かめ、実際には離されているキーを外す。
+            if (isDown is not null && held.Count > 0 && idle >= 3000)
+                lostReleases += held.RemoveWhere(item => !isDown(item.Code));
+            return new(held.Count > 0 || idle < 3000, held.Count, idle, userEvents, nanoEvents, lostReleases,
+                held.Select(item => item.Code).Distinct().Order().ToArray());
         }
     }
 

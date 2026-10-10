@@ -81,6 +81,32 @@ public sealed class UserInputPauseStateTests
     }
 
     [Fact]
+    public void 離した合図を取りこぼしたキーは入力が三秒途絶えた時にOSの押下状態で外す()
+    {
+        // 実測: Botは押下1のまま9分半止まり、同じ時刻にOSが押下中と返すキーは無かった。
+        long now = 0;
+        var down = new HashSet<int> { 0x41, 0x10001 };
+        var state = new UserInputPauseState(() => now, down.Contains);
+        now = 10_000; state.Button(10, 0x41, true); state.Button(10, 0x10001, true);
+        // 入力が続いている間はOSへ聞かず、届いた合図だけで数える。
+        down.Clear();
+        now = 12_999; Assert.Equal(2, state.Snapshot().HeldCount);
+        Assert.Equal([0x41, 0x10001], state.Snapshot().HeldCodes!);
+        // 3秒途絶えたらOSへ確かめ、離されているキーを外して再開する。
+        now = 13_000;
+        var resumed = state.Snapshot();
+        Assert.False(resumed.Paused);
+        Assert.Equal(0, resumed.HeldCount);
+        Assert.Equal(2, resumed.LostReleases);
+        // OSが押下中と返すキーは、押しっぱなしとして待ち続ける。
+        down.Add(0x57);
+        state.Button(10, 0x57, true);
+        now = 60_000;
+        Assert.True(state.Snapshot().Paused);
+        Assert.Equal(2, state.Snapshot().LostReleases);
+    }
+
+    [Fact]
     public void 移動やホイール後に三秒待ち押しっぱなしなら再開しない()
     {
         long now = 4000;

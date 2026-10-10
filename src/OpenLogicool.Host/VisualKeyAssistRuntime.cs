@@ -893,14 +893,15 @@ public static class VisualKeyAssistRuntime
                     {
                         lastUserSample = clock.ElapsedMilliseconds;
                         Emit(new { Event = "user-input-state", AtMs = clock.ElapsedMilliseconds,
-                            snapshot.Paused, snapshot.HeldCount, snapshot.IdleMilliseconds, snapshot.UserEvents, snapshot.NanoEvents });
+                            snapshot.Paused, snapshot.HeldCount, snapshot.IdleMilliseconds, snapshot.UserEvents, snapshot.NanoEvents,
+                            snapshot.LostReleases, snapshot.HeldCodes });
                     }
                     if (userPaused != snapshot.Paused)
                     {
                         userPaused = snapshot.Paused;
                         Emit(new { Event = snapshot.Paused ? "user-input-paused" : "user-input-resumed",
                             AtMs = clock.ElapsedMilliseconds, snapshot.HeldCount, snapshot.IdleMilliseconds,
-                            snapshot.UserEvents, snapshot.NanoEvents,
+                            snapshot.UserEvents, snapshot.NanoEvents, snapshot.LostReleases, snapshot.HeldCodes,
                             Detail = snapshot.Paused ? "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
                                 : "手入力がなくなって3秒経過したためBotの送出を再開しました。" });
                     }

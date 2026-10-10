@@ -35,7 +35,8 @@ internal sealed class WindowsUserInputMonitor : IDisposable
     {
         this.nano = nano;
         nanoContainer = ContainerForInstance(nano.DeviceInstanceId);
-        state = new(() => clock.ElapsedMilliseconds);
+        // 押下状態の符号は、マウスのボタンだけ0x10000を足してある。OSへは仮想キーの番号で聞く。
+        state = new(() => clock.ElapsedMilliseconds, code => (GetAsyncKeyState(code & 0xFFFF) & 0x8000) != 0);
         keyboardHook = Keyboard;
         mouseHook = Mouse;
         thread = new Thread(Run) { IsBackground = true, Name = "Botの手入力監視" };
