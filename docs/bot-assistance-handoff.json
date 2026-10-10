@@ -80,6 +80,23 @@
       "basis": "決裁箱K-DBAPMRの利用者回答。ゲーム内推奨は厚い皮膚だったが、回答どおりに選んだ。",
       "status": "executed",
       "evidence": "evidence/bot-bonus-ask-user-20261010/two-card-after-confirm.png"
+    },
+    "hudCurrencies": {
+      "source": "利用者の説明（2026-10-10）と画面の記録",
+      "layout": "画面左上に3つ並ぶ。左がゴールド、真ん中がシルバーコイン（例: 46/100）、右は未確認。",
+      "silverCoin": {
+        "name": "シルバーコイン",
+        "display": "現在値/100",
+        "observed": [
+          "15:55 51/100",
+          "16:43 52/100",
+          "17:22 54",
+          "18:32 76/100",
+          "18:40ごろ 46/100"
+        ],
+        "guess": "18:33のダンジョン入場の前後で76から46へ30減った。入場で消費した見込み（入場の瞬間の前後を並べて確かめてはいない）。時間で増える見込み。",
+        "botBehavior": "Botはこの数字を読んでいない。入場の確認が出たらそのまま進む。"
+      }
     }
   },
   "pendingGameDecision": {
@@ -182,7 +199,7 @@
   },
   "continuation": {
     "threadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74",
-    "updatedUtc": "2026-10-10T08:19:47.045831+00:00",
+    "updatedUtc": "2026-10-10T09:42:09.074061+00:00",
     "assistanceGeneration": 7,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
