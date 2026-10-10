@@ -611,7 +611,7 @@ internal static partial class RemoteViewSmoke
     {
         public const int SampleRate = 48000;
         private const int ReadChunk = 16384;
-        private const int SilenceTolerance = SampleRate / 50;
+        private static readonly TimeSpan SilenceGap = TimeSpan.FromMilliseconds(40);
 
         private Thread? worker;
         private volatile bool stopRequested;
@@ -655,27 +655,35 @@ internal static partial class RemoteViewSmoke
                 source = new ProcessLoopbackAudioSource(processId);
                 var buffer = new float[ReadChunk];
                 var silence = new float[SampleRate / 10];
+                var lastData = clock.Elapsed;
                 while (!stopRequested)
                 {
                     var count = source.Read(buffer);
-                    if (count > 0 && !Write(buffer.AsSpan(0, count)))
+                    if (count > 0)
                     {
-                        return;
-                    }
-
-                    var deficit = (long)(clock.Elapsed.TotalSeconds * SampleRate) - Interlocked.Read(ref samplesSent);
-                    if (deficit >= SilenceTolerance)
-                    {
-                        Interlocked.Add(ref silenceSamples, deficit);
-                        while (deficit > 0)
+                        if (!Write(buffer.AsSpan(0, count)))
                         {
-                            var chunk = (int)Math.Min(deficit, silence.Length);
-                            if (!Write(silence.AsSpan(0, chunk)))
+                            return;
+                        }
+
+                        lastData = clock.Elapsed;
+                    }
+                    else
+                    {
+                        // 対象が鳴っていない間は何も届かない。届かない時間のぶんだけ無音を書く。
+                        // 送った合計を時計と比べて埋めると、ffmpeg が読み始めるまでの遅れを毎回「不足」と数え、
+                        // 鳴っている音を押しのけて無音を入れ続ける（実測で音が途切れた）。
+                        var gap = clock.Elapsed - lastData;
+                        if (gap >= SilenceGap)
+                        {
+                            var missing = (int)Math.Min(silence.Length, gap.TotalSeconds * SampleRate);
+                            if (!Write(silence.AsSpan(0, missing)))
                             {
                                 return;
                             }
 
-                            deficit -= chunk;
+                            Interlocked.Add(ref silenceSamples, missing);
+                            lastData += TimeSpan.FromSeconds((double)missing / SampleRate);
                         }
                     }
 
