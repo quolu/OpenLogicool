@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "df98a07",
+  "request": "「レベルアップボーナスを選択してください」の表示では、AIを挟まず即座に決裁箱へ選択肢を提示する。",
+  "behavior": {
+    "profileFlag": "ReviewWhenの該当表示にAskUserImmediately=true",
+    "onDetection": "検出した回に、選択肢（OCR）と画面画像をBotが決裁箱へ直接申請する。1分の待機と担当AIへの通知を経由しない。",
+    "onFailure": "申請に失敗した時はreview-notification-failedを記録し、1分後の詰まり通知が担当AIへ届く。",
+    "withAssistant": "担当AIが登録済みでも、決裁箱の接続設定がある時は併せて保持する。接続設定がない時の直接申請は明示エラー。",
+    "afterAnswer": "Botは回答を理由に自動選択しない。カード選択と確定は担当AIがNanoで行う。"
+  },
+  "tests": {
+    "focused": 113,
+    "failed": 0,
+    "classes": [
+      "VisualKeyAssistTests",
+      "VisualProgress*",
+      "HostBotScriptIntentsTests",
+      "BotAssistanceTests",
+      "VisualAssistReviewNotifierTests"
+    ]
+  },
+  "installation": {
+    "entry": "scripts/install-development-app.ps1",
+    "profileHashMatches": true,
+    "restartForUpdate": true,
+    "restartSuccess": true
+  },
+  "live": {
+    "run": "20261010-123559-432-cc306951",
+    "detectedAtMs": 987,
+    "filedAfterMs": 639,
+    "decisionId": "K-VS2VHH",
+    "options": [
+      "選択肢1: STR成長1段階",
+      "選択肢2: LUCK成長13段階",
+      "選択肢3: WにL成長1段階",
+      "入力を停止したままにする"
+    ],
+    "aiCallCount": 0,
+    "assistantNotification": "この表示では送っていない",
+    "duplicateHandled": "同じ画面へ担当AIが手で出していたK-JDG472は取り下げ、K-VS2VHHへ一本化"
+  },
+  "knownLimits": [
+    "3枚目のラベルはOCRが「WILL」を「WにL」と誤読した。画像を添付しているが、ラベルの読み誤りは残る。",
+    "推奨マークとレア度は選択肢のラベルに含まれない（添付画像で確認する）。",
+    "回答後のカード選択と確定はBotが行わない。"
+  ]
+}

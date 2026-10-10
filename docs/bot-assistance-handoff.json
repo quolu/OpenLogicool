@@ -52,18 +52,17 @@
     }
   ],
   "currentAssistance": {
-    "incidentId": "1be952de-c62b-4c2c-a91e-945938ac01e8",
-    "status": "resolved",
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-113621-503-d20c87fc",
-    "detail": "READY1.1.4・全解放24ms成功、新しいBot実行でSpace送出と回復監視を確認。HELLO無応答の根本原因は未解明。",
-    "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。",
-    "resolutionEvidence": "evidence/bot-feather-t-20261010/acceptance.json"
+    "incidentId": "b1cc2557-d9cc-46d2-9a5c-3621bcad936f",
+    "status": "claimed",
+    "detail": "クエストクリアの確認画面でspace-confirm後に静止。quest-reward-prompt規則の導入後、実機で確認画面を抜けた。",
+    "nextAction": "宛先対応後に、根拠を添えてresolveする。",
+    "resolutionEvidence": "evidence/bot-quest-reward-prompt-20261010/acceptance.json"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "三語表示のスキップ→Escを導入済み。Botは継続中。HP充填が読めない参考表示後、実画面はストーリー演出で復活選択なし。死亡確定と扱わず、新しい詰まり通知時だけ対応する。新規則の実機送出は表示機会待ち。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-120601-669-77ff4523",
+    "nextCheck": "レベルアップボーナス3択（STR成長1・LUCK成長13・WILL成長1）の回答待ち。",
+    "botRun": "bot-runs/mabinogi-mobile/20261010-123559-432-cc306951",
     "levelProgression": {
       "currentLevel": 53,
       "targetLevel": 42,
@@ -182,7 +181,7 @@
   },
   "continuation": {
     "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
-    "updatedUtc": "2026-10-10T03:08:25.7968157+00:00",
+    "updatedUtc": "2026-10-10T03:37:39.5198099+00:00",
     "assistanceGeneration": 6,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -193,10 +192,13 @@
       "96ecd868-6107-41de-acec-ca8fdb476833",
       "379225d3-7ac8-4a7b-a293-55c09ab9f0ab"
     ],
-    "pendingDecisionIds": [],
+    "pendingDecisionIds": [
+      "K-VS2VHH",
+      "K-X9E7Z7"
+    ],
     "botPhase": "ReviewMonitoring",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。三語表示のスキップ→Escを導入・130件試験済み。実画面の当該表示での送出は未確認。T反復と画面押下指示も、それぞれ表示機会待ちを保持する。",
+    "nextAction": "K-VS2VHHの回答後、Botを止めてgame-index click-pointで選ばれたカードを選択し、拡大表示とSpace決定を確認してkey-tapでSpace、Botを--db指定で再開する。b1cc2557は実機で解消済みだがClaudeの会話からresolveできないため、状態はclaimedのまま残る。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -236,6 +238,42 @@
       ],
       "evidence": "evidence/bot-merchant-skip-20261010/acceptance.json",
       "live": "表示機会待ち"
+    },
+    "assistant": {
+      "harness": "claude-desktop",
+      "takeover": "Codexの不調により、利用者の指示でベル（Claude）が作業を引き継いだ。",
+      "notificationBinding": "Botの詰まり通知の宛先はCodexの会話のまま。Claudeの会話を宛先にする正規入口は未実装（K-X9E7Z7で範囲を裁定待ち）。",
+      "incidentCommands": "assistant claim/resolveはCODEX_THREAD_ID前提で、Claudeの会話からは実行できない。"
+    },
+    "hostLaunch": {
+      "entry": "bot start mabinogi-mobile --db <実データのDB>",
+      "reason": "常駐Hostの実データはCodexアプリ専用の保存先にある。Claudeの会話から既定の保存先で起動すると空の別DBになるため、製品の--dbで明示する。"
+    },
+    "timedInput": {
+      "sourceCommit": "df98a07",
+      "status": "installed",
+      "enabled": false,
+      "live": "run-startedでTimedInputEnabled=falseを確認。長時間の進行は未確認。",
+      "evidence": "evidence/bot-quest-reward-prompt-20261010/acceptance.json"
+    },
+    "questRewardPrompt": {
+      "sourceCommit": "df98a07",
+      "status": "installed-and-live-verified",
+      "conditions": [
+        "クエストクリア！",
+        "アイテムを押すと、詳細情報を確認できます。"
+      ],
+      "action": "認識した回にKey:Space",
+      "live": "再開6.5秒後に1回送出し、12:14から止まっていた確認画面を抜けた。",
+      "evidence": "evidence/bot-quest-reward-prompt-20261010/acceptance.json"
+    },
+    "bonusAskUser": {
+      "sourceCommit": "df98a07",
+      "status": "installed-and-live-verified",
+      "behavior": "ボーナスの選択表示は検出した回にBotが決裁箱へ直接申請。1分の待機と担当AIを経由しない。",
+      "live": "検出から0.64秒でK-VS2VHHを申請。",
+      "afterAnswer": "回答後のカード選択と確定は担当AIがNanoで行う。",
+      "evidence": "evidence/bot-bonus-ask-user-20261010/acceptance.json"
     }
   }
 }

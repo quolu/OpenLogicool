@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "df98a07",
+  "request": [
+    "無条件の定期Spaceを一回止める。",
+    "「クエストクリア！」と「アイテムを押すと、詳細情報を確認できます。」の2つのテキストがある時は即Spaceを押す。"
+  ],
+  "handover": "Codexが実装途中で停止。ベル（Claude）が差分と試験を引き継ぎ、試験・導入・実機確認・commitまで実施。",
+  "behavior": {
+    "timedInput": "bot.jsonのTimedInputEnabled=falseで、表示条件のない8〜12秒の定期Spaceを送らない。表示に応じた規則と回復監視は継続。",
+    "questRewardPrompt": {
+      "ruleId": "quest-reward-prompt",
+      "conditions": ["クエストクリア！", "アイテムを押すと、詳細情報を確認できます。"],
+      "key": "Key:Space",
+      "immediate": true,
+      "afterInput": "同じ表示の間は再送しない"
+    }
+  },
+  "stuckBeforeFix": {
+    "run": "20261010-120601-669-77ff4523",
+    "incidentId": "b1cc2557-d9cc-46d2-9a5c-3621bcad936f",
+    "observed": "523112msにspace-confirmのSpaceを1回送出。直後に画面が変化（差分21）して報酬一覧の最終表示で静止。同じ操作は再送しないため、12:14:44から停止までこの画面に留まった。",
+    "interpretation": "1回目のSpaceは演出中に消費され、最終表示でもう一度Spaceが必要だった（推測。演出中の入力の扱いはゲーム側の仕様で未確認）。"
+  },
+  "tests": {
+    "focused": 74,
+    "failed": 0,
+    "classes": ["VisualKeyAssistTests", "VisualProgressTests", "HostBotScriptIntentsTests"],
+    "realImage": "fixtures/visual-recovery/mabinogi-20261008/quest-reward-prompt.png"
+  },
+  "installation": {
+    "entry": "scripts/install-development-app.ps1",
+    "profileHashMatches": true,
+    "installedTimedInputEnabled": false,
+    "start": "bot start mabinogi-mobile --db <実データのDB>"
+  },
+  "live": {
+    "run": "20261010-122849-520-4e970fed",
+    "runStarted": "TimedInputEnabled=false",
+    "before": "before-start.png（クエストクリアの確認画面で静止）",
+    "dispatch": "6584msにquest-reward-promptがKey:SpaceをNanoSerialHidで1回送出",
+    "after": "after-start.png（確認画面を抜け、レベルアップボーナスの3択へ進行）",
+    "automaticInputRetry": false,
+    "fallback": false
+  },
+  "unverified": [
+    "定期Spaceを止めた状態での長時間の進行（定期Spaceに頼っていた場面で詰まるかは未確認）",
+    "別のクエストのクリア画面での再現"
+  ]
+}

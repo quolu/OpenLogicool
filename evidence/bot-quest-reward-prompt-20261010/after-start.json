@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-quest-reward-prompt-20261010\\after-start.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "0c8491ddb5ece005073c9ca907e76e166deaa86723282361657264326e97e4f7",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
