@@ -176,6 +176,37 @@ public sealed class RepeatingImageKeyTests
         Assert.StartsWith("pointer-guide:@", choice.Signature);
     }
 
+    // 画面中央に説明文だけが出るページ。文字認識は試験で使わないため、中央の文の位置へ文字を置く。
+    private static WindowsGameOcrResult CenterText(CapturedFrame frame) => new("", "ja", 0,
+        [new("宝石やルーンなどを錬金術で昇級させると", frame.Width * 0.36, frame.Height * 0.4, frame.Width * 0.28, 28)]);
+    private static VisualProgressProfile NarrationOnly()
+    {
+        var profile = Profile();
+        return profile with { Rules = profile.Rules.Where(rule => rule.Id == "narration-cue").ToArray() };
+    }
+
+    [Fact]
+    public void 中央に説明文と送りの印だけが出る実画面ではSpaceを選ぶ()
+    {
+        var frame = Read("narration-cue-screen.png");
+        var choice = new VisualProgressRecognizer(Profile()).Recognize(CenterText(frame), frame.Width, frame.Height, Viewport(frame), frame);
+        Assert.Equal(VisualProgressAction.Key, choice.Action);
+        Assert.Equal("narration-cue", choice.RuleId);
+        Assert.Equal("Key:Space", choice.Key);
+    }
+
+    [Fact]
+    public void 中央の送りの印の規則はほかの実画面の白い形に一致しない()
+    {
+        var recognizer = new VisualProgressRecognizer(NarrationOnly());
+        var screens = Directory.GetFiles(Fixture, "*.png").Select(Path.GetFileName).Where(name => name != "narration-cue-screen.png")
+            .Select(name => (Name: name!, Frame: Read(name!))).Where(screen => screen.Frame.Width >= 1000).ToArray();
+        Assert.True(screens.Length >= 20, "実画面の見本が足りません: " + screens.Length);
+        var matched = screens.Where(screen => recognizer.Recognize(CenterText(screen.Frame), screen.Frame.Width, screen.Frame.Height,
+            Viewport(screen.Frame), screen.Frame).RuleId == "narration-cue").Select(screen => screen.Name).ToArray();
+        Assert.Empty(matched);
+    }
+
     [Fact]
     public void 手の下側が描画領域の下端で切れた実画面でも指先をクリック先に選ぶ()
     {
