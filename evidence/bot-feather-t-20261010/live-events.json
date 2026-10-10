@@ -1,0 +1,382 @@
+[
+  {
+    "Event": "run-started",
+    "DurationMs": null,
+    "AutomaticRulesContinue": true,
+    "NotificationGraceMs": 60000
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 476,
+    "HeldCount": 0,
+    "IdleMilliseconds": 486,
+    "UserEvents": 0,
+    "NanoEvents": 0,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  },
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 3199,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3210,
+    "UserEvents": 0,
+    "NanoEvents": 0,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 9568,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:27",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:36:31.1900329+09:00",
+      "CompletedUtc": "2026-10-10T11:36:31.2032822+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 12315,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "RepeatIntervalMs": 0,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:35",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:36:33.9463826+09:00",
+      "CompletedUtc": "2026-10-10T11:36:33.9503942+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 19678,
+    "HeldCount": 0,
+    "IdleMilliseconds": 156,
+    "UserEvents": 2,
+    "NanoEvents": 8,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  },
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 22692,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3170,
+    "UserEvents": 2,
+    "NanoEvents": 8,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 23015,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:66",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:36:44.6477053+09:00",
+      "CompletedUtc": "2026-10-10T11:36:44.6508251+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 34080,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:96",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:36:55.7137687+09:00",
+      "CompletedUtc": "2026-10-10T11:36:55.7163544+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 56763,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:155",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:37:18.3961089+09:00",
+      "CompletedUtc": "2026-10-10T11:37:18.3994037+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 74687,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3,
+    "UserEvents": 3,
+    "NanoEvents": 20,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  },
+  {
+    "Event": "progress-review-grace",
+    "AtMs": 90887,
+    "Detail": "クリック先が複数あります: loot-auto-equip",
+    "GracePeriodMs": 60000,
+    "AutomaticRulesContinue": true,
+    "EvidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-113621-503-d20c87fc\\review-001"
+  },
+  {
+    "Event": "progress-resumed",
+    "AtMs": 92784,
+    "Detail": "確認済みの画面に戻りました。操作規則は継続しています。"
+  },
+  {
+    "Event": "progress-review-grace",
+    "AtMs": 109583,
+    "Detail": "利用者の判断が必要な表示: ボーナスを選択してください",
+    "GracePeriodMs": 60000,
+    "AutomaticRulesContinue": true,
+    "EvidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-113621-503-d20c87fc\\review-002"
+  },
+  {
+    "Event": "progress-resumed",
+    "AtMs": 114020,
+    "Detail": "確認済みの画面に戻りました。操作規則は継続しています。"
+  },
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 120691,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3069,
+    "UserEvents": 1755,
+    "NanoEvents": 20,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "progress-review-grace",
+    "AtMs": 144511,
+    "Detail": "複数回観測して画面の変化が止まりましたが、確認済みの画面規則とHUDに一致しません。",
+    "GracePeriodMs": 60000,
+    "AutomaticRulesContinue": true,
+    "EvidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-113621-503-d20c87fc\\review-003"
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 145093,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:408",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:38:46.7259586+09:00",
+      "CompletedUtc": "2026-10-10T11:38:46.729436+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-resumed",
+    "AtMs": 147804,
+    "Detail": "確認済みの画面に戻りました。操作規則は継続しています。"
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 148274,
+    "RuleId": "dungeon-entry",
+    "Signature": "dungeon-entry:任務報酬リスト|SPACE|入場",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "RepeatIntervalMs": 0,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:415",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:38:49.9068672+09:00",
+      "CompletedUtc": "2026-10-10T11:38:49.9095291+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 165114,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "RepeatIntervalMs": 0,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:456",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:39:06.747246+09:00",
+      "CompletedUtc": "2026-10-10T11:39:06.7502074+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 175940,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:493",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:39:17.571824+09:00",
+      "CompletedUtc": "2026-10-10T11:39:17.575722+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 185812,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:515",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:39:27.445898+09:00",
+      "CompletedUtc": "2026-10-10T11:39:27.448209+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 195099,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:536",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:39:36.7311274+09:00",
+      "CompletedUtc": "2026-10-10T11:39:36.734804+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 208601,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:571",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:39:50.2323212+09:00",
+      "CompletedUtc": "2026-10-10T11:39:50.2365587+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 220904,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:598",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:40:02.5370934+09:00",
+      "CompletedUtc": "2026-10-10T11:40:02.5397952+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 233051,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:631",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:40:14.6846399+09:00",
+      "CompletedUtc": "2026-10-10T11:40:14.687218+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-feather-t-20261010\\bonus-current.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "25a1799d990ad1aad39d3c6fbb7b483db0ad7f3ba3dc8661f1bd184be7c2d1bb",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

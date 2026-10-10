@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-resume-20261010\\restart-game.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "ab0150a0004fe43306479232a909595ef5737a0c6f04ba844e308b7371495f46",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

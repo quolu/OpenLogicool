@@ -1,0 +1,215 @@
+[
+  {
+    "Event": "run-started",
+    "DurationMs": null,
+    "AutomaticRulesContinue": true,
+    "NotificationGraceMs": 60000
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 207,
+    "HeldCount": 0,
+    "IdleMilliseconds": 215,
+    "UserEvents": 0,
+    "NanoEvents": 0,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  },
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 3048,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3057,
+    "UserEvents": 0,
+    "NanoEvents": 0,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 6595,
+    "RuleId": "screen-prompt",
+    "Signature": "screen-prompt:画面を押してください",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:8",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:26:45.0854555+09:00",
+      "CompletedUtc": "2026-10-10T11:26:45.0919645+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 8688,
+    "HeldCount": 0,
+    "IdleMilliseconds": 2,
+    "UserEvents": 5,
+    "NanoEvents": 41,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  },
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 16673,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3117,
+    "UserEvents": 1395,
+    "NanoEvents": 41,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 18667,
+    "HeldCount": 0,
+    "IdleMilliseconds": 10,
+    "UserEvents": 1396,
+    "NanoEvents": 41,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  },
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 25933,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3117,
+    "UserEvents": 2514,
+    "NanoEvents": 41,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 36130,
+    "RuleId": "loot-continue",
+    "Signature": "loot-continue:発見した戦利品",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:89",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:27:14.6248448+09:00",
+      "CompletedUtc": "2026-10-10T11:27:14.6274328+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 39344,
+    "RuleId": "dungeon-exit",
+    "Signature": "dungeon-exit:発見した戦利品",
+    "Key": null,
+    "Point": [
+      0.39302393461762986,
+      0.943822739480752
+    ],
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:98",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:27:17.4863008+09:00",
+      "CompletedUtc": "2026-10-10T11:27:17.8414164+09:00",
+      "CandidateId": "dungeon-exit",
+      "TransportReceiptId": "pointer:2228,664->2052,1059;deltas:21;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 45913,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:118",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:27:24.4081544+09:00",
+      "CompletedUtc": "2026-10-10T11:27:24.4106794+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 49761,
+    "RuleId": "level-guide-recommended",
+    "Signature": "level-guide-recommended:レベルガイド|キャラクターを成長させるためのポイント|一推しアクティビティ",
+    "Key": null,
+    "Point": [
+      0.46511967308814944,
+      0.5816920322291854
+    ],
+    "Immediate": false,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "click",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:127",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:27:27.915782+09:00",
+      "CompletedUtc": "2026-10-10T11:27:28.2581056+09:00",
+      "CandidateId": "level-guide-recommended",
+      "TransportReceiptId": "pointer:2052,1059->2176,656;deltas:21;mouse-left-down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 51393,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:133",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:27:29.8886595+09:00",
+      "CompletedUtc": "2026-10-10T11:27:29.8909475+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 62436,
+    "HeldCount": 2,
+    "IdleMilliseconds": 27,
+    "UserEvents": 2516,
+    "NanoEvents": 99,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  }
+]

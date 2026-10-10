@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "request": "Botを起動して進め、右下に緑の羽根が表示されている間は積極的にTを押す。開発中はBotを止めない。",
+  "sourceCommit": "38ab0e0",
+  "changes": [
+    "画像キー規則に独立した反復間隔を追加",
+    "羽根の表示中は1秒間隔でTを送出し、送出直前にも画像を確認",
+    "通常Spaceの期限・会話の結果待ち・コンパスの一回送出状態を保持",
+    "選択済み入場画面の任務報酬リスト・Space・入場から進行"
+  ],
+  "verification": {
+    "newRepeatingTests": 12,
+    "relatedTests": 117,
+    "entryTest": 1,
+    "releaseBuild": "エラー0・警告0",
+    "packageTemplateSha256": "DBE3E28FBA2D12FCDED84AD93A0293B8EB264FFC4A7454DC5B64F9D8E3B3B142",
+    "sourceAndInstalledTemplateMatch": true
+  },
+  "development": {
+    "botStoppedDuringDevelopment": false,
+    "restartForInstallation": true,
+    "installationEntry": "scripts/install-development-app.ps1",
+    "instruction": "開発中のBot停止をしない。更新を反映する再起動だけ事前に伝えて実施し、すぐ再開する。"
+  },
+  "recovery": {
+    "incidentId": "1be952de-c62b-4c2c-a91e-945938ac01e8",
+    "before": "起動とfresh診断でHELLO応答0bytes・約2秒Timeout",
+    "action": "USB\\VID_1B4F&PID_9206\\HIDFGだけをpnputil /restart-deviceで再起動",
+    "after": "READY1.1.4・全解放24ms成功、新しいBot実行でSpace送出と回復監視を確認",
+    "rootCause": "未解明",
+    "automaticInputRetry": false,
+    "alternateInputRoute": false
+  },
+  "assistanceDelivery": {
+    "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
+    "generation": 6,
+    "liveNotificationReceived": true,
+    "receivedIncident": "516c9be3-40e9-4966-8ada-388109b87ce8",
+    "rupeeCall": "1116d255-1d69-4293-a38c-fe9c497965e8",
+    "pendingUserDecisions": []
+  },
+  "live": {
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-113621-503-d20c87fc",
+    "phase": "Running",
+    "observedGame": "Lv53・南の廃墟ダンジョン1Fエリア1",
+    "normalAndCompassSpace": "確認済み",
+    "featherT": "画像照合と反復間隔は試験で確認済み。今回の導入後はダンジョン内で羽根表示機会がなく、実機のT送出は未確認。",
+    "newEntryRule": "確認済み。経過148274msにdungeon-entryのSpaceをNanoSerialHidで送出し、後続コンパスSpaceと次のダンジョン内HUDを確認。",
+    "bonus": "攻撃優先13・防御優先3・HP優先3の画面を確認したが、1分の通知猶予中に手入力も混在して選択画面が閉じたため、古い選択の申請を作っていない。"
+  },
+  "updatedUtc": "2026-10-10T02:40:33.1809874+00:00"
+}

@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-feather-t-20261010\\latest-game.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "37a42335654ab634fe6338d2a604756f138370a48c48f88339286e77c67d4b04",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

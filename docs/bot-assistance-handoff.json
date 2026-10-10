@@ -14,8 +14,9 @@
       "memberName": "ルピー",
       "memberId": "bot-ca9fed97",
       "role": "マビモバ攻略ポータル更新担当",
-      "sessionId": "671e840a-16f9-403a-af2b-41621b06facb",
-      "localId": "codex:01a12189-3064-70c3-85fc-ea19c17fea2e",
+      "sessionId": "1116d255-1d69-4293-a38c-fe9c497965e8",
+      "previousSessionId": "671e840a-16f9-403a-af2b-41621b06facb",
+      "localId": "codex:01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
       "lastSentSequence": 1,
       "lastReceivedSequence": 0,
       "delivery": "BellTeam accepted",
@@ -47,31 +48,31 @@
         "サキュバス討伐とクエスト完了時の表示名"
       ],
       "handoffAction": "新しい会話でcall_openし、旧通話へ移動先を知らせ、新通話へ返答待ちを引き継いで旧通話を閉じる。返信のポーリングは行わない",
-      "replyThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e"
+      "replyThreadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2"
     }
   ],
   "currentAssistance": {
-    "incidentId": "c5b7d3f5-9a7d-49d0-b482-d57cddc2ae22",
+    "incidentId": "1be952de-c62b-4c2c-a91e-945938ac01e8",
     "status": "resolved",
-    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-075906-140-a71d2410",
-    "detail": "SequenceViolationから運用復旧。fresh診断24ms成功後、新規Bot実行とNano入力・ナオの会話への進行を確認。根因未解明・firmware未導入を保持。",
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-113621-503-d20c87fc",
+    "detail": "READY1.1.4・全解放24ms成功、新しいBot実行でSpace送出と回復監視を確認。HELLO無応答の根本原因は未解明。",
     "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。",
-    "resolutionEvidence": "evidence/bot-assistance-20261010/c5b7d3f5/acceptance.md"
+    "resolutionEvidence": "evidence/bot-feather-t-20261010/acceptance.json"
   },
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv52のゲーム画面を確認。Botは再開済み。手入力を優先して継続し、新しい通知でだけ調査する。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-111303-629-c982e9f7",
+    "nextCheck": "Lv53・南の廃墟1Fエリア1へ進行。新しい入場規則のNano送出は実測済み。T反復は導入・画像試験済みだが羽根の表示機会がなく実機送出は未確認。Botを継続し、新しい詰まり通知でだけ対応する。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-113621-503-d20c87fc",
     "levelProgression": {
-      "currentLevel": 52,
+      "currentLevel": 53,
       "targetLevel": 42,
       "quest": "生き残りし者へ",
       "activityPolicy": "明確なゲーム内推奨と一意な移動先",
       "approvedActivity": "ラビ1Fエリア1 HARD",
       "status": "achieved",
       "decisionId": "K-X6FCVM",
-      "currentActivity": "Lv50。誰かの頼み／ダンカンと会話への移動を確認。",
+      "currentActivity": "Lv53・南の廃墟ダンジョン1Fエリア1。手入力も混在しており全進行をBotの成果としない。",
       "lastGuideCompletionPercent": 67
     },
     "lastBonusChoice": {
@@ -136,7 +137,7 @@
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
-    "botState": "Bot再開済み。Running。手入力時は送出だけ一時停止し監視は継続。実行C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-111303-629-c982e9f7",
+    "botState": "Bot再開済み。通常Space・コンパスSpaceと回復監視の継続を確認。実行C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-113621-503-d20c87fc",
     "remaining": [],
     "hostReadTimeoutRepair": {
       "reproductionBefore": "read-pause100で受信済み10バイトを捨てTimeout",
@@ -180,9 +181,9 @@
     "residualUnknown": "過去のHELLO無応答を含む全通信停止の根本原因は特定済みと扱わない。今回の実機hard kill再測定は未実施。"
   },
   "continuation": {
-    "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-10T02:17:04.6927175+00:00",
-    "assistanceGeneration": 5,
+    "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
+    "updatedUtc": "2026-10-10T02:40:33.3526618+00:00",
+    "assistanceGeneration": 6,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
       "842bfff3-1588-44f9-88ab-8b0fe08c2610",
@@ -195,15 +196,23 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。未導入だったfirmware1.1.4の更新・標準自動更新・idle診断は完了。基板操作の再依頼は不要。",
+    "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。旧案件7件を保持。新しい入場規則は実機送出・遷移を確認済み。T反復は導入・画像試験済みだが、次の羽根表示時の実機送出は未確認。",
+    "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
-    "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。",
+    "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
     "captureRepair": {
       "status": "installed-and-live-tested",
       "sourceCommit": "022728b",
       "testsPassed": 560,
       "evidence": "evidence/bot-resume-20261010/acceptance.md",
       "behavior": "captureはDB・Nano・ALL_UP・前面化を使わずWGC画像だけを読む。"
+    },
+    "developmentPolicy": "開発中のBot停止をしない。更新を反映する再起動だけ事前に伝えて実施し、すぐ再開する。",
+    "featherTRule": {
+      "status": "installed",
+      "intervalMs": 1000,
+      "evidence": "evidence/bot-feather-t-20261010/acceptance.json",
+      "liveDispatch": "羽根の表示機会待ち"
     }
   }
 }
