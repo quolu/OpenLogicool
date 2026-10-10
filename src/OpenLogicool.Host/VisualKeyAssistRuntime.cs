@@ -57,7 +57,7 @@ public sealed record VisualKeyTemplateMatch(double Difference, IReadOnlyList<dou
 
 /// <summary>周囲の背景を除いた利用者画像を、小さく平滑化したRGB標本で照合する。</summary>
 public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool relativeColor = false, bool silhouette = false,
-    double[][]? stableRegions = null)
+    double[][]? stableRegions = null, int searchStep = 1)
 {
     private const int Samples = 16;
     private readonly byte[] samples = Sample(bgra, width, height, relativeColor, silhouette);
@@ -73,7 +73,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
         }).ToArray()).ToArray();
 
     public static VisualKeyTemplate Load(string path, bool relativeColor = false, bool silhouette = false,
-        double[][]? stableRegions = null)
+        double[][]? stableRegions = null, int searchStep = 1)
     {
         using var stream = File.OpenRead(path);
         var bitmap = new FormatConvertedBitmap(
@@ -83,7 +83,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
             throw new ArgumentException("画像条件には縦横8px以上の画像が必要です。", nameof(path));
         var bytes = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4];
         bitmap.CopyPixels(bytes, bitmap.PixelWidth * 4, 0);
-        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor, silhouette, stableRegions);
+        return new(bitmap.PixelWidth, bitmap.PixelHeight, bytes, relativeColor, silhouette, stableRegions, searchStep);
     }
 
     public VisualKeyTemplateMatch Find(CapturedFrame frame, IReadOnlyList<double> searchBounds) =>
@@ -95,7 +95,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 .Select(scale => ((int)Math.Round(width * scale * windowScale), (int)Math.Round(height * scale * windowScale))), 3);
 
     public VisualKeyTemplateMatch FindNativeSize(CapturedFrame frame, IReadOnlyList<double> searchBounds) =>
-        Find(frame, searchBounds, new[] { (width, height) }, 1);
+        Find(frame, searchBounds, new[] { (width, height) }, searchStep);
 
     public VisualKeyTemplateMatch FindAtScale(CapturedFrame frame, IReadOnlyList<double> searchBounds, double scale)
     {
@@ -108,7 +108,7 @@ public sealed class VisualKeyTemplate(int width, int height, byte[] bgra, bool r
                 var resized = new TransformedBitmap(source, new ScaleTransform(w / (double)width, h / (double)height));
                 var bytes = new byte[resized.PixelWidth * resized.PixelHeight * 4];
                 resized.CopyPixels(bytes, resized.PixelWidth * 4, 0);
-                matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor, silhouette, stableRegions)
+                matches.Add(new VisualKeyTemplate(resized.PixelWidth, resized.PixelHeight, bytes, relativeColor, silhouette, stableRegions, searchStep)
                     .FindNativeSize(frame, searchBounds));
             }
         return matches.MinBy(match => match.Difference)!;

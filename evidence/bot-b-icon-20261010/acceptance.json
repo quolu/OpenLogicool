@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "request": "「B」の印が付いたこの画像が左上にある時は、Bを押す。",
+  "behavior": {
+    "ruleId": "top-left-b",
+    "key": "Key:B",
+    "kind": "羽根のTと同じ種類。表示中は1秒おきに送り、ほかの規則が動く時はそちらを優先する。",
+    "match": "アイコン本体と「B」の印の両方が一致した時だけ反応する。左上の範囲だけを探す。",
+    "template": "fixtures/visual-recovery/mabinogi-20261008/top-left-b.png（11時台の実画面から切り出し）"
+  },
+  "tests": {
+    "positive": [
+      "top-left-b-screen.png",
+      "before.png（別の窓サイズ・別の日）"
+    ],
+    "negative": [
+      "top-left-b-no-key.png（同じアイコンで印なし）",
+      "feather-screen.png",
+      "combat.png",
+      "compass-screen.png",
+      "bonus-three.png",
+      "quest-reward-prompt.png"
+    ],
+    "failed": 0
+  },
+  "live": {
+    "installed": true,
+    "dispatch": "導入後、印つきのアイコンが出る場面がまだなく、実機での送出は未確認。"
+  },
+  "unverified": [
+    "Bを押した後にアイコンや印が消えるかは未確認。消えない場合は1秒おきに押し続ける。"
+  ]
+}

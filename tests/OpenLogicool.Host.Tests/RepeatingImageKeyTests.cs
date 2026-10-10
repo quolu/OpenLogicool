@@ -47,7 +47,7 @@ public sealed class RepeatingImageKeyTests
     public void 羽根のない実画面ではTを選ばない(string name)
     {
         var frame = Read(name);
-        Assert.Null(new VisualProgressRecognizer(Profile()).RecognizeRepeatingImage(frame, Viewport(frame), _ => true));
+        Assert.Null(new VisualProgressRecognizer(Profile()).RecognizeRepeatingImage(frame, Viewport(frame), rule => rule.Id == "feather-t"));
     }
 
     [Fact]
@@ -100,6 +100,96 @@ public sealed class RepeatingImageKeyTests
         schedule.RecordInput(6000, compass);
         schedule.RecordInput(6500, feather);
         Assert.Equal(VisualProgressAction.Wait, schedule.Decide(7000, compass, false, true, true).Action);
+    }
+
+    [Theory]
+    [InlineData("top-left-b-screen.png")]
+    [InlineData("before.png")] // 窓の大きさが違う別の日の実画面。
+    public void 左上にBの印が付いた利用者のアイコンがある実画面ではBを選ぶ(string name)
+    {
+        var frame = Read(name);
+        var recognizer = new VisualProgressRecognizer(Profile());
+        var choice = recognizer.RecognizeRepeatingImage(frame, Viewport(frame), rule => rule.Id == "top-left-b");
+        Assert.NotNull(choice);
+        Assert.Equal("top-left-b", choice.RuleId);
+        Assert.Equal("Key:B", choice.Key);
+        Assert.Equal(1000, choice.RepeatIntervalMs);
+        Assert.NotEqual("top-left-b", recognizer.RecognizeImmediateImage(frame, Viewport(frame))?.RuleId);
+    }
+
+    [Theory]
+    [InlineData("top-left-b-no-key.png")] // 同じアイコンはあるがBの印が出ていない。
+    [InlineData("feather-screen.png")]
+    [InlineData("combat.png")]
+    [InlineData("compass-screen.png")]
+    [InlineData("bonus-three.png")]
+    [InlineData("quest-reward-prompt.png")]
+    public void Bの印がない実画面やアイコンのない実画面ではBを選ばない(string name)
+    {
+        var frame = Read(name);
+        Assert.Null(new VisualProgressRecognizer(Profile()).RecognizeRepeatingImage(frame, Viewport(frame), rule => rule.Id == "top-left-b"));
+    }
+
+    [Fact]
+    public void 指差しの案内がある実画面では手の中心ではなく指先をクリック先に選ぶ()
+    {
+        var frame = Read("pointer-guide-screen.png");
+        var choice = new VisualProgressRecognizer(Profile()).Recognize(new("", "ja", 0, []), frame.Width, frame.Height, Viewport(frame), frame);
+        Assert.Equal(VisualProgressAction.Click, choice.Action);
+        Assert.Equal("pointer-guide", choice.RuleId);
+        // 実測の指先は(1499, 74)。手の中心(1507, 108)はメニューボタンの外になる。
+        Assert.InRange(choice.Point![0] * frame.Width, 1495, 1503);
+        Assert.InRange(choice.Point[1] * frame.Height, 70, 78);
+        Assert.StartsWith("pointer-guide:@", choice.Signature);
+    }
+
+    [Theory]
+    [InlineData("before.png")]
+    [InlineData("combat.png")]
+    [InlineData("compass-screen.png")]
+    [InlineData("bonus-three.png")]
+    [InlineData("space-confirm.png")]
+    [InlineData("quest-reward-prompt.png")]
+    [InlineData("top-left-b-screen.png")]
+    [InlineData("top-left-b-no-key.png")]
+    [InlineData("feather-screen.png")]
+    public void 指差しの案内がない実画面では指先のクリックを選ばない(string name)
+    {
+        var frame = Read(name);
+        var choice = new VisualProgressRecognizer(Profile()).Recognize(new("", "ja", 0, []), frame.Width, frame.Height, Viewport(frame), frame);
+        Assert.NotEqual("pointer-guide", choice.RuleId);
+    }
+
+    [Fact]
+    public void 指差しの先が別の場所へ移ったら結果待ちにせず次のクリックとして扱う()
+    {
+        var schedule = new VisualProgressSchedule(Profile());
+        var first = new VisualProgressChoice(VisualProgressAction.Click, "pointer-guide", "pointer-guide:@0.90,0.05", Point: [0.875, 0.066]);
+        var moved = first with { Signature = "pointer-guide:@0.45,0.60", Point = [0.45, 0.6] };
+        schedule.RecordInput(0, first);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1000, first, false, false, due: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2000, moved, false, false, due: true).Action);
+        var next = schedule.Decide(2600, moved, false, false, due: true);
+        Assert.Equal(VisualProgressAction.Click, next.Action);
+        Assert.Equal(moved.Point, next.Point);
+    }
+
+    [Fact]
+    public void 画像内のクリック位置は画像のクリック規則にだけ指定できる()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(new VisualProgressProfile(1,
+                [new("point", [], "Key:Space", Image: "unused.png", ImageBounds: [0, 0, 1, 1],
+                    ImageClientWidth: 1506, ClickImagePoint: [0.5, 0.1])], [])));
+            Assert.Throws<InvalidDataException>(() => VisualProgressProfile.Load(path));
+            File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(new VisualProgressProfile(1,
+                [new("point", [], Image: "unused.png", ImageBounds: [0, 0, 1, 1],
+                    ImageClientWidth: 1506, ClickImage: true, ClickImagePoint: [0.5, 1.5])], [])));
+            Assert.Throws<InvalidDataException>(() => VisualProgressProfile.Load(path));
+        }
+        finally { File.Delete(path); }
     }
 
     [Theory]

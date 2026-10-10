@@ -14,7 +14,7 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false,
     int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null,
     double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false,
-    int RepeatIntervalMs = 0, string? AfterClickKey = null);
+    int RepeatIntervalMs = 0, string? AfterClickKey = null, double[]? ClickImagePoint = null, int ImageSearchStep = 1);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
@@ -44,6 +44,12 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("進行規則の画像には探索範囲と基準描画幅が必要です。");
             if (rule.ClickImage && rule.Image is null)
                 throw new InvalidDataException("画像のクリック先には参照画像が必要です。");
+            if (rule.ClickImagePoint is not null && (!rule.ClickImage || rule.ClickImagePoint.Length != 2
+                || rule.ClickImagePoint.Any(value => !double.IsFinite(value) || value < 0 || value > 1)))
+                throw new InvalidDataException("画像内のクリック位置は、画像のクリック規則に0〜1の2値で指定します。");
+            // 粗い探索の後は周囲2pxを正確に照合する。刻みはその範囲に収まる3までとする。
+            if (rule.ImageSearchStep is < 1 or > 3 || rule.ImageSearchStep > 1 && rule.ImageStableRegions is null)
+                throw new InvalidDataException("画像探索の刻みは、固定部分の照合に1〜3で指定します。");
             if (rule.ImageRotates && (rule.Image is null || rule.ImageSilhouette))
                 throw new InvalidDataException("回転する印には単色画像を指定します。");
             if (rule.ImageForegroundRgb is not null && (!rule.ImageRotates
@@ -89,7 +95,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
 {
     private readonly Dictionary<string, VisualKeyTemplate> templates = profile.Rules.Where(rule => rule.Image is not null && !rule.ImageRotates)
         .ToDictionary(rule => rule.Id, rule => VisualKeyTemplate.Load(rule.Image!, silhouette: rule.ImageSilhouette,
-            stableRegions: rule.ImageStableRegions));
+            stableRegions: rule.ImageStableRegions, searchStep: rule.ImageSearchStep));
     private readonly Dictionary<string, VisualRotatingTemplate> rotatingTemplates = profile.Rules.Where(rule => rule.ImageRotates)
         .ToDictionary(rule => rule.Id, rule => new VisualRotatingTemplate(rule.Image!, rule.ImageForegroundRgb));
 
@@ -150,7 +156,9 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 var match = rule.ImageRotates ? rotatingTemplates[rule.Id].Find(frame, mapped, scale)
                     : templates[rule.Id].FindAtWindowScale(frame, mapped, scale);
                 if (!match.Matches) continue;
-                if (rule.ClickImage) point = [match.Bounds[0] + match.Bounds[2] / 2, match.Bounds[1] + match.Bounds[3] / 2];
+                // 指し示す画像は、画像の中心ではなく指定した位置（指先など）を押す。
+                if (rule.ClickImage) point = [match.Bounds[0] + match.Bounds[2] * (rule.ClickImagePoint?[0] ?? 0.5),
+                    match.Bounds[1] + match.Bounds[3] * (rule.ClickImagePoint?[1] ?? 0.5)];
             }
             var texts = rule.When.Select(Read).ToArray();
             if (!rule.When.Select((condition, i) => Matches(texts[i], condition.Text)).All(x => x)) continue;
@@ -184,7 +192,10 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             candidates.Add(new(rule.WaitForChange ? VisualProgressAction.Wait
                 : rule.Click is null && !rule.ClickImage ? VisualProgressAction.Key : VisualProgressAction.Click,
                 rule.Id, rule.Id + ":" + string.Join("|", rule.When.Select((condition, i) =>
-                    string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text))), rule.Key, point,
+                    string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text)))
+                    // 指し示す先が別の場所へ移ったら、同じ操作の結果待ちではなく次の操作として扱う。
+                    + (rule.ClickImagePoint is null ? "" : FormattableString.Invariant(
+                        $"@{Math.Round(point![0] * 20) / 20:0.00},{Math.Round(point[1] * 20) / 20:0.00}")), rule.Key, point,
                 Immediate: rule.Immediate, AllowWhileInhibited: rule.AllowWhileInhibited, AfterClickKey: rule.AfterClickKey));
         }
         var priority = candidates.Count == 0 ? 0 : candidates.Max(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority);
