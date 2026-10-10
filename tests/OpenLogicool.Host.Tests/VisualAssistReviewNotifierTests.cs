@@ -17,6 +17,18 @@ public sealed class VisualAssistReviewNotifierTests
     }
 
     [Fact]
+    public void 決裁箱の回答は回答済みの時だけ選択肢を返し未回答と取り下げは回答にしない()
+    {
+        using var answered = JsonDocument.Parse("""{"status":"answered","answer":{"option_id":"choice-2","answered_at":"2026-10-10T03:41:17Z"}}""");
+        Assert.Equal("choice-2", VisualAssistReviewNotifier.AnswerOption(answered.RootElement));
+        foreach (var status in new[] { "pending", "deferred", "cancelled" })
+        {
+            using var open = JsonDocument.Parse($$"""{"status":"{{status}}"}""");
+            Assert.Null(VisualAssistReviewNotifier.AnswerOption(open.RootElement));
+        }
+    }
+
+    [Fact]
     public void Approval_preflight_is_a_required_handshake_despite_the_MCP_error_marker()
     {
         using var wire = JsonDocument.Parse("""{"isError":true,"structuredContent":{"error":"confirm_required","check_token":"札","decisions":[]}}""");

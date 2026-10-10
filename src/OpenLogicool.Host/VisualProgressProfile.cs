@@ -7,7 +7,7 @@ using OpenLogicool.Contracts.Capture;
 namespace OpenLogicool.Host;
 
 public sealed record VisualProgressText(string Text, double[] Bounds, double[][]? ChoiceBounds = null,
-    bool AskUserImmediately = false);
+    bool AskUserImmediately = false, VisualProgressText? Confirm = null, string? ConfirmKey = null);
 public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
@@ -63,7 +63,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("反復間隔は即時画像キー規則に正の時間で指定します。");
         }
         foreach (var bounds in value.Rules.SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }))
-            .Concat(value.ReviewWhen).Select(text => text.Bounds)
+            .Concat(value.ReviewWhen).Concat(value.ReviewWhen.Where(text => text.Confirm is not null).Select(text => text.Confirm!))
+            .Select(text => text.Bounds)
             .Concat(value.ReviewWhen.SelectMany(text => text.ChoiceBounds ?? []))
             .Concat(value.Rules.Where(rule => rule.Image is not null).Select(rule => rule.ImageBounds!))
             .Concat(value.Rules.Where(rule => rule.FilledQuantitiesBounds is not null).Select(rule => rule.FilledQuantitiesBounds!))
@@ -78,6 +79,14 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
         if (value.ReviewWhen.Any(text => text.AskUserImmediately && text.ChoiceBounds is null)
             || value.Rules.SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click })).Any(text => text.AskUserImmediately))
             throw new InvalidDataException("利用者への即時申請は、選択肢の領域を持つ確認画面に指定します。");
+        foreach (var review in value.ReviewWhen.Where(text => text.Confirm is not null || text.ConfirmKey is not null))
+        {
+            // 回答された選択を押した後の確定は、確定の表示とキーの両方を設定した即時申請にだけ許す。
+            if (!review.AskUserImmediately || review.Confirm is null || review.ConfirmKey is null
+                || review.Confirm.Confirm is not null || review.Confirm.ChoiceBounds is not null)
+                throw new InvalidDataException("選択後の確定は、利用者への即時申請に確定の表示とキーの組で指定します。");
+            OpenLogicool.Input.OutputTokens.Parse(review.ConfirmKey);
+        }
         return value with { Rules = value.Rules.Select(rule => rule.Image is null ? rule
             : rule with { Image = Path.GetFullPath(rule.Image, Path.GetDirectoryName(Path.GetFullPath(path))!) }).ToArray() };
     }
@@ -88,7 +97,8 @@ public sealed record VisualProgressOption(string Id, string Label);
 public sealed record VisualProgressChoice(VisualProgressAction Action, string? RuleId = null,
     string? Signature = null, string? Key = null, double[]? Point = null, string? Detail = null,
     VisualProgressOption[]? Options = null, bool Immediate = false, bool AllowWhileInhibited = false,
-    int RepeatIntervalMs = 0, string? AfterClickKey = null, bool AskUserImmediately = false);
+    int RepeatIntervalMs = 0, string? AfterClickKey = null, bool AskUserImmediately = false,
+    VisualProgressText? ReviewSource = null);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
@@ -139,7 +149,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                         var label = Read(new("", bounds));
                         return new VisualProgressOption($"choice-{index + 1}",
                             $"選択肢{index + 1}: " + (label.Length == 0 ? "文字を読めません（添付画像を確認）" : label));
-                    }).ToArray(), AskUserImmediately: review.AskUserImmediately);
+                    }).ToArray(), AskUserImmediately: review.AskUserImmediately, ReviewSource: review);
         var candidates = new List<VisualProgressChoice>();
         foreach (var rule in profile.Rules.Where(rule => rule.RepeatIntervalMs == 0))
         {
@@ -208,6 +218,24 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         };
     }
 
+    /// <summary>指定した領域に、指定した文字が表示されているかを読む。</summary>
+    public static bool Shows(WindowsGameOcrResult ocr, FrameRect viewport, VisualProgressText text) =>
+        Matches(Normalize(string.Concat(ocr.Words.Where(word => Inside(word, text.Bounds, viewport)).Select(word => word.Text))), text.Text);
+
+    /// <summary>選択肢の並びが同じ表示かを比べる。OCRの数文字の読み違いは同じとみなし、別の選択肢は区別する。</summary>
+    public static bool SameOptions(VisualProgressOption[]? observed, VisualProgressOption[]? expected) =>
+        observed is not null && expected is not null && observed.Length == expected.Length
+        && observed.Zip(expected).All(pair => pair.First.Id == pair.Second.Id
+            && OpenLogicool.Contracts.Perception.OcrTextMatcher.Similarity(pair.First.Label, pair.Second.Label) >= 0.75);
+
+    /// <summary>選択肢の領域の中心を、画像全体に対する位置へ変換する。</summary>
+    public static double[] OptionPoint(VisualProgressText review, int index, FrameRect viewport, int width, int height)
+    {
+        var bounds = review.ChoiceBounds![index];
+        return [(viewport.X + (bounds[0] + bounds[2] / 2) * viewport.Width) / width,
+            (viewport.Y + (bounds[1] + bounds[3] / 2) * viewport.Height) / height];
+    }
+
     public VisualProgressChoice? RecognizeImmediateImage(CapturedFrame frame, FrameRect viewport) =>
         RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.Immediate && rule.Image is not null && rule.RepeatIntervalMs == 0));
 
@@ -272,9 +300,23 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         if (observed.Contains(expected, StringComparison.Ordinal)) return true;
         // 日本語OCRの空白・全半角と、長いラベルの一文字の読違いを吸収する。
         if (expected.Length < 4) return false;
-        return Enumerable.Range(0, Math.Max(0, observed.Length - expected.Length + 1))
+        if (Enumerable.Range(0, Math.Max(0, observed.Length - expected.Length + 1))
             .Any(start => observed.AsSpan(start, expected.Length).ToArray()
-                .Where((c, i) => c != expected[i]).Count() <= 1);
+                .Where((c, i) => c != expected[i]).Count() <= 1)) return true;
+        // OCRは文字を落とす・余分に読むこともある。短い語は別の語と区別できないため6文字以上に限り、
+        // 抜け・余分・読違いの合計が長さの4分の1以下なら同じ表示とする。
+        if (expected.Length < 6) return false;
+        var previous = new int[observed.Length + 1]; // 観測文字列のどこから始まってもよい。
+        var current = new int[observed.Length + 1];
+        for (var i = 1; i <= expected.Length; i++)
+        {
+            current[0] = i;
+            for (var j = 1; j <= observed.Length; j++)
+                current[j] = Math.Min(Math.Min(previous[j] + 1, current[j - 1] + 1),
+                    previous[j - 1] + (expected[i - 1] == observed[j - 1] ? 0 : 1));
+            (previous, current) = (current, previous);
+        }
+        return previous.Min() <= expected.Length / 4;
     }
 }
 

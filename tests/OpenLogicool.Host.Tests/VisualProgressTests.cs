@@ -571,7 +571,7 @@ public sealed class VisualProgressTests
         var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
         var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, new(1, 31, 1506, 814), frame);
         Assert.Equal(VisualProgressAction.Key, choice.Action);
-        Assert.Equal("screen-prompt", choice.RuleId);
+        Assert.Equal("dungeon-clear-prompt", choice.RuleId);
         Assert.Equal("Key:Space", choice.Key);
         Assert.True(choice.Immediate);
         var schedule = new VisualProgressSchedule(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
@@ -907,6 +907,37 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
+    public async Task ダンジョンクリアの実画面ではOCRが一文字落とした画面を押してくださいでも即Spaceを選ぶ()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
+        var frame = ReadFrame(Path.Combine(fixture, "dungeon-clear-prompt.png"));
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var ocr = await recognizer.ReadOcrAsync(frame, viewport);
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.True(choice.RuleId == "dungeon-clear-prompt", $"選ばれた規則: {choice.RuleId}／読んだ文字: {VisualProgressRecognizer.Normalize(ocr.Text)}");
+        Assert.Equal("Key:Space", choice.Key);
+        Assert.True(choice.Immediate);
+    }
+
+    [Theory]
+    // 実測: 「画面を押してください」を「画面押してください」「画面押してくだい」、飾り文字の題を崩して読んだ。
+    [InlineData("画面押してください", "画面を押してください", true)]
+    [InlineData("画面押してくだい", "画面を押してください", true)]
+    [InlineData("完璧にダンョンをクリア", "ダンジョンクリア", true)]
+    [InlineData("スムーズにダンジョンをクリア", "ダンジョンクリア", true)]
+    [InlineData("画面を押してくだい", "画面を押してください", true)]
+    [InlineData("画面の設定を選択してください", "画面を押してください", false)]
+    [InlineData("画面押して", "画面を押してください", false)]
+    [InlineData("行動不", "行動不能", false)]
+    [InlineData("ダンノ4ア", "ダンジョンクリア", false)]
+    public void 文字の照合は長い語の数文字の抜けや余分を許し短い語と大きな違いは許さない(string observed, string expected, bool matches)
+    {
+        Assert.Equal(matches, VisualProgressRecognizer.Matches(VisualProgressRecognizer.Normalize(observed), expected));
+    }
+    [Fact]
     public void ボーナスの選択表示は利用者へ即時申請する印と選択肢を持ち行動不能には印を付けない()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -926,6 +957,67 @@ public sealed class VisualProgressTests
         var down = recognizer.Recognize(Ocr([new("行動不能", 400, 110, 100, 30)]), 1000, 600, new(0, 0, 1000, 600));
         Assert.Equal(VisualProgressAction.Review, down.Action);
         Assert.False(down.AskUserImmediately);
+    }
+
+    [Fact]
+    public async Task 回答された選択は同じ選択肢の時だけ対象になり確定は決定の表示が出た実画面でだけ成立する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var profile = VisualProgressProfile.Load(Path.Combine(fixture, "progress.json"));
+        var review = profile.ReviewWhen.Single(text => text.AskUserImmediately);
+        Assert.Equal("Key:Space", review.ConfirmKey);
+        var recognizer = new VisualProgressRecognizer(profile);
+
+        // 実測: カードを押す前の3択。中央のカードは x 770〜945、y 415〜720。
+        var before = ReadFrame(Path.Combine(fixture, "bonus-levelup-three.png"));
+        var viewport = new FrameRect(1, 31, before.Width - 2, before.Height - 32);
+        var beforeOcr = await recognizer.ReadOcrAsync(before, viewport);
+        var choice = recognizer.Recognize(beforeOcr, before.Width, before.Height, viewport, before);
+        Assert.Same(review, choice.ReviewSource);
+        Assert.Equal(3, choice.Options!.Length);
+        var point = VisualProgressRecognizer.OptionPoint(review, 1, viewport, before.Width, before.Height);
+        Assert.InRange(point[0] * before.Width, 780, 935);
+        Assert.InRange(point[1] * before.Height, 430, 700);
+        Assert.False(VisualProgressRecognizer.Shows(beforeOcr, viewport, review.Confirm!));
+
+        // 実測: 中央のカードを押した後は、選んだカードが拡大され下に「Space 決定」が出る。
+        var selected = ReadFrame(Path.Combine(fixture, "bonus-card-selected.png"));
+        Assert.True(VisualProgressRecognizer.Shows(await recognizer.ReadOcrAsync(selected, viewport), viewport, review.Confirm!));
+
+        VisualProgressOption[] asked = [new("choice-1", "選択肢1: STR成長1段階"), new("choice-2", "選択肢2: LUCK成長13段階"), new("choice-3", "選択肢3: WにL成長1段階")];
+        // OCRがWILLを読み違えた時と読めた時は同じ選択肢として扱う。
+        Assert.True(VisualProgressRecognizer.SameOptions(
+            [asked[0], asked[1], new("choice-3", "選択肢3: WILL成長1段階")], asked));
+        // 別の選択肢・数の違う選択肢には回答を当てない。
+        Assert.False(VisualProgressRecognizer.SameOptions(
+            [new("choice-1", "選択肢1: 防御優先3段階"), new("choice-2", "選択肢2: 速度優先1段階"), new("choice-3", "選択肢3: 技巧優先3段階")], asked));
+        Assert.False(VisualProgressRecognizer.SameOptions(
+            [asked[2], asked[1], new("choice-3", "選択肢3: STR成長1段階")], asked));
+        Assert.False(VisualProgressRecognizer.SameOptions([asked[0], asked[1]], asked));
+        Assert.False(VisualProgressRecognizer.SameOptions(null, asked));
+    }
+
+    [Fact]
+    public void 選択後の確定は利用者への即時申請に表示とキーの組でだけ指定できる()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"openlogicool-progress-{Guid.NewGuid():N}.json");
+        try
+        {
+            foreach (var review in new[]
+            {
+                """{"Text":"選択","Bounds":[0,0,1,1],"ChoiceBounds":[[0,0,0.1,0.1],[0.2,0,0.1,0.1]],"Confirm":{"Text":"決定","Bounds":[0,0.9,1,0.1]},"ConfirmKey":"Key:Space"}""",
+                """{"Text":"選択","Bounds":[0,0,1,1],"ChoiceBounds":[[0,0,0.1,0.1],[0.2,0,0.1,0.1]],"AskUserImmediately":true,"ConfirmKey":"Key:Space"}""",
+                """{"Text":"選択","Bounds":[0,0,1,1],"ChoiceBounds":[[0,0,0.1,0.1],[0.2,0,0.1,0.1]],"AskUserImmediately":true,"Confirm":{"Text":"決定","Bounds":[0,0.9,1,0.1]}}""",
+                """{"Text":"選択","Bounds":[0,0,1,1],"ChoiceBounds":[[0,0,0.1,0.1],[0.2,0,0.1,0.1]],"AskUserImmediately":true,"Confirm":{"Text":"決定","Bounds":[0,0.9,1,0.2]},"ConfirmKey":"Key:Space"}""",
+            })
+            {
+                File.WriteAllText(path, $$"""{"SchemaVersion":1,"Rules":[],"ReviewWhen":[{{review}}]}""");
+                Assert.Throws<InvalidDataException>(() => VisualProgressProfile.Load(path));
+            }
+        }
+        finally { File.Delete(path); }
     }
 
     [Fact]

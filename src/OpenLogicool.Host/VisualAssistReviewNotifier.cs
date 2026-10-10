@@ -45,6 +45,18 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
             ? new(VisualAssistNoticeKind.Assistant, await BotAssistanceCoordinator.Create(database).ReportAsync(evidenceDirectory, result, token))
             : new(VisualAssistNoticeKind.Human, await ExchangeAsync(evidenceDirectory, result, token));
 
+    /// <summary>利用者へ直接申請した選択の回答を読む。未回答・取り下げ済みはnull。</summary>
+    public async Task<string?> ReadAnswerAsync(VisualAssistNotice notice, CancellationToken token)
+    {
+        if (notice.Kind != VisualAssistNoticeKind.Human) throw new InvalidOperationException("決裁箱へ直接出した申請だけ回答を読めます。");
+        var answer = await ExchangeAsync("", default, token, notice.Id, readAnswer: true);
+        return answer.Length == 0 ? null : answer;
+    }
+
+    internal static string? AnswerOption(JsonElement decision) =>
+        decision.GetProperty("status").GetString() == "answered"
+            ? decision.GetProperty("answer").GetProperty("option_id").GetString() : null;
+
     public async Task ResolveAsync(VisualAssistNotice notice, CancellationToken token)
     {
         if (notice.Kind == VisualAssistNoticeKind.Assistant)
@@ -55,7 +67,8 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
         _ = await ExchangeAsync("", default, token, notice.Id);
     }
 
-    private async Task<string> ExchangeAsync(string evidenceDirectory, JsonElement result, CancellationToken token, string? resolvedDecisionId = null)
+    private async Task<string> ExchangeAsync(string evidenceDirectory, JsonElement result, CancellationToken token,
+        string? resolvedDecisionId = null, bool readAnswer = false)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
         deadline.CancelAfter(TimeSpan.FromSeconds(30));
@@ -79,6 +92,7 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
             if (resolvedDecisionId is not null)
             {
                 var decision = await Tool("get_decision", new { decision_id = resolvedDecisionId });
+                if (readAnswer) return AnswerOption(decision) ?? "";
                 if (decision.GetProperty("status").GetString() is "pending" or "deferred")
                     await Tool("cancel_decision", new { decision_id = resolvedDecisionId,
                         reason = "確認済みの画面に戻り、この申請が対象としていた表示が解消しました。" });

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "request": "「ダンジョンクリア」と「画面を押してください」の2フレーズがある時はSpaceを押す。",
+  "stuck": {
+    "run": "20261010-130911-594-43ae1b44",
+    "observed": "ダンジョンクリアの画面で245293msから静止。既存の「画面を押してください」で即Spaceの規則は一致しなかった。",
+    "rootCause": "OCRが「画面を押してください」を「画面押してください」（1文字抜け）、別の回には「画面押してくだい」（2文字抜け）と読んだ。照合は1文字の読み違いだけを許し、抜け・余分を許していなかった。飾り文字の題「ダンジョンクリア！」も「ダンノ4ア!」と崩れて読まれた。"
+  },
+  "fix": {
+    "matching": "6文字以上の語は、抜け・余分・読み違いの合計が長さの4分の1以下なら同じ表示とする。5文字以下は従来どおり。",
+    "rule": {
+      "ruleId": "dungeon-clear-prompt",
+      "conditions": [
+        "ダンジョンクリア",
+        "画面を押してください"
+      ],
+      "key": "Key:Space",
+      "immediate": true,
+      "priority": 62
+    },
+    "note": "題が崩れて読まれる時は、同じ画面の達成項目「…ダンジョンをクリア」の行で1つ目のフレーズが一致する。"
+  },
+  "tests": {
+    "hostAll": 626,
+    "failed": 0,
+    "realImage": "fixtures/visual-recovery/mabinogi-20261008/dungeon-clear-prompt.png（2文字抜けで読まれる実画面）"
+  },
+  "live": {
+    "run": "20261010-132335-230-fdb1cbbb",
+    "dispatch": "11312msにdungeon-clear-promptがKey:Spaceを1回送出。宝箱の演出へ進行（after-start.png）。",
+    "ocrFlapping": "同じ画面でも観測ごとに一致する規則が変わった（screen-prompt→一致なし→dungeon-clear-prompt）。"
+  }
+}

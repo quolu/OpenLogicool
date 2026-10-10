@@ -61,8 +61,8 @@
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv54。レベルガイドの一推し「南の廃墟 2F エリア1」へBotが今すぐ移動を押して自動移動中。クエストは冒険者の向上心（Lv55達成）。",
-    "botRun": "bot-runs/mabinogi-mobile/20261010-130911-594-43ae1b44",
+    "nextCheck": "Lv54。南の廃墟ダンジョン2F エリア1をクリアし、宝箱の演出へ進行。",
+    "botRun": "bot-runs/mabinogi-mobile/20261010-132335-230-fdb1cbbb",
     "levelProgression": {
       "currentLevel": 53,
       "targetLevel": 42,
@@ -181,7 +181,7 @@
   },
   "continuation": {
     "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
-    "updatedUtc": "2026-10-10T04:10:56.4512767+00:00",
+    "updatedUtc": "2026-10-10T04:24:34.8823900+00:00",
     "assistanceGeneration": 6,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -192,12 +192,10 @@
       "96ecd868-6107-41de-acec-ca8fdb476833",
       "379225d3-7ac8-4a7b-a293-55c09ab9f0ab"
     ],
-    "pendingDecisionIds": [
-      "K-5V3KM4"
-    ],
+    "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "K-5V3KM4の回答に従う。承認済みのボーナス回答の実行と、通知の宛先・保存先の統一を進める。Botの詰まり通知は今もCodexの会話宛てなので、詰まりは担当AIが記録を直接読んで確認する。",
+    "nextAction": "Jevの実測（K-5V3KM4）と、通知の宛先・保存先の統一（K-X9E7Z7）を進める。Botの詰まり通知は今もCodexの会話宛てなので、詰まりは担当AIが記録を直接読んで確認する。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -283,9 +281,9 @@
     },
     "topLeftB": {
       "sourceCommit": "5d8d5d7",
-      "status": "installed",
+      "status": "installed-and-live-verified",
       "behavior": "左上にBの印が付いたアイコンがある間、1秒おきにBを送る。停止表示中は送らない。",
-      "live": "印つきのアイコンは自動移動中に表示されたが、停止表示優先のため送出はまだない。",
+      "live": "Bを1回送出し、アイコンが消えて「旅人のおやつ：LUCK+1」が付いた。",
       "evidence": "evidence/bot-b-icon-20261010/acceptance.json"
     },
     "pointerGuide": {
@@ -296,28 +294,30 @@
       "evidence": "evidence/bot-pointer-guide-20261010/acceptance.json"
     },
     "textGuide": {
-      "status": "pending-decision",
+      "status": "decided-measure-first",
       "decisionId": "K-5V3KM4",
-      "observed": "「成長ガイドを押してください。」は文章とボタンの強調だけの案内。担当AIが手で1回クリックして通過させた。",
-      "options": [
-        "Jevに押す先を選ばせる（まず実測）",
-        "案内文ごとの固定の規則",
-        "AIなしの汎用",
-        "手で押す"
-      ],
-      "uncommitted": "固定の規則guide-press-growth-guideと実画面の試験は作業ツリーにあるが未commit・未導入。裁定が固定以外なら取り除く。"
+      "answer": "Jevに押す先を選ばせる。まず実画面で実測する。",
+      "ownerNote": "利用者の発言: JEVで汎用的にできる気はする。",
+      "fixedRule": "成長ガイド用の固定の規則は導入せず取り除いた。",
+      "next": "保存した実画面のOCRをJevへ送り、押す先と確率・所要時間を実測する。製品への接続は実測の後に決める。"
     },
     "bonusAnswerExecution": {
-      "status": "approved-not-implemented",
+      "status": "installed",
       "decisionId": "K-8WKC8R",
-      "answer": "Botが回答を読んでカード選択と確定まで行う",
-      "measured": "中央のカードをクリックすると、選んだカードが拡大され下にSpaceの決定ボタンが出る。Spaceで確定して通常画面へ戻る（after-click.png・after-confirm.png）。左右のカードの拡大表示は未確認。"
+      "behavior": "回答を3秒おきに読み、同じ選択肢の間だけカードを押し、決定の表示を確かめてSpaceを送る。",
+      "live": "次のボーナス画面でまだ実機確認していない。",
+      "evidence": "evidence/bot-bonus-ask-user-20261010/acceptance.json"
     },
     "assistantTakeover": {
       "status": "approved-not-started",
       "decisionId": "K-X9E7Z7",
       "answer": "通知の宛先対応と保存先の統一を両方やる",
       "ownerNote": "判定のたびに、両方のAIを起こすことのないように。"
+    },
+    "dungeonClearPrompt": {
+      "status": "installed-and-live-verified",
+      "behavior": "ダンジョンクリアと画面を押してくださいの2フレーズで即Space。OCR照合は6文字以上で長さの4分の1までの抜け・余分・読み違いを許す。",
+      "evidence": "evidence/bot-dungeon-clear-20261010/acceptance.json"
     }
   }
 }

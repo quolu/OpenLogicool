@@ -350,6 +350,9 @@ public static class VisualKeyAssistRuntime
             Action<CapturedFrame, string?>? pendingReviewNotification = null;
             Task notificationWork = Task.CompletedTask;
             VisualAssistNotice? reviewDecisionId = null;
+            // 利用者へ直接申請した選択。回答が届いたら、同じ選択肢が表示されている間だけ実行する。
+            (VisualAssistNotice Notice, VisualProgressChoice Review, string Folder)? askedUser = null;
+            string? answeredOption = null;
             var reviewNumber = 0;
             Emit(new { Event = "run-started", DurationMs = duration, AutomaticRulesContinue = continueRules, TimedInputEnabled = timedInputEnabled,
                 NotificationGraceMs = VisualProgressReviewMonitor.NotificationGraceMs });
@@ -376,6 +379,71 @@ public static class VisualKeyAssistRuntime
                 var sceneMonitor = new VisualProgressSceneMonitor();
                 var inputSequence = new VisualProgressInputSequence(actions);
                 VisualKeyAssistDecision? previous = null;
+
+                // 利用者が決裁箱で答えた選択を押し、確定の表示を確かめてから確定キーを送る。
+                // 終えた時（送出・回答どおりに進められない時）はtrue、手入力中などで次の観測へ持ち越す時はfalse。
+                async Task<bool> ExecuteUserChoiceAsync((VisualAssistNotice Notice, VisualProgressChoice Review, string Folder) asked, string option)
+                {
+                    var source = asked.Review.ReviewSource!;
+                    var index = Array.FindIndex(asked.Review.Options!, candidate => candidate.Id == option);
+                    if (index < 0)
+                    {
+                        Emit(new { Event = "user-choice-skipped", AtMs = clock.ElapsedMilliseconds, Option = option,
+                            Detail = "画面の選択肢以外の回答のため、選択を送っていません。" });
+                        return true;
+                    }
+                    await inputGate.WaitAsync(token);
+                    try
+                    {
+                        if (!TryForeground() || UserIsActive()) return false;
+                        var fresh = await frames.CaptureAsync(token);
+                        var freshViewport = WindowsGameTargetLocator.CaptureClientBounds(target.Window);
+                        var current = progressRecognizer!.Recognize(await progressRecognizer.ReadOcrAsync(fresh, freshViewport, token),
+                            fresh.Width, fresh.Height, freshViewport, fresh, Inhibited(fresh));
+                        // 続けて別の選択が出た時に前の回答を当てないよう、回答した時と同じ選択肢の時だけ押す。
+                        if (current.ReviewSource != source || !VisualProgressRecognizer.SameOptions(current.Options, asked.Review.Options))
+                            return Fail("回答した時の選択肢が現在の画面と一致しないため、選択を送っていません。");
+                        if (UserIsActive()) return false;
+                        var click = new VisualProgressChoice(VisualProgressAction.Click, "user-choice", $"user-choice:{asked.Notice.Id}:{option}",
+                            Point: VisualProgressRecognizer.OptionPoint(source, index, freshViewport, fresh.Width, fresh.Height));
+                        Send(click, fresh);
+                        var deadline = clock.ElapsedMilliseconds + 5000;
+                        while (clock.ElapsedMilliseconds < deadline)
+                        {
+                            await Task.Delay(400, token);
+                            var after = await frames.CaptureAsync(token);
+                            var afterViewport = WindowsGameTargetLocator.CaptureClientBounds(target.Window);
+                            if (UserIsActive() || !VisualProgressRecognizer.Shows(
+                                await progressRecognizer.ReadOcrAsync(after, afterViewport, token), afterViewport, source.Confirm!)) continue;
+                            Send(new(VisualProgressAction.Key, "user-choice-confirm", click.Signature + ":confirm", source.ConfirmKey), after);
+                            return true;
+                        }
+                        return Fail("選択を押しましたが、確定の表示を確認できません。確定キーは送っていません。");
+                    }
+                    finally { inputGate.Release(); }
+
+                    void Send(VisualProgressChoice choice, CapturedFrame bound)
+                    {
+                        var dispatch = inputSequence.Dispatch(choice, Observation(bound));
+                        if (dispatch.Status != GameInteractionDispatchStatus.Dispatched)
+                            throw new InvalidOperationException($"回答の選択のNano入力に失敗しました: {dispatch.FailureReason}");
+                        Emit(new { Event = "progress-input", AtMs = clock.ElapsedMilliseconds, choice.RuleId, choice.Signature,
+                            choice.Key, choice.Point, Immediate = false, RepeatIntervalMs = 0, AfterClick = false, dispatch });
+                    }
+
+                    bool Fail(string detail)
+                    {
+                        Emit(new { Event = "user-choice-failed", AtMs = clock.ElapsedMilliseconds, Option = option, Detail = detail });
+                        // 回答どおりに進められなかった時は、根拠を添えて担当へ1回知らせる。
+                        QueueNotification(async () =>
+                        {
+                            if (reviewNotifier is null) return;
+                            await reviewNotifier.NotifyAsync(asked.Folder, JsonSerializer.SerializeToElement(new { Detail = detail,
+                                MonitoringContinues = true, AutomaticRulesContinue = continueRules }), token);
+                        }, token);
+                        return true;
+                    }
+                }
                 try
                 {
                 while (duration is null || clock.ElapsedMilliseconds < duration.Value)
@@ -422,6 +490,8 @@ public static class VisualKeyAssistRuntime
                         else
                         {
                             pendingReviewNotification = null;
+                            askedUser = null;
+                            Interlocked.Exchange(ref answeredOption, null);
                             progress.Resume();
                             if (!continueRules)
                             {
@@ -437,6 +507,16 @@ public static class VisualKeyAssistRuntime
                                 reviewDecisionId = null;
                             }, token);
                         }
+                    }
+                    if (reviewMonitor.IsHolding && askedUser is { } asked && Volatile.Read(ref answeredOption) is { } answered)
+                    {
+                        if (await ExecuteUserChoiceAsync(asked, answered))
+                        {
+                            askedUser = null;
+                            Interlocked.Exchange(ref answeredOption, null);
+                        }
+                        await Task.Delay(250, token);
+                        continue;
                     }
                     var flowTimed = flowCandidate?.RuleId is not null && progressProfile!.Rules.Single(rule => rule.Id == flowCandidate.RuleId).Timed;
                     var flowChoice = progressSchedule?.Decide(clock.ElapsedMilliseconds,
@@ -490,7 +570,7 @@ public static class VisualKeyAssistRuntime
                             if (keepMonitoring)
                             {
                                 BeginMonitoring(flowCandidate ?? new(VisualProgressAction.Normal), frame,
-                                    flowChoice.Detail!, flowChoice.Options, ocr?.Text, token, flowChoice.AskUserImmediately);
+                                    flowChoice.Detail!, flowChoice.Options, ocr?.Text, token, flowChoice.AskUserImmediately ? flowChoice : null);
                                 flowChoice = VisualProgressContinuation.AfterReview(
                                     flowCandidate ?? new(VisualProgressAction.Normal), continueRules);
                                 if (flowChoice.Action == VisualProgressAction.Wait)
@@ -679,7 +759,7 @@ public static class VisualKeyAssistRuntime
             }
 
             void BeginMonitoring(VisualProgressChoice candidate, CapturedFrame frame, string detail,
-                VisualProgressOption[]? options, string? ocrText, CancellationToken token, bool askUser = false)
+                VisualProgressOption[]? options, string? ocrText, CancellationToken token, VisualProgressChoice? askUser = null)
             {
                 if (reviewMonitor.IsHolding) return;
                 var detectedAt = clock.ElapsedMilliseconds;
@@ -695,7 +775,7 @@ public static class VisualKeyAssistRuntime
                     NeedsReview = true, MonitoringContinues = true, AutomaticRulesContinue = continueRules, Detail = detail, ReviewOptions = options,
                     OcrText = ocrText, Image = image, AiCallCount = 0 });
                 File.WriteAllText(Path.Combine(folder, "review.json"), review.GetRawText());
-                if (askUser)
+                if (askUser is not null)
                 {
                     // 利用者だけが選ぶ表示は、様子見と担当AIを経由せず検出した回に決裁箱へ出す。
                     // 申請に失敗した時は印を付けず、1分後の詰まり通知で担当AIへ知らせる。
@@ -704,8 +784,13 @@ public static class VisualKeyAssistRuntime
                     QueueNotification(async () =>
                     {
                         if (reviewNotifier is null) throw new InvalidOperationException("決裁箱の接続設定がないため、利用者へ直接申請できません。");
-                        reviewDecisionId = await reviewNotifier.AskUserAsync(folder, review, token);
+                        var notice = reviewDecisionId = await reviewNotifier.AskUserAsync(folder, review, token);
                         reviewMonitor.MarkNotified();
+                        if (askUser.ReviewSource?.ConfirmKey is not null)
+                        {
+                            askedUser = (notice, askUser, folder);
+                            _ = Task.Run(() => PollAnswerAsync(notice, token), token);
+                        }
                         File.WriteAllText(Path.Combine(folder, "notification.json"), JsonSerializer.Serialize(new { DecisionId = reviewDecisionId }));
                         Emit(new { Event = "review-notified", DecisionId = reviewDecisionId, MonitoringContinues = true, AskedUser = true,
                             ElapsedMs = clock.ElapsedMilliseconds - detectedAt });
@@ -736,6 +821,28 @@ public static class VisualKeyAssistRuntime
                         Emit(new { Event = "review-notified", DecisionId = reviewDecisionId, MonitoringContinues = true });
                     }, token);
                 };
+            }
+
+            async Task PollAnswerAsync(VisualAssistNotice notice, CancellationToken token)
+            {
+                // 決裁箱は回答を押し出さないため、申請した表示が続いている間だけ3秒おきに読む。
+                while (reviewMonitor.IsHolding && askedUser?.Notice == notice)
+                {
+                    try
+                    {
+                        await Task.Delay(3000, token);
+                        if (await reviewNotifier!.ReadAnswerAsync(notice, token) is not { } option) continue;
+                        Interlocked.Exchange(ref answeredOption, option);
+                        Emit(new { Event = "user-choice-answered", AtMs = clock.ElapsedMilliseconds, DecisionId = notice, Option = option });
+                        return;
+                    }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested) { return; }
+                    catch (Exception error)
+                    {
+                        Emit(new { Event = "user-choice-read-failed", AtMs = clock.ElapsedMilliseconds,
+                            Detail = "決裁箱の回答を読めません。3秒後に読み直します。 " + error.Message });
+                    }
+                }
             }
 
             void QueueNotification(Func<Task> operation, CancellationToken token)
