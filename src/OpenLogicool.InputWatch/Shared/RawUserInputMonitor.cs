@@ -2,29 +2,34 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows.Interop;
-using System.Windows.Threading;
 
-namespace OpenLogicool.Host;
+namespace OpenLogicool.InputWatch;
+
+/// <summary>キーボードとマウスの手入力を観測する元。</summary>
+internal interface IRawUserInputSource : IDisposable
+{
+    UserInputPauseSnapshot Snapshot();
+}
 
 /// <summary>
-/// Raw Inputの入力元でNanoを除外し、キーボードとマウスの手入力とリモートの合成入力を観測する。
+/// Raw Inputの入力元でBotの出力機器を除外し、キーボードとマウスの手入力とリモートの合成入力を観測する。
 /// 自分より高い権限の窓が前面の間は、OSがこのprocessへ入力を渡さない。その時は管理者権限の監視processの中で使う。
+/// 監視processとBot本体の両方でコンパイルするため、画面部品に頼らずmessage専用の窓で受け取る。
 /// </summary>
-internal sealed class WindowsUserInputMonitor : IRawUserInputSource
+internal sealed class RawUserInputMonitor : IRawUserInputSource
 {
-    private readonly SerialHidCandidate nano;
-    private readonly Guid nanoContainer;
+    private readonly Func<string, bool> isBotOutputDevice;
     private readonly Stopwatch clock = Stopwatch.StartNew();
     private readonly UserInputPauseState state;
     private readonly Thread thread;
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private readonly Dictionary<nint, bool> nanoDevices = [];
+    private readonly Dictionary<nint, bool> botOutputDevices = [];
     private readonly Dictionary<nint, (int X, int Y)> absolutePositions = [];
     private readonly HookProc keyboardHook;
     private readonly HookProc mouseHook;
-    private Dispatcher? dispatcher;
-    private HwndSource? window;
+    private readonly WindowProcedure windowProcedure;
+    private uint threadId;
+    private nint window;
     private nint keyboardHandle;
     private nint mouseHandle;
     private volatile Exception? failure;
@@ -34,24 +39,24 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
     private long softwarePositionChanges;
     private (int X, int Y)? softwarePosition;
 
-    public WindowsUserInputMonitor(SerialHidCandidate nano)
+    /// <param name="isBotOutputDevice">Raw Inputの機器のパスが、Botの出力機器（Nano）かを返す。</param>
+    public RawUserInputMonitor(Func<string, bool> isBotOutputDevice)
     {
-        this.nano = nano;
-        nanoContainer = ContainerForInstance(nano.DeviceInstanceId);
+        this.isBotOutputDevice = isBotOutputDevice;
         // 押下状態の符号は、マウスのボタンだけ0x10000を足してある。OSへは仮想キーの番号で聞く。
         state = new(() => clock.ElapsedMilliseconds, code => (GetAsyncKeyState(code & 0xFFFF) & 0x8000) != 0);
         keyboardHook = Keyboard;
         mouseHook = Mouse;
-        thread = new Thread(Run) { IsBackground = true, Name = "Botの手入力監視" };
-        thread.SetApartmentState(ApartmentState.STA);
+        windowProcedure = WindowProc;
+        thread = new Thread(Run) { IsBackground = true, Name = "手入力の監視" };
         thread.Start();
         ready.Task.GetAwaiter().GetResult();
     }
 
-    public Guid NanoContainer => nanoContainer;
     public int StartupHeldCount { get; private set; }
     public long SoftwareMoves => Interlocked.Read(ref softwareMoves);
     public long SoftwarePositionChanges => Interlocked.Read(ref softwarePositionChanges);
+
     public UserInputPauseSnapshot Snapshot()
     {
         if (failure is { } error) throw new InvalidOperationException("手入力監視に失敗しました。", error);
@@ -60,18 +65,29 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
 
     private void Run()
     {
+        var instance = GetModuleHandleW(null);
+        var className = "OpenLogicool.UserInput." + Guid.NewGuid().ToString("N");
+        ushort classAtom = 0;
         try
         {
-            dispatcher = Dispatcher.CurrentDispatcher;
-            window = new HwndSource(new HwndSourceParameters("OpenLogicool.Bot.UserInput")
-                { ParentWindow = new nint(-3), Width = 0, Height = 0, WindowStyle = 0 });
-            window.AddHook(WindowProc);
+            threadId = GetCurrentThreadId();
+            var windowClass = new WindowClass
+            {
+                Size = (uint)Marshal.SizeOf<WindowClass>(),
+                WindowProc = Marshal.GetFunctionPointerForDelegate(windowProcedure),
+                Instance = instance,
+                ClassName = className,
+            };
+            classAtom = RegisterClassExW(ref windowClass);
+            if (classAtom == 0) throw new Win32Exception(Marshal.GetLastWin32Error(), "手入力の監視の窓を登録できません。");
+            window = CreateWindowExW(0, className, "OpenLogicool.Bot.UserInput", 0, 0, 0, 0, 0, new nint(-3), 0, instance, 0);
+            if (window == 0) throw new Win32Exception(Marshal.GetLastWin32Error(), "手入力の監視の窓を作れません。");
             if (RegisteredDevices().Any(device => device.Page == 1 && device.Usage is 2 or 6))
                 throw new InvalidOperationException("キーボード／マウスのRaw Inputは別の機能が登録済みです。登録を上書きしません。");
-            Register(window.Handle, 0x2100);
+            Register(window, 0x2100);
             registered = true;
-            keyboardHandle = SetWindowsHookExW(13, keyboardHook, GetModuleHandleW(null), 0);
-            mouseHandle = SetWindowsHookExW(14, mouseHook, GetModuleHandleW(null), 0);
+            keyboardHandle = SetWindowsHookExW(13, keyboardHook, instance, 0);
+            mouseHandle = SetWindowsHookExW(14, mouseHook, instance, 0);
             if (keyboardHandle == 0 || mouseHandle == 0) throw new Win32Exception(Marshal.GetLastWin32Error(), "手入力hookを登録できません。");
             for (var vk = 1; vk < 255; vk++)
             {
@@ -82,23 +98,24 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
                 state.SeedHeld(vk is 1 or 2 or 4 or 5 or 6 ? 0x10000 + vk : vk);
             }
             ready.SetResult();
-            Dispatcher.Run();
+            while (GetMessageW(out var message, 0, 0, 0) > 0) DispatchMessageW(ref message);
         }
         catch (Exception error) { failure = error; ready.TrySetException(error); }
         finally
         {
             if (keyboardHandle != 0) UnhookWindowsHookEx(keyboardHandle);
             if (mouseHandle != 0) UnhookWindowsHookEx(mouseHandle);
-            if (window is not null)
+            if (window != 0)
             {
                 try
                 {
                     if (registered && RegisteredDevices().Where(device => device.Page == 1 && device.Usage is 2 or 6)
-                        .All(device => device.Target == window.Handle)) Register(0, 1);
+                        .All(device => device.Target == window)) Register(0, 1);
                 }
                 catch (Exception error) { failure ??= error; }
-                window.Dispose();
+                DestroyWindow(window);
             }
+            if (classAtom != 0) UnregisterClassW(className, instance);
         }
     }
 
@@ -123,16 +140,16 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
         return devices;
     }
 
-    private nint WindowProc(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
+    private nint WindowProc(nint hwnd, uint message, nint wParam, nint lParam)
     {
         try
         {
-            if (msg == 0xFF) ReadRaw(lParam);
-            if (msg == 0xFE && wParam == 2)
-            { state.Removed(lParam); nanoDevices.Remove(lParam); absolutePositions.Remove(lParam); }
+            if (message == 0xFF) ReadRaw(lParam);
+            if (message == 0xFE && wParam == 2)
+            { state.Removed(lParam); botOutputDevices.Remove(lParam); absolutePositions.Remove(lParam); }
         }
         catch (Exception error) { failure = error; }
-        return 0;
+        return DefWindowProcW(hwnd, message, wParam, lParam);
     }
 
     private void ReadRaw(nint handle)
@@ -148,7 +165,7 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             var header = Marshal.PtrToStructure<RawHeader>(data);
             if (header.Type > 1) return;
-            if (IsNano(header.Device)) { state.NanoInput(); return; }
+            if (IsBotOutput(header.Device)) { state.NanoInput(); return; }
             var body = data + (int)headerSize;
             if (header.Type == 1)
             {
@@ -198,19 +215,18 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
         else state.Button(source, code, down);
     }
 
-    private bool IsNano(nint device)
+    private bool IsBotOutput(nint device)
     {
         if (device == 0) return false; // OSが機器handleを付けない入力も、利用者の入力として扱う。
-        if (nanoDevices.TryGetValue(device, out var result)) return result;
+        if (botOutputDevices.TryGetValue(device, out var result)) return result;
         uint size = 0;
         if (GetRawInputDeviceInfoW(device, 0x20000007, null, ref size) == uint.MaxValue)
             throw new Win32Exception(Marshal.GetLastWin32Error());
         var path = new StringBuilder((int)size + 1);
         if (GetRawInputDeviceInfoW(device, 0x20000007, path, ref size) == uint.MaxValue)
             throw new Win32Exception(Marshal.GetLastWin32Error());
-        var sameModel = path.ToString().Contains($"VID_{nano.VendorId:X4}&PID_{nano.ProductId:X4}", StringComparison.OrdinalIgnoreCase);
-        result = sameModel && ContainerForInterface(path.ToString()) == nanoContainer;
-        nanoDevices.Add(device, result);
+        result = isBotOutputDevice(path.ToString());
+        botOutputDevices.Add(device, result);
         return result;
     }
 
@@ -221,7 +237,7 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
             if (code == 0)
             {
                 var input = Marshal.PtrToStructure<KeyboardHookData>(pointer);
-                // リモート操作等の合成入力を補足する。Nanoの物理入力はRaw Inputで識別する。
+                // リモート操作等の合成入力を補足する。Botの出力機器の物理入力はRaw Inputで識別する。
                 if ((input.Flags & 0x10) != 0)
                     Key(state, new nint(-2), KeyboardCode((int)input.VKey, (int)input.Scan, (input.Flags & 1) != 0 ? 2 : 0),
                         message is 0x100 or 0x104);
@@ -257,36 +273,21 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
         return CallNextHookEx(0, code, message, pointer);
     }
 
-    private static Guid ContainerForInstance(string instance)
-    {
-        var result = CM_Locate_DevNodeW(out var node, instance, 0);
-        if (result != 0) throw new InvalidOperationException($"Nanoのdevnodeを取得できません: CR={result}");
-        var key = ContainerKey;
-        var bytes = new byte[16]; uint size = 16;
-        result = CM_Get_DevNode_PropertyW(node, ref key, out var type, bytes, ref size, 0);
-        if (result != 0 || type != 13 || size != 16) throw new InvalidOperationException($"NanoのContainerIdを取得できません: CR={result}");
-        return new Guid(bytes);
-    }
-
-    private static Guid ContainerForInterface(string path)
-    {
-        var key = ContainerKey;
-        var bytes = new byte[16]; uint size = 16;
-        var result = CM_Get_Device_Interface_PropertyW(path, ref key, out var type, bytes, ref size, 0);
-        if (result != 0 || type != 13 || size != 16) throw new InvalidOperationException($"HIDのContainerIdを取得できません: CR={result}");
-        return new Guid(bytes);
-    }
-
     public void Dispose()
     {
         if (disposed) return;
         disposed = true;
-        if (dispatcher is { HasShutdownStarted: false }) dispatcher.BeginInvokeShutdown(DispatcherPriority.Send);
+        if (threadId != 0 && thread.IsAlive) PostThreadMessageW(threadId, 0x12, 0, 0); // WM_QUIT
         if (!thread.Join(TimeSpan.FromSeconds(5))) throw new InvalidOperationException("手入力監視を終了できません。");
     }
 
-    private static readonly DevicePropertyKey ContainerKey = new() { Format = new("8c7ed206-3f8a-4827-b3ab-ae9e1faefc6c"), Id = 2 };
-    [StructLayout(LayoutKind.Sequential)] private struct DevicePropertyKey { public Guid Format; public uint Id; }
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct WindowClass
+    {
+        public uint Size, Style; public nint WindowProc; public int ClassExtra, WindowExtra;
+        public nint Instance, Icon, Cursor, Background; public string? MenuName; public string ClassName; public nint SmallIcon;
+    }
+    [StructLayout(LayoutKind.Sequential)] private struct WindowMessage { public nint Window; public uint Id; public nint WParam, LParam; public uint Time; public int X, Y; public uint Private; }
     [StructLayout(LayoutKind.Sequential)] private struct RawDevice { public ushort Page, Usage; public uint Flags; public nint Target; }
     [StructLayout(LayoutKind.Sequential)] private struct RawHeader { public uint Type, Size; public nint Device, Parameter; }
     [StructLayout(LayoutKind.Sequential)] private struct RawKeyboard { public ushort MakeCode, Flags, Reserved, VKey; public uint Message, Extra; }
@@ -296,6 +297,16 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
     [StructLayout(LayoutKind.Sequential)] private struct KeyboardHookData { public uint VKey, Scan, Flags, Time; public nuint Extra; }
     [StructLayout(LayoutKind.Sequential)] private struct MouseHookData { public int X, Y; public uint MouseData, Flags, Time; public nuint Extra; }
     private delegate nint HookProc(int code, nint message, nint data);
+    private delegate nint WindowProcedure(nint hwnd, uint message, nint wParam, nint lParam);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern ushort RegisterClassExW(ref WindowClass windowClass);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool UnregisterClassW(string className, nint instance);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern nint CreateWindowExW(uint exStyle, string className, string windowName, uint style, int x, int y, int width, int height, nint parent, nint menu, nint instance, nint parameter);
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool DestroyWindow(nint window);
+    [DllImport("user32.dll")] private static extern nint DefWindowProcW(nint window, uint message, nint wParam, nint lParam);
+    [DllImport("user32.dll")] private static extern int GetMessageW(out WindowMessage message, nint window, uint filterMin, uint filterMax);
+    [DllImport("user32.dll")] private static extern nint DispatchMessageW(ref WindowMessage message);
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool PostThreadMessageW(uint threadId, uint message, nint wParam, nint lParam);
+    [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
     [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool RegisterRawInputDevices(RawDevice[] devices, uint count, uint size);
     [DllImport("user32.dll", SetLastError = true)] private static extern uint GetRegisteredRawInputDevices([Out] RawDevice[]? devices, ref uint count, uint size);
     [DllImport("user32.dll", SetLastError = true)] private static extern uint GetRawInputData(nint input, uint command, nint data, ref uint size, uint headerSize);
@@ -306,7 +317,4 @@ internal sealed class WindowsUserInputMonitor : IRawUserInputSource
     [DllImport("user32.dll")] private static extern short GetAsyncKeyState(int key);
     [DllImport("user32.dll")] private static extern uint MapVirtualKeyW(uint code, uint type);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] private static extern nint GetModuleHandleW(string? name);
-    [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] private static extern uint CM_Locate_DevNodeW(out uint node, string instance, uint flags);
-    [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] private static extern uint CM_Get_DevNode_PropertyW(uint node, ref DevicePropertyKey key, out uint type, byte[] value, ref uint size, uint flags);
-    [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)] private static extern uint CM_Get_Device_Interface_PropertyW(string path, ref DevicePropertyKey key, out uint type, byte[] value, ref uint size, uint flags);
 }

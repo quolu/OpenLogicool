@@ -59,8 +59,9 @@ foreach ($requiredFile in $requiredFiles) {
     }
 }
 
-# 管理者権限で動くゲームの手入力を見るための監視のタスク。未登録の時だけ登録する（UACの確認が1回出る）。
-& (Join-Path $PSScriptRoot 'register-user-input-watch.ps1')
+# 管理者権限で動くゲームの手入力を見るための監視。管理者だけが書ける場所へ置く。
+# 監視の中身が変わった時と、タスクが正しくない時だけ、UACの確認が1回出る。
+& (Join-Path $PSScriptRoot 'install-user-input-watch.ps1')
 
 $desktop = [Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)
 $shortcutPath = Join-Path $desktop 'OpenLogicool.lnk'

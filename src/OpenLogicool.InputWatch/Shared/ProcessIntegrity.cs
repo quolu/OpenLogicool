@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace OpenLogicool.Host;
+namespace OpenLogicool.InputWatch;
 
 /// <summary>
 /// processの整合性の水準（権限の高さ）を読む。Windowsは、高い水準の窓が前面の間、低い水準のprocessへ

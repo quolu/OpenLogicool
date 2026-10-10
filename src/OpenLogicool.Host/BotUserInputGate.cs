@@ -1,14 +1,6 @@
 namespace OpenLogicool.Host;
 
 /// <summary>
-/// キーボードとマウスの手入力を観測する元。Botと同じprocessで見る元と、管理者権限の別processで見る元がある。
-/// </summary>
-internal interface IRawUserInputSource : IDisposable
-{
-    UserInputPauseSnapshot Snapshot();
-}
-
-/// <summary>
 /// Botが手を止めるかを決める。人の手の入力装置すべてを対象にし、キーボードとマウス（観測元）・
 /// G13／G600の物理ボタン（常駐の観測）・Botが矢印を動かせなかった合図を合わせる。
 /// どれかが押下中か、最後の入力から無入力の時間が過ぎていなければ一時停止にする。
@@ -47,9 +39,10 @@ internal sealed class BotUserInputGate : IDisposable
         var clock = System.Diagnostics.Stopwatch.StartNew();
         var description = FormattableString.Invariant($"対象の整合性=0x{target ?? 0:X}（読めない時は0） Botの整合性=0x{own:X}");
         return ProcessIntegrity.NeedsElevatedWatch(target, own)
-            ? new(new ElevatedUserInputWatch(nano, target ?? ProcessIntegrity.High), physicalInput, () => clock.ElapsedMilliseconds,
+            ? new(new ElevatedUserInputWatch(target ?? ProcessIntegrity.High), physicalInput, () => clock.ElapsedMilliseconds,
                 "管理者権限の監視process " + description)
-            : new(new WindowsUserInputMonitor(nano), physicalInput, () => clock.ElapsedMilliseconds, "Botと同じprocess " + description);
+            : new(new RawUserInputMonitor(new NanoRawInputMatcher(nano).Matches), physicalInput, () => clock.ElapsedMilliseconds,
+                "Botと同じprocess " + description);
     }
 
     public UserInputPauseSnapshot Snapshot()

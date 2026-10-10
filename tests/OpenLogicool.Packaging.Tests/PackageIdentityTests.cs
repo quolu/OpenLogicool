@@ -26,6 +26,15 @@ public sealed class PackageIdentityTests
     }
 
     [Fact]
+    public void Elevated_input_watch_is_installed_outside_the_application_folder()
+    {
+        var layout = PackageIdentities.CurrentDevelopment().DevelopmentLayout;
+
+        Assert.Equal([@"%ProgramFiles%\OpenLogicool\InputWatch\OpenLogicool.InputWatch.exe"], layout.ElevatedInstallFiles);
+        Assert.DoesNotContain(layout.ApplicationFiles, file => file.Contains("InputWatch", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Autostart_and_update_remain_unverified_and_never_start_device_write()
     {
         var identity = PackageIdentities.CurrentDevelopment();

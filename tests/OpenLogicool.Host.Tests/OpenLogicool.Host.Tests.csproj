@@ -18,4 +18,7 @@
     <ProjectReference Include="..\..\src\OpenLogicool.Host\OpenLogicool.Host.csproj" />
     <ProjectReference Include="..\..\src\OpenLogicool.Launcher\OpenLogicool.Launcher.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="OpenLogicool.InputWatch" />
+  </ItemGroup>
 </Project>

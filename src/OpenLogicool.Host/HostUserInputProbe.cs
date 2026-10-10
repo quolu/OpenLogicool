@@ -24,7 +24,8 @@ internal static class HostUserInputProbe
         var selection = discovery.Resolve(null, SerialHidProtocolV1.AllCapabilities);
         using var session = selection.Session;
         session.Start();
-        using var monitor = new WindowsUserInputMonitor(selection.Candidate);
+        var matcher = new NanoRawInputMatcher(selection.Candidate);
+        using var monitor = new RawUserInputMonitor(matcher.Matches);
         var samples = new List<object>();
         var clock = Stopwatch.StartNew();
         var sent = false;
@@ -48,7 +49,7 @@ internal static class HostUserInputProbe
             if (sent && after is null && clock.ElapsedMilliseconds - sentAt >= 500) after = snapshot;
             Thread.Sleep(50);
         }
-        var result = new { Mode = "user-input-probe", NanoContainer = monitor.NanoContainer,
+        var result = new { Mode = "user-input-probe", NanoContainer = matcher.Container,
             StartupHeldCount = monitor.StartupHeldCount,
             SoftwareMoves = monitor.SoftwareMoves, SoftwarePositionChanges = monitor.SoftwarePositionChanges,
             TestSent = sent, BeforeNano = before, AfterNano = after, Samples = samples };

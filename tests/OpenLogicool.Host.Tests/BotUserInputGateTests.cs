@@ -1,7 +1,6 @@
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
-using System.Text.Json;
 using OpenLogicool.Host;
 using Xunit;
 
@@ -10,8 +9,6 @@ namespace OpenLogicool.Host.Tests;
 /// <summary>人の手の入力装置すべてを合わせて、Botが手を止めるかを決める部分。</summary>
 public sealed class BotUserInputGateTests
 {
-    private static readonly SerialHidCandidate Nano = new("USB\\VID_1B4F&PID_9206\\TEST", "COM9", @"\\?\test", 0x1B4F, 0x9206);
-
     [Theory]
     [InlineData(0x3000, 0x2000, true)]  // 管理者権限のゲームと通常権限のBot。
     [InlineData(0x2000, 0x2000, false)]
@@ -84,6 +81,16 @@ public sealed class BotUserInputGateTests
         Assert.Throws<FormatException>(() => UserInputWatchProtocol.ParseReady(null));
     }
 
+    [Theory]
+    [InlineData(@"\\?\HID#VID_1B4F&PID_9206&MI_02#8&2f6c&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}", true)]
+    [InlineData(@"\\?\HID#VID_1B4F&PID_9205&MI_03#8&1a&0&0000#{378de44c-56ef-11d1-bc8c-00a0c91405dd}", true)]
+    [InlineData(@"\\?\hid#vid_1b4f&pid_9206&mi_02#8&2f6c&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}", true)]
+    [InlineData(@"\\?\HID#VID_046D&PID_C24A&MI_00#8&3b&0&0000#{378de44c-56ef-11d1-bc8c-00a0c91405dd}", false)]
+    [InlineData(@"\\?\HID#VID_1B4F&PID_0001#8&3b&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}", false)]
+    [InlineData(@"\\?\HID#VID_046D&PID_9206#8&3b&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}", false)]
+    public void 監視processはBotの出力機器を機器のパスだけで見分ける(string path, bool expected) =>
+        Assert.Equal(expected, BotOutputDevices.IsSerialHidOutput(path));
+
     [Fact]
     public async Task 監視processの報告を受け取り途絶えたら見えないまま続けない()
     {
@@ -91,14 +98,12 @@ public sealed class BotUserInputGateTests
         var held = new TaskCompletionSource();
         var close = new TaskCompletionSource();
         Task? client = null;
-        using var watch = new ElevatedUserInputWatch(Nano, 0x3000, () => client = Task.Run(async () =>
+        // 連絡は監視processからの一方通行。Bot本体は読むだけで、何も送らない。
+        using var watch = new ElevatedUserInputWatch(0x3000, () => client = Task.Run(async () =>
         {
-            using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+            using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
             await pipe.ConnectAsync(5000);
-            var reader = new StreamReader(pipe, new UTF8Encoding(false), false, 256, leaveOpen: true);
             var writer = new StreamWriter(pipe, new UTF8Encoding(false), 256, leaveOpen: true) { AutoFlush = true };
-            // Botは最初に、入力元から外すNanoの識別を渡す。
-            Assert.Equal(Nano, JsonSerializer.Deserialize<SerialHidCandidate>((await reader.ReadLineAsync())!));
             await writer.WriteLineAsync(UserInputWatchProtocol.Ready(0x3000));
             await writer.WriteLineAsync("0 9000 5 7 0");
             await held.Task;
@@ -138,22 +143,20 @@ public sealed class BotUserInputGateTests
     public void 監視processの権限が足りない時と起動できない時は始めない()
     {
         var pipeName = "OpenLogicool.UserInputWatch.Test." + Guid.NewGuid().ToString("N");
-        var low = Assert.Throws<InvalidOperationException>(() => new ElevatedUserInputWatch(Nano, 0x3000, () => Task.Run(async () =>
+        var low = Assert.Throws<InvalidOperationException>(() => new ElevatedUserInputWatch(0x3000, () => Task.Run(async () =>
         {
-            using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+            using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
             await pipe.ConnectAsync(5000);
-            var reader = new StreamReader(pipe, new UTF8Encoding(false), false, 256, leaveOpen: true);
             var writer = new StreamWriter(pipe, new UTF8Encoding(false), 256, leaveOpen: true) { AutoFlush = true };
-            await reader.ReadLineAsync();
             await writer.WriteLineAsync(UserInputWatchProtocol.Ready(0x2000));
             await Task.Delay(500);
         }), pipeName));
         Assert.Contains("権限が足りません", low.Message, StringComparison.Ordinal);
 
         // 起動できなかった時は通信口を残さない（同じ名前でやり直せる）。
-        Assert.Throws<InvalidOperationException>(() => new ElevatedUserInputWatch(Nano, 0x3000,
+        Assert.Throws<InvalidOperationException>(() => new ElevatedUserInputWatch(0x3000,
             () => throw new InvalidOperationException("起動できません"), pipeName));
-        var silent = Assert.Throws<InvalidOperationException>(() => new ElevatedUserInputWatch(Nano, 0x3000, () => { }, pipeName,
+        var silent = Assert.Throws<InvalidOperationException>(() => new ElevatedUserInputWatch(0x3000, () => { }, pipeName,
             startTimeoutMs: 200));
         Assert.Contains("時間内に始まりません", silent.Message, StringComparison.Ordinal);
     }

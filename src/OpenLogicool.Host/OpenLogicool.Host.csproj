@@ -19,6 +19,11 @@
     <InternalsVisibleTo Include="OpenLogicool.Host.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <!-- 手入力の監視は、管理者権限の監視process（OpenLogicool.InputWatch）と同じ実装をコンパイルする。DLLは共有しない。 -->
+    <Compile Include="..\OpenLogicool.InputWatch\Shared\*.cs" Link="UserInputShared\%(Filename)%(Extension)" />
+    <Using Include="OpenLogicool.InputWatch" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\quest-marker.png" Link="BotScripts\MabinogiMobile\quest-marker.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\feather-t.png" Link="BotScripts\MabinogiMobile\feather-t.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\top-left-b.png" Link="BotScripts\MabinogiMobile\top-left-b.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

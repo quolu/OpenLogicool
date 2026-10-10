@@ -1,4 +1,4 @@
-namespace OpenLogicool.Host;
+namespace OpenLogicool.InputWatch;
 
 internal sealed record UserInputPauseSnapshot(bool Paused, int HeldCount, long IdleMilliseconds,
     long UserEvents, long NanoEvents, long LostReleases = 0, int[]? HeldCodes = null);

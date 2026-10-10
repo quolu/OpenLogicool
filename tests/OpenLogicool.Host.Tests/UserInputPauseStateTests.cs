@@ -20,15 +20,15 @@ public sealed class UserInputPauseStateTests
     [InlineData(0xFB)]
     public void 日本語入力のモード状態はスキャンコードがあっても初期押下へ取り込まない(int vk)
     {
-        Assert.False(WindowsUserInputMonitor.HasStartupPhysicalKey(vk, 0x29));
+        Assert.False(RawUserInputMonitor.HasStartupPhysicalKey(vk, 0x29));
     }
 
     [Fact]
     public void スキャンコードに対応しないOS状態を起動前の実キー押下にしない()
     {
-        Assert.False(WindowsUserInputMonitor.HasStartupPhysicalKey(0xF4, 0));
-        Assert.True(WindowsUserInputMonitor.HasStartupPhysicalKey(0x41, 0x1E));
-        Assert.True(WindowsUserInputMonitor.HasStartupPhysicalKey(1, 0));
+        Assert.False(RawUserInputMonitor.HasStartupPhysicalKey(0xF4, 0));
+        Assert.True(RawUserInputMonitor.HasStartupPhysicalKey(0x41, 0x1E));
+        Assert.True(RawUserInputMonitor.HasStartupPhysicalKey(1, 0));
     }
     [Fact]
     public void 前面化の準備中に手入力が始まったらタスクバーを押さない()
@@ -66,17 +66,17 @@ public sealed class UserInputPauseStateTests
         long now = 0;
         var state = new UserInputPauseState(() => now);
         // 実測: 英数(0xF0)と半角/全角(0xF4)は押した合図だけが届き、OSも押下中と返し続ける。
-        now = 10_000; WindowsUserInputMonitor.Key(state, 10, 0xF0, true);
-        now = 10_100; WindowsUserInputMonitor.Key(state, 10, 0xF4, true);
+        now = 10_000; RawUserInputMonitor.Key(state, 10, 0xF0, true);
+        now = 10_100; RawUserInputMonitor.Key(state, 10, 0xF4, true);
         Assert.Equal(0, state.Snapshot().HeldCount);
         Assert.Equal(2, state.Snapshot().UserEvents);
         now = 15_099; Assert.True(state.Snapshot().Paused);
         now = 15_100; Assert.False(state.Snapshot().Paused);
         // 通常のキーは従来どおり、離すまで押下に数える。
-        WindowsUserInputMonitor.Key(state, 10, 0x41, true);
+        RawUserInputMonitor.Key(state, 10, 0x41, true);
         now = 60_000; Assert.True(state.Snapshot().Paused);
         Assert.Equal(1, state.Snapshot().HeldCount);
-        WindowsUserInputMonitor.Key(state, 10, 0x41, false);
+        RawUserInputMonitor.Key(state, 10, 0x41, false);
         now = 65_000; Assert.False(state.Snapshot().Paused);
     }
 
@@ -155,5 +155,5 @@ public sealed class UserInputPauseStateTests
     [InlineData(17, 0x1D, 2, 0xA3)]
     [InlineData(18, 0x38, 0, 0xA4)]
     public void 左右の修飾キーを押下状態として区別する(int vk, int scan, int flags, int expected) =>
-        Assert.Equal(expected, WindowsUserInputMonitor.KeyboardCode(vk, scan, flags));
+        Assert.Equal(expected, RawUserInputMonitor.KeyboardCode(vk, scan, flags));
 }

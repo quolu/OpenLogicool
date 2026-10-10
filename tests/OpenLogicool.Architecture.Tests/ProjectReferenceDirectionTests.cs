@@ -19,6 +19,8 @@ public sealed class ProjectReferenceDirectionTests
             ["OpenLogicool.Input"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),
             // watchdog は host 死亡後も動く最後の砦なので依存ゼロ（§6.2・DEV-009）
             ["OpenLogicool.Watchdog"] = new HashSet<string>(StringComparer.Ordinal),
+            // 管理者権限で動く手入力の監視。昇格する部分をこのexeだけに限るため依存ゼロ（Bot本体のexeやDLLを読み込まない）。
+            ["OpenLogicool.InputWatch"] = new HashSet<string>(StringComparer.Ordinal),
             ["OpenLogicool.Packaging"] = new HashSet<string>(StringComparer.Ordinal),
             ["OpenLogicool.Profiles"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),
             ["OpenLogicool.Playbooks"] = Set("OpenLogicool.Contracts", "OpenLogicool.Domain"),

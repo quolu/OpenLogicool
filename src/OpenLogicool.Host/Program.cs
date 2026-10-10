@@ -110,7 +110,6 @@ return command switch
     "supervised-import" when args.Length >= 2 => SupervisedImport(args[1], args[2..]),
     "game-index" when args.Length >= 2 => HostGameIndexCommand.Run(args[1], args[2..]),
     "user-input-probe" => HostUserInputProbe.Run(args[1..]),
-    "user-input-watch" => HostUserInputWatch.Run(args[1..]),
     "assistant" => BotAssistanceCli.Run(args[1..], DefaultDatabasePath()),
     "data" => DataCommand(args[1..]),
     "control" or "app" or "bot" or "device" or "devices" or "profile" or "recording" or "serial" or "lcd"

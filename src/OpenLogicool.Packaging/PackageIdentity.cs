@@ -21,7 +21,8 @@ public sealed record UnpackagedDistributionLayout(
     IReadOnlyList<string> ApplicationFiles,
     bool AutostartConfigured,
     bool UpdateManifestPresent,
-    bool StartsDeviceWriteDuringInstallOrUpdate);
+    bool StartsDeviceWriteDuringInstallOrUpdate,
+    IReadOnlyList<string> ElevatedInstallFiles);
 
 /// <summary>
 /// package identity の現在地（EXP-DIST-01）。
@@ -55,6 +56,11 @@ public static class PackageIdentities
             ],
             AutostartConfigured: false,
             UpdateManifestPresent: false,
-            StartsDeviceWriteDuringInstallOrUpdate: false),
+            StartsDeviceWriteDuringInstallOrUpdate: false,
+            // アプリのフォルダーには置かない。管理者権限で動くため、昇格した導入の手順が管理者だけが書ける場所へ置く。
+            ElevatedInstallFiles:
+            [
+                @"%ProgramFiles%\OpenLogicool\InputWatch\OpenLogicool.InputWatch.exe",
+            ]),
         PublicPackagingDecision: "EXP-DIST-01 の clean VM 実測前のため、MSIX／Sparse Package／MSI は未決定。");
 }
