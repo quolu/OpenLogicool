@@ -202,36 +202,31 @@ public sealed class GameOperatorMacroUiTests
     [Fact]
     public void Recorded_macro_opens_a_pending_confirmation_after_the_tab_is_loaded()
     {
-        Exception? failure = null;
-        var thread = new Thread(() =>
+        // 確認の小窓は「常に最前面・画面中央・前面へ出す」作りで、本当に表示しないと開かない。
+        // 利用者の画面へ出さず、前面の窓からフォーカスも奪わないよう、見えないデスクトップで走らせる。
+        HiddenDesktop.RunSta(() =>
         {
-            try
+            var review = new MacroStepConfirmationRequest("confirmation:pending", 3, "クリック", "Moved", null, null, "違いあり");
+            var intents = new MacroIntents
             {
-                var review = new MacroStepConfirmationRequest("confirmation:pending", 3, "クリック", "Moved", null, null, "違いあり");
-                var intents = new MacroIntents
-                {
-                    Macros = [new("daily", "v1", "game", "env", "日課", 1, 51, "保存済み", true)],
-                    Current = new(MacroRunPhase.AwaitingConfirmation, "日課", "game", 2, "保存済み", "クリック", "Moved", 0, 1,
-                        "確認待ち", false, true, PendingConfirmation: review),
-                };
-                var window = new GameOperatorWindow(new WebIntent(), macroAutomationIntents: intents, openMacroTab: true);
-                window.Show();
-                Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.Background, new Action(() => { }));
-                var dialog = Assert.Single(window.OwnedWindows.OfType<MacroStepConfirmationDialog>());
-                Assert.Equal(review.ConfirmationId, dialog.ConfirmationId);
-                var panel = (DependencyObject)Assert.IsType<TabItem>(((TabControl)window.Content).SelectedItem).Content;
-                Assert.False(Descendants(panel).OfType<Button>().Single(button => Equals(button.Content, "再生")).IsEnabled);
-                intents.Publish(intents.Current!);
-                Assert.Single(window.OwnedWindows.OfType<MacroStepConfirmationDialog>());
-                Descendants(dialog).OfType<Button>().Single(button => Equals(button.Content, "違う・ここで補正"))
-                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Assert.Equal((review.ConfirmationId, MacroStepDecision.Correct), intents.Confirmed);
-                window.Close();
-            }
-            catch (Exception error) { failure = error; }
+                Macros = [new("daily", "v1", "game", "env", "日課", 1, 51, "保存済み", true)],
+                Current = new(MacroRunPhase.AwaitingConfirmation, "日課", "game", 2, "保存済み", "クリック", "Moved", 0, 1,
+                    "確認待ち", false, true, PendingConfirmation: review),
+            };
+            var window = new GameOperatorWindow(new WebIntent(), macroAutomationIntents: intents, openMacroTab: true);
+            window.Show();
+            Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.Background, new Action(() => { }));
+            var dialog = Assert.Single(window.OwnedWindows.OfType<MacroStepConfirmationDialog>());
+            Assert.Equal(review.ConfirmationId, dialog.ConfirmationId);
+            var panel = (DependencyObject)Assert.IsType<TabItem>(((TabControl)window.Content).SelectedItem).Content;
+            Assert.False(Descendants(panel).OfType<Button>().Single(button => Equals(button.Content, "再生")).IsEnabled);
+            intents.Publish(intents.Current!);
+            Assert.Single(window.OwnedWindows.OfType<MacroStepConfirmationDialog>());
+            Descendants(dialog).OfType<Button>().Single(button => Equals(button.Content, "違う・ここで補正"))
+                .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.Equal((review.ConfirmationId, MacroStepDecision.Correct), intents.Confirmed);
+            window.Close();
         });
-        thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join();
-        if (failure is not null) throw failure;
     }
 
     private sealed class RecordingIntents : IDemonstrationRecordingIntents
