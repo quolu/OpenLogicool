@@ -222,7 +222,7 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "コインが30以下になった時に、本番設定の補充（70個）が最後まで進むかを確かめる。次の「届いていません」の知らせで、回答の読み取りと送り直しを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。会話の選択で1分以上止まった時に通知が出るかを確かめる。",
+    "nextAction": "利用者かBotが次に入力した時に、Botの記録（user-input-state の UserEvents・NanoEvents）で、ゲームが前面の間の手入力が数えられBotの送出が手入力に数えられないことを確かめる。コインが30以下になった時に、本番設定の補充（70個）が最後まで進むかを確かめる。次の「届いていません」の知らせで、回答の読み取りと送り直しを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。会話の選択で1分以上止まった時に通知が出るかを確かめる。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -419,7 +419,17 @@
       "status": "Throughline 0.16.17で修理・導入済み（リヴァリンの報告 seq3）。後継の番が終わった時（Stopのhookから起きた回）の窓は未確認。",
       "pendingReply": null
     },
-    "idleAtStatue": "18:53から19:13まで、Botは像の前でコンパスのSpaceを1回送った後に何も送らず、通知も出なかった。原因は未調査。",
+    "userInputWatch": {
+      "status": "installed-unverified-with-real-input",
+      "ownerRule": "人の操作の検知は、キーボード・マウス・G13など人の手の入力装置すべてが対象。Bot自身の入力を誤検知しない。操作の終わりは入力の空白5秒。",
+      "cause": "ゲームは管理者権限、Hostは通常権限。高い権限の窓が前面の間、Hostへキーボードとマウスの入力が届かない（UACを有効へ戻した15:39以降）。",
+      "fix": "管理者権限のタスク \\OpenLogicool\\UserInputWatch から監視processを起動し、押下の数と無入力の時間だけを受け取る（5e31979）。待ち時間5秒と、矢印を動かせない時に止まらない修理は 8c2956d。",
+      "decisionId": "K-7V3G4G",
+      "record": "docs/incidents/2026-10-10-bot-user-input-blind-under-uac.md",
+      "caution": "動作中の実行の events.jsonl は Get-Content で読む。File.ReadLines で読むとBotが止まる（20:11に担当AIが起こした）。"
+    },
+    "openScreen": "20:40時点で画面は「調理台」。Botは知らない画面として待っている（案件 ede258c6・引き受け済み）。その前は「クエストに必要なアイテムがありません（ハーブ0/2）」で待っていた。どちらも未対応。",
+    "coreSessionExperiment": "本体改良の会話の遠隔表示の実験（窓の取り込み）は、19:52の停止を受けて止めてもらっていた。20:45ごろ、事前の一言つきで再開してよいと伝えた。", "idleAtStatue": "18:53から19:13まで、Botは像の前でコンパスのSpaceを1回送った後に何も送らず、通知も出なかった。原因は未調査。",
     "coreSessionAddress": "本体改良の会話の宛先は「core-ui-improvements｜OpenLogicool本体の改良（自動引き継ぎ）」。こちらの宛先は「OpenLogicool｜マビノギ BOT 開発（自動引き継ぎ） [cce395]」と伝えてある。先方は許可の問いで止まっていて（リヴァリンの報告）、連絡が読まれた確認は無い。",
     "narrationCue": {
       "sourceCommit": "3f3bdf2",
