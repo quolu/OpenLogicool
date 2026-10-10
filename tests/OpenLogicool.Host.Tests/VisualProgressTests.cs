@@ -598,8 +598,13 @@ public sealed class VisualProgressTests
         var schedule = new VisualProgressSchedule(profile);
         Assert.Equal(VisualProgressAction.Key, schedule.Decide(0, choice, false, true, due: false).Action);
         Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, choice, true, true, due: false).Action);
-        Assert.Equal(VisualProgressAction.Review, recognizer.Recognize(Ocr([
+        // ボーナスの選択が出ている間は、カードを読めるまで待ち、読めたら利用者の選択を優先する。どちらもSpaceは選ばない。
+        Assert.Equal(VisualProgressAction.Wait, recognizer.Recognize(Ocr([
             new("画面を押してください", 30, 30, 300, 30), new("ボーナスを選択してください", 300, 150, 300, 30)]),
+            1000, 600, new(0, 0, 1000, 600)).Action);
+        Assert.Equal(VisualProgressAction.Review, recognizer.Recognize(Ocr([
+            new("画面を押してください", 30, 30, 300, 30), new("ボーナスを選択してください", 300, 150, 300, 30),
+            new("傷の保護", 410, 270, 70, 20), new("厚い皮膚", 520, 270, 70, 20)]),
             1000, 600, new(0, 0, 1000, 600)).Action);
         Assert.NotEqual("screen-prompt", recognizer.Recognize(Ocr([new("画面の設定を選択してください", 30, 30, 300, 30)]),
             1000, 600, new(0, 0, 1000, 600)).RuleId);
@@ -990,8 +995,9 @@ public sealed class VisualProgressTests
         var beforeOcr = await recognizer.ReadOcrAsync(before, viewport);
         var choice = recognizer.Recognize(beforeOcr, before.Width, before.Height, viewport, before);
         Assert.Same(review, choice.ReviewSource);
-        Assert.Equal(3, choice.Options!.Length);
-        var point = VisualProgressRecognizer.OptionPoint(review, 1, viewport, before.Width, before.Height);
+        Assert.Equal(new[] { "選択肢1: STR成長1段階", "選択肢2: LUCK成長13段階（ゲーム内推奨）", "選択肢3: WにL成長1段階" },
+            choice.Options!.Select(option => option.Label));
+        var point = choice.OptionPoints![1];
         Assert.InRange(point[0] * before.Width, 780, 935);
         Assert.InRange(point[1] * before.Height, 430, 700);
         Assert.False(VisualProgressRecognizer.Shows(beforeOcr, viewport, review.Confirm!));
@@ -999,6 +1005,9 @@ public sealed class VisualProgressTests
         // 実測: 中央のカードを押した後は、選んだカードが拡大され下に「Space 決定」が出る。
         var selected = ReadFrame(Path.Combine(fixture, "bonus-card-selected.png"));
         Assert.True(VisualProgressRecognizer.Shows(await recognizer.ReadOcrAsync(selected, viewport), viewport, review.Confirm!));
+        // 実測: 2枚の画面で左のカードを押した後も、同じ位置に「Space 決定」が出る。
+        var leftSelected = ReadFrame(Path.Combine(fixture, "bonus-left-card-selected.png"));
+        Assert.True(VisualProgressRecognizer.Shows(await recognizer.ReadOcrAsync(leftSelected, viewport), viewport, review.Confirm!));
 
         VisualProgressOption[] asked = [new("choice-1", "選択肢1: STR成長1段階"), new("choice-2", "選択肢2: LUCK成長13段階"), new("choice-3", "選択肢3: WにL成長1段階")];
         // OCRがWILLを読み違えた時と読めた時は同じ選択肢として扱う。
@@ -1013,6 +1022,40 @@ public sealed class VisualProgressTests
         Assert.False(VisualProgressRecognizer.SameOptions(null, asked));
     }
 
+    [Fact]
+    public async Task カードが2枚の実画面でも枚数と位置を文字のまとまりから読み推奨の印を名前へ付ける()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
+        var frame = ReadFrame(Path.Combine(fixture, "bonus-two-cards.png"));
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var choice = recognizer.Recognize(await recognizer.ReadOcrAsync(frame, viewport), frame.Width, frame.Height, viewport, frame);
+        Assert.Equal(VisualProgressAction.Review, choice.Action);
+        Assert.True(choice.AskUserImmediately);
+        Assert.Equal(new[] { "選択肢1: 傷の保護1段階", "選択肢2: 厚い皮膚1段階（ゲーム内推奨）" }, choice.Options!.Select(option => option.Label));
+        // 実測: 左のカードは x 680〜845、右のカードは x 865〜1037、どちらも y 420〜720。
+        Assert.InRange(choice.OptionPoints![0][0] * frame.Width, 690, 835);
+        Assert.InRange(choice.OptionPoints[1][0] * frame.Width, 875, 1027);
+        Assert.All(choice.OptionPoints, point => Assert.InRange(point[1] * frame.Height, 430, 710));
+    }
+
+    [Fact]
+    public async Task カードが裏返る演出の途中の実画面は選択肢を読めるまで確認画面として扱わず待つ()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
+        // 実測: 利用者へ届いた申請に添付されていた、文字を読めない画面。
+        var frame = ReadFrame(Path.Combine(fixture, "bonus-cards-animating.png"));
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var choice = recognizer.Recognize(await recognizer.ReadOcrAsync(frame, viewport), frame.Width, frame.Height, viewport, frame);
+        Assert.Equal(VisualProgressAction.Wait, choice.Action);
+        Assert.Null(choice.Options);
+        Assert.False(choice.AskUserImmediately);
+    }
     [Fact]
     public void 選択後の確定は利用者への即時申請に表示とキーの組でだけ指定できる()
     {

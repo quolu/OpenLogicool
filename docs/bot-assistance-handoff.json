@@ -61,8 +61,8 @@
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv54。狩り場クリア後、Botがレベルガイドの推奨から自動移動し、ダンジョンへ入場して進行中。",
-    "botRun": "bot-runs/mabinogi-mobile/20261010-135801-627-f2b97703",
+    "nextCheck": "Lv55。クエストは向上心の証明（女神の庭で10歳のタイタンベアを退治）。",
+    "botRun": "bot-runs/mabinogi-mobile/20261010-141810-428-41592824",
     "levelProgression": {
       "currentLevel": 53,
       "targetLevel": 42,
@@ -75,10 +75,10 @@
       "lastGuideCompletionPercent": 67
     },
     "lastBonusChoice": {
-      "choice": "LUCK成長13段階（Epic・推奨）",
-      "basis": "決裁箱K-VS2VHHの利用者回答（選択肢2）。Botが検出直後に自分で申請した。",
+      "choice": "傷の保護1段階（Elite）",
+      "basis": "決裁箱K-DBAPMRの利用者回答。ゲーム内推奨は厚い皮膚だったが、回答どおりに選んだ。",
       "status": "executed",
-      "evidence": "evidence/bot-bonus-ask-user-20261010/after-confirm.png"
+      "evidence": "evidence/bot-bonus-ask-user-20261010/two-card-after-confirm.png"
     }
   },
   "pendingGameDecision": {
@@ -181,7 +181,7 @@
   },
   "continuation": {
     "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
-    "updatedUtc": "2026-10-10T04:58:58.7710527+00:00",
+    "updatedUtc": "2026-10-10T05:18:36.2057598+00:00",
     "assistanceGeneration": 6,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -195,7 +195,7 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "通知の宛先対応（Aitermの設計→反証→実装→公開→OpenLogicoolの担当登録）。ボーナス回答のBot実行の実機確認。Jevの実測結果への利用者の判断。",
+    "nextAction": "次のボーナス画面で、読める申請とBot自身による選択の実行を確認する。通知の宛先対応（Aitermの設計草案は受領済み・未検証）。Jevの実測結果への利用者の判断。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -269,8 +269,8 @@
     "bonusAskUser": {
       "sourceCommit": "df98a07",
       "status": "installed-and-live-verified",
-      "behavior": "ボーナスの選択表示は検出した回にBotが決裁箱へ直接申請。1分の待機と担当AIを経由しない。",
-      "live": "検出から0.64秒でK-VS2VHHを申請。",
+      "behavior": "選択肢の文字が読めて、続けて2回同じ内容を読めた時に、Botが決裁箱へ直接申請する。枚数と位置は文字のまとまりから決める。",
+      "live": "3枚の画面は検出直後の申請が成立（K-VS2VHH）。2枚の画面は演出途中の画像で申請してしまい（K-DBAPMR）、修理した。修理後の申請は次のボーナス画面で確認する。",
       "afterAnswer": "回答後のカード選択と確定は担当AIがNanoで行う。",
       "evidence": "evidence/bot-bonus-ask-user-20261010/acceptance.json"
     },
@@ -306,7 +306,7 @@
       "status": "installed",
       "decisionId": "K-8WKC8R",
       "behavior": "回答を3秒おきに読み、同じ選択肢の間だけカードを押し、決定の表示を確かめてSpaceを送る。",
-      "live": "次のボーナス画面でまだ実機確認していない。",
+      "live": "Bot自身による実行は未確認。K-DBAPMRは担当AIが手で実行した。",
       "evidence": "evidence/bot-bonus-ask-user-20261010/acceptance.json"
     },
     "assistantTakeover": {

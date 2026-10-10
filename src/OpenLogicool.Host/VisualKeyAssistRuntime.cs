@@ -353,6 +353,9 @@ public static class VisualKeyAssistRuntime
             // 利用者へ直接申請した選択。回答が届いたら、同じ選択肢が表示されている間だけ実行する。
             (VisualAssistNotice Notice, VisualProgressChoice Review, string Folder)? askedUser = null;
             string? answeredOption = null;
+            // 演出の途中で読めた文字で申請しないよう、続けて同じ選択肢を読めた時だけ申請する。
+            VisualProgressOption[]? settlingOptions = null;
+            var askQueued = false;
             var reviewNumber = 0;
             Emit(new { Event = "run-started", DurationMs = duration, AutomaticRulesContinue = continueRules, TimedInputEnabled = timedInputEnabled,
                 NotificationGraceMs = VisualProgressReviewMonitor.NotificationGraceMs });
@@ -401,11 +404,12 @@ public static class VisualKeyAssistRuntime
                         var current = progressRecognizer!.Recognize(await progressRecognizer.ReadOcrAsync(fresh, freshViewport, token),
                             fresh.Width, fresh.Height, freshViewport, fresh, Inhibited(fresh));
                         // 続けて別の選択が出た時に前の回答を当てないよう、回答した時と同じ選択肢の時だけ押す。
-                        if (current.ReviewSource != source || !VisualProgressRecognizer.SameOptions(current.Options, asked.Review.Options))
+                        if (current.ReviewSource != source || current.OptionPoints is null
+                            || !VisualProgressRecognizer.SameOptions(current.Options, asked.Review.Options))
                             return Fail("回答した時の選択肢が現在の画面と一致しないため、選択を送っていません。");
                         if (UserIsActive()) return false;
                         var click = new VisualProgressChoice(VisualProgressAction.Click, "user-choice", $"user-choice:{asked.Notice.Id}:{option}",
-                            Point: VisualProgressRecognizer.OptionPoint(source, index, freshViewport, fresh.Width, fresh.Height));
+                            Point: current.OptionPoints[index]);
                         Send(click, fresh);
                         var deadline = clock.ElapsedMilliseconds + 5000;
                         while (clock.ElapsedMilliseconds < deadline)
@@ -490,6 +494,8 @@ public static class VisualKeyAssistRuntime
                         {
                             pendingReviewNotification = null;
                             askedUser = null;
+                            askQueued = false;
+                            settlingOptions = null;
                             Interlocked.Exchange(ref answeredOption, null);
                             progress.Resume();
                             if (!continueRules)
@@ -568,6 +574,13 @@ public static class VisualKeyAssistRuntime
                         {
                             if (keepMonitoring)
                             {
+                                if (flowChoice.AskUserImmediately && !askQueued
+                                    && !VisualProgressRecognizer.SameOptions(flowChoice.Options, settlingOptions))
+                                {
+                                    settlingOptions = flowChoice.Options;
+                                    await Task.Delay(250, token);
+                                    continue;
+                                }
                                 BeginMonitoring(flowCandidate ?? new(VisualProgressAction.Normal), frame,
                                     flowChoice.Detail!, flowChoice.Options, ocr?.Text, token, flowChoice.AskUserImmediately ? flowChoice : null);
                                 flowChoice = VisualProgressContinuation.AfterReview(
@@ -763,7 +776,8 @@ public static class VisualKeyAssistRuntime
             void BeginMonitoring(VisualProgressChoice candidate, CapturedFrame frame, string detail,
                 VisualProgressOption[]? options, string? ocrText, CancellationToken token, VisualProgressChoice? askUser = null)
             {
-                if (reviewMonitor.IsHolding) return;
+                // 別の理由で監視中でも、利用者へ直接申請する表示は申請する。申請済みの間は重ねて出さない。
+                if (reviewMonitor.IsHolding && (askUser is null || askQueued)) return;
                 var detectedAt = clock.ElapsedMilliseconds;
                 reviewMonitor.Hold(candidate, recoveryRecognizer?.Observe(frame,
                     WindowsGameTargetLocator.CaptureClientBounds(target.Window)).HudVisible == true, detectedAt,
@@ -779,6 +793,7 @@ public static class VisualKeyAssistRuntime
                 File.WriteAllText(Path.Combine(folder, "review.json"), review.GetRawText());
                 if (askUser is not null)
                 {
+                    askQueued = true;
                     // 利用者だけが選ぶ表示は、様子見と担当AIを経由せず検出した回に決裁箱へ出す。
                     // 申請に失敗した時は印を付けず、1分後の詰まり通知で担当AIへ知らせる。
                     Emit(new { Event = "progress-review-monitoring", AtMs = detectedAt,

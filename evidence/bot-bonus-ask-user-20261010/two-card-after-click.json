@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-bonus-ask-user-20261010\\two-card-after-click.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "bd7923bc17a8f4319fc43bc120a040479b9b042c501fa1563d24f23398d35f28",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

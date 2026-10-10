@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-bonus-ask-user-20261010\\two-card-after-confirm.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "a2c0ee097a1ec7272650aaf3d17db1a54d69a4c90c166cdc7cac95ff6fc91860",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
