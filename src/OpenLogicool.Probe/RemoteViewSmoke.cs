@@ -361,14 +361,26 @@ internal static partial class RemoteViewSmoke
 
         private IEnumerable<string> FfmpegArguments(long window)
         {
+            // 製品（RemoteViewFfmpegArguments）と同じ形: 映像と音の両方へ同じ起点の現在時刻を振らせ、取り込みは送るコマ数の2倍にして間引く。
+            // 届いた量から音の時刻を数えると、渡せなかった間に失った音のぶんだけ映像より遅れ、同じ絵の繰り返しが終わりまで続く。
+            var originOffset = "-" + (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000.0)
+                .ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
             yield return "-hide_banner";
             yield return "-loglevel";
             yield return "info";
+            yield return "-use_wallclock_as_timestamps";
+            yield return "1";
+            yield return "-itsoffset";
+            yield return originOffset;
             yield return "-f";
             yield return "lavfi";
             yield return "-i";
-            yield return $"gfxcapture=hwnd={window}:max_framerate={settings.Fps}:width={settings.Width}:height={settings.Height}" +
+            yield return $"gfxcapture=hwnd={window}:max_framerate={settings.Fps * 2}:width={settings.Width}:height={settings.Height}" +
                          ":resize_mode=scale_aspect:capture_cursor=1";
+            yield return "-use_wallclock_as_timestamps";
+            yield return "1";
+            yield return "-itsoffset";
+            yield return originOffset;
             yield return "-f";
             yield return "f32le";
             yield return "-ar";
@@ -377,6 +389,11 @@ internal static partial class RemoteViewSmoke
             yield return "mono";
             yield return "-i";
             yield return "pipe:0";
+            yield return "-copyts";
+            yield return "-fps_mode";
+            yield return "cfr";
+            yield return "-r";
+            yield return settings.Fps.ToString();
             yield return "-c:v";
             yield return "h264_nvenc";
             yield return "-preset";
@@ -393,6 +410,8 @@ internal static partial class RemoteViewSmoke
             yield return "0";
             yield return "-g";
             yield return (settings.Fps * 2).ToString();
+            yield return "-af";
+            yield return "aresample=async=1";
             yield return "-c:a";
             yield return "libopus";
             yield return "-b:a";

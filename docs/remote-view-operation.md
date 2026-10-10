@@ -41,6 +41,18 @@ Cloudflare のトンネルは Web の通信だけを運ぶ。映像と音は通�
 2. 「遠隔表示」で開始を押す（`remoteview start`）。止める時は停止（`remoteview stop`）。
 3. iPad／iPhone の Safari で視聴用の URL を開き、視聴用の ID とパスワードを入れる。
 
+## 映像が正しく届いているかの確かめ方
+
+コマの数と間隔だけでは、同じ絵の繰り返しを見逃す。受信側で、届いた絵が前のコマから変わったかを数える。
+
+```powershell
+node scripts/remote-view-receive-check.mjs https://stream.kitepon.dev/game/ <視聴用のIDとパスワードのJSON> 30
+```
+
+- 窓を出さない Chrome で視聴ページを開いて測る。ゲームの窓からフォーカスを奪わない。
+- `identicalToPrevious` の `frames` が前のコマと全く同じ絵の数、`longestRun` が最長の連続。動いているゲームでは、どちらも 0 に近い値になる。`runsOf3OrMore` が 0 でない時は、送り出し側が映像を止めて同じコマで埋めている。
+- JSON は `{"viewUser": "...", "viewPass": "..."}`。repo へ置かない。
+
 ## 外から見る時に要るもの
 
 - 家のルーターが UDP 8189 をメインサーバーの 8189 へ転送すること。
