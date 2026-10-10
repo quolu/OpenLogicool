@@ -229,12 +229,16 @@
       "fix": "Number.BrightAtLeast。明るい数字だけを残した画像でも読み、同じ値になった時だけ使う。"
     },
     "processSplit": {
-      "status": "stage1-implementation-delegated",
+      "status": "stage1-merged-installed-host-down",
       "ownerInstruction": "利用者の指示（2026-10-11 02:19・02:27）: B（Botを本体と別の process に出す）をやってから、A（設定を動いたまま読み直す）をやる。Bも実装しろ。そのあとAもだ。",
       "design": "docs/bot-worker-process-design.md（設計の正本。別ベンダーの反証 §9 を取り込み済み・7463ae3）。計画 §6.2 と §16 も改めた。",
       "stage0": "実装済み（3ea3cc1）。Botの実行へ、Nanoの接続ではなく入力装置の口だけを渡す。動きは変えていない。Host 878件が成功。導入とBotを動かしての確認は段階1と一緒に行う。",
       "stage1": "02:55 ごろ、実装担当（Codex・GPT-6.1 Sol・effort high。pick-model の選定）へ頼んだ。Aitermの会話名は bot-worker-stage1-impl。作業場所は worktree C:\\Users\\kite_\\Developer\\OpenLogicool-bot-worker、枝は bot-worker-stage1（main の 7463ae3 から）。push と main への取り込みは担当にさせていない。結果は担当AIの会話へ自動で届く。",
-      "afterStage1": "届いた成果を親が実物で受け入れる（差分を読む・Host と構成の試験を走らせる）。main へ取り込み、本体を1回入れ替えてから、設計書 §5 段階1 の完了条件①〜⑥と §6 の実測を実機で確かめる。その後に段階2・段階3（設定の読み直し）。",
+      "stage1Result": "Codex が実装（枝の 42a8f3e）。親が差分を読み、別の点検担当（Claude・読み取り専用）が敵対的に読んだ。致命点は無く、直す所8点を Codex へ返して直した（1565eb1）。main の上へ載せ直して取り込んだ（0d6ea55・e50c0fb）。Host 925件・構成 11件・同梱 14件が成功。",
+      "stage1Install": "03:41 に本体とBotを導入した（Botの版は artifacts/development/OpenLogicool.Bot/20261011-034134-766-86f1593a）。導入は成功したが、本体が起動できず、段階1の実機の確認は1つもできていない。",
+      "hostDown": "本体は 03:40:04 に閉じられていた（担当AIの入れ替えの48秒前。担当AIではない。原因は未確認）。その後の起動は3回とも、Nano が最初のあいさつに 0 バイトしか返さず失敗した（SerialHidDiscoveryException。COM3 は Windows から見えている）。未解明で残っている「アプリを閉じて開き直した直後に Nano が無応答になる」件と同じ形。G13／G600 のキー割当・Bot・遠隔表示が全部止まっている。",
+      "recovery": "承認済みの手順（docs/serial-hid-output-operation.md「無応答時のWindows機器再起動」）: 管理者権限で pnputil /restart-device \"USB\\VID_1B4F&PID_9206\\HIDFG\" → serial-hid-test --repeat 1 で HELLO/READY と全解放を確かめる → 本体を起動 → bot start。UACが1回要るので、決裁箱 K-BATBH7 で出してよい時を聞いている。",
+      "afterRecovery": "設計書 §5 段階1 の完了条件①〜⑥と §6 の実測を実機で確かめる。その後に段階2・段階3（設定の読み直し）。Nano の無応答の復旧にUACが要らない形と、原因の調査を利用者へ提案済み。",
       "next": "process をまたいで渡すもの（Nano の接続・G13／G600 の押下の観測・操作用の通信口）の設計を出し、本体改良の会話との調整と別ベンダーの反証を通してから実装する。"
     },
     "screenJudge": {
@@ -274,10 +278,11 @@
       "567762f6-372e-46a8-b2e0-3e5ee137adcb"
     ],
     "pendingDecisionIds": [
-      "K-FCU8T8"
+      "K-FCU8T8",
+      "K-BATBH7"
     ],
-    "botPhase": "Running",
-    "botStoppedReason": null,
+    "botPhase": "Stopped",
+    "botStoppedReason": "2026-10-11 03:40:04 に実行 20261011-023519-489-b0f9b37f が終わり、本体も閉じられた。その後は Nano の無応答で本体が起動できない。",
     "botRunNote": "2026-10-11 01:40 に利用者がBotを始めた。02:08 に担当AIが、事前に伝えた上でBotを止めて開発版を入れ替え（0a620fb）、すぐ始め直した。本体改良の会話への連絡は、02:08 の分が相手の会話で保留になり届いていない。",
     "botFunctions": {
       "status": "installed-start-verified",
