@@ -411,7 +411,7 @@ public static class VisualKeyAssistRuntime
                             fresh.Width, fresh.Height, freshViewport, fresh, Inhibited(fresh));
                         // 続けて別の選択が出た時に前の回答を当てないよう、回答した時と同じ選択肢の時だけ押す。
                         if (current.ReviewSource != source || current.OptionPoints is null
-                            || !VisualProgressRecognizer.SameOptions(current.Options, asked.Review.Options))
+                            || !VisualProgressRecognizer.SameOptions(current.Options, asked.Review.Options, ignoreRecommendedMark: true))
                             return Fail("回答した時の選択肢が現在の画面と一致しないため、選択を送っていません。");
                         if (UserIsActive()) return false;
                         var click = new VisualProgressChoice(VisualProgressAction.Click, "user-choice", $"user-choice:{asked.Notice.Id}:{option}",

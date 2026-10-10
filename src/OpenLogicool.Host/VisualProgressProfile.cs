@@ -189,7 +189,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     Options: review.ChoiceBounds is null && review.ChoiceBand is null ? null : choices.Select((choice, index) =>
                         new VisualProgressOption($"choice-{index + 1}", $"選択肢{index + 1}: "
                             + (choice.Label.Length == 0 ? "文字を読めません（添付画像を確認）" : choice.Label)
-                            + (choice.Recommended ? "（ゲーム内推奨）" : ""))).ToArray(),
+                            + (choice.Recommended ? RecommendedMark : ""))).ToArray(),
                     AskUserImmediately: review.AskUserImmediately, ReviewSource: review,
                     OptionPoints: choices.Select(choice => choice.Point).ToArray());
             }
@@ -265,11 +265,21 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
     public static bool Shows(WindowsGameOcrResult ocr, FrameRect viewport, VisualProgressText text) =>
         Matches(Normalize(string.Concat(ocr.Words.Where(word => Inside(word, text.Bounds, viewport)).Select(word => word.Text))), text.Text);
 
-    /// <summary>選択肢の並びが同じ表示かを比べる。OCRの数文字の読み違いは同じとみなし、別の選択肢は区別する。</summary>
-    public static bool SameOptions(VisualProgressOption[]? observed, VisualProgressOption[]? expected) =>
-        observed is not null && expected is not null && observed.Length == expected.Length
-        && observed.Zip(expected).All(pair => pair.First.Id == pair.Second.Id
-            && OpenLogicool.Contracts.Perception.OcrTextMatcher.Similarity(pair.First.Label, pair.Second.Label) >= 0.75);
+    private const string RecommendedMark = "（ゲーム内推奨）";
+
+    /// <summary>
+    /// 選択肢の並びが同じ表示かを比べる。OCRの数文字の読み違いは同じとみなし、別の選択肢は区別する。
+    /// 推奨の印は光って読めない回があるため、同じ選択肢かを確かめる時は ignoreRecommendedMark で印を比較から外す。
+    /// </summary>
+    public static bool SameOptions(VisualProgressOption[]? observed, VisualProgressOption[]? expected,
+        bool ignoreRecommendedMark = false)
+    {
+        string Name(string label) => ignoreRecommendedMark && label.EndsWith(RecommendedMark, StringComparison.Ordinal)
+            ? label[..^RecommendedMark.Length] : label;
+        return observed is not null && expected is not null && observed.Length == expected.Length
+            && observed.Zip(expected).All(pair => pair.First.Id == pair.Second.Id
+                && OpenLogicool.Contracts.Perception.OcrTextMatcher.Similarity(Name(pair.First.Label), Name(pair.Second.Label)) >= 0.75);
+    }
 
     /// <summary>
     /// 選択肢の名前・押す位置・推奨の印を読む。帯を指定した表示は、帯の中の文字を横の間隔でまとめて

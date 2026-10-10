@@ -1089,6 +1089,19 @@ public sealed class VisualProgressTests
             [asked[2], asked[1], new("choice-3", "選択肢3: STR成長1段階")], asked));
         Assert.False(VisualProgressRecognizer.SameOptions([asked[0], asked[1]], asked));
         Assert.False(VisualProgressRecognizer.SameOptions(null, asked));
+
+        // 実測: 推奨の印は6枚中4枚で読め、2枚で読めなかった。印の有無で名前の類似度は0.70になり、
+        // 印の無い読みで申請した回答を、印のある読みの画面へ送れなかった。回答を当てる時は印を比較から外す。
+        VisualProgressOption[] withMark = [new("choice-1", "選択肢1: T成長1段階"),
+            new("choice-2", "選択肢2: LUCK成長15段階（ゲーム内推奨）"), new("choice-3", "選択肢3: WにL成長1段階")];
+        VisualProgressOption[] withoutMark = [withMark[0], new("choice-2", "選択肢2: LUCK成長15段階"), withMark[2]];
+        Assert.False(VisualProgressRecognizer.SameOptions(withMark, withoutMark));
+        Assert.True(VisualProgressRecognizer.SameOptions(withMark, withoutMark, ignoreRecommendedMark: true));
+        Assert.True(VisualProgressRecognizer.SameOptions(withoutMark, withMark, ignoreRecommendedMark: true));
+        // 印を外しても、別の選択肢には回答を当てない。
+        Assert.False(VisualProgressRecognizer.SameOptions(
+            [new("choice-1", "選択肢1: 防御優先3段階"), new("choice-2", "選択肢2: 速度優先1段階（ゲーム内推奨）"), new("choice-3", "選択肢3: 技巧優先3段階")],
+            withoutMark, ignoreRecommendedMark: true));
     }
 
     [Fact]
