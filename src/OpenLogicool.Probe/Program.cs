@@ -37,6 +37,9 @@ return command switch
     "g13-lcd-resident-smoke" => OpenLogicool.Probe.G13LcdResidentSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
+    "g13-backlight-smoke" => OpenLogicool.Probe.G13BacklightSmoke.Run(
+        args[1..],
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
     "g13-lcd-image-smoke" => OpenLogicool.Probe.G13LcdImageSmoke.Run(
         args[1..],
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "probe-output"))),
