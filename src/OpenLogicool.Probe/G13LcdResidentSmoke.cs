@@ -9,10 +9,7 @@ internal static class G13LcdResidentSmoke
 {
     public static int Run(string[] args, string outputDirectory)
     {
-        var databasePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OpenLogicool",
-            "input-studio.db");
+        var databasePath = OpenLogicool.Host.OpenLogicoolDataRoot.DatabasePath;
         for (var index = 0; index < args.Length; index++)
         {
             if (args[index] == "--db" && index + 1 < args.Length)

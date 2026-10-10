@@ -70,9 +70,8 @@ public sealed class WindowsPurposeMacroExecutionEngine(
             var routes = new MacroLearningRouteStore(connections);
             var profiles = new MacroLearnedSceneProfileStore(connections);
             var journal = RunJournal.Restore(new MacroRunJournalStore(connections), new MacroEngineeringLog());
-            var frameDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "OpenLogicool", "macro-evidence", DateTime.Now.ToString("yyyyMMdd-HHmmss-fff"));
+            var frameDirectory = OpenLogicoolDataRoot.Combine(
+                "macro-evidence", DateTime.Now.ToString("yyyyMMdd-HHmmss-fff"));
             var policy = new ExplorationPolicy(
                 ContractSchemaVersions.Revision03,
                 $"macro-policy:{Guid.NewGuid():N}",

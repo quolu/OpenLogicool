@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "decisions": [
+    "K-X9E7Z7（通知の宛先対応と保存先の統一を両方やる）",
+    "K-V3MUU2（C:\\Users\\kite_\\.openlogicool へ移す）"
+  ],
+  "cause": "AppData配下への書込みは、起動元がパッケージ化されたアプリ（Codex・Claudeのデスクトップアプリ）の時、アプリごとの別の場所へ振り分けられる。同じ製品が起動元によって別のDBを見ていた。",
+  "before": {
+    "codexPackage": "データの実体はここだけにあった（約5.1GB）。",
+    "realLocalAppData": "空。デスクトップのショートカットから起動すると設定が空で立ち上がる状態だった。",
+    "claudePackage": "空。"
+  },
+  "change": {
+    "root": "OpenLogicoolDataRoot（利用者のホーム直下の .openlogicool）。保存先を決めていた5か所をここへ寄せた。",
+    "importCommand": "data import --from <以前の保存先>。コピーのみ。同じ名前のファイルがあれば上書きせず、何も写さずに止まる。起動中のOpenLogicoolがある時は実行しない。"
+  },
+  "tests": {
+    "hostAll": 635,
+    "failed": 0
+  },
+  "migration": {
+    "files": 5970,
+    "bytes": 5118353021,
+    "databaseSha256": "7928321CCD69450683402FD624A8A951EA8226F70564A6C5E3B01138ED2EBA17",
+    "databaseHashMatches": true,
+    "seconds": 7,
+    "sourceKept": true
+  },
+  "live": {
+    "start": "--db なしの bot start が成功。app status のDBは C:\\Users\\kite_\\.openlogicool\\input-studio.db、常駐・LCD接続・Bot実行中。",
+    "outsideView": "アプリの外で起動したprocessから、新しい保存先に全項目と最新の実行フォルダーがあることを確認。",
+    "assistantStatus": "この会話からの assistant status が、実際の担当（Codexの会話）と案件40件を返すようになった。",
+    "appClose": "常駐Hostが応答して終了し、Watchdogも終了。G600のF3は出荷割当へ復元。",
+    "inputs": "再開後 processedInputs=6、G13・G600の取りこぼし0。"
+  },
+  "rollback": "Codex側の元データは変更せず残してある。--db で元の場所を指定して起動すれば、移行前の状態で動く。",
+  "remaining": [
+    "元データの削除は、利用者の別途承認まで行わない。",
+    "通知の宛先対応（Claudeの会話へ届ける）は未着手。Botの詰まり通知は今もCodexの会話宛て。"
+  ]
+}

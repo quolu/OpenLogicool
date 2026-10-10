@@ -92,9 +92,8 @@ public sealed class WindowsDemonstrationLiveSessionFactory(
                 target.Window,
                 $"window:demonstration:{target.ProcessId}",
                 TimeSpan.FromSeconds(10));
-            var evidenceDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "OpenLogicool", "demonstration-evidence", $"{DateTime.Now:yyyyMMdd-HHmmss-fff}-{Guid.NewGuid():N}");
+            var evidenceDirectory = OpenLogicoolDataRoot.Combine(
+                "demonstration-evidence", $"{DateTime.Now:yyyyMMdd-HHmmss-fff}-{Guid.NewGuid():N}");
             var recordedFrames = new DemonstrationRecordedFrameSource();
             var evidence = new LocalPngGameFrameEvidenceSink(evidenceDirectory, new WindowsGameFramePngEncoder());
             var observation = new ProductGameObservationRuntime(

@@ -110,6 +110,7 @@ return command switch
     "game-index" when args.Length >= 2 => HostGameIndexCommand.Run(args[1], args[2..]),
     "user-input-probe" => HostUserInputProbe.Run(args[1..]),
     "assistant" => BotAssistanceCli.Run(args[1..], DefaultDatabasePath()),
+    "data" => DataCommand(args[1..]),
     "control" or "app" or "bot" or "device" or "devices" or "profile" or "recording" or "serial" or "lcd"
         or "explorer" or "learning" or "research" or "editor" or "resident" or "supervised" => ApplicationControlCli.Run(command, args[1..]),
     _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>]]"),
@@ -411,11 +412,31 @@ static int Fail(string message)
     return 1;
 }
 
-static string DefaultDatabasePath() =>
-    Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "OpenLogicool",
-        "input-studio.db");
+static string DefaultDatabasePath() => OpenLogicoolDataRoot.DatabasePath;
+
+// data status | data import --from <以前の保存先>
+// 以前の保存先のデータを現在の保存先へ写す。写すだけで元は変更せず、同じ名前のファイルがあれば上書きせずに止まる。
+static int DataCommand(string[] arguments)
+{
+    try
+    {
+        if (arguments is ["status"])
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new { Location = OpenLogicoolDataRoot.Location,
+                DatabaseExists = File.Exists(OpenLogicoolDataRoot.DatabasePath) }));
+            return 0;
+        }
+        if (arguments is not ["import", "--from", var from]) return Fail("usage: data status | data import --from <以前の保存先>");
+        if (System.Diagnostics.Process.GetProcessesByName("OpenLogicool.Host").Any(process => process.Id != Environment.ProcessId))
+            return Fail("起動中のOpenLogicoolを終了してから取り込んでください。");
+        Console.WriteLine(JsonSerializer.Serialize(HostDataImport.Import(from, OpenLogicoolDataRoot.Location)));
+        return 0;
+    }
+    catch (Exception error) when (error is IOException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
+    {
+        return Fail(error.Message);
+    }
+}
 
 static int Run(string[] arguments)
 {

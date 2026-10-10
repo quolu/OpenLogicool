@@ -19,8 +19,7 @@ public static class WindowsTaskbarNanoWindowActivator
 {
     private static void Trace(string phase, WindowsGameTarget target, SerialHidCursorPoint? point = null, string? receipt = null)
     {
-        var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "OpenLogicool", "diagnostics");
+        var directory = OpenLogicoolDataRoot.Combine("diagnostics");
         Directory.CreateDirectory(directory);
         File.AppendAllText(Path.Combine(directory, "nano-window-activation.jsonl"), JsonSerializer.Serialize(new
         {
