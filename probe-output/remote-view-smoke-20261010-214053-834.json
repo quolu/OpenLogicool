@@ -1,0 +1,79 @@
+{
+  "Probe": "remote-view-smoke",
+  "CapturedAtUtc": "2026-10-10T12:10:53.4172622Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "Arguments": [
+    "--process-name",
+    "MabinogiMobile",
+    "--whip-url",
+    "http://127.0.0.1:8889/game/whip",
+    "--seconds",
+    "1800"
+  ],
+  "TargetProcessId": 33892,
+  "TargetProcessName": "MabinogiMobile",
+  "Cycles": [
+    {
+      "Cycle": 1,
+      "Kill": false,
+      "TargetSeconds": 1800,
+      "ElapsedSeconds": 1800.3930266,
+      "WindowHandle": 329852,
+      "StoppedBy": "Graceful",
+      "FfmpegExitCode": 0,
+      "Video": {
+        "Frame": 54000,
+        "TimeSeconds": 1800,
+        "Dup": 44049,
+        "Drop": 0,
+        "LastFps": "30",
+        "ProgressLines": 3489,
+        "StallCount": 0,
+        "LongestStallSeconds": 0
+      },
+      "Audio": {
+        "SamplesSent": 86342880,
+        "SilenceSamples": 0,
+        "WriteExceptions": 0,
+        "FirstWriteException": null,
+        "ThreadStuck": false,
+        "Failure": null
+      },
+      "ForegroundChangeCount": 5,
+      "ForegroundChanges": [
+        {
+          "AtSeconds": 178.302,
+          "From": "MabinogiMobile",
+          "To": "OpenLogicool.Host"
+        },
+        {
+          "AtSeconds": 249.69,
+          "From": "OpenLogicool.Host",
+          "To": "MabinogiMobile"
+        },
+        {
+          "AtSeconds": 1469.15,
+          "From": "MabinogiMobile",
+          "To": "chrome"
+        },
+        {
+          "AtSeconds": 1568.834,
+          "From": "chrome",
+          "To": "MabinogiMobile"
+        },
+        {
+          "AtSeconds": 1705.827,
+          "From": "MabinogiMobile",
+          "To": "claude"
+        }
+      ],
+      "FfmpegErrorLines": [
+        "[WHIP muxer @ 0000015cc14e8a40] Failed to read response from DELETE url=http://127.0.0.1:8889/game/whip/da2091bf-5e17-4cfc-b684-9250ebd5054c",
+        "[WHIP muxer @ 0000015cc14e8a40] Failed to dispose resource, ret=-5"
+      ],
+      "Exception": null
+    }
+  ],
+  "Failure": null
+}

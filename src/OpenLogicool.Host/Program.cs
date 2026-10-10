@@ -113,7 +113,7 @@ return command switch
     "assistant" => BotAssistanceCli.Run(args[1..], DefaultDatabasePath()),
     "data" => DataCommand(args[1..]),
     "control" or "app" or "bot" or "device" or "devices" or "profile" or "recording" or "serial" or "lcd"
-        or "explorer" or "learning" or "research" or "editor" or "resident" or "supervised" => ApplicationControlCli.Run(command, args[1..]),
+        or "explorer" or "learning" or "research" or "editor" or "resident" or "supervised" or "remoteview" => ApplicationControlCli.Run(command, args[1..]),
     _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>] | ui-snapshot --out <folder>]"),
 };
 
@@ -711,6 +711,7 @@ static int Ui(string[] arguments)
     using var botScriptIntents = HostBotScriptIntents.Create(databasePath, serialHidDiscovery,
         () => residentHost?.BorrowedNanoSession, demonstrationGate, outputSettingsForMacro.SelectedDeviceInstanceId,
         () => residentHost?.PhysicalInput);
+    using var remoteViewIntents = HostRemoteViewIntents.Create(databasePath);
     using var macroAutomationIntents = new HostMacroAutomationIntents(
         databasePath,
         CreateMacroExecutionEngine(
@@ -800,7 +801,7 @@ static int Ui(string[] arguments)
         var (controlRegistry, controlJobs) = ApplicationControlRegistration.Create(window, databasePath, residentHost,
             new(editorIntents, residentApply, onboardIntent, serialHidSettingsIntent, new HostG13LcdSettingsIntent(),
                 webResearchIntent, explorerIntents, learningRouteIntents, supervisedMacroIntents, supervisedUnavailableReason,
-                macroAutomationIntents, demonstrationRecordingIntents, botScriptIntents),
+                macroAutomationIntents, demonstrationRecordingIntents, botScriptIntents, remoteViewIntents),
             () => new SqliteMappingProfileStore(connection).ListAll());
         using var controlPipe = new ApplicationControlPipe(controlRegistry, controlJobs, databasePath: databasePath);
         var closingAfterCleanup = false;
@@ -814,6 +815,7 @@ static int Ui(string[] arguments)
             await controlJobs.StopAsync();
             macroAutomationIntents.Stop();
             await botScriptIntents.StopAsync();
+            await remoteViewIntents.StopAsync();
             closingAfterCleanup = true;
             // 後始末が待ちなしで終わった時はまだ Closing の最中で、そこから Close を呼ぶと例外になる。Closing を抜けてから閉じ直す。
             _ = window.Dispatcher.BeginInvoke(window.Close);
@@ -860,6 +862,7 @@ static int Ui(string[] arguments)
     thread.Start();
     thread.Join();
     botScriptIntents.StopAsync().GetAwaiter().GetResult();
+    remoteViewIntents.StopAsync().GetAwaiter().GetResult();
     macroAutomationIntents.Stop();
     macroWorker?.Dispose();
     residentHost?.Stop();

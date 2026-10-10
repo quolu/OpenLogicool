@@ -203,6 +203,27 @@ public sealed class ProjectReferenceDirectionTests
         Assert.DoesNotContain("RawInputSource", serialComposition, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Product_sources_do_not_open_a_listening_socket_or_reference_a_web_server()
+    {
+        // 遠隔表示の圧縮と通信は別 process の ffmpeg が担う。製品の中に待ち受け（HTTP／TCP）を作らない。
+        var forbidden = new[] { "HttpListener", "TcpListener", "Microsoft.AspNetCore" };
+        var sourceDirectory = Path.Combine(FindRepositoryRoot(), "src");
+        var separator = Path.DirectorySeparatorChar;
+        var offenders = Directory.EnumerateFiles(sourceDirectory, "*.*", SearchOption.AllDirectories)
+            .Where(path => path.EndsWith(".cs", StringComparison.Ordinal) || path.EndsWith(".csproj", StringComparison.Ordinal))
+            .Where(path => !path.Contains($"{separator}obj{separator}") && !path.Contains($"{separator}bin{separator}"))
+            .SelectMany(path =>
+            {
+                var text = File.ReadAllText(path);
+                return forbidden.Where(word => text.Contains(word, StringComparison.Ordinal))
+                    .Select(word => $"{Path.GetRelativePath(sourceDirectory, path)}: {word}");
+            })
+            .ToArray();
+
+        Assert.Empty(offenders);
+    }
+
     private static Dictionary<string, HashSet<string>> LoadReferences()
     {
         return EnumerateSliceOneProjects()

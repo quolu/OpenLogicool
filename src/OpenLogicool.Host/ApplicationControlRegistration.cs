@@ -16,7 +16,8 @@ internal sealed record ApplicationControlServices(IWorkspaceEditorIntents Worksp
     IG600OnboardIntent Onboard, ISerialHidSettingsIntent Serial, IG13LcdSettingsIntent Lcd,
     IWebResearchIntent Research, IExplorerIntents Explorer, ILearningRouteIntents Learning,
     ISupervisedMacroIntents? Supervised, string? SupervisedUnavailable,
-    IMacroAutomationIntents Macro, IDemonstrationRecordingIntents Recording, IBotScriptIntents Bot);
+    IMacroAutomationIntents Macro, IDemonstrationRecordingIntents Recording, IBotScriptIntents Bot,
+    IRemoteViewIntents RemoteView);
 
 internal static class ApplicationControlRegistration
 {
@@ -34,6 +35,7 @@ internal static class ApplicationControlRegistration
         registry.Add("macro", services.Macro);
         registry.Add("recording", services.Recording);
         registry.Add("bot", services.Bot);
+        registry.Add("remoteview", services.RemoteView);
         registry.AddStatic("editor", typeof(WorkspaceDocumentEditor));
     }
 
@@ -81,7 +83,7 @@ internal static class ApplicationControlRegistration
             processedInputs = resident?.Pump.ProcessedCount, droppedG13 = resident?.DroppedG13InputCount,
             droppedG600 = resident?.DroppedG600InputCount, lcd = resident?.G13LcdStatus,
             backlight = resident?.G13BacklightStatus,
-            bot = services.Bot.Current(), recording = services.Recording.Status(), macro = services.Macro.CurrentRun()
+            bot = services.Bot.Current(), remoteView = services.RemoteView.Current(), recording = services.Recording.Status(), macro = services.Macro.CurrentRun()
         };
         registry.Add("app.status", async (_, _) => await Dispatch(Status));
         registry.Add("diagnostics.snapshot", async (_, _) => await Dispatch(Status));

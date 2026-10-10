@@ -25,7 +25,7 @@ public sealed class ApplicationControlTests
     {
         var registry = Registry();
         ApplicationControlRegistration.RegisterIntents(registry,
-            new(null!, null, null!, null!, null!, null!, null!, null!, null, "未接続", null!, null!, null!));
+            new(null!, null, null!, null!, null!, null!, null!, null!, null, "未接続", null!, null!, null!, null!));
         var interfaces = typeof(InputStudioWindow).GetConstructors().Single().GetParameters()
             .Where(parameter => parameter.ParameterType.IsInterface).Select(parameter => parameter.ParameterType);
         foreach (var contract in interfaces)

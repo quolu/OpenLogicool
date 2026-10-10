@@ -84,7 +84,39 @@ public sealed class ProcessLoopbackAudioSource : IProcessAudioSource
 
     public int SampleRate => CaptureSampleRate;
 
-    public int Read(Span<float> destination)
+    public int Read(Span<float> destination) => ReadPackets(destination, 1, static (target, packet, silent) =>
+    {
+        if (silent)
+        {
+            target.Clear();
+            return;
+        }
+
+        for (var frame = 0; frame < target.Length; frame++)
+        {
+            target[frame] = (packet[frame * 2] + packet[frame * 2 + 1]) / 65536f;
+        }
+    });
+
+    /// <summary>
+    /// 左右を混ぜずに L,R の順で 16bit のまま読む。戻り値は frame 数（interleaved には frame 数の2倍の値が入る）。
+    /// 1 回の到着分が入り切らない時の扱いは <see cref="Read"/> と同じ。
+    /// </summary>
+    public int ReadStereo(Span<short> interleaved) => ReadPackets(interleaved, Channels, static (target, packet, silent) =>
+    {
+        if (silent)
+        {
+            target.Clear();
+            return;
+        }
+
+        packet[..target.Length].CopyTo(target);
+    });
+
+    private delegate void PacketCopy<T>(Span<T> target, ReadOnlySpan<short> packet, bool silent);
+
+    /// <summary>到着済みの packet を入り切る分だけ読む共通処理。valuesPerFrame は 1 frame あたりに destination へ入れる値の数。</summary>
+    private int ReadPackets<T>(Span<T> destination, int valuesPerFrame, PacketCopy<T> copy)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
         var written = 0;
@@ -93,27 +125,24 @@ public sealed class ProcessLoopbackAudioSource : IProcessAudioSource
             Check(capture.GetNextPacketSize(out var nextFrames), "音の到着量を取得できませんでした");
             if (nextFrames == 0)
             {
-                return written;
+                return written / valuesPerFrame;
             }
 
-            if (destination.Length - written < nextFrames)
+            if (destination.Length - written < nextFrames * valuesPerFrame)
             {
                 if (written == 0)
                 {
                     throw new ArgumentException(
-                        $"読み出し先が1回の到着分（{nextFrames} sample）より小さいです。", nameof(destination));
+                        $"読み出し先が1回の到着分（{nextFrames} frame）より小さいです。", nameof(destination));
                 }
 
-                return written;
+                return written / valuesPerFrame;
             }
 
             Check(capture.GetBuffer(out var data, out var frames, out var flags, out _, out _), "音を読み出せませんでした");
-            var target = destination.Slice(written, (int)frames);
-            if ((flags & BufferFlagsSilent) != 0)
-            {
-                target.Clear();
-            }
-            else
+            var target = destination.Slice(written, (int)frames * valuesPerFrame);
+            var silent = (flags & BufferFlagsSilent) != 0;
+            if (!silent)
             {
                 var values = (int)frames * Channels;
                 if (packet.Length < values)
@@ -122,14 +151,11 @@ public sealed class ProcessLoopbackAudioSource : IProcessAudioSource
                 }
 
                 Marshal.Copy(data, packet, 0, values);
-                for (var frame = 0; frame < target.Length; frame++)
-                {
-                    target[frame] = (packet[frame * 2] + packet[frame * 2 + 1]) / 65536f;
-                }
             }
 
+            copy(target, packet, silent);
             Check(capture.ReleaseBuffer(frames), "読み出した音を返却できませんでした");
-            written += (int)frames;
+            written += (int)frames * valuesPerFrame;
         }
     }
 

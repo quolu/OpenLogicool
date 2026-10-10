@@ -1,0 +1,53 @@
+{
+  "Probe": "remote-view-smoke",
+  "CapturedAtUtc": "2026-10-10T12:07:47.2297350Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "Arguments": [
+    "--process-name",
+    "MabinogiMobile",
+    "--whip-url",
+    "http://127.0.0.1:8889/game/whip",
+    "--seconds",
+    "30"
+  ],
+  "TargetProcessId": 33892,
+  "TargetProcessName": "MabinogiMobile",
+  "Cycles": [
+    {
+      "Cycle": 1,
+      "Kill": false,
+      "TargetSeconds": 30,
+      "ElapsedSeconds": 30.4607675,
+      "WindowHandle": 329852,
+      "StoppedBy": "Graceful",
+      "FfmpegExitCode": 0,
+      "Video": {
+        "Frame": 900,
+        "TimeSeconds": 30,
+        "Dup": 57,
+        "Drop": 0,
+        "LastFps": "30",
+        "ProgressLines": 57,
+        "StallCount": 0,
+        "LongestStallSeconds": 0
+      },
+      "Audio": {
+        "SamplesSent": 1440820,
+        "SilenceSamples": 489940,
+        "WriteExceptions": 0,
+        "FirstWriteException": null,
+        "ThreadStuck": false,
+        "Failure": null
+      },
+      "ForegroundChangeCount": 0,
+      "ForegroundChanges": [],
+      "FfmpegErrorLines": [
+        "[WHIP muxer @ 000001bfc9669a80] Failed to read response from DELETE url=http://127.0.0.1:8889/game/whip/610c4b57-77ca-4a0b-84cf-de6a1adb1fb5",
+        "[WHIP muxer @ 000001bfc9669a80] Failed to dispose resource, ret=-5"
+      ],
+      "Exception": null
+    }
+  ],
+  "Failure": null
+}
