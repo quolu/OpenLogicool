@@ -56,6 +56,9 @@ public sealed class SideQuestModeTests
     [InlineData("side-quest-list-top.png", 0.448, "料理入門", "料理を学びたいけど", "肝試し")]
     [InlineData("side-quest-list-top-progress.png", 0.518, "料理入門", "食料品店で砂糖を購入", "肝試し")]
     [InlineData("side-quest-list-middle.png", 0.436, "ガルドアイルの巨大クマ", "その件でお願いしたいことがあるんです", "旅館")]
+    // 実機で、上下2つの「進行」をまとめたかたまりの真ん中（縦0.66）を押してしまった画面。
+    [InlineData("side-quest-list-tracked-top.png", 0.542, "メモリーライト", "たまに思い出を振り返りたくなるでしょ", "トレボー",
+        Skip = "未解決: この画面では、ボタンの列を拡大しても白い文字だけを抜き出しても「進行」を読めず、規則が当たらない。サイドクエストは利用者の指示で脇へ置いた。")]
     public async Task サイドを選んだ後は一番上に見えるクエストの内容を覚えて進行を押し段階を終える(
         string image, double y, string title, string body, string next)
     {

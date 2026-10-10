@@ -2,7 +2,7 @@
   "SchemaVersion": 1,
   "ResultTimeoutMs": 5000,
   "UnknownTimeoutMs": 10000,
-  "WhiteTextBounds": [[0.3, 0.9, 0.4, 0.08]],
+  "WhiteTextBounds": [[0.3, 0.9, 0.4, 0.08], [0.86, 0.3, 0.12, 0.56]],
   "Modes": [
     { "Id": "side-quest", "Name": "サイドクエストモード", "Stage": "side-quest",
       "RestartAfter": ["quest-reward-prompt", "quest-reward"] }

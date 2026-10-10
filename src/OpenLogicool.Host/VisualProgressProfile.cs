@@ -440,7 +440,13 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     .OrderBy(span => Normalize(span.Text).Length).ToArray();
                 if (spans.Length == 0) continue;
                 // 一覧のように同じ名前のボタンが縦に並ぶ表示は、一番上を選ぶと明示した時だけ一番上を押す。
-                if (rule.Click.First) spans = spans.OrderBy(span => span.EvidenceRegion.NormalizedBounds[1]).ToArray();
+                // 上下のボタンを1つにまとめたかたまりは、中心がボタンの間に来る。1行ぶんの高さのものだけから選ぶ。
+                if (rule.Click.First)
+                {
+                    var lineHeight = spans.Min(span => span.EvidenceRegion.NormalizedBounds[3]);
+                    spans = spans.Where(span => span.EvidenceRegion.NormalizedBounds[3] <= lineHeight * 1.5)
+                        .OrderBy(span => span.EvidenceRegion.NormalizedBounds[1]).ToArray();
+                }
                 var bounds = spans[0].EvidenceRegion.NormalizedBounds;
                 point = [bounds[0] + bounds[2] / 2, bounds[1] + bounds[3] / 2];
                 // 離れた同名ボタンが複数ある場合は選ばない。
@@ -754,6 +760,19 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
         modeRetryAt = 0;
         modeFailure = null;
         modeFailureReported = false;
+    }
+
+    /// <summary>モードの段階を始めるのを待っている時の、その段階の名前。</summary>
+    public string? PendingModeStage(long now) =>
+        mode is not null && modeDue && Stage is null && now >= modeRetryAt ? mode.Stage : null;
+
+    /// <summary>
+    /// モードの段階の規則がいま当てはまる画面（一覧が既に開いている時など）では、通常の画面を待たずに段階を始める。
+    /// </summary>
+    public void StartModeStage()
+    {
+        Stage = mode!.Stage; modeStage = true; modeStageInputs = 0; modeDue = false; modeIdleAt = null;
+        pending = null; stableSignature = null; ResetUnresolved();
     }
 
     /// <summary>

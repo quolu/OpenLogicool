@@ -488,6 +488,20 @@ public static class VisualKeyAssistRuntime
                     var ocr = immediate is null && (!inhibitMatch.Matches || readWhileInhibited) && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                         ? progressRecognizer is null ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token)
                             : await progressRecognizer.ReadOcrAsync(frame, viewport!, token, stage) : null;
+                    if (ocr is not null && progressSchedule?.PendingModeStage(clock.ElapsedMilliseconds) is { } pendingModeStage
+                        && !recoveryRecognizer!.Observe(frame, viewport).HudVisible)
+                    {
+                        // モードの画面が既に開いている時（利用者が開いた一覧など）は、閉じてもらうのを待たずに続きから進める。
+                        var probe = progressRecognizer!.Recognize(await progressRecognizer.ReadOcrAsync(frame, viewport!, token, pendingModeStage),
+                            frame.Width, frame.Height, viewport!, frame, inhibitMatch.Matches, pendingModeStage);
+                        if (probe.Action is VisualProgressAction.Key or VisualProgressAction.Click)
+                        {
+                            progressSchedule.StartModeStage();
+                            Emit(new { Event = "mode-stage-started", AtMs = clock.ElapsedMilliseconds, Stage = pendingModeStage, probe.RuleId,
+                                Detail = "モードの画面が既に開いているため、続きから進めます。" });
+                            continue;
+                        }
+                    }
                     var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
                     var decision = progress.Apply(schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
                         cueMatch?.Matches == true || matchedTexts.Length > 0));
