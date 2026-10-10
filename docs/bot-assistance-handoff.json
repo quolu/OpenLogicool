@@ -182,7 +182,7 @@
   },
   "continuation": {
     "threadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74",
-    "updatedUtc": "2026-10-10T06:46:41.094115+00:00",
+    "updatedUtc": "2026-10-10T08:19:47.045831+00:00",
     "assistanceGeneration": 7,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -200,7 +200,7 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "次の「届いていません」の知らせで、回答の読み取りと送り直しを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。次のボーナス画面で、読める申請とBot自身による選択の実行を確かめる。Jevの実測結果への利用者の判断。",
+    "nextAction": "次の「届いていません」の知らせで、回答の読み取りと送り直しを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。会話の選択で1分以上止まった時に通知が出るかを確かめる。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -251,7 +251,8 @@
       "entry": "bot start mabinogi-mobile",
       "dataRoot": "製品の既定（OpenLogicoolDataRoot）。--db は不要。",
       "migratedFrom": "Codexアプリ専用の保存先。元データは残してあり、削除には利用者の承認が要る。",
-      "evidence": "evidence/data-root-migration-20261010/acceptance.json"
+      "evidence": "evidence/data-root-migration-20261010/acceptance.json",
+      "outputRoute": "17:08:22から出力設定はNano（serial-hid）。常駐がNanoの接続を持ち、Botはそれを借りる（a7385a1）。アプリが動いている間、別processの serial-hid-test と game-index のNano操作は接続口を開けない。"
     },
     "timedInput": {
       "sourceCommit": "df98a07",
@@ -311,7 +312,7 @@
       "status": "installed",
       "decisionId": "K-8WKC8R",
       "behavior": "回答を3秒おきに読み、同じ選択肢の間だけカードを押し、決定の表示を確かめてSpaceを送る。",
-      "live": "Bot自身による実行は未確認。K-DBAPMRは担当AIが手で実行した。",
+      "live": "Bot自身による実行を実機で確認した（K-GZHNW5。申請・回答の読み取り・カードのクリック・確定のSpace）。",
       "evidence": "evidence/bot-bonus-ask-user-20261010/acceptance.json"
     },
     "assistantTakeover": {
@@ -383,6 +384,40 @@
       "execution": "Botを止めてgame-index click-pointで1回クリックし、会話が進んだ画面を確認してBotを再開した。",
       "evidence": "evidence/bot-dialogue-choice-20261010/click.json"
     },
-    "botRun": "bot-runs/mabinogi-mobile/20261010-154613-810-fa952cec"
+    "botRun": "bot-runs/mabinogi-mobile/20261010-171608-438-54ce2106",
+    "narrationCue": {
+      "sourceCommit": "3f3bdf2",
+      "status": "installed-and-live-verified",
+      "evidence": "evidence/bot-narration-cue-20261010/acceptance.json"
+    },
+    "pointerGuideClipped": {
+      "sourceCommit": "f229764",
+      "status": "installed-and-live-verified",
+      "evidence": "evidence/bot-pointer-guide-clipped-20261010/acceptance.json"
+    },
+    "lostKeyRelease": {
+      "sourceCommit": "d5ff3e9",
+      "status": "installed",
+      "live": "一時停止の解除は確認。取りこぼしが再び起きた時に外れることは、実行20261010-164731でLostReleases=1として1回観測した。",
+      "evidence": "evidence/bot-lost-key-release-20261010/acceptance.json"
+    },
+    "waitSimilarity": {
+      "sourceCommit": "73c42a1",
+      "status": "installed",
+      "threshold": 0.5,
+      "ownerRule": "文字認識は類似度判定で測る。しきい値は0.5（利用者の指定）。",
+      "live": "次に会話の選択で1分以上止まった時の通知は未確認。"
+    },
+    "nanoLending": {
+      "sourceCommit": "a7385a1",
+      "status": "installed-and-live-verified",
+      "evidence": "evidence/bot-stalled-20261010-1710/acceptance.json"
+    },
+    "heldMessage": "本体改良の会話（core-ui-improvements）への連絡は、相手の会話で保留になり届いていない（権限の設定の違い）。音連動を導入した報告は利用者経由で伝える。",
+    "proposals": [
+      "手入力での一時停止が入力なしで1分以上続いたら、担当AIへ知らせる（利用者の返事待ち）。",
+      "同じ画面の停滞が約2分おきに別件として通知される件をまとめる（利用者の返事待ち）。",
+      "戦闘に入る確認をBotが自動で進めてよいかの方針（利用者の返事待ち）。"
+    ]
   }
 }
