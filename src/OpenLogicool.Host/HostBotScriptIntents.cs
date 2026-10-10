@@ -39,17 +39,62 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
     private BotScriptPhase? userResumePhase;
     private string? userResumeDetail;
     private BotScriptSnapshot state = new(BotScriptPhase.Stopped, "Botは停止しています。");
+    private readonly IReadOnlyList<BotScriptMode> modes;
+    // Botごとの、入っているモード。解除するまで、Botとアプリを起動し直しても残す。
+    private readonly Dictionary<string, string> activeModes;
+    private string ModeFile => Path.Combine(dataDirectory, "modes.json");
 
     internal HostBotScriptIntents(IReadOnlyList<BotScriptItem> scripts, string dataDirectory,
         DemonstrationRecordingGate executionGate,
         Func<string, string, Action<JsonElement>, CancellationToken, Task<BotScriptResult>> execute,
-        Func<string, string, Task>? reportFault = null)
+        Func<string, string, Task>? reportFault = null, IReadOnlyList<BotScriptMode>? modes = null)
     {
         this.scripts = scripts;
         this.dataDirectory = dataDirectory;
         this.executionGate = executionGate;
         this.execute = execute;
         this.reportFault = reportFault;
+        this.modes = modes ?? [];
+        activeModes = System.IO.File.Exists(ModeFile)
+            ? JsonSerializer.Deserialize<Dictionary<string, string>>(System.IO.File.ReadAllText(ModeFile))
+                ?? throw new InvalidDataException("保存したBotのモードが空です。")
+            : [];
+    }
+
+    /// <summary>Botが入っているモード。実行中のBotが観測ごとに読む。</summary>
+    internal string? ActiveMode(string scriptId) { lock (gate) return activeModes.GetValueOrDefault(scriptId); }
+
+    public IReadOnlyList<BotScriptMode> ListModes()
+    {
+        lock (gate) return modes.Select(mode => mode with { Active = activeModes.GetValueOrDefault(mode.ScriptId) == mode.Id }).ToArray();
+    }
+
+    public BotScriptSnapshot SetMode(string modeId)
+    {
+        lock (gate)
+        {
+            var matches = modes.Where(mode => mode.Id == modeId).ToArray();
+            if (matches.Length != 1) throw new ArgumentException(matches.Length == 0
+                ? $"モード {modeId} がありません。指定できるモード: {string.Join("、", modes.Select(mode => mode.Id))}"
+                : $"モード {modeId} は複数のBotにあります。");
+            activeModes[matches[0].ScriptId] = modeId;
+            SaveModes();
+        }
+        return Current();
+    }
+
+    public BotScriptSnapshot ClearMode()
+    {
+        lock (gate) { activeModes.Clear(); SaveModes(); }
+        return Current();
+    }
+
+    private void SaveModes()
+    {
+        System.IO.Directory.CreateDirectory(dataDirectory);
+        var temporary = ModeFile + ".tmp";
+        System.IO.File.WriteAllText(temporary, JsonSerializer.Serialize(activeModes));
+        System.IO.File.Move(temporary, ModeFile, overwrite: true);
     }
 
     public static HostBotScriptIntents Create(string databasePath, SerialHidDiscoveryService discovery,
@@ -58,16 +103,19 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
     {
         var packages = System.IO.Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "BotScripts"),
             "bot.json", SearchOption.AllDirectories).Select(BotScriptPackage.Load).ToDictionary(package => package.Id);
+        var modes = new List<BotScriptMode>();
+        HostBotScriptIntents? intents = null;
         var scripts = packages.Values.Select(package =>
         {
             var recovery = VisualRecoveryProfile.Load(package.File("profile.json"));
-            _ = VisualProgressProfile.Load(package.File("progress.json"));
+            modes.AddRange((VisualProgressProfile.Load(package.File("progress.json")).Modes ?? [])
+                .Select(mode => new BotScriptMode(package.Id, mode.Id, mode.Name, false)));
             return new BotScriptItem(package.Id, package.Name,
                 $"Nanoで入力・会話は表示の安定後に送る・{(package.TimedInputEnabled ? "通常Spaceは8〜12秒間隔" : "表示条件のある入力のみ・定期Spaceは停止中")}\n回復監視は毎秒4回 ／ ポーション: HP {recovery.PotionThreshold:P0}以下 ／ 包帯: 白 {recovery.BandageThreshold:P0}以上 ／ 時間制限なし");
         }).ToArray();
         var dataDirectory = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-runs");
         var reviewSettings = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "bot-review-mcp.json");
-        return new(scripts, dataDirectory, executionGate, async (id, evidence, report, token) =>
+        return intents = new(scripts, dataDirectory, executionGate, async (id, evidence, report, token) =>
         {
             var package = packages[id];
             var target = WindowsGameTargetLocator.Locate(package.ProcessName);
@@ -93,7 +141,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                 if (!package.TimedInputEnabled) arguments.Add("--no-timed-input");
                 if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
                 var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(), nano, emitter, target,
-                    $"window:bot:{target.ProcessId}", token, report, physicalInput);
+                    $"window:bot:{target.ProcessId}", token, report, physicalInput, () => intents!.ActiveMode(id));
                 var json = JsonSerializer.SerializeToElement(result);
                 System.IO.File.WriteAllText(Path.Combine(evidence, "result.json"), json.GetRawText());
                 return new(json.TryGetProperty("NeedsReview", out var review) && review.GetBoolean(),
@@ -106,11 +154,20 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
             var fault = JsonSerializer.SerializeToElement(new { Kind = "fault", Detail = detail });
             System.IO.File.WriteAllText(Path.Combine(evidence, "assistance-fault.json"), fault.GetRawText());
             await VisualAssistReviewNotifier.Create(reviewSettings, databasePath)!.NotifyAsync(evidence, fault, CancellationToken.None);
-        });
+        }, modes);
     }
 
     public IReadOnlyList<BotScriptItem> ListScripts() => scripts;
-    public BotScriptSnapshot Current() { lock (gate) return state; }
+    public BotScriptSnapshot Current()
+    {
+        lock (gate)
+        {
+            // 実行中・直前のBotのモードを示す。Botをまだ始めていない時は、入っているモードをすべて示す。
+            var active = modes.Where(mode => activeModes.GetValueOrDefault(mode.ScriptId) == mode.Id
+                && (state.ScriptId is null || state.ScriptId == mode.ScriptId)).Select(mode => mode.Name).ToArray();
+            return state with { Mode = active.Length == 0 ? null : string.Join("、", active) };
+        }
+    }
 
     public void Start(string scriptId)
     {

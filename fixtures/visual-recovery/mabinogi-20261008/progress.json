@@ -3,6 +3,10 @@
   "ResultTimeoutMs": 5000,
   "UnknownTimeoutMs": 10000,
   "WhiteTextBounds": [[0.3, 0.9, 0.4, 0.08]],
+  "Modes": [
+    { "Id": "side-quest", "Name": "サイドクエストモード", "Stage": "side-quest",
+      "RestartAfter": ["quest-reward-prompt", "quest-reward"] }
+  ],
   "ReviewWhen": [
     { "Text": "ボーナスを選択してください", "Bounds": [0.15, 0.1, 0.7, 0.65], "AskUserImmediately": true,
       "Confirm": { "Text": "決定", "Bounds": [0.3, 0.9, 0.4, 0.09] }, "ConfirmKey": "Key:Space",
@@ -316,6 +320,36 @@
     {
       "Id": "coin-refill-close", "Stage": "coin-refill-close", "Priority": 1, "Key": "Key:Esc", "RepeatAfterChange": true,
       "When": [ { "Text": "整理", "Bounds": [0.88, 0.83, 0.1, 0.05] } ]
+    },
+    {
+      "Id": "side-quest-open", "Stage": "side-quest", "Priority": 1, "ClickImage": true, "AllowWhileInhibited": true,
+      "When": [], "Image": "quest-plus.png", "ImageBounds": [0.9, 0.14, 0.1, 0.08],
+      "ImageClientWidth": 1711, "ImageStableRegions": [[0, 0, 1, 1]]
+    },
+    {
+      "Id": "side-quest-tab", "Stage": "side-quest", "Priority": 2, "AllowWhileInhibited": true,
+      "When": [ { "Text": "サイド", "Bounds": [0.76, 0.133, 0.06, 0.032] } ],
+      "Areas": [ { "Bounds": [0.76, 0.139, 0.01, 0.018], "Rgb": [22, 29, 34], "Tolerance": 14 } ],
+      "Click": { "Text": "サイド", "Bounds": [0.76, 0.133, 0.06, 0.032] }
+    },
+    {
+      "Id": "side-quest-to-top", "Stage": "side-quest", "Priority": 3, "AllowWhileInhibited": true,
+      "When": [ { "Text": "", "Bounds": [0.64, 0.3, 0.33, 0.52] } ],
+      "Areas": [
+        { "Bounds": [0.76, 0.139, 0.01, 0.018], "Rgb": [13, 179, 118], "Tolerance": 30 },
+        { "Bounds": [0.648, 0.2415, 0.31, 0.023], "Flat": false }
+      ],
+      "Flick": { "From": [0.8, 0.49], "To": [0.8, 0.64] }
+    },
+    {
+      "Id": "side-quest-accept", "Stage": "side-quest", "Priority": 4, "AllowWhileInhibited": true, "EndStage": true,
+      "When": [ { "Text": "進行", "Bounds": [0.86, 0.38, 0.12, 0.22] } ],
+      "Areas": [
+        { "Bounds": [0.76, 0.139, 0.01, 0.018], "Rgb": [13, 179, 118], "Tolerance": 30 },
+        { "Bounds": [0.648, 0.2415, 0.31, 0.023], "Rgb": [34, 39, 50], "Tolerance": 10, "Flat": true }
+      ],
+      "Click": { "Text": "進行", "Bounds": [0.86, 0.38, 0.12, 0.22] },
+      "Remember": { "Name": "side-quest", "Bounds": [0.636, 0.236, 0.338, 0.4], "EndBelowClick": 0.045 }
     }
   ]
 }

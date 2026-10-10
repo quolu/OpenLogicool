@@ -12,12 +12,17 @@ internal sealed class VisualProgressInputSequence(NanoGameInteractionActions act
     public GameInteractionDispatchReceipt Dispatch(VisualProgressChoice choice, ObservationResult current)
     {
         var frame = current.Frame;
-        var receipt = choice.Action == VisualProgressAction.Key
-            ? actions.KeyTap(new GameInteractionKeyTapRequest(ContractSchemaVersions.Revision03,
-                current.ObservationId, frame.Sequence, frame.TransformRevision, frame.SourceId, [choice.Key!]), current)
-            : actions.Click(new GameInteractionTargetBinding(ContractSchemaVersions.Revision03,
-                current.ObservationId, frame.Sequence, frame.TransformRevision, frame.SourceId,
-                choice.RuleId!, "visual-progress-v1", [choice.Point![0] - 0.0005, choice.Point[1] - 0.0005, 0.001, 0.001]), current);
+        GameInteractionTargetBinding Target() => new(ContractSchemaVersions.Revision03,
+            current.ObservationId, frame.Sequence, frame.TransformRevision, frame.SourceId,
+            choice.RuleId!, "visual-progress-v1", [choice.Point![0] - 0.0005, choice.Point[1] - 0.0005, 0.001, 0.001]);
+        var receipt = choice.Action switch
+        {
+            VisualProgressAction.Key => actions.KeyTap(new GameInteractionKeyTapRequest(ContractSchemaVersions.Revision03,
+                current.ObservationId, frame.Sequence, frame.TransformRevision, frame.SourceId, [choice.Key!]), current),
+            VisualProgressAction.Flick => actions.Flick(new GameInteractionDragRequest(ContractSchemaVersions.Revision03,
+                Target(), choice.FlickTo!), current),
+            _ => actions.Click(Target(), current),
+        };
         string[] following = [.. choice.AfterClickKey is null ? [] : new[] { choice.AfterClickKey }, .. choice.ThenKeys ?? []];
         if (receipt.Status == GameInteractionDispatchStatus.Dispatched && following.Length > 0)
             Pending = choice with

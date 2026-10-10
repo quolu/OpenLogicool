@@ -77,8 +77,16 @@ internal static class ApplicationControlCli
                 { "list" => "profiles.list", "load" => "workspace.load-document", "save" => "workspace.save", "compile" => "workspace.compile", "undo" => "workspace.undo", _ => operation };
                 if (group == "bot")
                 {
-                    operation = verb switch { "list" => "bot.list-scripts", "status" => "bot.current", _ => operation };
+                    operation = verb switch { "list" => "bot.list-scripts", "status" => "bot.current", "modes" => "bot.list-modes", _ => operation };
                     if (verb == "start" && arguments.Length > 1 && !arguments[1].StartsWith("--", StringComparison.Ordinal)) parameters["scriptId"] = arguments[1];
+                    // bot mode <モード> で入り、bot mode off で解除する。
+                    if (verb == "mode")
+                    {
+                        if (arguments.Length < 2 || arguments[1].StartsWith("--", StringComparison.Ordinal))
+                            throw new ArgumentException("bot mode <モード>|off を指定します。モードの一覧は bot modes で見られます。");
+                        operation = arguments[1] == "off" ? "bot.clear-mode" : "bot.set-mode";
+                        if (arguments[1] != "off") parameters["modeId"] = arguments[1];
+                    }
                 }
                 request = new("invoke", operation, JsonSerializer.SerializeToElement(parameters));
             }

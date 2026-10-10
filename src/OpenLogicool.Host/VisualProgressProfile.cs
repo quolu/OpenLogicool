@@ -11,6 +11,23 @@ public sealed record VisualProgressText(string Text, double[] Bounds, double[][]
     double[]? ChoiceBand = null, VisualProgressText? Recommended = null, bool Exact = false);
 /// <summary>画面の数値の条件。OutOf を指定した表示は「現在値/上限」の形で、上限まで読めた時だけ現在値を使う。</summary>
 public sealed record VisualProgressNumber(double[] Bounds, int? AtMost = null, int? Exactly = null, int? OutOf = null);
+/// <summary>
+/// 画素で見る条件。Rgb は領域の平均色がその色に近いこと。Flat は行ごとの明るさが平らであること（true）、
+/// 濃淡があること（false）。一覧の上端のぼかしのように、文字では読めない状態を見分ける。
+/// </summary>
+public sealed record VisualProgressArea(double[] Bounds, int[]? Rgb = null, int Tolerance = 24, bool? Flat = null);
+/// <summary>払う操作。描画領域内の From で押して To へ一定の速さで進み、途中で離す。</summary>
+public sealed record VisualProgressFlick(double[] From, double[] To);
+/// <summary>
+/// 操作を送る時に、領域の文字と画像を記録へ残す。EndBelowClick を指定すると、領域の下端を押す位置からその分だけ下までに縮める。
+/// </summary>
+public sealed record VisualProgressRemember(string Name, double[] Bounds, double? EndBelowClick = null);
+public sealed record VisualProgressRemembered(string Name, string[] Lines, double[] Bounds);
+/// <summary>
+/// 外から入り・解除を指示する動き方。入っている間は、通常の画面で Stage の段階を始める。
+/// RestartAfter の規則が操作を送った後は、通常の画面へ戻った時にもう一度始める。
+/// </summary>
+public sealed record VisualProgressMode(string Id, string Name, string Stage, string[]? RestartAfter = null);
 public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
@@ -19,10 +36,12 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false,
     int RepeatIntervalMs = 0, string? AfterClickKey = null, double[]? ClickImagePoint = null, int ImageSearchStep = 1,
     bool ImageClipsAtBottom = false, bool RepeatAfterChange = false, VisualProgressNumber? Number = null,
-    string? Stage = null, string? NextStage = null, string[]? ThenKeys = null);
+    string? Stage = null, string? NextStage = null, string[]? ThenKeys = null,
+    VisualProgressArea[]? Areas = null, VisualProgressFlick? Flick = null, VisualProgressRemember? Remember = null,
+    bool EndStage = false);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000,
-    double[][]? WhiteTextBounds = null)
+    double[][]? WhiteTextBounds = null, VisualProgressMode[]? Modes = null)
 {
     public static VisualProgressProfile Load(string path)
     {
@@ -35,8 +54,9 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
         foreach (var rule in value.Rules)
         {
             if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null || (rule.When.Length == 0 && rule.Image is null && rule.Number is null)
-                || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) + (rule.ClickImage ? 1 : 0) != 1)
-                throw new InvalidDataException("進行規則には条件と、キー・クリック・待機のいずれか一つが必要です。");
+                || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) + (rule.ClickImage ? 1 : 0)
+                    + (rule.Flick is null ? 0 : 1) != 1)
+                throw new InvalidDataException("進行規則には条件と、キー・クリック・払う操作・待機のいずれか一つが必要です。");
             if (rule.MinimumVisibleMs < 0)
                 throw new InvalidDataException("表示待ち時間が不正です。");
             if (rule.Key is not null) OpenLogicool.Input.OutputTokens.Parse(rule.Key);
@@ -87,7 +107,27 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                     throw new InvalidDataException("続けて送るキーは、即時・反復でないキーまたはクリックの規則に一つ以上指定します。");
                 foreach (var key in rule.ThenKeys) OpenLogicool.Input.OutputTokens.Parse(key);
             }
+            if (rule.Flick is { } flick && (rule.ThenKeys is not null || rule.Timed
+                || new[] { flick.From, flick.To }.Any(point => point is not { Length: 2 }
+                    || point.Any(value => !double.IsFinite(value) || value < 0 || value > 1))))
+                throw new InvalidDataException("払う操作は、続けて送るキーと時間待ちのない規則に、描画領域内の始点と終点を指定します。");
+            if (rule.Areas is not null && (rule.Areas.Length == 0 || rule.Areas.Any(area => area.Rgb is null && area.Flat is null
+                || area.Tolerance is < 0 or > 255
+                || area.Rgb is not null && (area.Rgb.Length != 3 || area.Rgb.Any(channel => channel is < 0 or > 255)))))
+                throw new InvalidDataException("画素の条件には、RGBの3成分か、平らかどうかを指定します。");
+            if (rule.Remember is { } remember && (rule.Click is null && !rule.ClickImage || string.IsNullOrWhiteSpace(remember.Name)
+                || remember.Name.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-')
+                || remember.EndBelowClick is { } below && (!double.IsFinite(below) || below <= 0)))
+                throw new InvalidDataException("覚える指定は、クリックの規則に英数字とハイフンの名前で指定します。");
+            if (rule.EndStage && (rule.Stage is null || rule.NextStage is not null || rule.WaitForChange))
+                throw new InvalidDataException("段階を終える指定は、段階の中の、次の段階を持たない操作の規則に指定します。");
         }
+        foreach (var mode in value.Modes ?? [])
+            if (string.IsNullOrWhiteSpace(mode.Id) || string.IsNullOrWhiteSpace(mode.Name)
+                || value.Modes!.Count(other => other.Id == mode.Id) != 1
+                || !value.Rules.Any(rule => rule.Stage == mode.Stage)
+                || (mode.RestartAfter ?? []).Any(id => !value.Rules.Any(rule => rule.Id == id)))
+                throw new InvalidDataException("モードには、重複しない名前と、規則のある段階と、設定にある規則の名前を指定します。");
         foreach (var bounds in value.Rules.SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }))
             .Concat(value.ReviewWhen).Concat(value.ReviewWhen.Where(text => text.Confirm is not null).Select(text => text.Confirm!))
             .Concat(value.ReviewWhen.Where(text => text.Recommended is not null).Select(text => text.Recommended!))
@@ -99,6 +139,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             .Concat(value.Rules.Where(rule => rule.SingleTextRunBounds is not null).Select(rule => rule.SingleTextRunBounds!))
             .Concat(value.Rules.Where(rule => rule.Number is not null).Select(rule => rule.Number!.Bounds))
             .Concat(value.Rules.SelectMany(rule => rule.ImageStableRegions ?? []))
+            .Concat(value.Rules.SelectMany(rule => rule.Areas ?? []).Select(area => area.Bounds))
+            .Concat(value.Rules.Where(rule => rule.Remember is not null).Select(rule => rule.Remember!.Bounds))
             .Concat(value.WhiteTextBounds ?? []))
             if (bounds is not { Length: 4 } || bounds.Any(x => !double.IsFinite(x) || x < 0 || x > 1)
                 || bounds[2] <= 0 || bounds[3] <= 0
@@ -129,14 +171,14 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
     private static bool PressesSpace(string? key) => key?.Contains("Key:Space", StringComparison.OrdinalIgnoreCase) == true;
 }
 
-public enum VisualProgressAction { Wait, Normal, Key, Click, Review }
+public enum VisualProgressAction { Wait, Normal, Key, Click, Review, Flick }
 public sealed record VisualProgressOption(string Id, string Label);
 public sealed record VisualProgressChoice(VisualProgressAction Action, string? RuleId = null,
     string? Signature = null, string? Key = null, double[]? Point = null, string? Detail = null,
     VisualProgressOption[]? Options = null, bool Immediate = false, bool AllowWhileInhibited = false,
     int RepeatIntervalMs = 0, string? AfterClickKey = null, bool AskUserImmediately = false,
     VisualProgressText? ReviewSource = null, double[][]? OptionPoints = null, string? NextStage = null,
-    string[]? ThenKeys = null);
+    string[]? ThenKeys = null, double[]? FlickTo = null, VisualProgressRemembered? Remembered = null, bool EndStage = false);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
@@ -357,6 +399,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 if (rule.ClickImage) point = [match.Bounds[0] + match.Bounds[2] * (rule.ClickImagePoint?[0] ?? 0.5),
                     match.Bounds[1] + match.Bounds[3] * (rule.ClickImagePoint?[1] ?? 0.5)];
             }
+            if (rule.Areas is not null && (frame is null || !rule.Areas.All(area => AreaHolds(frame, viewport, area)))) continue;
             var texts = rule.When.Select(Read).ToArray();
             if (!rule.When.Select((condition, i) => Matches(texts[i], condition)).All(x => x)) continue;
             if (rule.SingleTextRunBounds is { } labelBounds
@@ -388,7 +431,14 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     continue;
                 }
             }
+            double[]? flickTo = null;
+            if (rule.Flick is { } flick)
+            {
+                point = [(viewport.X + flick.From[0] * viewport.Width) / width, (viewport.Y + flick.From[1] * viewport.Height) / height];
+                flickTo = [(viewport.X + flick.To[0] * viewport.Width) / width, (viewport.Y + flick.To[1] * viewport.Height) / height];
+            }
             candidates.Add(new(rule.WaitForChange ? VisualProgressAction.Wait
+                : rule.Flick is not null ? VisualProgressAction.Flick
                 : rule.Click is null && !rule.ClickImage ? VisualProgressAction.Key : VisualProgressAction.Click,
                 rule.Id, rule.Id + ":" + string.Join("|", rule.When.Select((condition, i) =>
                     string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text)))
@@ -396,7 +446,9 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     + (rule.ClickImagePoint is null ? "" : FormattableString.Invariant(
                         $"@{Math.Round(point![0] * 20) / 20:0.00},{Math.Round(point[1] * 20) / 20:0.00}")), rule.Key, point,
                 Immediate: rule.Immediate, AllowWhileInhibited: rule.AllowWhileInhibited, AfterClickKey: rule.AfterClickKey,
-                NextStage: rule.NextStage, ThenKeys: rule.ThenKeys));
+                NextStage: rule.NextStage, ThenKeys: rule.ThenKeys, FlickTo: flickTo,
+                Remembered: rule.Remember is null ? null : Remember(rule.Remember, point!, ocr, viewport, width, height),
+                EndStage: rule.EndStage));
         }
         var priority = candidates.Count == 0 ? 0 : candidates.Max(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority);
         var preferred = candidates.Where(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority == priority).ToArray();
@@ -406,6 +458,62 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             1 => preferred[0],
             _ => new(VisualProgressAction.Review, Detail: "複数の進行規則が同時に一致しました。"),
         };
+    }
+
+    /// <summary>
+    /// 画素の条件を確かめる。平らは行ごとの明るさの幅が3以下、濃淡ありは5以上とし、その間はどちらとも決めない。
+    /// </summary>
+    internal static bool AreaHolds(CapturedFrame frame, FrameRect viewport, VisualProgressArea area)
+    {
+        var pixels = frame.Pixels ?? throw new InvalidOperationException("画素の条件には画像が必要です。");
+        var left = (int)(viewport.X + area.Bounds[0] * viewport.Width);
+        var top = (int)(viewport.Y + area.Bounds[1] * viewport.Height);
+        var columns = Math.Max(1, (int)(area.Bounds[2] * viewport.Width));
+        var rows = Math.Max(1, (int)(area.Bounds[3] * viewport.Height));
+        var bytes = pixels.Bgra8.Span;
+        long red = 0, green = 0, blue = 0;
+        double darkest = double.MaxValue, brightest = double.MinValue;
+        for (var row = 0; row < rows; row++)
+        {
+            long r = 0, g = 0, b = 0;
+            var offset = (top + row) * pixels.Stride + left * 4;
+            for (var column = 0; column < columns; column++)
+            {
+                b += bytes[offset + column * 4];
+                g += bytes[offset + column * 4 + 1];
+                r += bytes[offset + column * 4 + 2];
+            }
+            red += r; green += g; blue += b;
+            var brightness = (r + g + b) / (3d * columns);
+            darkest = Math.Min(darkest, brightness);
+            brightest = Math.Max(brightest, brightness);
+        }
+        var count = (double)columns * rows;
+        if (area.Rgb is { } rgb && (Math.Abs(red / count - rgb[0]) > area.Tolerance
+            || Math.Abs(green / count - rgb[1]) > area.Tolerance || Math.Abs(blue / count - rgb[2]) > area.Tolerance)) return false;
+        return area.Flat switch { true => brightest - darkest <= 3, false => brightest - darkest >= 5, null => true };
+    }
+
+    /// <summary>覚える領域の文字を、上の行から順に読む。領域は画像全体に対する割合で返す。</summary>
+    private static VisualProgressRemembered Remember(VisualProgressRemember remember, double[] point, WindowsGameOcrResult ocr,
+        FrameRect viewport, int width, int height)
+    {
+        var area = remember.Bounds;
+        var bottom = area[1] + area[3];
+        if (remember.EndBelowClick is { } below)
+            bottom = Math.Min(bottom, (point[1] * height - viewport.Y) / viewport.Height + below);
+        double[] bounds = [area[0], area[1], area[2], bottom - area[1]];
+        var lines = new List<List<WindowsGameOcrWord>>();
+        foreach (var word in ocr.Words.Where(word => Inside(word, bounds, viewport)).OrderBy(word => word.Y + word.Height / 2))
+        {
+            var center = word.Y + word.Height / 2;
+            // 同じ行の文字は、縦の中心がほぼそろう。
+            if (lines.Count == 0 || center - lines[^1].Average(other => other.Y + other.Height / 2) > 0.012 * viewport.Height) lines.Add([]);
+            lines[^1].Add(word);
+        }
+        return new(remember.Name, lines.Select(line => string.Concat(line.OrderBy(word => word.X).Select(word => word.Text))).ToArray(),
+            [(viewport.X + bounds[0] * viewport.Width) / width, (viewport.Y + bounds[1] * viewport.Height) / height,
+                bounds[2] * viewport.Width / width, bounds[3] * viewport.Height / height]);
     }
 
     /// <summary>指定した領域に、指定した文字が表示されているかを読む。</summary>
@@ -580,8 +688,33 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     // 段階の途中で通常の画面がこの時間続いたら、段階を終える。画面を開くキーを送ってから切り替わるまでの間は終えない。
     private const int StageEndMs = 3000;
 
+    private VisualProgressMode? mode;
+    // モードの段階を、次に通常の画面が続いた時に始める。
+    private bool modeDue;
+    // 今の段階はモードが始めた。
+    private bool modeStage;
+    private int modeStageInputs;
+    private long? modeIdleAt;
+    // 会話や報酬の表示の合間に始めないよう、通常の画面がこの時間続いてからモードの段階を始める。
+    private const int ModeStartMs = 2000;
+
     /// <summary>進行中の段階。段階の中では、その段階の規則だけを評価する。</summary>
     public string? Stage { get; private set; }
+
+    public string? ModeId => mode?.Id;
+
+    /// <summary>
+    /// モードへ入る・解除する。入った時は、次に通常の画面が続いた時にモードの段階を始める。
+    /// 解除した時は、モードが始めた段階をその場で終える。
+    /// </summary>
+    public void SetMode(VisualProgressMode? next)
+    {
+        if (next?.Id == mode?.Id) return;
+        if (modeStage) { Stage = null; stageHudAt = null; modeStage = false; pending = null; ResetUnresolved(); }
+        mode = next;
+        modeDue = next is not null;
+        modeIdleAt = null;
+    }
 
     /// <summary>段階を始めた数値の規則は、数値が条件を外れたのを見るまで、もう一度は始めない。</summary>
     public bool MayStart(VisualProgressRule rule) => rule.NextStage is null || !started.Contains(rule.Id);
@@ -600,9 +733,28 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
         if (Stage is not null && candidate.Action == VisualProgressAction.Normal && hudVisible)
         {
             stageHudAt ??= now;
-            if (now - stageHudAt >= StageEndMs) { Stage = null; stageHudAt = null; }
+            if (now - stageHudAt >= StageEndMs)
+            {
+                Stage = null; stageHudAt = null;
+                var silent = modeStage && modeStageInputs == 0;
+                modeStage = false;
+                // モードの段階が何も送らずに終わった時は、黙って終えずに知らせる。
+                if (silent) return new(VisualProgressAction.Review,
+                    Detail: $"{mode!.Name}を始める操作を、通常の画面で見つけられません。操作は送っていません。");
+            }
         }
         else stageHudAt = null;
+        if (mode is not null && modeDue && Stage is null && candidate.Action == VisualProgressAction.Normal && hudVisible)
+        {
+            modeIdleAt ??= now;
+            if (now - modeIdleAt >= ModeStartMs)
+            {
+                Stage = mode.Stage; modeStage = true; modeStageInputs = 0; modeDue = false; modeIdleAt = null;
+                pending = null; stableSignature = null; ResetUnresolved();
+                return new(VisualProgressAction.Wait, Signature: "mode-start:" + mode.Id, Detail: mode.Name);
+            }
+        }
+        else modeIdleAt = null;
         if (inhibited && !candidate.AllowWhileInhibited)
         {
             pending = null; stableSignature = null; waitingSignature = null;
@@ -677,12 +829,15 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
 
     public void RecordInput(long now, VisualProgressChoice choice)
     {
+        if (modeStage) modeStageInputs++;
+        if (choice.RuleId is not null && mode?.RestartAfter?.Contains(choice.RuleId) == true) modeDue = true;
         if (choice.NextStage is not null)
         {
             if (Stage is null) started.Add(choice.RuleId!);
             Stage = choice.NextStage;
             stageHudAt = null;
         }
+        if (choice.EndStage) { Stage = null; stageHudAt = null; modeStage = false; }
         if (choice.RepeatIntervalMs > 0) { repeatedAt[choice.RuleId!] = now; return; }
         if (choice.Immediate) { consumedImmediate = choice.Signature; pending = null; ResetUnresolved(); return; }
         pending = choice; pendingChanged = false; unknownAt = now; unresolvedObservations = 0;

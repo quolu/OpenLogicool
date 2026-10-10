@@ -269,7 +269,8 @@ public static class VisualKeyAssistRuntime
     public static async Task<object> RunAsync(
         string[] arguments, SerialHidResidentOutputSession nano, SerialHidEmitter emitter,
         WindowsGameTarget target, string sourceId, CancellationToken cancellationToken = default,
-        Action<JsonElement>? onEvent = null, Func<ResidentPhysicalInput?>? physicalInput = null)
+        Action<JsonElement>? onEvent = null, Func<ResidentPhysicalInput?>? physicalInput = null,
+        Func<string?>? requestedMode = null)
     {
         string Required(string name)
         {
@@ -464,6 +465,15 @@ public static class VisualKeyAssistRuntime
                     token.ThrowIfCancellationRequested();
                     var frame = await frames.CaptureAsync(token);
                     _ = UserIsActive();
+                    if (progressSchedule is not null && requestedMode is not null && requestedMode() is var wanted
+                        && wanted != progressSchedule.ModeId)
+                    {
+                        var mode = wanted is null ? null : progressProfile!.Modes?.SingleOrDefault(candidate => candidate.Id == wanted)
+                            ?? throw new InvalidOperationException($"進行設定にモード {wanted} がありません。bot mode off で解除してください。");
+                        progressSchedule.SetMode(mode);
+                        Emit(new { Event = "mode-changed", AtMs = clock.ElapsedMilliseconds, Mode = mode?.Id,
+                            Detail = mode is null ? "モードを解除しました。" : $"{mode.Name}に入りました。" });
+                    }
                     var viewport = recoveryRecognizer is null ? null : WindowsGameTargetLocator.CaptureClientBounds(target.Window);
                     var windowScale = viewport is null ? 1 : recoveryRecognizer!.HudScale(viewport);
                     var inhibitMatch = inhibit.FindAtWindowScale(frame, region, windowScale);
@@ -623,7 +633,7 @@ public static class VisualKeyAssistRuntime
                             flowChoice = progressRecognizer!.RecognizeRepeatingImage(frame, viewport!,
                                 rule => (!flowInhibited || rule.AllowWhileInhibited)
                                     && progressSchedule!.RepeatIsDue(clock.ElapsedMilliseconds, rule), stage) ?? flowChoice;
-                        if (flowChoice.Action is VisualProgressAction.Key or VisualProgressAction.Click)
+                        if (flowChoice.Action is VisualProgressAction.Key or VisualProgressAction.Click or VisualProgressAction.Flick)
                         {
                             await inputGate.WaitAsync(token);
                             try
@@ -662,8 +672,9 @@ public static class VisualKeyAssistRuntime
                                     throw new InvalidOperationException($"進行操作のNano入力に失敗しました: {dispatch.FailureReason}");
                                 if (!completingClick) progressSchedule!.RecordInput(clock.ElapsedMilliseconds, current);
                                 if (current.RepeatIntervalMs == 0) schedule.RecordInput(clock.ElapsedMilliseconds);
+                                if (!completingClick && current.Remembered is { } remembered) SaveRemembered(remembered, current.RuleId!, fresh);
                                 Emit(new { Event = "progress-input", AtMs = clock.ElapsedMilliseconds, current.RuleId,
-                                    current.Signature, current.Key, current.Point, current.Immediate, current.RepeatIntervalMs,
+                                    current.Signature, current.Key, current.Point, current.FlickTo, current.Immediate, current.RepeatIntervalMs,
                                     AfterClick = completingClick, progressSchedule!.Stage, dispatch });
                             }
                             finally { inputGate.Release(); }
@@ -908,7 +919,8 @@ public static class VisualKeyAssistRuntime
             bool PointerBlocked(VisualProgressChoice choice, GameInteractionDispatchReceipt dispatch)
             {
                 if (userInput is null || dispatch.Status == GameInteractionDispatchStatus.Dispatched
-                    || choice.Action != VisualProgressAction.Click || !actions.LastDispatchPointerUnmoved) return false;
+                    || choice.Action is not (VisualProgressAction.Click or VisualProgressAction.Flick)
+                    || !actions.LastDispatchPointerUnmoved) return false;
                 userInput.PointerHeldByOther();
                 Emit(new { Event = "progress-input-blocked", AtMs = clock.ElapsedMilliseconds, choice.RuleId, choice.Signature, choice.Point,
                     Foreground = ForegroundAppTracker.GetForegroundWindowTitle(), dispatch });
@@ -1156,6 +1168,29 @@ public static class VisualKeyAssistRuntime
                     onEvent?.Invoke(JsonSerializer.SerializeToElement(entry));
                     Console.WriteLine(json);
                 }
+            }
+
+            // 操作を送った時の領域の文字と画像を、実行の記録へ残す。
+            void SaveRemembered(VisualProgressRemembered remembered, string ruleId, CapturedFrame source)
+            {
+                var folder = Path.Combine(evidenceDirectory, "remembered");
+                Directory.CreateDirectory(folder);
+                var name = FormattableString.Invariant($"{remembered.Name}-{clock.ElapsedMilliseconds:D9}");
+                var x = (int)(remembered.Bounds[0] * source.Width);
+                var y = (int)(remembered.Bounds[1] * source.Height);
+                var width = (int)(remembered.Bounds[2] * source.Width);
+                var height = (int)(remembered.Bounds[3] * source.Height);
+                var pixels = source.Pixels ?? throw new InvalidOperationException("覚える領域の保存には画像が必要です。");
+                var bytes = new byte[width * height * 4];
+                for (var row = 0; row < height; row++)
+                    pixels.Bgra8.Span.Slice((y + row) * pixels.Stride + x * 4, width * 4).CopyTo(bytes.AsSpan(row * width * 4));
+                var image = Path.Combine(folder, name + ".png");
+                File.WriteAllBytes(image, new WindowsGameFramePngEncoder().Encode(source with { Width = width, Height = height,
+                    Pixels = new FramePixels(bytes, width * 4), Crop = null }).Bytes.ToArray());
+                var entry = new { Event = "remembered", AtMs = clock.ElapsedMilliseconds, remembered.Name, RuleId = ruleId,
+                    remembered.Lines, Image = image, RecordedAt = DateTimeOffset.Now };
+                File.WriteAllText(Path.Combine(folder, name + ".json"), JsonSerializer.Serialize(entry));
+                Emit(entry);
             }
 
             bool Inhibited(CapturedFrame candidate) => inhibit.FindAtWindowScale(candidate, region,

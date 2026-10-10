@@ -70,5 +70,8 @@ public sealed class BotScriptPanelTests
         public void Start(string id) { Started = id; State = new(BotScriptPhase.Running, "実行中"); }
         public Task StopAsync() { Stopped = true; State = new(BotScriptPhase.Stopped, "停止済み"); return Task.CompletedTask; }
         public void OpenEvidence() { }
+        public IReadOnlyList<BotScriptMode> ListModes() => [];
+        public BotScriptSnapshot SetMode(string modeId) => State;
+        public BotScriptSnapshot ClearMode() => State;
     }
 }

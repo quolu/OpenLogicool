@@ -41,7 +41,7 @@ internal sealed class VisualProgressReviewMonitor
         string? known = inhibited ? blockedInhibited ? null : "停止表示"
             : blockedInhibited ? "停止表示解除" : candidate.Action switch
         {
-            VisualProgressAction.Key or VisualProgressAction.Click or VisualProgressAction.Wait
+            VisualProgressAction.Key or VisualProgressAction.Click or VisualProgressAction.Flick or VisualProgressAction.Wait
                 when candidate.Signature is not null && candidate.Signature != blockedSignature => candidate.Signature,
             VisualProgressAction.Normal when hudVisible && !blockedHudVisible => "HUD",
             _ => null
