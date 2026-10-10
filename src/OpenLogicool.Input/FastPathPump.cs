@@ -42,6 +42,10 @@ public sealed class FastPathPump : IDisposable
     private volatile bool _started;
     private Exception? _failure;
     private long _processedCount;
+    // 物理的に押されている control の集合（device instance 単位）。worker thread だけが書く。
+    // 他 thread へは合計だけを Volatile で公開し、lock・待ちは持たない。
+    private readonly Dictionary<string, HashSet<string>> _physicalHeld = new(StringComparer.Ordinal);
+    private int _physicalHeldCount;
     private long _traceSequence;
     private long _traceApproxCount;
     private long _acceptedMacroInvocations;
@@ -93,6 +97,9 @@ public sealed class FastPathPump : IDisposable
 
     /// <summary>処理済み PhysicalInput 件数。</summary>
     public long ProcessedCount => Interlocked.Read(ref _processedCount);
+
+    /// <summary>いま物理的に押されている control の数（全 device の合計）。mapping の有無・output の有無に依らない。</summary>
+    public int PhysicalHeldCount => Volatile.Read(ref _physicalHeldCount);
 
     public long AcceptedMacroInvocations => Interlocked.Read(ref _acceptedMacroInvocations);
 
@@ -178,6 +185,8 @@ public sealed class FastPathPump : IDisposable
                 var emitted = Dispatch(edges);
                 RecordTrace(input, layerId, edges, emitted, MonotonicMilliseconds());
                 processed++;
+                // 件数より先に押下集合を更新する。件数の変化を見た読み手は更新後の押下数を読める。
+                TrackPhysicalHeld(input);
                 Interlocked.Increment(ref _processedCount);
             }
 
@@ -191,6 +200,45 @@ public sealed class FastPathPump : IDisposable
         }
 
         return processed;
+    }
+
+    /// <summary>物理 edge で押下集合を更新する（Down で追加・Up で削除。重複 down・幽霊 up は数を変えない）。</summary>
+    private void TrackPhysicalHeld(PhysicalInput input)
+    {
+        if (input.Edge == PhysicalInputEdge.Down)
+        {
+            if (!_physicalHeld.TryGetValue(input.DeviceInstanceId, out var held))
+            {
+                held = new HashSet<string>(StringComparer.Ordinal);
+                _physicalHeld.Add(input.DeviceInstanceId, held);
+            }
+
+            if (held.Add(input.ControlId))
+            {
+                Volatile.Write(ref _physicalHeldCount, _physicalHeldCount + 1);
+            }
+        }
+        else if (_physicalHeld.TryGetValue(input.DeviceInstanceId, out var held) && held.Remove(input.ControlId))
+        {
+            Volatile.Write(ref _physicalHeldCount, _physicalHeldCount - 1);
+        }
+    }
+
+    /// <summary>指定 device の押下集合を空にする（切断。切断後に押下の up は届かない）。</summary>
+    private void ClearPhysicalHeld(string deviceInstanceId)
+    {
+        if (_physicalHeld.TryGetValue(deviceInstanceId, out var held) && held.Count > 0)
+        {
+            Volatile.Write(ref _physicalHeldCount, _physicalHeldCount - held.Count);
+            held.Clear();
+        }
+    }
+
+    /// <summary>全 device の押下集合を空にする（停止・fault 停止）。</summary>
+    private void ClearAllPhysicalHeld()
+    {
+        _physicalHeld.Clear();
+        Volatile.Write(ref _physicalHeldCount, 0);
     }
 
     private bool Dispatch(IReadOnlyList<MappedOutputEdge> edges)
@@ -244,6 +292,12 @@ public sealed class FastPathPump : IDisposable
     /// </summary>
     private void ProcessDeviceChange(DeviceChange change)
     {
+        // 押下の観測は mapping の有無に依らない。切断した device の押下は up が届かないため空にする。
+        if (change.Kind == DeviceChangeKind.Removal)
+        {
+            ClearPhysicalHeld(change.DeviceInstanceId);
+        }
+
         if (!_runtimes.TryGetValue(change.DeviceInstanceId, out var runtime))
         {
             return;
@@ -275,6 +329,9 @@ public sealed class FastPathPump : IDisposable
             }
         }
 
+        // worker は終了済み（または未開始）なので、ここでの書込みは worker と競合しない。
+        ClearAllPhysicalHeld();
+
         if (_failure is null)
         {
             ReleaseAllOwnedOutputs();
@@ -297,6 +354,8 @@ public sealed class FastPathPump : IDisposable
         }
         catch (Exception ex)
         {
+            // fault 停止後は入力を処理しないため、押下の観測も止める（Failure を見た読み手が 0 を読めるよう先に空にする）。
+            ClearAllPhysicalHeld();
             _failure = ex;
             try
             {

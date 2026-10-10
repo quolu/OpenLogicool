@@ -14,6 +14,8 @@ internal sealed class WindowsUserInputMonitor : IDisposable
     private readonly Guid nanoContainer;
     private readonly Stopwatch clock = Stopwatch.StartNew();
     private readonly UserInputPauseState state;
+    private readonly PhysicalInputPauseBridge physicalBridge;
+    private readonly Func<ResidentPhysicalInput?>? physicalInput;
     private readonly Thread thread;
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Dictionary<nint, bool> nanoDevices = [];
@@ -31,12 +33,18 @@ internal sealed class WindowsUserInputMonitor : IDisposable
     private long softwarePositionChanges;
     private (int X, int Y)? softwarePosition;
 
-    public WindowsUserInputMonitor(SerialHidCandidate nano)
+    public WindowsUserInputMonitor(SerialHidCandidate nano, Func<ResidentPhysicalInput?>? physicalInput = null)
     {
         this.nano = nano;
+        this.physicalInput = physicalInput;
         nanoContainer = ContainerForInstance(nano.DeviceInstanceId);
         // 押下状態の符号は、マウスのボタンだけ0x10000を足してある。OSへは仮想キーの番号で聞く。
-        state = new(() => clock.ElapsedMilliseconds, code => (GetAsyncKeyState(code & 0xFFFF) & 0x8000) != 0);
+        // G13／G600の物理ボタンは仮想キーではないので、OSでなく常駐の観測で確かめる。
+        PhysicalInputPauseBridge? bridge = null;
+        state = new(() => clock.ElapsedMilliseconds, code => code == PhysicalInputPauseBridge.Code
+            ? bridge!.IsHeld
+            : (GetAsyncKeyState(code & 0xFFFF) & 0x8000) != 0);
+        physicalBridge = bridge = new(state);
         keyboardHook = Keyboard;
         mouseHook = Mouse;
         thread = new Thread(Run) { IsBackground = true, Name = "Botの手入力監視" };
@@ -52,6 +60,8 @@ internal sealed class WindowsUserInputMonitor : IDisposable
     public UserInputPauseSnapshot Snapshot()
     {
         if (failure is { } error) throw new InvalidOperationException("手入力監視に失敗しました。", error);
+        // G13／G600の物理ボタンは、Raw Inputでなく常駐の観測から取る（Raw Inputの登録は増やさない）。
+        if (physicalInput is not null) physicalBridge.Apply(physicalInput());
         return state.Snapshot();
     }
 

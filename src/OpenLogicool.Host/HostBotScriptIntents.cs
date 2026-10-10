@@ -54,7 +54,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
 
     public static HostBotScriptIntents Create(string databasePath, SerialHidDiscoveryService discovery,
         Func<SerialHidResidentOutputSession?> borrowedNano, DemonstrationRecordingGate executionGate,
-        string? selectedDeviceId)
+        string? selectedDeviceId, Func<ResidentPhysicalInput?>? physicalInput = null)
     {
         var packages = System.IO.Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "BotScripts"),
             "bot.json", SearchOption.AllDirectories).Select(BotScriptPackage.Load).ToDictionary(package => package.Id);
@@ -93,7 +93,7 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                 if (!package.TimedInputEnabled) arguments.Add("--no-timed-input");
                 if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
                 var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(), nano, emitter, target,
-                    $"window:bot:{target.ProcessId}", token, report);
+                    $"window:bot:{target.ProcessId}", token, report, physicalInput);
                 var json = JsonSerializer.SerializeToElement(result);
                 System.IO.File.WriteAllText(Path.Combine(evidence, "result.json"), json.GetRawText());
                 return new(json.TryGetProperty("NeedsReview", out var review) && review.GetBoolean(),

@@ -269,7 +269,7 @@ public static class VisualKeyAssistRuntime
     public static async Task<object> RunAsync(
         string[] arguments, SerialHidResidentOutputSession nano, SerialHidEmitter emitter,
         WindowsGameTarget target, string sourceId, CancellationToken cancellationToken = default,
-        Action<JsonElement>? onEvent = null)
+        Action<JsonElement>? onEvent = null, Func<ResidentPhysicalInput?>? physicalInput = null)
     {
         string Required(string name)
         {
@@ -333,7 +333,7 @@ public static class VisualKeyAssistRuntime
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using var userInput = arguments.Contains("--pause-on-user-input", StringComparer.Ordinal)
             ? new WindowsUserInputMonitor(nano.DeviceIdentity
-                ?? throw new InvalidOperationException("手入力の識別に必要なNanoのデバイス情報がありません。")) : null;
+                ?? throw new InvalidOperationException("手入力の識別に必要なNanoのデバイス情報がありません。"), physicalInput) : null;
         ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; stop.Cancel(); };
         Console.CancelKeyPress += cancel;
         try

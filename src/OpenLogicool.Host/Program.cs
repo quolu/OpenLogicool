@@ -709,7 +709,8 @@ static int Ui(string[] arguments)
     // 再生が走り、Nanoが出した入力を自分で記録してしまう（injected flagでは送信元を確定できない）。
     var demonstrationGate = new DemonstrationRecordingGate();
     using var botScriptIntents = HostBotScriptIntents.Create(databasePath, serialHidDiscovery,
-        () => residentHost?.BorrowedNanoSession, demonstrationGate, outputSettingsForMacro.SelectedDeviceInstanceId);
+        () => residentHost?.BorrowedNanoSession, demonstrationGate, outputSettingsForMacro.SelectedDeviceInstanceId,
+        () => residentHost?.PhysicalInput);
     using var macroAutomationIntents = new HostMacroAutomationIntents(
         databasePath,
         CreateMacroExecutionEngine(

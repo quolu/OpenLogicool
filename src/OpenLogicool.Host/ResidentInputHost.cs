@@ -22,6 +22,9 @@ public sealed record ResidentHostStatus(
     G600LeftoverResult? LeftoverApply,
     bool G13LcdStarted);
 
+/// <summary>常駐が観測した G13／G600 の物理ボタン入力。件数は処理した edge（Down／Up）の累計、押下数はいま押されている control の合計。</summary>
+public readonly record struct ResidentPhysicalInput(long EdgeCount, int HeldCount);
+
 /// <summary>
 /// Input Studio の resident 実行体（計画 §6.2 の初期 process model）。
 /// SQLite から mapping profile を復元し、実機 G13/G600 を列挙して fast path
@@ -105,6 +108,10 @@ public sealed class ResidentInputHost : IDisposable
 
     /// <summary>live Raw Input queueが破棄したG600 input件数。0以外ならfast pathはfault停止する。</summary>
     public long DroppedG600InputCount => _g600Source?.DroppedInputCount ?? 0;
+
+    /// <summary>G13／G600 の物理ボタンの観測（Botの手入力監視が参照する）。fast path が無ければ null。</summary>
+    public ResidentPhysicalInput? PhysicalInput =>
+        _pump is { } pump ? new ResidentPhysicalInput(pump.ProcessedCount, pump.PhysicalHeldCount) : null;
 
     public FastPathPump Pump =>
         _pump ?? throw new InvalidOperationException("resident host は未起動です。");
