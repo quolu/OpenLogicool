@@ -18,6 +18,11 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
     [JsonIgnore] internal Func<string, BotAssistanceCoordinator> Coordinators { get; init; } = BotAssistanceCoordinator.Create;
     /// <summary>直近の通知の見届け。結果は支援状態へ残るため、呼び出し側は完了を待たない。</summary>
     [JsonIgnore] internal Task ClaimWatch { get; private set; } = Task.CompletedTask;
+    /// <summary>利用者への知らせの回答を読む見届け。結果は支援状態へ残る。</summary>
+    [JsonIgnore] internal Task EscalationFollow { get; private set; } = Task.CompletedTask;
+    [JsonIgnore] internal TimeSpan AnswerPollInterval { get; init; } = TimeSpan.FromSeconds(3);
+    [JsonIgnore] internal Func<string, string, CancellationToken, Task<string>>? Escalations { get; init; }
+    [JsonIgnore] internal Func<string, CancellationToken, Task<string?>>? Answers { get; init; }
 
     public static VisualAssistReviewNotifier? Create(string? humanSettings, string? assistanceDatabasePath)
     {
@@ -89,17 +94,48 @@ internal sealed record VisualAssistReviewNotifier(string Executable, string[] Ar
     internal static (string Title, string Context, VisualProgressOption[] Options) EscalationRequest(BotAssistanceIncident incident, string reason) =>
         ("担当AIへBotの詰まり通知が届いていません: " + incident.Detail[..Math.Min(60, incident.Detail.Length)],
             $"Botが詰まりを検出して担当AIへ通知しましたが、{reason}。\n詰まりの内容: {incident.Detail}\n"
-            + "Botの画面観測と回復監視は続いています。\n担当AIの会話を開いて、この詰まりへの対応を頼んでください。"
-            + "通知の宛先が切れている時は、担当AIが assistant attach をやり直すと直ります。\n"
+            + "Botの画面観測と回復監視は続いています。\n「担当AIへもう一度送る」を選ぶと、Botが同じ通知を担当AIへ送り直します。"
+            + "それでも届かない時は、担当AIの会話を開いて assistant attach をやり直すよう伝えてください。\n"
             + $"案件ID: {incident.Id}\n根拠: {incident.EvidenceDirectory}",
-            [new("asked", "担当AIの会話で対応を頼んだ"), new("later", "今は対応しない")]);
+            [new(ResendOption, "担当AIへもう一度送る"), new("later", "今は対応しない")]);
+
+    internal const string ResendOption = "resend";
 
     private async Task EscalateAsync(BotAssistanceStore store, string incidentId, string reason, CancellationToken token)
     {
-        if (Executable.Length == 0)
+        if (Executable.Length == 0 && Escalations is null)
             throw new InvalidOperationException("決裁箱の接続設定がないため、担当AIへ届いていないことを利用者へ知らせられません。");
         var incident = store.Incident(incidentId);
-        store.Escalated(incidentId, await ExchangeAsync(incident.EvidenceDirectory, default, token, custom: EscalationRequest(incident, reason)));
+        var request = EscalationRequest(incident, reason);
+        var decisionId = Escalations is null ? await ExchangeAsync(incident.EvidenceDirectory, default, token, custom: request)
+            : await Escalations(incidentId, request.Context, token);
+        store.Escalated(incidentId, decisionId);
+        EscalationFollow = FollowEscalationAsync(store, incidentId, decisionId, token);
+    }
+
+    /// <summary>決裁箱は回答を押し出さないため、案件が未処理の間だけ回答を読み、頼まれたら担当AIへ送り直す。</summary>
+    private async Task FollowEscalationAsync(BotAssistanceStore store, string incidentId, string decisionId, CancellationToken token)
+    {
+        try
+        {
+            string? answer = null;
+            while (answer is null)
+            {
+                await Task.Delay(AnswerPollInterval, token);
+                if (store.Incident(incidentId) is not { Status: "open", ObservedCleared: false }) return;
+                answer = Answers is null ? await ReadAnswerAsync(new(VisualAssistNoticeKind.Human, decisionId), token)
+                    : await Answers(decisionId, token);
+            }
+            if (answer != ResendOption) return;
+            try { await Coordinators(AssistanceDatabasePath!).RedeliverAsync(incidentId, token); }
+            catch (BotAssistanceDeliveryException error)
+            {
+                // 送り直しも届かない時は、黙らずにもう一度利用者へ知らせる。
+                await EscalateAsync(store, incidentId, $"頼まれて送り直しましたが、また届きませんでした（{error.Code}: {error.Message}）", token);
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception error) { store.EscalationFailed(incidentId, error.Message); }
     }
 
     /// <summary>利用者へ直接申請した選択の回答を読む。未回答・取り下げ済みはnull。</summary>

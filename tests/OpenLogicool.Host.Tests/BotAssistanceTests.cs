@@ -338,6 +338,36 @@ public sealed class BotAssistanceTests : IDisposable
         Assert.Same(watch, notifier.ClaimWatch);
     }
 
+    [Theory]
+    [InlineData("resend", false, 2, 1)]
+    [InlineData("later", false, 1, 1)]
+    [InlineData("resend", true, 2, 2)]
+    public async Task 知らせへの回答を読み頼まれた時だけ担当AIへ送り直す(string answer, bool resendFails, int sent, int escalations)
+    {
+        var dispatcher = new Dispatcher();
+        var store = new BotAssistanceStore(Database);
+        store.Bind(OldThread, root);
+        var asked = new List<string>();
+        var notifier = VisualAssistReviewNotifier.Create("存在しない人向け設定", Database)! with
+        {
+            Coordinators = _ => new(store, dispatcher), ClaimGrace = TimeSpan.FromMilliseconds(20), AnswerPollInterval = TimeSpan.FromMilliseconds(10),
+            Escalations = (_, context, _) => { asked.Add(context); return Task.FromResult("K-" + asked.Count); },
+            // 1件目の知らせにだけ答える。送り直しも届かない時の2件目は未回答のままにして、見届けを画面の回復で終わらせる。
+            Answers = (decision, _) => Task.FromResult(decision == "K-1" ? answer : null),
+        };
+        var notice = await notifier.NotifyAsync("根拠", Review("詰まり"), default);
+        await notifier.ClaimWatch;
+        if (resendFails) dispatcher.Failure = new("inbox-connect_failed", "受信箱へ送れません");
+        var first = notifier.EscalationFollow;
+        await first;
+        Assert.Equal(sent, dispatcher.Sent.Count);
+        Assert.Equal(escalations, asked.Count);
+        Assert.Equal("K-" + escalations, store.Incident(notice.Id).EscalationDecisionId);
+        if (resendFails) Assert.Contains("また届きませんでした", asked[1]);
+        store.ObservedClear(notice.Id);
+        await notifier.EscalationFollow;
+    }
+
     [Fact]
     public void 未受領の知らせは開いたままで画面も回復していない案件だけを対象にする()
     {
