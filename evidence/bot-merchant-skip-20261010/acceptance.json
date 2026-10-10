@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "2df484b",
+  "request": "ネコ商品・こんニャちわ・スキップの三語がある場合に右上のスキップをクリックしてからEsc。OCR頻度を確認。",
+  "behavior": {
+    "conditions": [
+      "ネコ商品",
+      "こんニャちわ",
+      "右上のスキップ"
+    ],
+    "click": "右上のスキップのOCR位置",
+    "afterClickKey": "Key:Esc",
+    "afterClick": "クリック送出成功後にのみ予約し、新しい観測で実行",
+    "manualInput": "手入力中は予約を保持して保留",
+    "stopDisplay": "表示中は予約を保持して保留",
+    "failedInput": "エラー停止し、自動再送なし"
+  },
+  "tests": {
+    "focused": 10,
+    "related": 120,
+    "failed": 0,
+    "releaseBuildErrors": 0,
+    "releaseBuildWarnings": 0,
+    "sequence": "fake Nano入力portでclick→Key:Esc、別の許可操作を挟んだ予約保持、クリック失敗後のEsc未送出を確認"
+  },
+  "ocr": {
+    "measuredRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-115014-794-9f2be114",
+    "windowMs": 119887,
+    "progressPasses": 165,
+    "mainOcrPasses": 164,
+    "approximateProgressPassesPerSecond": 1.37,
+    "scope": "着手直後の直近2分。画像だけで判定したコンパス1回を除く。押下直前の追加OCRはこの回数に含めない。",
+    "frequency": "250ms待機に撮影・画像照合・OCRを加えた間隔。回復監視の4回/秒とは独立。"
+  },
+  "installation": {
+    "entry": "scripts/install-development-app.ps1",
+    "profileHashMatches": true,
+    "duringDevelopmentBotStopped": false,
+    "restartForUpdate": true,
+    "restartSuccess": true
+  },
+  "live": {
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-120601-669-77ff4523",
+    "phase": "Running",
+    "normalSpace": "NanoSerialHidで確認済み",
+    "recovery": "観測とポーション送出を確認済み",
+    "merchantSequence": "指定3語の表示機会がなく実機送出は未確認",
+    "automaticInputRetry": false,
+    "fallback": false
+  },
+  "updatedUtc": "2026-10-10T03:07:02.7181355+00:00"
+}

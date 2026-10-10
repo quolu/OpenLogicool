@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-merchant-skip-20261010\\live-game.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "59e5d34fc7b6724a7cca8d7695139d45e2e1d5026d42886bb7ffff47848d7170",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

@@ -62,8 +62,8 @@
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv53・迷路の果てへ進行中。通常Space後の結果比較を省く修理と画面押下指示の即時入力を導入済み。T反復と画面押下指示の実機送出は、それぞれ表示機会待ち。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-115014-794-9f2be114",
+    "nextCheck": "三語表示でスキップ→Escの規則を導入済み。通常Spaceと回復処理を確認し、Bot継続中。指定3語の実画面での送出は表示機会待ち。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-120601-669-77ff4523",
     "levelProgression": {
       "currentLevel": 53,
       "targetLevel": 42,
@@ -137,7 +137,7 @@
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
-    "botState": "更新後のBotはNano通信エラーなしで再開。通常会話Spaceを確認。実行C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-115014-794-9f2be114",
+    "botState": "Bot再開済み。通常Spaceと回復処理を確認。実行C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-120601-669-77ff4523",
     "remaining": [],
     "hostReadTimeoutRepair": {
       "reproductionBefore": "read-pause100で受信済み10バイトを捨てTimeout",
@@ -182,7 +182,7 @@
   },
   "continuation": {
     "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
-    "updatedUtc": "2026-10-10T02:53:00.6252365+00:00",
+    "updatedUtc": "2026-10-10T03:07:02.8282849+00:00",
     "assistanceGeneration": 6,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -196,7 +196,7 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。通常Space後の結果比較は実機で0回を確認済み。画面を押してくださいの即時選択は実録画像試験済み・導入済みで、実機送出は表示機会待ち。",
+    "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。三語表示のスキップ→Escを導入・130件試験済み。実画面の当該表示での送出は未確認。T反復と画面押下指示も、それぞれ表示機会待ちを保持する。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -221,6 +221,21 @@
       "prompt": "画面を押してくださいを文字認識した回に即Space",
       "evidence": "evidence/bot-immediate-prompt-20261010/acceptance.json",
       "live": "通常Timed Space後の比較0回と次の判定への継続は実機確認済み。画面を押してくださいの実送出は表示機会待ち。"
+    },
+    "merchantGreetingSkip": {
+      "sourceCommit": "2df484b",
+      "status": "installed",
+      "conditions": [
+        "ネコ商品",
+        "こんニャちわ",
+        "右上のスキップ"
+      ],
+      "actions": [
+        "右上のスキップをクリック",
+        "Esc"
+      ],
+      "evidence": "evidence/bot-merchant-skip-20261010/acceptance.json",
+      "live": "表示機会待ち"
     }
   }
 }
