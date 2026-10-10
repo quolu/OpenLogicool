@@ -48,7 +48,7 @@
         "サキュバス討伐とクエスト完了時の表示名"
       ],
       "handoffAction": "新しい会話でcall_openし、旧通話へ移動先を知らせ、新通話へ返答待ちを引き継いで旧通話を閉じる。返信のポーリングは行わない。Claudeの会話では返信が自動で届かないため、返答を待つ依頼を出した時だけcall_pollで読む",
-      "replyThreadId": "8c733340-ff46-419b-bbe8-ed61e54565ab",
+      "replyThreadId": "1ea870ae-2414-470b-b685-df055274159a",
       "note": "後継の会話ではCall Bridgeへ接続できている。通話312a385cをそのまま使い、返答を待つ依頼を出した時だけcall_pollで読む。ルピーへの移動の連絡は、返答待ちが無いため送っていない。"
     }
   ],
@@ -203,9 +203,9 @@
     "residualUnknown": "過去のHELLO無応答を含む全通信停止の根本原因は特定済みと扱わない。今回の実機hard kill再測定は未実施。"
   },
   "continuation": {
-    "threadId": "8c733340-ff46-419b-bbe8-ed61e54565ab",
-    "updatedUtc": "2026-10-10T10:30:00+00:00",
-    "assistanceGeneration": 8,
+    "threadId": "1ea870ae-2414-470b-b685-df055274159a",
+    "updatedUtc": "2026-10-10T13:10:00+00:00",
+    "assistanceGeneration": 9,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
       "842bfff3-1588-44f9-88ab-8b0fe08c2610",
@@ -220,7 +220,17 @@
       "567762f6-372e-46a8-b2e0-3e5ee137adcb"
     ],
     "pendingDecisionIds": [],
-    "botPhase": "Running",
+    "botPhase": "Stopped",
+    "botStoppedReason": "2026-10-10 21:12、利用者の指示で停止。サイドクエストの流れを利用者と一歩ずつ手で進めるため。再開は利用者の合図を待つ。",
+    "sideQuestMode": {
+      "status": "installed-not-live-run",
+      "sourceCommit": "3d07bc0",
+      "enter": "利用者が「サイドクエストモード」と言ったら bot mode side-quest、Botが止まっていれば bot start mabinogi-mobile。「解除」と言われたら bot mode off。",
+      "verified": "実機で取得した画面5枚の試験（通常の画面・全体のタブ・一覧の途中・一番上・進行中のクエストが先頭）。導入版で bot mode の入り・状態・解除。",
+      "unverified": "Botを動かしての通し（モードに入る→受注→覚える）。クエストクリア後に次の受注を始めること。受注した後の進行は既存の規則が担い、詰まった時に利用者の指示で一歩ずつ足す。",
+      "userPolicy": "利用者の指示（2026-10-10）: モードは解除と言われるまで続け、サイドクエストを繰り返す。この先は一歩ずつ実装し、Botが詰まるたびに利用者が指示する。",
+      "evidence": "evidence/bot-side-quest-20261010/README.md"
+    },
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
     "nextAction": "利用者かBotが次に入力した時に、Botの記録（user-input-state の UserEvents・NanoEvents）で、ゲームが前面の間の手入力が数えられBotの送出が手入力に数えられないことを確かめる。コインが30以下になった時に、本番設定の補充（70個）が最後まで進むかを確かめる。次の「届いていません」の知らせで、回答の読み取りと送り直しを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。会話の選択で1分以上止まった時に通知が出るかを確かめる。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
