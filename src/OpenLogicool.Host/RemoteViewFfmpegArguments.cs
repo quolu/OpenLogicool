@@ -12,7 +12,24 @@ public sealed record RemoteViewQualityProfile(int Width, int Height, int Fps, in
         RemoteViewQuality.Fine => new(1920, 1080, 30, 8000),
         _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "未対応の画質です。"),
     };
+
+    /// <summary>
+    /// 取り込む窓の描画領域と同じ形で、この画質の枠に収まる送る大きさ（偶数）。拡大はしない。
+    /// 枠の大きさのまま送ると、形の違う窓の絵が枠の左へ詰められ、黒い帯が付いて視聴側で小さく・片寄って見える。
+    /// </summary>
+    public (int Width, int Height) Fit(int sourceWidth, int sourceHeight)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sourceWidth);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sourceHeight);
+        var scale = Math.Min(1.0, Math.Min((double)Width / sourceWidth, (double)Height / sourceHeight));
+        return (Math.Min(Width, Even(sourceWidth * scale)), Math.Min(Height, Even(sourceHeight * scale)));
+
+        static int Even(double value) => Math.Max(2, (int)Math.Round(value / 2.0, MidpointRounding.AwayFromZero) * 2);
+    }
 }
+
+/// <summary>取り込む窓と、その描画領域の大きさ。</summary>
+public sealed record RemoteViewSource(nint Window, int Width, int Height);
 
 /// <summary>
 /// 遠隔表示の ffmpeg の引数を組み立てる pure な関数。
@@ -42,8 +59,9 @@ public static class RemoteViewFfmpegArguments
     public const int WhipSendBufferBytes = 4 * 1024 * 1024;
 
     public static IReadOnlyList<string> Build(
-        RemoteViewSettings settings, nint window, string authorization, DateTimeOffset clockOrigin)
+        RemoteViewSettings settings, RemoteViewSource source, string authorization, DateTimeOffset clockOrigin)
     {
+        ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentException.ThrowIfNullOrEmpty(authorization);
         if (settings.PublishUrl is null)
@@ -52,6 +70,7 @@ public static class RemoteViewFfmpegArguments
         }
 
         var profile = RemoteViewQualityProfile.For(settings.Quality);
+        var (width, height) = profile.Fit(source.Width, source.Height);
         var originOffset = "-" + (clockOrigin.ToUnixTimeMilliseconds() / 1000.0).ToString("F3", CultureInfo.InvariantCulture);
         return
         [
@@ -61,7 +80,7 @@ public static class RemoteViewFfmpegArguments
             "-itsoffset", originOffset,
             "-f", "lavfi",
             "-i",
-            $"gfxcapture=hwnd={window}:max_framerate={profile.Fps * CaptureOversampling}:width={profile.Width}:height={profile.Height}" +
+            $"gfxcapture=hwnd={source.Window}:max_framerate={profile.Fps * CaptureOversampling}:width={width}:height={height}" +
             ":resize_mode=scale_aspect:capture_cursor=1",
             "-use_wallclock_as_timestamps", "1",
             "-itsoffset", originOffset,

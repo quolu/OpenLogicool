@@ -95,7 +95,7 @@ public sealed class RemoteViewRuntimeTests
         short[] chunk = [5, 6, 7, 8];
         fixture.Audio.Enqueue(chunk);
 
-        fixture.Runtime.Start(0x2020, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(0x2020, 1280, 720), 42, "Game", Settings, Authorization);
 
         Assert.Equal(42, fixture.RequestedProcessId);
         Assert.Contains($"gfxcapture=hwnd={0x2020}:max_framerate=60:width=1280:height=720" +
@@ -111,7 +111,7 @@ public sealed class RemoteViewRuntimeTests
     public void 進捗行でコマ数が進み_最初のコマで配信中になる()
     {
         var fixture = new Fixture();
-        fixture.Runtime.Start(1, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization);
 
         fixture.Encoder.Emit("frame=   30 fps= 30 q=24.0 size=  120kB time=00:00:01.00 bitrate= 980.0kbits/s speed=1x");
         WaitFor(() => fixture.Runtime.Status.VideoFrames == 30);
@@ -129,7 +129,7 @@ public sealed class RemoteViewRuntimeTests
     public void timeが2秒以上進まない間は映像が止まったと示す()
     {
         var fixture = new Fixture();
-        fixture.Runtime.Start(1, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization);
 
         fixture.Encoder.Emit("frame=   30 fps= 30 q=24.0 size=  120kB time=00:00:01.00 bitrate= 980.0kbits/s");
         WaitFor(() => fixture.Runtime.Status.StreamedSeconds == 1.0);
@@ -152,7 +152,7 @@ public sealed class RemoteViewRuntimeTests
     public void ffmpegが自分で終了するとFaultedになり_認証の文字列は出さず_再起動もしない()
     {
         var fixture = new Fixture();
-        fixture.Runtime.Start(1, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization);
 
         fixture.Encoder.Emit("frame=   30 fps= 30 q=24.0 size=  120kB time=00:00:01.00 bitrate= 980.0kbits/s");
         fixture.Encoder.Emit("[whip @ 000001] request with publisher:secretpw to https://relay.example/game/whip");
@@ -178,7 +178,7 @@ public sealed class RemoteViewRuntimeTests
     {
         var fixture = new Fixture { AudioFactoryFailure = new InvalidOperationException("音の取り込みを開始できませんでした") };
 
-        fixture.Runtime.Start(1, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization);
 
         WaitFor(() => fixture.Runtime.Status.Phase == RemoteViewPhase.Faulted);
         Assert.Contains("音の取り込みを開始できませんでした", fixture.Runtime.Status.Detail);
@@ -190,7 +190,7 @@ public sealed class RemoteViewRuntimeTests
     public void 停止するとstdinが閉じ_音源は作った同じthreadで破棄され_停止になる()
     {
         var fixture = new Fixture();
-        fixture.Runtime.Start(1, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization);
         WaitFor(() => fixture.Audio.CreatedOnThread != 0);
 
         fixture.Runtime.Stop();
@@ -210,12 +210,12 @@ public sealed class RemoteViewRuntimeTests
     public void 停止後に再開でき_動いている間の二重起動は拒否する()
     {
         var fixture = new Fixture();
-        fixture.Runtime.Start(1, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization);
         Assert.Throws<InvalidOperationException>(
-            () => fixture.Runtime.Start(1, 42, "Game", Settings, Authorization));
+            () => fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization));
         fixture.Runtime.Stop();
 
-        fixture.Runtime.Start(1, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization);
 
         Assert.Equal(2, fixture.ProcessesStarted);
         Assert.Equal(RemoteViewPhase.Starting, fixture.Runtime.Status.Phase);
@@ -227,11 +227,11 @@ public sealed class RemoteViewRuntimeTests
     public void Faulted_の後も開始し直せる()
     {
         var fixture = new Fixture();
-        fixture.Runtime.Start(1, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization);
         fixture.Encoder.Exit(2);
         WaitFor(() => fixture.Runtime.Status.Phase == RemoteViewPhase.Faulted);
 
-        fixture.Runtime.Start(1, 42, "Game", Settings, Authorization);
+        fixture.Runtime.Start(new RemoteViewSource(1, 1280, 720), 42, "Game", Settings, Authorization);
 
         Assert.Equal(2, fixture.ProcessesStarted);
         Assert.Equal(RemoteViewPhase.Starting, fixture.Runtime.Status.Phase);

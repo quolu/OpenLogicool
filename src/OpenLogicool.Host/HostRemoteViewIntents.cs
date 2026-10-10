@@ -12,6 +12,7 @@ public sealed class HostRemoteViewIntents : IRemoteViewIntents, IDisposable
     private readonly IRemoteViewSecretStore secrets;
     private readonly MacroTargetSettingsStore targetStore;
     private readonly Func<string, WindowsGameTarget> locate;
+    private readonly Func<nint, (int Width, int Height)> clientSize;
     private readonly RemoteViewRuntime runtime;
     private readonly IDisposable? owned;
     private readonly object gate = new();
@@ -22,6 +23,7 @@ public sealed class HostRemoteViewIntents : IRemoteViewIntents, IDisposable
         IRemoteViewSecretStore secrets,
         MacroTargetSettingsStore targetStore,
         Func<string, WindowsGameTarget> locate,
+        Func<nint, (int Width, int Height)> clientSize,
         RemoteViewRuntime runtime,
         IDisposable? owned = null)
     {
@@ -29,6 +31,7 @@ public sealed class HostRemoteViewIntents : IRemoteViewIntents, IDisposable
         this.secrets = secrets ?? throw new ArgumentNullException(nameof(secrets));
         this.targetStore = targetStore ?? throw new ArgumentNullException(nameof(targetStore));
         this.locate = locate ?? throw new ArgumentNullException(nameof(locate));
+        this.clientSize = clientSize ?? throw new ArgumentNullException(nameof(clientSize));
         this.runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
         this.owned = owned;
     }
@@ -42,6 +45,11 @@ public sealed class HostRemoteViewIntents : IRemoteViewIntents, IDisposable
             new RemoteViewSecretStore(),
             MacroTargetSettingsStore.ForDatabase(databasePath),
             WindowsGameTargetLocator.Locate,
+            window =>
+            {
+                var bounds = WindowsGameTargetLocator.CaptureClientBounds(window);
+                return ((int)bounds.Width, (int)bounds.Height);
+            },
             new RemoteViewRuntime(launcher.Launch, ProcessLoopbackRemoteViewAudioSource.Create),
             launcher);
     }
@@ -74,7 +82,9 @@ public sealed class HostRemoteViewIntents : IRemoteViewIntents, IDisposable
         var target = targetStore.Load()
             ?? throw new InvalidOperationException("遠隔表示の対象のゲームが未設定です。Game Operator の対象を設定してください。");
         var game = locate(target.ProcessName);
-        runtime.Start(game.Window, game.ProcessId, game.ProcessName, current, $"{current.PublishUser}:{password}");
+        var size = clientSize(game.Window);
+        runtime.Start(new RemoteViewSource(game.Window, size.Width, size.Height), game.ProcessId, game.ProcessName, current,
+            $"{current.PublishUser}:{password}");
     }
 
     public Task StopAsync() => Task.Run(runtime.Stop);

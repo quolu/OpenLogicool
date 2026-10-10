@@ -215,8 +215,9 @@ public sealed class RemoteViewRuntime : IDisposable
         }
     }
 
-    public void Start(nint window, int processId, string processName, RemoteViewSettings settings, string authorization)
+    public void Start(RemoteViewSource source, int processId, string processName, RemoteViewSettings settings, string authorization)
     {
+        ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentException.ThrowIfNullOrWhiteSpace(processName);
         ArgumentException.ThrowIfNullOrEmpty(authorization);
@@ -235,7 +236,7 @@ public sealed class RemoteViewRuntime : IDisposable
                 Teardown(previous);
             }
 
-            var arguments = RemoteViewFfmpegArguments.Build(settings, window, authorization, wallClock());
+            var arguments = RemoteViewFfmpegArguments.Build(settings, source, authorization, wallClock());
             var process = processFactory(arguments)
                 ?? throw new InvalidOperationException("ffmpeg の起動がnullを返しました。");
             var current = new Session(process, processName, authorization, clock());

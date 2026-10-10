@@ -122,6 +122,7 @@ public sealed class RemoteViewSettingsStoreTests : IDisposable
         secrets,
         new MacroTargetSettingsStore(directory),
         _ => throw new InvalidOperationException("この test では対象を探しません。"),
+        _ => throw new InvalidOperationException("この test では窓の大きさを読みません。"),
         new RemoteViewRuntime(_ => throw new InvalidOperationException("起動しません。"),
             _ => throw new InvalidOperationException("起動しません。")));
 

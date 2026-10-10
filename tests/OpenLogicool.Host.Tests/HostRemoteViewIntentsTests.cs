@@ -38,6 +38,7 @@ public sealed class HostRemoteViewIntentsTests : IDisposable
             new MacroTargetSettingsStore(directory),
             processName => new WindowsGameTarget(
                 0x3030, 77, processName, "title", new GameCaptureScreenBounds(0, 0, 1, 1), @"C:\Games\game.exe"),
+            _ => (1711, 1085),
             runtime);
     }
 
@@ -56,7 +57,10 @@ public sealed class HostRemoteViewIntentsTests : IDisposable
         // 音源は配信の thread で作られる。対象の process id がそこへ渡ること。
         Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref audioProcessId) == 77, TimeSpan.FromSeconds(10)));
         Assert.Equal("publisher:secretpw", ValueAfter(launchedArguments!, "-authorization"));
-        Assert.Contains($"gfxcapture=hwnd={0x3030}:", launchedArguments!.First(argument => argument.StartsWith("gfxcapture", StringComparison.Ordinal)));
+        var capture = launchedArguments!.First(argument => argument.StartsWith("gfxcapture", StringComparison.Ordinal));
+        Assert.Contains($"gfxcapture=hwnd={0x3030}:", capture);
+        // 窓の描画領域（1711x1085）と同じ形で、720p の枠に収まる大きさで送る。
+        Assert.Contains(":width=1136:height=720:", capture);
         var running = intents.Current();
         Assert.Equal("Game", running.TargetProcessName);
         Assert.Equal("https://relay.example/game", running.ViewerUrl);
