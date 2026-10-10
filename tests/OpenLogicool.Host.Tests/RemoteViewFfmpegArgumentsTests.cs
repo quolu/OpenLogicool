@@ -18,12 +18,14 @@ public sealed class RemoteViewFfmpegArgumentsTests
         var arguments = RemoteViewFfmpegArguments.Build(Settings(quality), 0x1A2B, "publisher:secret");
 
         Assert.Contains(
-            $"gfxcapture=hwnd={0x1A2B}:max_framerate=30:width={width}:height={height}" +
+            $"gfxcapture=hwnd={0x1A2B}:max_framerate=60:width={width}:height={height}" +
             ":resize_mode=scale_aspect:capture_cursor=1",
             arguments);
         Assert.Equal(bitrate, ValueAfter(arguments, "-b:v"));
         Assert.Equal("0", ValueAfter(arguments, "-bf"));
         Assert.Equal("60", ValueAfter(arguments, "-g"));
+        Assert.Equal("cfr", ValueAfter(arguments, "-fps_mode"));
+        Assert.Equal("30", ValueAfter(arguments, "-r"));
     }
 
     [Fact]

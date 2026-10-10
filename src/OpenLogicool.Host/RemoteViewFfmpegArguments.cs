@@ -23,6 +23,12 @@ public static class RemoteViewFfmpegArguments
     public const int AudioSampleRate = 48000;
 
     /// <summary>
+    /// 取り込みの上限を、送るコマ数の何倍にするか。同じ値にすると、ゲームの描画の間合いと噛み合わず、
+    /// 送るコマ数へ揃える段で同じコマが毎秒2回ほど繰り返される（15秒で28〜36回の実測。2倍で0回）。
+    /// </summary>
+    public const int CaptureOversampling = 2;
+
+    /// <summary>
     /// WHIP の UDP 送信の溜め場。ffmpeg の既定のままだと、別の機器の中継サーバーへ送る時に
     /// 最初のコマで送信が詰まって終了する（4MiB で 720p・3Mbps を20秒送り切った実測）。
     /// </summary>
@@ -44,12 +50,14 @@ public static class RemoteViewFfmpegArguments
             "-loglevel", "info",
             "-f", "lavfi",
             "-i",
-            $"gfxcapture=hwnd={window}:max_framerate={profile.Fps}:width={profile.Width}:height={profile.Height}" +
+            $"gfxcapture=hwnd={window}:max_framerate={profile.Fps * CaptureOversampling}:width={profile.Width}:height={profile.Height}" +
             ":resize_mode=scale_aspect:capture_cursor=1",
             "-f", "s16le",
             "-ar", AudioSampleRate.ToString(),
             "-ch_layout", "stereo",
             "-i", "pipe:0",
+            "-fps_mode", "cfr",
+            "-r", profile.Fps.ToString(),
             "-c:v", "h264_nvenc",
             "-preset", "p1",
             "-tune", "ull",

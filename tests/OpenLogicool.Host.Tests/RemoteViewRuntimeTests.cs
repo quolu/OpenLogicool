@@ -98,7 +98,7 @@ public sealed class RemoteViewRuntimeTests
         fixture.Runtime.Start(0x2020, 42, "Game", Settings, Authorization);
 
         Assert.Equal(42, fixture.RequestedProcessId);
-        Assert.Contains($"gfxcapture=hwnd={0x2020}:max_framerate=30:width=1280:height=720" +
+        Assert.Contains($"gfxcapture=hwnd={0x2020}:max_framerate=60:width=1280:height=720" +
                         ":resize_mode=scale_aspect:capture_cursor=1", fixture.Encoder.Arguments);
         WaitFor(() => fixture.Encoder.Input.ToArray().Length == 8);
         Assert.Equal(MemoryMarshal.AsBytes<short>(chunk).ToArray(), fixture.Encoder.Input.ToArray());
