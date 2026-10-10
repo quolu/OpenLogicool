@@ -507,6 +507,9 @@ public static class VisualKeyAssistRuntime
                                 return review;
                             }
                         }
+                        if (!flowInhibited && flowChoice.Action is VisualProgressAction.Normal or VisualProgressAction.Wait)
+                            flowChoice = progressRecognizer!.RecognizeRepeatingImage(frame, viewport!,
+                                rule => progressSchedule!.RepeatIsDue(clock.ElapsedMilliseconds, rule)) ?? flowChoice;
                         if (flowChoice.Action is VisualProgressAction.Key or VisualProgressAction.Click)
                         {
                             await inputGate.WaitAsync(token);
@@ -517,7 +520,9 @@ public static class VisualKeyAssistRuntime
                                 var fresh = await frames.CaptureAsync(token);
                                 var freshInhibited = Inhibited(fresh);
                                 var freshViewport = WindowsGameTargetLocator.CaptureClientBounds(target.Window);
-                                var current = freshInhibited ? null : progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport);
+                                var current = freshInhibited ? null : flowChoice.RepeatIntervalMs > 0
+                                    ? progressRecognizer!.RecognizeRepeatingImage(fresh, freshViewport, rule => rule.Id == flowChoice.RuleId)
+                                    : progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport);
                                 if (current is null)
                                 {
                                     var freshOcr = await progressRecognizer!.ReadOcrAsync(fresh, freshViewport, token);
@@ -536,9 +541,9 @@ public static class VisualKeyAssistRuntime
                                 if (dispatch.Status != GameInteractionDispatchStatus.Dispatched)
                                     throw new InvalidOperationException($"進行操作のNano入力に失敗しました: {dispatch.FailureReason}");
                                 progressSchedule!.RecordInput(clock.ElapsedMilliseconds, current);
-                                schedule.RecordInput(clock.ElapsedMilliseconds);
+                                if (current.RepeatIntervalMs == 0) schedule.RecordInput(clock.ElapsedMilliseconds);
                                 Emit(new { Event = "progress-input", AtMs = clock.ElapsedMilliseconds, current.RuleId,
-                                    current.Signature, current.Key, current.Point, current.Immediate, dispatch });
+                                    current.Signature, current.Key, current.Point, current.Immediate, current.RepeatIntervalMs, dispatch });
                             }
                             finally { inputGate.Release(); }
                             await Task.Delay(250, token);

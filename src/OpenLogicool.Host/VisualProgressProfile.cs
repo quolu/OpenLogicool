@@ -12,7 +12,8 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
     bool ImageRotates = false, bool WaitForChange = false, double[][]? ImageStableRegions = null, bool Immediate = false,
     int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null,
-    double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false);
+    double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false,
+    int RepeatIntervalMs = 0);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
 {
@@ -45,6 +46,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("固定部分の照合には画像と一つ以上の領域が必要です。");
             if (rule.Immediate && (rule.Image is null || rule.When.Length != 0 || rule.Timed || rule.Key is null))
                 throw new InvalidDataException("即時入力には文字条件や時間待ちを持たない画像キー規則を指定します。");
+            if (rule.RepeatIntervalMs < 0 || rule.RepeatIntervalMs > 0 && !rule.Immediate)
+                throw new InvalidDataException("反復間隔は即時画像キー規則に正の時間で指定します。");
         }
         foreach (var bounds in value.Rules.SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }))
             .Concat(value.ReviewWhen).Select(text => text.Bounds)
@@ -68,7 +71,8 @@ public enum VisualProgressAction { Wait, Normal, Key, Click, Review }
 public sealed record VisualProgressOption(string Id, string Label);
 public sealed record VisualProgressChoice(VisualProgressAction Action, string? RuleId = null,
     string? Signature = null, string? Key = null, double[]? Point = null, string? Detail = null,
-    VisualProgressOption[]? Options = null, bool Immediate = false, bool AllowWhileInhibited = false);
+    VisualProgressOption[]? Options = null, bool Immediate = false, bool AllowWhileInhibited = false,
+    int RepeatIntervalMs = 0);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
@@ -121,7 +125,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                             $"選択肢{index + 1}: " + (label.Length == 0 ? "文字を読めません（添付画像を確認）" : label));
                     }).ToArray());
         var candidates = new List<VisualProgressChoice>();
-        foreach (var rule in profile.Rules)
+        foreach (var rule in profile.Rules.Where(rule => rule.RepeatIntervalMs == 0))
         {
             if (inhibited && !rule.AllowWhileInhibited) continue;
             double[]? point = null;
@@ -183,16 +187,24 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         };
     }
 
-    public VisualProgressChoice? RecognizeImmediateImage(CapturedFrame frame, FrameRect viewport)
+    public VisualProgressChoice? RecognizeImmediateImage(CapturedFrame frame, FrameRect viewport) =>
+        RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.Immediate && rule.RepeatIntervalMs == 0));
+
+    public VisualProgressChoice? RecognizeRepeatingImage(CapturedFrame frame, FrameRect viewport,
+        Func<VisualProgressRule, bool> isDue) =>
+        RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.RepeatIntervalMs > 0 && isDue(rule)));
+
+    private VisualProgressChoice? RecognizeImageKey(CapturedFrame frame, FrameRect viewport, IEnumerable<VisualProgressRule> rules)
     {
-        foreach (var rule in profile.Rules.Where(rule => rule.Immediate).OrderByDescending(rule => rule.Priority))
+        foreach (var rule in rules.OrderByDescending(rule => rule.Priority))
         {
             var area = rule.ImageBounds!;
             double[] mapped = [(viewport.X + area[0] * viewport.Width) / frame.Width,
                 (viewport.Y + area[1] * viewport.Height) / frame.Height,
                 area[2] * viewport.Width / frame.Width, area[3] * viewport.Height / frame.Height];
             if (templates[rule.Id].FindAtWindowScale(frame, mapped, viewport.Width / rule.ImageClientWidth).Matches)
-                return new(VisualProgressAction.Key, rule.Id, rule.Id, rule.Key, Immediate: true);
+                return new(VisualProgressAction.Key, rule.Id, rule.Id, rule.Key, Immediate: true,
+                    RepeatIntervalMs: rule.RepeatIntervalMs);
         }
         return null;
     }
@@ -257,6 +269,10 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     private string? consumedImmediate;
     private long? immediateMissingAt;
     private bool wasInhibited;
+    private readonly Dictionary<string, long> repeatedAt = [];
+
+    public bool RepeatIsDue(long now, VisualProgressRule rule) =>
+        !repeatedAt.TryGetValue(rule.Id, out var last) || now - last >= rule.RepeatIntervalMs;
 
     public VisualProgressChoice Decide(long now, VisualProgressChoice candidate, bool inhibited,
         bool hudVisible, bool due, bool sceneChanged = false)
@@ -318,6 +334,7 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
 
     public void RecordInput(long now, VisualProgressChoice choice)
     {
+        if (choice.RepeatIntervalMs > 0) { repeatedAt[choice.RuleId!] = now; return; }
         if (choice.Immediate) { consumedImmediate = choice.Signature; pending = null; ResetUnresolved(); return; }
         pending = choice; unknownAt = now; unresolvedObservations = 0;
     }

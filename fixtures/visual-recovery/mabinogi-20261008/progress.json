@@ -82,6 +82,11 @@
       ]
     },
     {
+      "Id": "feather-t", "Key": "Key:T", "Immediate": true, "RepeatIntervalMs": 1000,
+      "When": [], "Image": "feather-t.png", "ImageBounds": [0.86, 0.76, 0.13, 0.2],
+      "ImageClientWidth": 1506
+    },
+    {
       "Id": "dialogue-accept", "Priority": 30,
       "When": [
         { "Text": "承諾", "Bounds": [0.2, 0.75, 0.6, 0.25] },
@@ -189,6 +194,14 @@
       "When": [
         { "Text": "装備変更", "Bounds": [0.2, 0.1, 0.6, 0.65] },
         { "Text": "確認", "Bounds": [0.3, 0.65, 0.5, 0.35] }
+      ]
+    },
+    {
+      "Id": "dungeon-entry", "Key": "Key:Space", "Priority": 20,
+      "When": [
+        { "Text": "任務報酬リスト", "Bounds": [0.5, 0.7, 0.4, 0.12] },
+        { "Text": "Space", "Bounds": [0.6, 0.88, 0.15, 0.08] },
+        { "Text": "入場", "Bounds": [0.65, 0.9, 0.25, 0.1] }
       ]
     },
     {

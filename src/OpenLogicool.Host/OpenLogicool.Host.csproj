@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\quest-marker.png" Link="BotScripts\MabinogiMobile\quest-marker.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\feather-t.png" Link="BotScripts\MabinogiMobile\feather-t.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="BotScripts\**\bot.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\fixtures\visual-recovery\mabinogi-20261008\profile.json;..\..\fixtures\visual-recovery\mabinogi-20261008\progress.json;..\..\fixtures\visual-recovery\mabinogi-20261008\stop.png;..\..\fixtures\visual-recovery\mabinogi-20261008\hud.png;..\..\fixtures\visual-recovery\mabinogi-20261008\food-ready.png;..\..\fixtures\visual-recovery\mabinogi-20261008\food-active.png;..\..\fixtures\visual-recovery\mabinogi-20261008\dialogue-tail.png;..\..\fixtures\visual-recovery\mabinogi-20261008\dialogue-cue.jpg;..\..\fixtures\visual-recovery\mabinogi-20261008\compass-space.png"
              Link="BotScripts\MabinogiMobile\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
