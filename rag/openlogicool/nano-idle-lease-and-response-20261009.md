@@ -6,7 +6,7 @@
 
 全解放したfirmwareとの通信を200ms空けるだけで、次のHeartbeatがSequenceViolationになることを実機確認した。接続・連番まで消す処理を、入力保持中の150ms全解放と混同していた。
 
-修正版は全解放済みなら接続を維持し、保持中の期限切れは従来どおり全解放して旧sessionを拒否する。配布sketchそのもののfake時計試験で確認済み。実機導入後の同じ再現試験は基板の手動reset待ちであり、未確認。
+修正版は全解放済みなら接続を維持し、保持中の期限切れは従来どおり全解放して旧sessionを拒否する。配布sketchそのもののfake時計試験で確認済み。2026-10-10の実機導入後、同じ無入力200msを5回、1000msを2回実行し、すべて成功した。
 
 ## 受信済みACK
 
@@ -25,3 +25,9 @@ WindowsのHID停止は、Nano一台に限定しても即時停止にならず再
 2026-10-10、通常動作時のVID 1B4F / PID 9206と同じLocationPathsに、Arduino Leonardo（VID 2341 / PID 0036、COM5）のWindows列挙履歴があった。通常動作時のUSB名はsketch由来であり、実機のbootloaderがSparkFun純正である根拠にはならない。導入済みのSparkFun bootloader sourceも、実機のbootloader sourceそのものを証明しない。
 
 PID 9205だけに限定していた待機処理は、この正規AVR109機器を取りこぼす。Arduino LeonardoとSparkFun Pro Microの固定boards.txtはともにavr109 / 57600を指定する。物理接続口を維持したまま対応する識別子を追加し、実録を使った選択・非接続履歴・別の接続口・未知機器・複数候補・通常動作中・COM番号未確定の8件を確認した。今回の利用者操作後の新規arrivalは未確認で、履歴の発見を今回のreset成功とは扱わない。
+
+## 実機導入の完了
+
+2026-10-10 11:09 JST、写真で確認したPro Micro互換基板の接点操作後、同じ物理接続口の2341/0036（COM5）が実際に再到着した。verify付きuploadとREADY 1.1.4を確認し、bootloaderのUSB識別子を確認済みに更新した。実機のbootloaderが導入packageのsourceと完全に同じbinaryであることまでは確認していない。
+
+11:11 JST、手操作なしの標準1200-baud uploadを同じHEXでもう一度実行し、ATmega32U4 signatureと6548bytesのverify成功を確認した。以後の通常更新で手動resetを要しないことを実証した。無入力の再現条件も通過し、Bot再開とNano入力を確認。詳細は[導入受入](../../evidence/nano-firmware-install-20261010/acceptance.md)。過去のHELLO無応答を含む全障害の原因解明や、今回の実機hard kill再測定を意味しない。

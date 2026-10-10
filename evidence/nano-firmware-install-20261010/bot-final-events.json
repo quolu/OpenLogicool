@@ -1,0 +1,134 @@
+[
+  {
+    "Event": "foreground",
+    "AtMs": 105593,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 106259,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 106966,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 107672,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 108408,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 112815,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 113679,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 114579,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 115467,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 116267,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 117051,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  },
+  {
+    "Event": "foreground",
+    "AtMs": 117897,
+    "Identity": {
+      "NormalizedFullPath": "c:\\nexon\\mabinogimobile_jp\\mabinogimobile.exe",
+      "PackageFamilyName": null,
+      "ProcessId": 44864,
+      "ProcessStartTimeUtc": "2026-10-09T22:56:47.7688689Z"
+    },
+    "Title": "マビモバ"
+  }
+]

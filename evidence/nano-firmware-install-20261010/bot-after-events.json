@@ -1,0 +1,53 @@
+[
+  {
+    "Event": "run-started",
+    "DurationMs": null,
+    "AutomaticRulesContinue": true,
+    "NotificationGraceMs": 60000
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 225,
+    "HeldCount": 0,
+    "IdleMilliseconds": 234,
+    "UserEvents": 0,
+    "NanoEvents": 0,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  },
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 4564,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3082,
+    "UserEvents": 31,
+    "NanoEvents": 0,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 10452,
+    "HeldCount": 0,
+    "IdleMilliseconds": 5,
+    "UserEvents": 40,
+    "NanoEvents": 4,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  },
+  {
+    "Event": "user-input-resumed",
+    "AtMs": 25194,
+    "HeldCount": 0,
+    "IdleMilliseconds": 3137,
+    "UserEvents": 610,
+    "NanoEvents": 4,
+    "Detail": "手入力がなくなって3秒経過したためBotの送出を再開しました。"
+  },
+  {
+    "Event": "user-input-paused",
+    "AtMs": 25552,
+    "HeldCount": 0,
+    "IdleMilliseconds": 6,
+    "UserEvents": 614,
+    "NanoEvents": 4,
+    "Detail": "手入力を優先してBotの送出を一時停止しています。全解放後3秒で再開します。"
+  }
+]

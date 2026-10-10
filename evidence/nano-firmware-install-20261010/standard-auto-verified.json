@@ -1,0 +1,76 @@
+{
+  "schema": "openlogicool.serial-hid.flash-evidence.v1",
+  "capturedAtUtc": "2026-10-10T02:11:05.0925528Z",
+  "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
+  "fqbn": "SparkFun:avr:promicro:cpu=16MHzatmega32U4",
+  "transientRuntimePort": "COM3",
+  "firmwareHexSha256": "b50c316a6776dd46692c8ec8575105c514d7cfbbff2607140beab0d9f11e3751",
+  "bootloaderEntry": "standard-1200-baud",
+  "before": {
+    "targetInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
+    "targetStatus": "OK",
+    "targetFriendlyName": "USB Composite Device",
+    "cdc": [
+      {
+        "instanceId": "USB\\VID_1B4F&PID_9206&MI_00\\A&3662A262&0&0000",
+        "friendlyName": "USB シリアル デバイス (COM3)",
+        "status": "OK"
+      }
+    ],
+    "keyboard": [
+      {
+        "instanceId": "HID\\VID_1B4F&PID_9206&MI_02&COL01\\B&8A63DBF&0&0000",
+        "friendlyName": "HID キーボード デバイス",
+        "status": "OK"
+      }
+    ],
+    "mouse": [
+      {
+        "instanceId": "HID\\VID_1B4F&PID_9206&MI_02&COL02\\B&8A63DBF&0&0001",
+        "friendlyName": "HID 準拠マウス",
+        "status": "OK"
+      }
+    ],
+    "hid": [
+      {
+        "instanceId": "USB\\VID_1B4F&PID_9206&MI_02\\A&3662A262&0&0002",
+        "friendlyName": "USB 入力デバイス",
+        "status": "OK"
+      }
+    ]
+  },
+  "uploadVerified": true,
+  "after": {
+    "targetInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
+    "targetStatus": "OK",
+    "targetFriendlyName": "USB Composite Device",
+    "cdc": [
+      {
+        "instanceId": "USB\\VID_1B4F&PID_9206&MI_00\\A&3662A262&0&0000",
+        "friendlyName": "USB シリアル デバイス (COM3)",
+        "status": "OK"
+      }
+    ],
+    "keyboard": [
+      {
+        "instanceId": "HID\\VID_1B4F&PID_9206&MI_02&COL01\\B&8A63DBF&0&0000",
+        "friendlyName": "HID キーボード デバイス",
+        "status": "OK"
+      }
+    ],
+    "mouse": [
+      {
+        "instanceId": "HID\\VID_1B4F&PID_9206&MI_02&COL02\\B&8A63DBF&0&0001",
+        "friendlyName": "HID 準拠マウス",
+        "status": "OK"
+      }
+    ],
+    "hid": [
+      {
+        "instanceId": "USB\\VID_1B4F&PID_9206&MI_02\\A&3662A262&0&0002",
+        "friendlyName": "USB 入力デバイス",
+        "status": "OK"
+      }
+    ]
+  }
+}

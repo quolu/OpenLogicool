@@ -1,7 +1,7 @@
 # Serial HID Output 運用・復旧手順
 
 - 対象: OpenLogicool Input Studio の USB出力（Serial HID v1）
-- 確認済み環境: Windows 11 build 26200 / x64、SparkFun Pro Micro ATmega32U4 5V / 16MHz、firmware 1.1.3
+- 確認済み環境: Windows 11 build 26200 / x64、ATmega32U4 / 16MHzのPro Micro互換基板。firmwareの導入結果は[実機受入記録](../evidence/nano-firmware-install-20261010/acceptance.md)を参照。
 - device identity: `USB\VID_1B4F&PID_9206\HIDFG`
 - protocol: v1、keyboard 6KRO、mouse button 5個、relative pointer／wheel、firmware lease 150ms
 
@@ -120,6 +120,8 @@ flash scriptはexact target identity、固定toolchain、upload verify、CDC＋k
 通常動作時のUSB識別子はsketchが設定するため、bootloaderのメーカー識別に流用しない。手動待機は対象本体の物理接続口と一致する書込み機器だけを選ぶ。対応するAVR109機器はSparkFun（VID 1B4F / PID 9205）と実録Arduino Leonardo（VID 2341 / PID 0036）。未知の機器・複数候補は明示エラーにし、過去の非接続履歴と別の接続口は選ばない。
 
 旧firmwareのwatchdogが自動resetを妨げる場合は、同じ正規scriptへ`-WaitForReset`を付ける。scriptが同じ物理USB接続のbootloaderを待ち、手動double-reset後に自動で書き込む。USBを抜き挿しせず、HIDの無効化やPC再起動を代行手段にしない。書込み用1200-baud close中にwatchdogを給餌しない修理はfirmwareが所有する。
+
+修正版の導入後は、`-WaitForReset`なしの標準uploadが手操作なしで成功することを確認する。ピンヘッダ未実装の基板ではRST/GNDの穴の金属部分へ同時に接触させ、離してから次の接触を行い、最後も離す。実機の写真と刻印で操作位置を確認する。
 
 以前の第三者firmwareへ戻すには、そのfirmwareの保持済みsketchまたはhexが別途必要である。OpenLogicool repoには第三者firmwareを同梱しない。
 

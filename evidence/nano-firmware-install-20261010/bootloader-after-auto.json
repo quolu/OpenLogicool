@@ -1,0 +1,17 @@
+[
+  {
+    "KeyName": "DEVPKEY_Device_LastArrivalDate",
+    "Data": "2026-10-10T11:10:57.702177+09:00"
+  },
+  {
+    "KeyName": "DEVPKEY_Device_LastRemovalDate",
+    "Data": "2026-10-10T11:11:01.074568+09:00"
+  },
+  {
+    "KeyName": "DEVPKEY_Device_LocationPaths",
+    "Data": [
+      "PCIROOT(0)#PCI(0202)#PCI(0000)#PCI(0200)#PCI(0000)#USBROOT(0)#USB(3)#USB(3)",
+      "ACPI(_SB_)#ACPI(PCI0)#ACPI(GPP8)#ACPI(U4UP)#ACPI(U4P2)#ACPI(UXHC)#ACPI(UHUB)#ACPI(UHS1)#USB(3)"
+    ]
+  }
+]

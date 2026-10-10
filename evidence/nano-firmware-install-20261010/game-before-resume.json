@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\nano-firmware-install-20261010\\game-before-resume.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "de7af5520582365bc48b940bf7aece553a7e5f23368c3fd5de96d449ff4172b2",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

@@ -61,10 +61,10 @@
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv50、ナオとの会話へ進行。Bot継続。",
-    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-080856-858-f8462f3d",
+    "nextCheck": "Lv52のゲーム画面を確認。Botは再開済み。手入力を優先して継続し、新しい通知でだけ調査する。",
+    "botRun": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-111303-629-c982e9f7",
     "levelProgression": {
-      "currentLevel": 50,
+      "currentLevel": 52,
       "targetLevel": 42,
       "quest": "生き残りし者へ",
       "activityPolicy": "明確なゲーム内推奨と一意な移動先",
@@ -131,18 +131,13 @@
     "objective": "Nanoの通信停止を修理してBotを動かす",
     "sourceCommit": "9f53d60",
     "rootCauseReproduced": "旧firmwareで全解放後200ms通信を空けるとSequenceViolation。修正版とnative試験・AVR build済み",
-    "firmwareInstallation": "利用者の写真でATmega32U4・16MHz・Pro Micro互換基板、RAW/GND/RST/VCCの穴を確認。CH340搭載機器の写真ではない。ピンは未実装で、穴の金属縁へ接触させる。修正版flasherを新しいAiterm PTY nano-firmware-verified-boardで開始しbuild完了・待機表示を確認。K-K3S7QMで写真のGND/RSTの穴の金属縁へ1秒接触→離す→0.75秒以内に再接触1秒→離す操作を依頼。COM3との最終照合とflashは未確認。",
-    "manualDecisionId": "K-K3S7QM",
+    "firmwareInstallation": "2026-10-10 11:09 JST、同じ接続口のArduino Leonardo互換AVR109機器2341/0036 COM5を捕捉し、verify付きupload・READY1.1.4・全解放25ms成功。11:11 JST、標準1200-baud自動uploadを手操作なしで再実行しverify成功。idle200ms5回・1000ms2回全成功。",
+    "manualDecisionId": null,
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
-    "botState": "書込み準備のためhandled stop・app close完了。ゲームは報酬画面で待機。Bot停止中。",
-    "remaining": [
-      "K-S426G8の操作結果とAiterm PTY nano-firmware-uploadのverify付きupload結果を確認。",
-      "READY 1.1.4を確認後、同じ正規flash入口を-WaitForResetなしで実行し手操作不要の更新を実測。",
-      "serial-hid-test --idle-ms 200 --repeat 5と--idle-ms 1000 --repeat 2で修理後の実機再現試験。",
-      "Botを再開しNano入力・画面進行・監視を確認して記録・push。"
-    ],
+    "botState": "Bot再開済み。Running。手入力時は送出だけ一時停止し監視は継続。実行C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-111303-629-c982e9f7",
+    "remaining": [],
     "hostReadTimeoutRepair": {
       "reproductionBefore": "read-pause100で受信済み10バイトを捨てTimeout",
       "testsPassed": 1655,
@@ -158,8 +153,8 @@
       "sourceCommit": "5d3445786b5e735ea969f29b881e6d222ead40c3",
       "hex": "evidence/nano-firmware-install-20261010/firmware-1.1.4.hex",
       "sha256": "b50c316a6776dd46692c8ec8575105c514d7cfbbff2607140beab0d9f11e3751",
-      "status": "waiting-after-photo-identification",
-      "uploadStarted": false
+      "status": "installed-standard-auto-update-verified",
+      "uploadStarted": true
     },
     "advisor": {
       "harness": "claude-code",
@@ -177,13 +172,16 @@
       "acceptedConclusion": "親が固定CDC.cpp・Caterina.c・旧版導入実測を照合。旧版の給餌が1200-baud watchdog resetを阻害。現行正規入口では本体のdouble-resetが必要。1.1.4導入後の標準自動upload再実測を受入に追加。",
       "followupConclusion": "Leonardo履歴は同じ口のbootloaderの強い推定で確認済みではない。PID固定は欠陥だが、今回の対象devnodeに新arrivalはない。CH340側MCUのreset有無はUSB devnodeだけでは判定できず、実物対応を確認する。"
     },
-    "waitingAitermSessionId": "nano-firmware-verified-board",
-    "waitingProcessId": 85868,
-    "waitingObservedAt": "2026-10-10T11:08:57.6660564+09:00"
+    "waitingAitermSessionId": null,
+    "waitingProcessId": null,
+    "waitingObservedAt": "2026-10-10T11:08:57.6660564+09:00",
+    "status": "firmware-installed-and-verified",
+    "installationEvidence": "evidence/nano-firmware-install-20261010/acceptance.md",
+    "residualUnknown": "過去のHELLO無応答を含む全通信停止の根本原因は特定済みと扱わない。今回の実機hard kill再測定は未実施。"
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-10T02:08:57.6578736+00:00",
+    "updatedUtc": "2026-10-10T02:17:04.6927175+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -192,16 +190,13 @@
       "29d93e1a-a45c-44f9-97a8-1e454277b2c8",
       "2417c9af-5a61-4011-8f3d-6bc4c9da5482",
       "96ecd868-6107-41de-acec-ca8fdb476833",
-      "379225d3-7ac8-4a7b-a293-55c09ab9f0ab",
-      "e4367d3f-c5d1-4359-8f82-3ae8af00b24f"
+      "379225d3-7ac8-4a7b-a293-55c09ab9f0ab"
     ],
-    "pendingDecisionIds": [
-      "K-K3S7QM"
-    ],
-    "botPhase": "Stopped",
+    "pendingDecisionIds": [],
+    "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "K-K3S7QMの操作回答後、Aiterm PTY nano-firmware-verified-boardの最新結果とflash evidenceを確認。1.1.4診断・標準自動更新・idle診断・Bot再開を進める。",
-    "firmware": "1.1.3のまま。手動リセット依頼は取り下げ済みで再依頼しない。",
+    "nextAction": "Botを継続し、新しい詰まり通知時だけ対応する。未導入だったfirmware1.1.4の更新・標準自動更新・idle診断は完了。基板操作の再依頼は不要。",
+    "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。",
     "captureRepair": {
       "status": "installed-and-live-tested",
