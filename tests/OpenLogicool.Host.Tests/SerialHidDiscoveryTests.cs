@@ -296,6 +296,45 @@ public sealed class SerialHidDiscoveryTests
         Assert.Null(ResidentInputHost.Lent(null));
     }
 
+    [Fact]
+    public void Serial_session_from_the_product_factory_requests_every_capability_its_borrowers_use()
+    {
+        // 常駐の接続はBotとマクロへ貸す。借りた側はマウスの移動も送るので、
+        // 常駐が接続を開く時に全capabilityを要求しておく（要求していないとBotのマウス操作が失敗する）。
+        var exchanges = new FakeExchangeFactory(deviceCapabilities: SerialHidProtocolV1.AllCapabilities);
+        var discovery = new SerialHidDiscoveryService(new FakeCandidates([CandidateA]), exchanges);
+        var settings = new SerialHidOutputSettings(
+            SerialHidOutputSettings.CurrentSchemaVersion,
+            ResidentOutputRoute.SerialHid,
+            CandidateA.DeviceInstanceId);
+        using var session = ResidentOutputSessionFactory.Create(settings, "unused-watchdog.exe", discovery)();
+
+        session.Start();
+
+        Assert.Equal(SerialHidProtocolV1.AllCapabilities, exchanges.Exchanges.Single().RequestedCapabilities);
+        Assert.Equal(
+            SerialHidProtocolV1.AllCapabilities,
+            ResidentInputHost.Lent(session)!.Protocol.ReadyInfo.Capabilities);
+    }
+
+    [Fact]
+    public void Serial_session_from_the_product_factory_still_starts_on_firmware_without_relative_mouse()
+    {
+        var exchanges = new FakeExchangeFactory(deviceCapabilities: SerialHidProtocolV1.BaselineCapabilities);
+        var discovery = new SerialHidDiscoveryService(new FakeCandidates([CandidateA]), exchanges);
+        var settings = new SerialHidOutputSettings(
+            SerialHidOutputSettings.CurrentSchemaVersion,
+            ResidentOutputRoute.SerialHid,
+            CandidateA.DeviceInstanceId);
+        using var session = ResidentOutputSessionFactory.Create(settings, "unused-watchdog.exe", discovery)();
+
+        session.Start();
+
+        Assert.Equal(
+            SerialHidProtocolV1.BaselineCapabilities,
+            ResidentInputHost.Lent(session)!.Protocol.ReadyInfo.Capabilities);
+    }
+
     private static SerialHidDiscoveryService Service(IReadOnlyList<SerialHidCandidate> candidates) =>
         new(new FakeCandidates(candidates), new FakeExchangeFactory());
 
@@ -304,7 +343,9 @@ public sealed class SerialHidDiscoveryTests
         public IReadOnlyList<SerialHidCandidate> EnumerateCandidates() => candidates;
     }
 
-    private sealed class FakeExchangeFactory(byte responseProtocolVersion = SerialHidProtocolV1.Version) : ISerialHidExchangeFactory
+    private sealed class FakeExchangeFactory(
+        byte responseProtocolVersion = SerialHidProtocolV1.Version,
+        SerialHidCapability deviceCapabilities = SerialHidProtocolV1.BaselineCapabilities) : ISerialHidExchangeFactory
     {
         public List<string> OpenedDeviceInstanceIds { get; } = [];
         public List<FakeExchange> Exchanges { get; } = [];
@@ -312,21 +353,27 @@ public sealed class SerialHidDiscoveryTests
         public ISerialHidFrameExchange Open(SerialHidCandidate candidate)
         {
             OpenedDeviceInstanceIds.Add(candidate.DeviceInstanceId);
-            var exchange = new FakeExchange(responseProtocolVersion);
+            var exchange = new FakeExchange(responseProtocolVersion, deviceCapabilities);
             Exchanges.Add(exchange);
             return exchange;
         }
     }
 
-    private sealed class FakeExchange(byte responseProtocolVersion) : ISerialHidFrameExchange
+    private sealed class FakeExchange(byte responseProtocolVersion, SerialHidCapability deviceCapabilities) : ISerialHidFrameExchange
     {
         public List<SerialHidMessageKind> RequestKinds { get; } = [];
+        public SerialHidCapability? RequestedCapabilities { get; private set; }
         public int DisposeCount { get; private set; }
 
         public byte[] Exchange(ReadOnlyMemory<byte> requestFrame, TimeSpan timeout)
         {
             var request = SerialHidProtocolV1.Decode(requestFrame.Span);
             RequestKinds.Add(request.Kind);
+            if (request.Kind == SerialHidMessageKind.Hello)
+            {
+                RequestedCapabilities = (SerialHidCapability)(request.Payload[3] | (request.Payload[4] << 8));
+            }
+
             return request.Kind == SerialHidMessageKind.Hello
                 ? Ready(request.Sequence)
                 : SerialHidProtocolV1.Encode(SerialHidMessageKind.Ack, request.Sequence, []);
@@ -337,7 +384,8 @@ public sealed class SerialHidDiscoveryTests
             var frame = SerialHidProtocolV1.Encode(
                 SerialHidMessageKind.Ready,
                 sequence,
-                [1, 0, 0, 1, 7, 0, 6, 150, 0]);
+                // firmware は、要求されたうち自分が対応している capability だけを返す。
+                [1, 0, 0, 1, (byte)(RequestedCapabilities!.Value & deviceCapabilities), 0, 6, 150, 0]);
             if (responseProtocolVersion == SerialHidProtocolV1.Version)
             {
                 return frame;

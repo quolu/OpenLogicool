@@ -48,6 +48,36 @@ public sealed class SerialHidEmitterTests
     }
 
     [Fact]
+    public void Optional_capability_is_requested_and_kept_when_the_device_grants_it()
+    {
+        var exchange = new ScriptedExchange(Ready);
+        var session = SerialHidProtocolSession.Connect(
+            exchange,
+            new SerialHidSemanticVersion(1, 1, 0),
+            Timeout,
+            SerialHidProtocolV1.BaselineCapabilities,
+            optionalCapabilities: SerialHidCapability.RelativeMouse);
+
+        Assert.Equal([1, 1, 0, 0x0F, 0], SerialHidProtocolV1.Decode(exchange.Requests[0]).Payload);
+        Assert.Equal(SerialHidProtocolV1.AllCapabilities, session.ReadyInfo.Capabilities);
+    }
+
+    [Fact]
+    public void Optional_capability_the_device_lacks_does_not_fail_the_handshake()
+    {
+        var exchange = new ScriptedExchange(
+            request => ReadyWithCapabilities(request, SerialHidProtocolV1.BaselineCapabilities));
+        var session = SerialHidProtocolSession.Connect(
+            exchange,
+            new SerialHidSemanticVersion(1, 1, 0),
+            Timeout,
+            SerialHidProtocolV1.BaselineCapabilities,
+            optionalCapabilities: SerialHidCapability.RelativeMouse);
+
+        Assert.Equal(SerialHidProtocolV1.BaselineCapabilities, session.ReadyInfo.Capabilities);
+    }
+
+    [Fact]
     public void Connect_can_wait_longer_for_firmware_recovery_without_relaxing_action_timeout()
     {
         var handshakeTimeout = TimeSpan.FromMilliseconds(2_000);

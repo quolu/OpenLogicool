@@ -84,7 +84,8 @@ public sealed class SerialHidProtocolSession
         SerialHidSemanticVersion hostVersion,
         TimeSpan requestTimeout,
         SerialHidCapability requestedCapabilities = SerialHidProtocolV1.BaselineCapabilities,
-        TimeSpan? handshakeTimeout = null)
+        TimeSpan? handshakeTimeout = null,
+        SerialHidCapability optionalCapabilities = 0)
     {
         ArgumentNullException.ThrowIfNull(exchange);
         if (requestTimeout <= TimeSpan.Zero)
@@ -97,8 +98,10 @@ public sealed class SerialHidProtocolSession
             throw new ArgumentOutOfRangeException(nameof(handshakeTimeout), "handshake timeoutは正でなければなりません。");
         }
 
+        // optionalCapabilities は「あれば使う」capability。READY に無くても handshake は成立し、
+        // 使う時に ReadyInfo.Capabilities で確かめる（要求 capability は READY に無ければ不成立のまま）。
         if (requestedCapabilities == 0
-            || (requestedCapabilities & ~SerialHidProtocolV1.AllCapabilities) != 0)
+            || ((requestedCapabilities | optionalCapabilities) & ~SerialHidProtocolV1.AllCapabilities) != 0)
         {
             throw new ArgumentOutOfRangeException(nameof(requestedCapabilities), "要求capabilityがSerial HID v1の範囲外です。");
         }
@@ -108,7 +111,8 @@ public sealed class SerialHidProtocolSession
         helloPayload[0] = hostVersion.Major;
         helloPayload[1] = hostVersion.Minor;
         helloPayload[2] = hostVersion.Patch;
-        BinaryPrimitives.WriteUInt16LittleEndian(helloPayload.AsSpan(3), (ushort)requestedCapabilities);
+        BinaryPrimitives.WriteUInt16LittleEndian(
+            helloPayload.AsSpan(3), (ushort)(requestedCapabilities | optionalCapabilities));
 
         lock (session._gate)
         {

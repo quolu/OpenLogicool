@@ -28,7 +28,8 @@ public sealed class SerialHidDiscoveryService(
 
     public SerialHidSessionSelection Resolve(
         string? selectedDeviceInstanceId,
-        SerialHidCapability requestedCapabilities = SerialHidProtocolV1.BaselineCapabilities)
+        SerialHidCapability requestedCapabilities = SerialHidProtocolV1.BaselineCapabilities,
+        SerialHidCapability optionalCapabilities = 0)
     {
         var allCandidates = candidates.EnumerateCandidates();
         IReadOnlyList<SerialHidCandidate> eligible = selectedDeviceInstanceId is null
@@ -57,7 +58,8 @@ public sealed class SerialHidDiscoveryService(
                     HostVersion,
                     RequestTimeout,
                     requestedCapabilities,
-                    HandshakeTimeout);
+                    HandshakeTimeout,
+                    optionalCapabilities);
                 successes.Add(new SerialHidSessionSelection(
                     candidate,
                     protocol.ReadyInfo,
@@ -193,7 +195,12 @@ public static class ResidentOutputSessionFactory
             }
 
             _startAttempted = true;
-            var session = discovery.Resolve(selectedDeviceInstanceId).Session;
+            // この接続はBotとマクロへ貸す。借りた側はマウスの移動も送るので、対応していれば使えるように開く。
+            // 常駐の出力に要るのは baseline だけなので、マウスの移動に未対応の firmware でも常駐は起動する。
+            var session = discovery.Resolve(
+                selectedDeviceInstanceId,
+                SerialHidProtocolV1.BaselineCapabilities,
+                SerialHidCapability.RelativeMouse).Session;
             try
             {
                 session.Start();
