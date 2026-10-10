@@ -110,6 +110,7 @@ UnverifiedをSupportedとして表示しない。実験失敗を別方式へ黙�
 - Game OperatorのAI推論は利用者端末内だけで実行し、OpenAI APIを含む従量課金型の外部AI APIへ依存しない。frame、crop、OCR、embedding、prompt、responseをAI推論目的で外部送信せず、cloud fallbackも実装しない。
 - 課金、希少資源の消費、account変更、削除等のhigh-impact操作は、利用者が対象actionを明示許可しない限り自動確定しない。
 - 未確認機能をLGS同等、一般ゲーム対応、完全自動化対応と表示しない。
+- 遠隔表示は視聴目的に限る。映像と音の送信先は利用者が設定した自分の中継サーバーだけとし、製品の中に外向きの待ち受け（HTTP／TCP）を持たない。遠隔からの入力はこの境界に含めない。
 - LGS/G HUB設定を既定で削除しない。復元を実証できないdevice writeを製品機能にしない。
 
 ### 2.3 Release claim
@@ -320,6 +321,9 @@ Release列は、R1 Core、R2 Unified UX、R3 Durable Lab、R4 AI Pilot、R5 Stab
 | OPS-007 | R5 | 公開artifact、installer、update manifestを署名・timestampし、SBOMとThird-Party Noticesを同梱する |
 | OPS-008 | R3 | journal、Playbook、active Runをapp再起動後に復元できる |
 | OPS-009 | R3 | execution journalとengineering logを分離し、correlation IDで一遷移を追跡できる |
+| RV-001 | R4 | 選んだゲームの窓の映像と音を、利用者の中継サーバー経由で利用者の別端末（iPad／iPhone）に表示できる。対象の窓からフォーカスを奪わない |
+| RV-002 | R4 | 遠隔表示は既定OFFで、利用者が明示して開始・停止する。視聴には認証を要し、送信は中継サーバーへの1経路だけとする |
+| RV-003 | R4 | 遠隔表示の失敗・停止は fast path と Input Studio へ伝播しない。別processの終了は明示の状態として表示し、自動で再起動しない |
 
 ### 3.8 非機能予算
 
@@ -1418,6 +1422,7 @@ Exit:
 
 - G13／G600の既存fast pathを共通の物理USB HID出力へ接続するSerial HID bridgeは、Phase番号を追加せず独立campaignとして扱う。設計、非目標、Task、実機受入の正本は[Serial HID Output campaign](serial-hid-output-campaign-plan.md)。実行状態はLattice storeだけに置く。
 - **Serial HID Output campaign Exit成立（2026-08-23）**: Exit 11条件をすべて満たしCLOSE。判定は[Exit Assessment](serial-hid-output-exit-assessment.md)、通常操作と復旧は[運用手順](serial-hid-output-operation.md)を正とする。製品公開claimは`Partial LGS Replacement`のまま維持する。
+- ゲームの窓の遠隔表示（iPad／iPhone で見る）は、Phase番号を追加せず独立campaignとして扱う。設計、非目標、段階、実機受入の正本は[Remote View campaign](remote-view-campaign-plan.md)。成立性の実測は[段0の記録](probes/remote-view-feasibility-2026-10-10.md)。
 - **G13 Native LCD campaign Phase 1 Exit成立（2026-08-23）**: Windows標準HidUsbの992-byte output collectionへ`WriteFile`でsolid frameを送り、LCD反映とwrite後のG1 down/up・drop 0を実機確認。`HidD_SetOutputReport`はerror 31で不採用、driver差替え不要。Phase 2のresident LCD runtimeへ進む。判定は[Phase 1標準HID write gate](../evidence/g13-native-lcd/p1-standard-hid-write-gate.md)。
 - **G13 Native LCD campaign Phase 2機能中核成立（2026-08-23）**: resident LCD worker、workspace単位の画像／テキスト保存、Input Studio G13ペイン、app-first前面連動、共通Windows表示を実装し、実機G13と実SQLiteで確認した。特定アプリが共通profileを再利用していた場合は編集前に専用workspaceへ分岐し、共通設定の巻込みを防ぐ。証跡は[プリセット表示・設定 delivery](../evidence/g13-native-lcd/p2-preset-lcd-delivery.md)。Phase 2 Exit全体はfocused latencyと実機hotplug再表示の確認待ち。
 - **Phase 12 Game Interaction Foundation／Supervised Visual Macro Runner Exit成立（2026-08-25）**: 10の基盤機能、逐次Screen Index、AIなし既知実行、NIKKEのHover／Click／KeyTap／Scroll／Drag、10秒の意味遷移判定、保存済みLearning Routeの可逆2step教師付き実行まで成立した。destination ID不一致は診断だけとし、`Moved`で進む。旧zero-seed複数target harnessの`Passed=false`は上位探索loopのhistorical判定であり、基盤Exitを否定しない。判定は[Phase 12 Foundation](phase12-game-interaction-foundation-exit-assessment.md)と[Supervised Macro Exit](phase12-supervised-macro-runner-exit-assessment.md)。

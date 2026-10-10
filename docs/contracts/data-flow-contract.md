@@ -26,6 +26,8 @@
 | diagnostic bundle | Diagnostics | 利用者が指定した場所 | 利用者が明示共有するときだけ | 生成物として残る | ファイル削除 | 生成は利用者操作。secret redaction 失敗は共有不可 |
 | Knowledge Pack | import／export | ローカル | 利用者が export したときだけ | pack の寿命 | pack 削除 | import 直後 Untrusted |
 | GameLab oracle / fake Observation | GameLab／test | Execution Journal と同じ | 送信しない | journal と同じ | journal と同じ | Phase 4 の「現在 state」根拠。実画面ではない |
+| 遠隔表示の映像と音 | ffmpeg（対象の窓の取り込み）と process loopback（対象 process の音） | 保存しない（メモリと送信中の packet だけ） | 利用者が設定した自分の中継サーバーだけ（WHIP・TLS） | 配信中だけ | 配信の停止 | **OFF**。利用者が明示して開始した時だけ送る。対象は選んだゲームの窓だけ |
+| 中継サーバーの資格情報 | 利用者の入力 | Windows Credential Manager | 中継サーバーへの認証だけ | 利用者が消すまで | 設定画面からの削除 | 設定ファイル・log・`app status`・export・診断 bundle へ出さない |
 
 ## 規則
 
@@ -33,6 +35,7 @@
 - AI adapterの送信先は端末内Foundry Local runtimeだけとし、外部AI API keyを保存しない。
 - model binaryとSTEP 0 Web Referenceのdownloadは許可するが、game frame、crop、OCR、embedding、prompt、responseをrequestへ混ぜない。
 - 外部AI API呼出回数と外部AI API費用は常に0。失敗時もcloudや別providerへfallbackしない。
+- **視聴目的の送信は、利用者が明示して開始した時だけ行う。** 送信先は利用者が設定した自分の中継サーバーに限り、AI推論・第三者の配信サービス・複数の視聴先へは送らない。AI推論目的の外部送信の禁止は変えない（オーナー裁定 2026-10-10）。
 - **削除経路のない data を作らない。** 書けない data は持たない。
 - 削除は対象を preview してから行う（SQLite、image、cache、temp、upload queue、bundle、backup）。preview なしの一括破棄を製品機能にしない。
 - AI API keyは作らない。AI以外のsecretが将来必要になった場合だけWindows Credential ManagerまたはCurrentUser scopeを使い、export対象外とする。
