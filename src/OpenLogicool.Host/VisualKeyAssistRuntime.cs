@@ -267,7 +267,7 @@ public static class VisualKeyAssistRuntime
     }
 
     public static async Task<object> RunAsync(
-        string[] arguments, SerialHidResidentOutputSession nano, SerialHidEmitter emitter,
+        string[] arguments, INanoGameInputDevice device, SerialHidCandidate? deviceIdentity,
         WindowsGameTarget target, string sourceId, CancellationToken cancellationToken = default,
         Action<JsonElement>? onEvent = null, Func<ResidentPhysicalInput?>? physicalInput = null,
         Func<string?>? requestedMode = null)
@@ -350,16 +350,16 @@ public static class VisualKeyAssistRuntime
                 : null);
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         using var userInput = arguments.Contains("--pause-on-user-input", StringComparer.Ordinal)
-            ? BotUserInputGate.Create(nano.DeviceIdentity
+            ? BotUserInputGate.Create(deviceIdentity
                 ?? throw new InvalidOperationException("手入力の識別に必要なNanoのデバイス情報がありません。"), physicalInput, target.ProcessId) : null;
         ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; stop.Cancel(); };
         Console.CancelKeyPress += cancel;
         try
         {
             if (userInput is null && !measureOnly && !arguments.Contains("--observe-only", StringComparer.Ordinal))
-                WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                WindowsTaskbarNanoWindowActivator.EnsureForeground(target, device);
             var actions = new NanoGameInteractionActions(
-                new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()),
+                device,
                 new WindowsGameInteractionCoordinateMapper(() => WindowsGameTargetLocator.Locate(target.ProcessName).Bounds));
             var clock = Stopwatch.StartNew();
             var schedule = new VisualKeyAssistSchedule(0, () => Random.Shared.Next(8_000, 12_001), timedInputEnabled);
@@ -1121,8 +1121,8 @@ public static class VisualKeyAssistRuntime
             bool TryForeground()
             {
                 if (userInput is not null)
-                    return WindowsTaskbarNanoWindowActivator.TryEnsureForeground(target, nano.Protocol, emitter, () => !UserIsActive());
-                WindowsTaskbarNanoWindowActivator.EnsureForeground(target, nano.Protocol, emitter);
+                    return WindowsTaskbarNanoWindowActivator.TryEnsureForeground(target, device, () => !UserIsActive());
+                WindowsTaskbarNanoWindowActivator.EnsureForeground(target, device);
                 return true;
             }
 

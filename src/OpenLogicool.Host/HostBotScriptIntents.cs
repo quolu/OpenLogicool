@@ -217,7 +217,9 @@ internal sealed class HostBotScriptIntents : IBotScriptIntents, IDisposable
                 if (System.IO.File.Exists(reviewSettings)) arguments.AddRange(["--review-mcp", reviewSettings]);
                 // 規則に一致しない画面の判断（Jev）は、接続設定を置いた時だけ使う。
                 if (System.IO.File.Exists(screenJudgeSettings)) arguments.AddRange(["--screen-judge", screenJudgeSettings]);
-                var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(), nano, emitter, target,
+                // Botの実行へは、入力装置の口とNanoの識別だけを渡す（Nanoの接続そのものは渡さない）。
+                var result = await VisualKeyAssistRuntime.RunAsync(arguments.ToArray(),
+                    new SerialHidNanoGameInputDevice(nano.Protocol, emitter, new WindowsSerialHidCursorOracle()), nano.DeviceIdentity, target,
                     $"window:bot:{target.ProcessId}", token, report, physicalInput, () => intents!.RunningMode(id));
                 var json = JsonSerializer.SerializeToElement(result);
                 System.IO.File.WriteAllText(Path.Combine(evidence, "result.json"), json.GetRawText());

@@ -35,6 +35,14 @@ public static class WindowsTaskbarNanoWindowActivator
         SerialHidProtocolSession session,
         SerialHidEmitter emitter) => ActivateFromTaskbar(target, session, emitter);
 
+    // 入力装置の口だけで前面化する。Botの実行は、Nanoの接続そのものを持たずに、この口へクリックを依頼する。
+    public static WindowsNanoWindowActivationResult EnsureForeground(WindowsGameTarget target, INanoGameInputDevice device) =>
+        EnsureForeground(() => GetForegroundWindow() == target.Window, () => PrepareTaskbarActivation(target, device));
+
+    public static bool TryEnsureForeground(WindowsGameTarget target, INanoGameInputDevice device, Func<bool> canSend) =>
+        TryEnsureForeground(() => GetForegroundWindow() == target.Window,
+            () => PrepareTaskbarActivation(target, device), canSend);
+
     public static bool TryEnsureForeground(WindowsGameTarget target, SerialHidProtocolSession session,
         SerialHidEmitter emitter, Func<bool> canSend) =>
         TryEnsureForeground(() => GetForegroundWindow() == target.Window,
@@ -74,7 +82,12 @@ public static class WindowsTaskbarNanoWindowActivator
     private static Func<WindowsNanoWindowActivationResult> PrepareTaskbarActivation(
         WindowsGameTarget target,
         SerialHidProtocolSession session,
-        SerialHidEmitter emitter)
+        SerialHidEmitter emitter) =>
+        PrepareTaskbarActivation(target, new SerialHidNanoGameInputDevice(session, emitter, new WindowsSerialHidCursorOracle()));
+
+    private static Func<WindowsNanoWindowActivationResult> PrepareTaskbarActivation(
+        WindowsGameTarget target,
+        INanoGameInputDevice device)
     {
         var condition = new PropertyCondition(
             AutomationElement.ClassNameProperty,
@@ -106,7 +119,7 @@ public static class WindowsTaskbarNanoWindowActivator
         return () =>
         {
             Trace("before-taskbar-click", target, point);
-            var receipt = new SerialHidNanoGameInputDevice(session, emitter, oracle).Click(point);
+            var receipt = device.Click(point);
             Thread.Sleep(250);
             Trace("after-taskbar-click", target, point, receipt);
             if (GetForegroundWindow() != target.Window)
