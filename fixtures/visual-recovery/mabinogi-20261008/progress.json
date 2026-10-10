@@ -126,7 +126,7 @@
       "When": [{ "Text": "スキップ", "Bounds": [0.85, 0, 0.15, 0.12] }]
     },
     {
-      "Id": "loot-continue", "Key": "Key:Space", "Priority": -5, "MinimumVisibleMs": 0,
+      "Id": "loot-continue", "Key": "Key:Space", "Priority": -5, "MinimumVisibleMs": 0, "RepeatAfterChange": true,
       "When": [{ "Text": "発見した戦利品", "Bounds": [0.2, 0, 0.6, 0.45] }]
     },
     {

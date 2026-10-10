@@ -16,7 +16,7 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null,
     double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false,
     int RepeatIntervalMs = 0, string? AfterClickKey = null, double[]? ClickImagePoint = null, int ImageSearchStep = 1,
-    bool ImageClipsAtBottom = false);
+    bool ImageClipsAtBottom = false, bool RepeatAfterChange = false);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000,
     double[][]? WhiteTextBounds = null)
@@ -53,6 +53,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             // 粗い探索の後は周囲2pxを正確に照合する。刻みはその範囲に収まる3までとする。
             if (rule.ImageSearchStep is < 1 or > 3 || rule.ImageSearchStep > 1 && rule.ImageStableRegions is null)
                 throw new InvalidDataException("画像探索の刻みは、固定部分の照合に1〜3で指定します。");
+            if (rule.RepeatAfterChange && (rule.Key is null || rule.Immediate || rule.Timed || rule.RepeatIntervalMs > 0))
+                throw new InvalidDataException("画面が進むたびに送り直す指定は、時間待ちと反復のないキー規則に指定します。");
             if (rule.ImageClipsAtBottom && rule.ImageStableRegions is not { Length: > 2 })
                 throw new InvalidDataException("下端で切れる画像には、固定部分の領域を3つ以上指定します。");
             if (rule.ImageRotates && (rule.Image is null || rule.ImageSilhouette))
@@ -401,6 +403,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
 public sealed class VisualProgressSchedule(VisualProgressProfile profile)
 {
     private VisualProgressChoice? pending;
+    private bool pendingChanged;
     private string? stableSignature;
     private long stableAt;
     private long? unknownAt;
@@ -447,14 +450,27 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
         if (candidate.Action == VisualProgressAction.Review) return candidate;
         if (pending is not null)
         {
-            if (candidate.Signature == pending.Signature || (candidate.Action == VisualProgressAction.Normal && !hudVisible))
+            // 押すたびに少しずつ進む表示は、操作の後に画面が変わって落ち着いたら、同じ表示でも次の操作として送る。
+            // 押しても画面が変わらない時は送り直さず、下の結果待ちが通知へ進める。
+            var advanced = false;
+            if (candidate.Signature == pending.Signature
+                && profile.Rules.SingleOrDefault(rule => rule.Id == candidate.RuleId)?.RepeatAfterChange == true)
+            {
+                if (sceneChanged) pendingChanged = true;
+                else if (pendingChanged) { advanced = true; pending = null; pendingChanged = false; ResetUnresolved(); }
+            }
+            if (advanced) { }
+            else if (candidate.Signature == pending!.Signature || (candidate.Action == VisualProgressAction.Normal && !hudVisible))
                 return ObserveUnresolved(now, sceneChanged,
                     candidate.Action == VisualProgressAction.Normal ? Math.Max(profile.ResultTimeoutMs, profile.UnknownTimeoutMs) : profile.ResultTimeoutMs,
                     $"{pending.RuleId} の操作後、複数回観測して画面の変化が止まったまま結果を確認できません。再送していません。");
-            if (stableSignature != candidate.Signature) { stableSignature = candidate.Signature; stableAt = now; }
-            if (now - stableAt < 600) return new(VisualProgressAction.Wait);
-            pending = null;
-            ResetUnresolved();
+            else
+            {
+                if (stableSignature != candidate.Signature) { stableSignature = candidate.Signature; stableAt = now; }
+                if (now - stableAt < 600) return new(VisualProgressAction.Wait);
+                pending = null;
+                ResetUnresolved();
+            }
         }
         if (candidate.Action == VisualProgressAction.Normal)
         {
@@ -483,7 +499,7 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     {
         if (choice.RepeatIntervalMs > 0) { repeatedAt[choice.RuleId!] = now; return; }
         if (choice.Immediate) { consumedImmediate = choice.Signature; pending = null; ResetUnresolved(); return; }
-        pending = choice; unknownAt = now; unresolvedObservations = 0;
+        pending = choice; pendingChanged = false; unknownAt = now; unresolvedObservations = 0;
     }
 
     private VisualProgressChoice ObserveUnresolved(long now, bool sceneChanged, int waitMs, string detail)

@@ -326,9 +326,30 @@ public sealed class VisualProgressTests
         Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, candidate, true, false, true).Action);
         Assert.Equal(VisualProgressAction.Key, schedule.Decide(0, candidate, false, false, true, sceneChanged: true).Action);
         schedule.RecordInput(0, candidate);
-        // 送った後は、同じ表示が続いても再送しない。
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2000, candidate, false, false, true, sceneChanged: true).Action);
+        // 実測: 1回目のSpaceで品の一部が開き、未開封の品を残して画面が止まった。待っても自動では開かなかった。
+        // 押して画面が進み、落ち着いたら、同じ見出しのままでももう一度送る。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(800, candidate, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1600, candidate, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(2400, candidate, false, false, true).Action);
+        schedule.RecordInput(2400, candidate);
+        // 押しても画面が変わらない時は送り直さず、結果待ちの時間が過ぎたら通知へ進む。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(3200, candidate, false, false, true).Action);
         Assert.Equal(VisualProgressAction.Wait, schedule.Decide(4000, candidate, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(2400 + profile.ResultTimeoutMs, candidate, false, false, true).Action);
+    }
+
+    [Fact]
+    public void 送り直しの指定がない規則は操作の後に画面が変わっても同じ表示へ送り直さない()
+    {
+        var rule = new VisualProgressRule("confirm", [new("確認", [0, 0, 1, 1])], "Key:Space");
+        var schedule = new VisualProgressSchedule(new(1, [rule], []));
+        var candidate = new VisualProgressChoice(VisualProgressAction.Key, "confirm", "confirm:確認", "Key:Space");
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, candidate, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(600, candidate, false, false, true).Action);
+        schedule.RecordInput(600, candidate);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1400, candidate, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2200, candidate, false, false, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(3000, candidate, false, false, true).Action);
     }
 
     [Fact]
