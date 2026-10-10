@@ -6,9 +6,10 @@ using OpenLogicool.Contracts.Capture;
 
 namespace OpenLogicool.Host;
 
+/// <summary>Zoom を2以上にすると、その規則の段階の間、領域を拡大して読み直す（小さい文字のため）。</summary>
 public sealed record VisualProgressText(string Text, double[] Bounds, double[][]? ChoiceBounds = null,
     bool AskUserImmediately = false, VisualProgressText? Confirm = null, string? ConfirmKey = null,
-    double[]? ChoiceBand = null, VisualProgressText? Recommended = null, bool Exact = false);
+    double[]? ChoiceBand = null, VisualProgressText? Recommended = null, bool Exact = false, int Zoom = 1);
 /// <summary>画面の数値の条件。OutOf を指定した表示は「現在値/上限」の形で、上限まで読めた時だけ現在値を使う。</summary>
 public sealed record VisualProgressNumber(double[] Bounds, int? AtMost = null, int? Exactly = null, int? OutOf = null);
 /// <summary>
@@ -119,6 +120,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 || remember.Name.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-')
                 || remember.EndBelowClick is { } below && (!double.IsFinite(below) || below <= 0)))
                 throw new InvalidDataException("覚える指定は、クリックの規則に英数字とハイフンの名前で指定します。");
+            if (rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }).Any(text => text.Zoom is < 1 or > 4))
+                throw new InvalidDataException("読み直しの拡大率は1〜4で指定します。");
             if (rule.EndStage && (rule.Stage is null || rule.NextStage is not null || rule.WaitForChange))
                 throw new InvalidDataException("段階を終える指定は、段階の中の、次の段階を持たない操作の規則に指定します。");
         }
@@ -189,9 +192,21 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
     private readonly Dictionary<string, VisualRotatingTemplate> rotatingTemplates = profile.Rules.Where(rule => rule.ImageRotates)
         .ToDictionary(rule => rule.Id, rule => new VisualRotatingTemplate(rule.Image!, rule.ImageForegroundRgb));
 
-    public async ValueTask<WindowsGameOcrResult> ReadOcrAsync(CapturedFrame frame, FrameRect viewport, CancellationToken token = default)
+    public async ValueTask<WindowsGameOcrResult> ReadOcrAsync(CapturedFrame frame, FrameRect viewport, CancellationToken token = default,
+        string? stage = null)
     {
         var ocr = await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token);
+        foreach (var text in profile.Rules.Where(rule => rule.Stage == stage)
+            .SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }))
+            .Where(text => text.Zoom > 1).DistinctBy(text => (string.Join(",", text.Bounds), text.Zoom)))
+        {
+            // 小さい文字は通常の読み取りで落ちる・読み違える。領域を拡大して読み直し、領域の中の読み取りを置き換える。
+            var x = (int)(viewport.X + text.Bounds[0] * viewport.Width);
+            var y = (int)(viewport.Y + text.Bounds[1] * viewport.Height);
+            var zoomed = await ReadAreaAsync(frame, viewport, text.Bounds, text.Zoom, token);
+            ocr = ocr with { Text = ocr.Text + " " + zoomed.Text, Words = ocr.Words.Where(word => !Inside(word, text.Bounds, viewport))
+                .Concat(zoomed.Words.Select(word => word with { X = word.X + x, Y = word.Y + y })).ToArray() };
+        }
         foreach (var rule in profile.Rules.Where(rule => rule.FilledQuantitiesBounds is not null))
         {
             if (!rule.When.All(condition => Matches(Normalize(string.Concat(ocr.Words
@@ -697,6 +712,11 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     private long? modeIdleAt;
     // 会話や報酬の表示の合間に始めないよう、通常の画面がこの時間続いてからモードの段階を始める。
     private const int ModeStartMs = 2000;
+    // モードの段階を始められなかった時は、この時間を置いてやり直す。その間は通常の規則が動く。
+    private const int ModeRetryMs = 30_000;
+    private long modeRetryAt;
+    private string? modeFailure;
+    private bool modeFailureReported;
 
     /// <summary>進行中の段階。段階の中では、その段階の規則だけを評価する。</summary>
     public string? Stage { get; private set; }
@@ -714,6 +734,22 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
         mode = next;
         modeDue = next is not null;
         modeIdleAt = null;
+        modeRetryAt = 0;
+        modeFailure = null;
+        modeFailureReported = false;
+    }
+
+    /// <summary>
+    /// モードの段階を始められなかった時の知らせを、続けて失敗している間は1回だけ返す。
+    /// 画面の詰まりとは別の失敗なので、様子見を挟まずに担当へ知らせる。
+    /// </summary>
+    public string? TakeModeFailure()
+    {
+        var failure = modeFailure;
+        modeFailure = null;
+        if (failure is null || modeFailureReported) return null;
+        modeFailureReported = true;
+        return failure;
     }
 
     /// <summary>段階を始めた数値の規則は、数値が条件を外れたのを見るまで、もう一度は始めない。</summary>
@@ -736,23 +772,27 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
             if (now - stageHudAt >= StageEndMs)
             {
                 Stage = null; stageHudAt = null;
-                var silent = modeStage && modeStageInputs == 0;
+                if (modeStage && modeStageInputs == 0)
+                {
+                    // モードの段階が何も送らずに終わった時は、黙って終えずに知らせ、間を置いてやり直す。
+                    modeFailure = $"{mode!.Name}を始める操作を、通常の画面で見つけられません。操作は送っていません。"
+                        + $"{ModeRetryMs / 1000}秒おきにやり直します。";
+                    modeDue = true;
+                    modeRetryAt = now + ModeRetryMs;
+                }
                 modeStage = false;
-                // モードの段階が何も送らずに終わった時は、黙って終えずに知らせる。
-                if (silent) return new(VisualProgressAction.Review,
-                    Detail: $"{mode!.Name}を始める操作を、通常の画面で見つけられません。操作は送っていません。");
             }
         }
         else stageHudAt = null;
-        if (mode is not null && modeDue && Stage is null && candidate.Action == VisualProgressAction.Normal && hudVisible)
+        if (mode is not null && modeDue && Stage is null && hudVisible && now >= modeRetryAt
+            && candidate.Action != VisualProgressAction.Review)
         {
+            // モードの段階を始めるまで、通常の画面でのほかの操作（追跡中のクエストの自動進行など）は送らない。
             modeIdleAt ??= now;
-            if (now - modeIdleAt >= ModeStartMs)
-            {
-                Stage = mode.Stage; modeStage = true; modeStageInputs = 0; modeDue = false; modeIdleAt = null;
-                pending = null; stableSignature = null; ResetUnresolved();
-                return new(VisualProgressAction.Wait, Signature: "mode-start:" + mode.Id, Detail: mode.Name);
-            }
+            if (now - modeIdleAt < ModeStartMs) return new(VisualProgressAction.Wait, Signature: "mode-waiting:" + mode.Id);
+            Stage = mode.Stage; modeStage = true; modeStageInputs = 0; modeDue = false; modeIdleAt = null;
+            pending = null; stableSignature = null; ResetUnresolved();
+            return new(VisualProgressAction.Wait, Signature: "mode-start:" + mode.Id, Detail: mode.Name);
         }
         else modeIdleAt = null;
         if (inhibited && !candidate.AllowWhileInhibited)
@@ -829,7 +869,7 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
 
     public void RecordInput(long now, VisualProgressChoice choice)
     {
-        if (modeStage) modeStageInputs++;
+        if (modeStage) { modeStageInputs++; modeFailureReported = false; }
         if (choice.RuleId is not null && mode?.RestartAfter?.Contains(choice.RuleId) == true) modeDue = true;
         if (choice.NextStage is not null)
         {

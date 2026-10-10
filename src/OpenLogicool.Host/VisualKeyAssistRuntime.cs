@@ -487,7 +487,7 @@ public static class VisualKeyAssistRuntime
                     var immediate = numbered is null ? progressRecognizer?.RecognizeImmediateImage(frame, viewport!, inhibitMatch.Matches, stage) : null;
                     var ocr = immediate is null && (!inhibitMatch.Matches || readWhileInhibited) && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                         ? progressRecognizer is null ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token)
-                            : await progressRecognizer.ReadOcrAsync(frame, viewport!, token) : null;
+                            : await progressRecognizer.ReadOcrAsync(frame, viewport!, token, stage) : null;
                     var matchedTexts = ocr is null ? [] : cueTexts.Where(cue => ContainsCue(ocr.Text, cue)).ToArray();
                     var decision = progress.Apply(schedule.Decide(clock.ElapsedMilliseconds, inhibitMatch.Matches,
                         cueMatch?.Matches == true || matchedTexts.Length > 0));
@@ -554,6 +554,27 @@ public static class VisualKeyAssistRuntime
                         recoveryRecognizer!.Observe(frame, viewport).HudVisible,
                         schedule.Decide(clock.ElapsedMilliseconds, false, !flowTimed) is VisualKeyAssistDecision.Cue or VisualKeyAssistDecision.Timed,
                         sceneActivity.Changed);
+                    if (progressSchedule?.TakeModeFailure() is { } modeFailure)
+                    {
+                        // 画面の詰まりとは別の失敗なので、1分の様子見を挟まずに、根拠を添えて担当へ1回知らせる。
+                        var folder = Path.Combine(evidenceDirectory, $"review-{++reviewNumber:D3}");
+                        Directory.CreateDirectory(folder);
+                        var image = Path.Combine(folder, "progress-review.png");
+                        File.WriteAllBytes(image, new WindowsGameFramePngEncoder().Encode(frame).Bytes.ToArray());
+                        var review = JsonSerializer.SerializeToElement(new { Mode = "key-assist", ProductHostEntry = true,
+                            NeedsReview = true, MonitoringContinues = true, AutomaticRulesContinue = continueRules,
+                            Detail = modeFailure, OcrText = ocr?.Text, Image = image, AiCallCount = 0 });
+                        File.WriteAllText(Path.Combine(folder, "review.json"), review.GetRawText());
+                        Emit(new { Event = "mode-start-failed", AtMs = clock.ElapsedMilliseconds, Mode = progressSchedule.ModeId,
+                            Detail = modeFailure, EvidenceDirectory = folder });
+                        QueueNotification(async () =>
+                        {
+                            if (reviewNotifier is null) return;
+                            var notice = await reviewNotifier.NotifyAsync(folder, review, token);
+                            File.WriteAllText(Path.Combine(folder, "notification.json"), JsonSerializer.Serialize(new { DecisionId = notice }));
+                            Emit(new { Event = "review-notified", DecisionId = notice, MonitoringContinues = true });
+                        }, token);
+                    }
                     var completingClick = inputSequence.Pending is not null && !inhibitMatch.Matches;
                     if (completingClick) flowChoice = inputSequence.Pending;
                     if (flowChoice is not null)
@@ -652,7 +673,7 @@ public static class VisualKeyAssistRuntime
                                     : freshNumbered is null ? progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport, freshInhibited, stage) : null;
                                 if (current is null)
                                 {
-                                    var freshOcr = await progressRecognizer!.ReadOcrAsync(fresh, freshViewport, token);
+                                    var freshOcr = await progressRecognizer!.ReadOcrAsync(fresh, freshViewport, token, stage);
                                     current = progressRecognizer.Prefer(freshNumbered,
                                         progressRecognizer.Recognize(freshOcr, fresh.Width, fresh.Height, freshViewport, fresh, freshInhibited, stage));
                                 }

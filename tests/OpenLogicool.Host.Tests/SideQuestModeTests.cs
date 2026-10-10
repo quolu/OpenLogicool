@@ -26,10 +26,14 @@ public sealed class SideQuestModeTests
 
     private static VisualProgressProfile Profile() => VisualProgressProfile.Load(Fixture("progress.json"));
 
-    [Fact]
-    public async Task 通常の画面ではクエストの帯を押す()
+    // 帯の地の色は追跡中のクエストで変わる（緑・青・オレンジ）。帯の文字を拡大して読んで見つける。
+    [Theory]
+    [InlineData("side-quest-hud.png")]
+    [InlineData("side-quest-hud-blue.png")]
+    [InlineData("side-quest-hud-orange.png")]
+    public async Task 通常の画面では帯の色にかかわらずクエストの帯を押す(string image)
     {
-        var choice = await Recognize("side-quest-hud.png", Stage);
+        var choice = await Recognize(image, Stage);
         Assert.Equal("side-quest-open", choice.RuleId);
         Assert.Equal(VisualProgressAction.Click, choice.Action);
         Assert.InRange(choice.Point![0], 0.955, 0.98);
@@ -89,6 +93,8 @@ public sealed class SideQuestModeTests
 
     [Theory]
     [InlineData("side-quest-hud.png")]
+    [InlineData("side-quest-hud-blue.png")]
+    [InlineData("side-quest-hud-orange.png")]
     [InlineData("side-quest-list-all.png")]
     [InlineData("side-quest-list-middle.png")]
     [InlineData("side-quest-list-top.png")]
@@ -184,7 +190,7 @@ public sealed class SideQuestModeTests
     }
 
     [Fact]
-    public void モードの段階が何も送らずに終わった時は黙って終えずに知らせる()
+    public void モードの段階が何も送らずに終わった時は1回だけ知らせ間を置いてやり直す()
     {
         var profile = Profile();
         var schedule = new VisualProgressSchedule(profile);
@@ -193,16 +199,58 @@ public sealed class SideQuestModeTests
         schedule.Decide(0, normal, false, true, true);
         schedule.Decide(2000, normal, false, true, true);
         Assert.Equal(Stage, schedule.Stage);
+        Assert.Null(schedule.TakeModeFailure());
         // クエストの帯を見つけられないまま、通常の画面が続いた。
         schedule.Decide(2250, normal, false, true, true);
-        var ended = schedule.Decide(5250, normal, false, true, true);
+        schedule.Decide(5250, normal, false, true, true);
         Assert.Null(schedule.Stage);
-        Assert.Equal(VisualProgressAction.Review, ended.Action);
-        Assert.Contains("サイドクエストモード", ended.Detail);
-        // 見つけられなかった後は、同じ操作を繰り返し始めない。
-        schedule.Decide(6000, normal, false, true, true);
-        schedule.Decide(20000, normal, false, true, true);
+        Assert.Contains("サイドクエストモード", schedule.TakeModeFailure());
+        Assert.Null(schedule.TakeModeFailure());
+        // 30秒は始め直さず、その間の通常の操作は止めない。
+        var compass = new VisualProgressChoice(VisualProgressAction.Key, "compass-space", "compass-space", "Key:Space", Immediate: true);
+        Assert.Same(compass, schedule.Decide(20000, compass, false, true, true));
         Assert.Null(schedule.Stage);
+        // 30秒たったら、通常の画面が2秒続いた時にやり直す。続けて失敗しても、知らせは重ねない。
+        schedule.Decide(35250, normal, false, true, true);
+        schedule.Decide(37250, normal, false, true, true);
+        Assert.Equal(Stage, schedule.Stage);
+        schedule.Decide(37500, normal, false, true, true);
+        schedule.Decide(40500, normal, false, true, true);
+        Assert.Null(schedule.Stage);
+        Assert.Null(schedule.TakeModeFailure());
+        // 一度でも操作を送れた後の失敗は、あらためて知らせる。
+        schedule.Decide(70500, normal, false, true, true);
+        schedule.Decide(72500, normal, false, true, true);
+        schedule.RecordInput(73000, new(VisualProgressAction.Click, "side-quest-open", "side-quest-open:", Point: [0.97, 0.2]));
+        schedule.SetMode(null);
+        schedule.SetMode(profile.Modes!.Single());
+        schedule.Decide(80000, normal, false, true, true);
+        schedule.Decide(82000, normal, false, true, true);
+        schedule.Decide(82250, normal, false, true, true);
+        schedule.Decide(85250, normal, false, true, true);
+        Assert.NotNull(schedule.TakeModeFailure());
+    }
+
+    [Fact]
+    public void モードの段階を始めるまでは通常の画面でのほかの操作を送らない()
+    {
+        var profile = Profile();
+        var schedule = new VisualProgressSchedule(profile);
+        var compass = new VisualProgressChoice(VisualProgressAction.Key, "compass-space", "compass-space", "Key:Space", Immediate: true);
+        // モードに入っていなければ、コンパスのSpaceはそのまま送る。
+        Assert.Same(compass, schedule.Decide(0, compass, false, true, true));
+        schedule.SetMode(profile.Modes!.Single());
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1000, compass, false, true, true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2900, compass, false, true, true).Action);
+        Assert.Null(schedule.Stage);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(3000, compass, false, true, true).Action);
+        Assert.Equal(Stage, schedule.Stage);
+        // 利用者の判断が要る表示は、モードの開始より先に扱う。
+        var other = new VisualProgressSchedule(profile);
+        other.SetMode(profile.Modes!.Single());
+        var review = new VisualProgressChoice(VisualProgressAction.Review, Detail: "利用者の判断が必要な表示");
+        Assert.Same(review, other.Decide(0, review, false, true, true));
+        Assert.Null(other.Stage);
     }
 
     [Fact]
@@ -228,6 +276,7 @@ public sealed class SideQuestModeTests
     [InlineData("""{ "Id": "x", "Key": "Key:I", "When": [{ "Text": "文字", "Bounds": [0, 0, 1, 1] }], "Areas": [{ "Bounds": [0, 0, 2, 1], "Flat": true }] }""")]
     [InlineData("""{ "Id": "x", "Key": "Key:I", "When": [{ "Text": "文字", "Bounds": [0, 0, 1, 1] }], "Remember": { "Name": "a", "Bounds": [0, 0, 1, 1] } }""")]
     [InlineData("""{ "Id": "x", "When": [{ "Text": "文字", "Bounds": [0, 0, 1, 1] }], "Click": { "Text": "文字", "Bounds": [0, 0, 1, 1] }, "Remember": { "Name": "a b", "Bounds": [0, 0, 1, 1] } }""")]
+    [InlineData("""{ "Id": "x", "Key": "Key:I", "When": [{ "Text": "文字", "Bounds": [0, 0, 1, 1], "Zoom": 5 }] }""")]
     [InlineData("""{ "Id": "x", "Key": "Key:I", "When": [{ "Text": "文字", "Bounds": [0, 0, 1, 1] }], "EndStage": true }""")]
     [InlineData("""{ "Id": "x", "Key": "Key:I", "Stage": "a", "NextStage": "b", "When": [{ "Text": "文字", "Bounds": [0, 0, 1, 1] }], "EndStage": true }""")]
     public void 払う操作と画素の条件と覚える指定の不正な設定は読込みで拒否する(string rule) =>
@@ -291,7 +340,7 @@ public sealed class SideQuestModeTests
     {
         var frame = ReadFrame(Fixture(image));
         var recognizer = new VisualProgressRecognizer(Profile());
-        return recognizer.Recognize(await recognizer.ReadOcrAsync(frame, Viewport(frame)), frame.Width, frame.Height,
+        return recognizer.Recognize(await recognizer.ReadOcrAsync(frame, Viewport(frame), stage: stage), frame.Width, frame.Height,
             Viewport(frame), frame, stage: stage);
     }
 

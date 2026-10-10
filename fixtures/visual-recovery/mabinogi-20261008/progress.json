@@ -322,9 +322,9 @@
       "When": [ { "Text": "整理", "Bounds": [0.88, 0.83, 0.1, 0.05] } ]
     },
     {
-      "Id": "side-quest-open", "Stage": "side-quest", "Priority": 1, "ClickImage": true, "AllowWhileInhibited": true,
-      "When": [], "Image": "quest-plus.png", "ImageBounds": [0.9, 0.14, 0.1, 0.08],
-      "ImageClientWidth": 1711, "ImageStableRegions": [[0, 0, 1, 1]]
+      "Id": "side-quest-open", "Stage": "side-quest", "Priority": 1, "AllowWhileInhibited": true,
+      "When": [ { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032], "Zoom": 3 } ],
+      "Click": { "Text": "クエスト", "Bounds": [0.945, 0.163, 0.055, 0.032] }
     },
     {
       "Id": "side-quest-tab", "Stage": "side-quest", "Priority": 2, "AllowWhileInhibited": true,
