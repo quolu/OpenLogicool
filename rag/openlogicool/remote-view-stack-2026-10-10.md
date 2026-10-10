@@ -30,6 +30,15 @@
 - 黄色い枠を消す `IsBorderRequired=false` には `RequestAccessAsync(Borderless)` と package manifest の `graphicsCaptureWithoutBorder` が要る。unpackaged の扱いは記載なし（未確認）。<https://learn.microsoft.com/en-us/uwp/api/windows.graphics.capture.graphicscapturesession.isborderrequired>
 - `MinUpdateInterval` は build 26100 以降。
 
+## Cloudflare Realtime TURN（外から見る経路の候補）
+
+- 料金: egress 1GB あたり $0.05。SFU と合わせて毎月 1,000GB まで無料。課金されるのは TURN サーバーから TURN client へ送った分で、client からの ingress は無料。STUN（`stun.cloudflare.com`）は無料。<https://developers.cloudflare.com/realtime/sfu/pricing/>・<https://developers.cloudflare.com/realtime/turn/faq/>
+- 受け口: `turn.cloudflare.com` の 3478/udp（代替 443/udp）、3478/tcp（代替 80/tcp）、TLS は 5349/tcp（代替 443/tcp）。<https://developers.cloudflare.com/realtime/turn/>
+- 資格情報は固定にできない。TURN key（長期の秘密）を作り、`POST https://rtc.live.cloudflare.com/v1/turn/keys/<key id>/credentials/generate-ice-servers`（`Authorization: Bearer <key の API token>`・body `{"ttl": 秒}`）で短期の username／credential を発行する。**有効期限は最長 48 時間**。期限が切れた接続は少し後に切断される。取り消しは `…/credentials/<username>/revoke`。<https://developers.cloudflare.com/realtime/turn/generate-credentials/>
+- private な address 範囲への CreatePermission／ChannelBind は拒否される。relay の address は IPv4 だけ。1 client あたり 50〜100Mbps・5〜10kpps を超えると落ちる場合がある。
+- MediaMTX の `webrtcICEServers2` は固定の username／password か、coturn 形式の `AUTH_SECRET` だけを受ける。`clientOnly: true` で「ブラウザーだけが使う」にできる。Cloudflare の短期の資格情報を使うには、期限の前に設定を書き換える定期の処理がサーバーに要る。<https://mediamtx.org/docs/features/webrtc-specific-features>
+- 未確認（推測）: MediaMTX 自身が TURN を使えば（`clientOnly` なし・STUN なし）、MediaMTX の候補は家の中の address と Cloudflare の relay だけになり、家の回線の address を視聴側へ渡さずに外から届く。実測で確かめる。
+
 ## Safari
 
 - WebRTC は H.264 と Opus に対応する。<https://webkit.org/blog/7726/announcing-webrtc-and-media-capture/>

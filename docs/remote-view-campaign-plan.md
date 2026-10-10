@@ -113,6 +113,14 @@
 - `docs/remote-view-operation.md`（設置と使い方）。
 - 実機で段0 の表を測り直し、`docs/remote-view-exit-assessment.md` で合否を宣言する。
 
+### 段5 の現在地（人の許可を待つ間の記録）
+
+- オーナーの回答（決裁箱 K-EZE9L9）: サーバーへの設置を進めてよい。外から見る経路は Cloudflare の中継サービス（TURN）を使う。
+- 決まった形: 名前は `stream.kitepon.dev`。MediaMTX 1.21.2 を main-server の `~/remote-view/` へ docker で置き、既存の Caddy（network `license-server_default`）から `remote-view-mediamtx:8889` へ渡す。家の中向けに `192.168.1.2:8189/udp` を開ける。Cloudflare のトンネル（home-server）へ行き先を1行足し、DNS へ `stream` を足す。
+- 済み: 送信用と視聴用の ID とパスワードの生成、MediaMTX の設定ファイルと compose の用意（サーバーへは未配置）。この PC のアプリへ送信先・視聴用の URL・送信用の ID とパスワードを保存した（`remoteview save-settings`・読み戻しで確認）。
+- 未実施: サーバーへの配置と起動、Caddy、トンネル、DNS、UDP 8189 の開放、視聴用の ID とパスワードの 1Password への保存。作業する会話の自動の許可判定が、サーバーへの書き込みと 1Password への書き込みを止めた。オーナーの許可を待つ。
+- 外から見る経路で分かったこと: Cloudflare の TURN の資格情報は最長 48 時間で切れる。MediaMTX は固定の資格情報しか受けないので、期限の前に資格情報を作り直して設定へ書く定期の処理をサーバーへ置く（[調査](../rag/openlogicool/remote-view-stack-2026-10-10.md)）。家の中で映ることを確かめた後に、内容を示してから足す。
+
 ## クオ君の手が要る所
 
 1. **サーバーの情報と設置の許可**（段0 の後半と段5）: ドメイン、既存の reverse proxy、UDP 8189 を開けられるか。設置はサーバーの変更なので、内容を示して許可をもらってから行う。
