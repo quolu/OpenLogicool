@@ -71,7 +71,7 @@ public sealed class InputStudioWindow : Window
         FontWeight = FontWeights.Bold,
         Foreground = Theme.Text,
         FontSize = 13.5,
-        MaxWidth = 200,
+        MaxWidth = 270,
         TextTrimming = TextTrimming.CharacterEllipsis,
     };
     private readonly ListBox _appPickerList = new() { BorderThickness = new Thickness(0), Width = 300, MaxHeight = 360 };
