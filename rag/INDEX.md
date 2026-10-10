@@ -25,6 +25,7 @@
 - [Serial HID firmware toolchain調査](openlogicool/serial-hid-toolchain-2026-08-23.md) — Arduino CLI 1.5.1、SparkFun AVR 1.1.13、Arduino AVR 1.8.8、Pro Micro 5V / 16 MHz FQBN、HID API、checksum、固定compile。取得日: 2026-08-23、確度: 高（公式catalog＋導入後source＋compile）
 - [Serial HID Windows discovery調査](openlogicool/serial-hid-windows-discovery-2026-08-23.md) — SetupAPI COM interface列挙、PnP device instance ID、SparkFun VID/PID、SerialPort partial readの実装根拠。取得日: 2026-08-23、確度: 高（Microsoft公式API＋導入済みboard定義）
 - [G13 LCD Windows標準HID write調査](openlogicool/g13-lcd-windows-write-2026-08-23.md) — 960-byte framebuffer＋32-byte header、標準HidUsbの`WriteFile`でLCD反映、write後もG1 down/up・drop 0、driver差替え不要。取得日: 2026-08-23、確度: 高（Microsoft公式仕様＋G13公開一次コード＋Windows実機）
+- [G13 input report の bit 順（公開実装 libg13）](openlogicool/g13-key-bit-order-libg13-2026-10-10.md) — `G13_KEY_SEQ` の bit 順。LCD の列（BD・L1〜L4）とスティック脇（LEFT・DOWN）の対応。取得日: 2026-10-10、確度: 高（公開一次コード。実機での個別確認とは別）
 
 実測で確定した仕様知識（正本は docs/ 側・ここは索引のみ）:
 

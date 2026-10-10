@@ -105,6 +105,13 @@ public static class InputStudioFigures
 
         Place(canvas, Keycap(view, canvas, request, "MR", 62, 22, "MR", showText: false), 362, 217);
 
+        // LCD の下の列: 左の丸いボタンと、4つ並びのボタン（左から 1〜4）。小さいので色だけを載せ、名前は吹き出しで出す。
+        Place(canvas, Keycap(view, canvas, request, "LCD_AUX", 26, 26, G13ControlName("LCD_AUX")!, showText: false, radius: 13), 126, 186);
+        foreach (var (controlId, x) in new[] { ("LCD1", 182.0), ("LCD2", 232.0), ("LCD3", 281.0), ("LCD4", 329.0) })
+        {
+            Place(canvas, Keycap(view, canvas, request, controlId, 46, 18, G13ControlName(controlId)!, showText: false, radius: 5), x, 188);
+        }
+
         (string ControlId, double X, double Y)[] keys =
         [
             ("G1", 97, 289), ("G2", 160, 289), ("G3", 220, 290), ("G4", 278, 291), ("G5", 335, 290), ("G6", 392, 289), ("G7", 458, 288),
@@ -136,7 +143,7 @@ public static class InputStudioFigures
         ];
         foreach (var (controlId, emptyLabel, x, y) in directions)
         {
-            Place(canvas, Keycap(view, canvas, request, controlId, 64, 44, G13StickName(controlId)!, emptyLabel), x, y);
+            Place(canvas, Keycap(view, canvas, request, controlId, 64, 44, G13ControlName(controlId)!, emptyLabel), x, y);
         }
 
         Place(canvas, new TextBlock
@@ -156,9 +163,17 @@ public static class InputStudioFigures
         return view;
     }
 
-    /// <summary>G13 のスティック系 control の表示名（内部 control ID を画面へ出さない）。該当しなければ null。</summary>
-    public static string? G13StickName(string controlId) => controlId switch
+    /// <summary>
+    /// G13 の、ボタン番号を持たない control の表示名（内部 control ID を画面へ出さない）。該当しなければ null。
+    /// LCD の列の並び（丸いボタン＝LCD_AUX、4つ並び＝左から LCD1〜4）は公開実装 libg13 の bit 順と一致する。
+    /// </summary>
+    public static string? G13ControlName(string controlId) => controlId switch
     {
+        "LCD_AUX" => "LCD左の丸ボタン",
+        "LCD1" => "LCD下ボタン1",
+        "LCD2" => "LCD下ボタン2",
+        "LCD3" => "LCD下ボタン3",
+        "LCD4" => "LCD下ボタン4",
         "STICK_PRESS" => "スティック押込み",
         G13Controls.StickUp => "スティック上",
         G13Controls.StickDown => "スティック下",

@@ -2375,7 +2375,7 @@ public sealed class InputStudioWindow : Window
             ("G600", "G8") => "上面ボタン下",
             _ => null,
         };
-        if (deviceKind == "G13" && InputStudioFigures.G13StickName(controlId) is { } stickName)
+        if (deviceKind == "G13" && InputStudioFigures.G13ControlName(controlId) is { } stickName)
         {
             return stickName;
         }

@@ -14,7 +14,7 @@ public sealed class InputStudioFiguresTests
         new Dictionary<string, string> { ["M1"] = "base", ["M2"] = "m2", ["M3"] = "m3" };
 
     [Fact]
-    public void G13_figure_has_a_key_for_every_assignable_control_including_the_stick_directions()
+    public void G13_figure_has_a_key_for_every_assignable_control_including_the_stick_directions_and_the_lcd_row()
     {
         RunSta(() =>
         {
@@ -22,11 +22,11 @@ public sealed class InputStudioFiguresTests
             var figure = InputStudioFigures.BuildG13(Request(clicked.Add), G13Layers, "base", _ => { });
             var keys = Buttons(figure.Root);
 
-            // LCD 列は図に置いていない（いまの線画に押せる場所を重ねていない）。層切替の M1〜M3 は割当先ではない。
-            var expected = G13Controls.Buttons.Where(control => !control.StartsWith("LCD", StringComparison.Ordinal) && control is not ("M1" or "M2" or "M3"));
+            // 層切替の M1〜M3 は割当先ではない。それ以外の control は全部、図から載せられる。
+            var expected = G13Controls.Buttons.Where(control => control is not ("M1" or "M2" or "M3"));
             foreach (var controlId in expected)
             {
-                var name = InputStudioFigures.G13StickName(controlId) ?? controlId;
+                var name = InputStudioFigures.G13ControlName(controlId) ?? controlId;
                 var key = Assert.Single(keys, button => AutomationProperties.GetName(button) == $"{name}（未割当）");
                 key.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Assert.Equal(controlId, clicked[^1]);

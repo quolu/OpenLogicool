@@ -104,6 +104,7 @@ return command switch
     "leftover" when args.Length >= 2 => Leftover(args[1], args[2..]),
     "onboard" when args.Length >= 2 => Onboard(args[1], args[2..]),
     "ui-test-scenario" => UiTestScenarioCommand(args[1..]),
+    "ui-snapshot" => UiSnapshot.Run(args[1..]),
     "macro" when args.Length >= 2 => Macro(args[1], args[2..]),
     "serial-hid-test" => SerialHidTest(args[1..]),
     "supervised-import" when args.Length >= 2 => SupervisedImport(args[1], args[2..]),
@@ -113,7 +114,7 @@ return command switch
     "data" => DataCommand(args[1..]),
     "control" or "app" or "bot" or "device" or "devices" or "profile" or "recording" or "serial" or "lcd"
         or "explorer" or "learning" or "research" or "editor" or "resident" or "supervised" => ApplicationControlCli.Run(command, args[1..]),
-    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>]]"),
+    _ => Fail("usage: OpenLogicool.Host [run [--db <path>] [--watchdog <path>] [--duration-ms N] [--trace] | import <documents.json> [--db <path>] | ui [--db <path>] [--duration-ms N] [--resident] | associate <profileId> <appFullPath|default|package:familyName> [--db <path>] | apps [--db <path>] | workspace <workspace.json> [--db <path>] [--dry-run] | undo <workspaceId> [<revisionNumber>] [--db <path>] | export <workspaceId> <out.json> [--db <path>] | revisions <workspaceId> [<revisionNumber>] [--db <path>] | diagnostics [--db <path>] | onboarding [--db <path>] | leftover <apply|restore|status> [--db <path>] | onboard <apply <workspaceId>|restore|status> [--db <path>] | ui-test-scenario [--out <path>] | ui-snapshot --out <folder>]"),
 };
 
 static int SerialHidTest(string[] arguments)

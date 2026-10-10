@@ -41,6 +41,7 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 - **BotのAI支援は詰まりイベントを入口にする。** AIの常時監視・定期巡回は行わず、Botが詰まった時だけ担当AIを起こす。担当AIは状況と情報源を確認し、対応をイベント名・NPC名・クエスト名の個別分岐へ固定せず、再利用できる機構へ一般化してBotへ搭載する。情報源は `https://mabimoba.kitepon.dev/`、X、Web。役立つ攻略情報はベルチームのルピーへ伝え、サイト更新を依頼する。
 - **Throughline後もBot支援を継続する。** 新しい会話は[Bot支援の運用と現在地](docs/bot-assistance-workflow.md)を読み、担当・返信先・未処理の詰まりを引き継いでから続行する。旧会話への通知を取り残さない。ユーザーが既に承認した対応方針を再確認しない。
 
+- **画面の見た目の確認は `OpenLogicool.Host ui-snapshot --out <フォルダー>` を使う。** 窓を出さずに、Input Studio・キーを録る画面・Game Operator を見本データで PNG に描く。操作用の通信口と実機に触れないので、常駐 Host が動いている間も使える。実機の押下に反応する動きだけは実際の窓で確かめる。
 - 通し試験は個別機能の動作確認・原因調査に使わない（最終確認だけ）。focused test で閉じる。
 - contract ownership・Lane分割・Definition of Ready/Done は計画 §7 に従う。
 - 調査した外部仕様は `rag/` へ、価値ある出力は `docs/` へ還流する。
