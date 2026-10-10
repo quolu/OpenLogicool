@@ -772,7 +772,8 @@ static int Ui(string[] arguments)
             supervisedUnavailableReason,
             macroAutomationIntents,
             demonstrationRecordingIntents,
-            botScriptIntents);
+            botScriptIntents,
+            WindowPlacementStore.ForDatabase(databasePath).ToMemory());
         var (controlRegistry, controlJobs) = ApplicationControlRegistration.Create(window, databasePath, residentHost,
             new(editorIntents, residentApply, onboardIntent, serialHidSettingsIntent, new HostG13LcdSettingsIntent(),
                 webResearchIntent, explorerIntents, learningRouteIntents, supervisedMacroIntents, supervisedUnavailableReason,
@@ -791,7 +792,8 @@ static int Ui(string[] arguments)
             macroAutomationIntents.Stop();
             await botScriptIntents.StopAsync();
             closingAfterCleanup = true;
-            window.Close();
+            // 後始末が待ちなしで終わった時はまだ Closing の最中で、そこから Close を呼ぶと例外になる。Closing を抜けてから閉じ直す。
+            _ = window.Dispatcher.BeginInvoke(window.Close);
         };
         System.Windows.Threading.DispatcherTimer? residentFailureTimer = null;
         if (residentHost is not null)

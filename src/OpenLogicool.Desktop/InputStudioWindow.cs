@@ -34,6 +34,7 @@ public sealed class InputStudioWindow : Window
     private readonly ISupervisedMacroIntents? _supervisedMacroIntents;
     private readonly IMacroAutomationIntents? _macroAutomationIntents;
     private readonly IBotScriptIntents? _botScriptIntents;
+    private readonly WindowPlacementMemory? _windowPlacementMemory;
     private readonly string? _supervisedUnavailableReason;
     private DiagnosticsWindow? _diagnosticsWindow;
     private GameOperatorWindow? _gameOperatorWindow;
@@ -229,7 +230,8 @@ public sealed class InputStudioWindow : Window
         string? supervisedUnavailableReason = null,
         IMacroAutomationIntents? macroAutomationIntents = null,
         IDemonstrationRecordingIntents? demonstrationRecordingIntents = null,
-        IBotScriptIntents? botScriptIntents = null)
+        IBotScriptIntents? botScriptIntents = null,
+        WindowPlacementMemory? windowPlacementMemory = null)
     {
         _report = ledgerReport; // 旧 device 台帳は撤去済み。診断画面（DiagnosticsWindow）の中身として復活させる。
         _intents = intents;
@@ -244,6 +246,7 @@ public sealed class InputStudioWindow : Window
         _supervisedMacroIntents = supervisedMacroIntents;
         _macroAutomationIntents = macroAutomationIntents;
         _botScriptIntents = botScriptIntents;
+        _windowPlacementMemory = windowPlacementMemory;
         _supervisedUnavailableReason = supervisedUnavailableReason;
         _snapshot = snapshot;
         _selectedApplicationFullPath = initialSelectedApplicationFullPath;
@@ -262,6 +265,7 @@ public sealed class InputStudioWindow : Window
         MinHeight = 720;
         Width = 1360;
         Height = 840;
+        _windowPlacementMemory?.Attach(this, "input-studio");
 
         var root = new Grid();
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -643,6 +647,7 @@ public sealed class InputStudioWindow : Window
         if (_diagnosticsWindow is null || !_diagnosticsWindow.IsVisible)
         {
             _diagnosticsWindow = new DiagnosticsWindow(_report) { Owner = this };
+            _windowPlacementMemory?.Attach(_diagnosticsWindow, "diagnostics");
             _diagnosticsWindow.Show();
         }
         else
@@ -670,6 +675,7 @@ public sealed class InputStudioWindow : Window
                 openMacroTab,
                 _demonstrationRecordingIntents,
                 _botScriptIntents) { Owner = this };
+            _windowPlacementMemory?.Attach(_gameOperatorWindow, "game-operator");
             _gameOperatorWindow.Show();
         }
         else
@@ -694,6 +700,7 @@ public sealed class InputStudioWindow : Window
             _gameOperatorWindow = new GameOperatorWindow(_webResearchIntent, _explorerIntents, _learningRouteIntents,
                 _supervisedMacroIntents, _supervisedUnavailableReason, _macroAutomationIntents, false,
                 _demonstrationRecordingIntents, _botScriptIntents) { Owner = this, ShowActivated = activate };
+            _windowPlacementMemory?.Attach(_gameOperatorWindow, "game-operator");
             _gameOperatorWindow.Show();
         }
         _gameOperatorWindow.SelectControlPanel(panel);
