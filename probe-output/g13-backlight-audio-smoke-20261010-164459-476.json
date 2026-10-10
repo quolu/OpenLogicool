@@ -1,0 +1,66 @@
+{
+  "Probe": "g13-backlight-audio-smoke",
+  "CapturedAtUtc": "2026-10-10T07:44:14.3817904Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "Arguments": [
+    "--pid",
+    "33892",
+    "--seconds",
+    "45",
+    "--record",
+    "C:\\Users\\kite_\\.claude\\jobs\\8a0049aa\\tmp\\mabi.f32"
+  ],
+  "TargetProcessId": 33892,
+  "TargetProcessName": "MabinogiMobile",
+  "ColorBefore": {
+    "Red": 90,
+    "Green": 255,
+    "Blue": 110
+  },
+  "ColorAfter": {
+    "Red": 90,
+    "Green": 255,
+    "Blue": 110
+  },
+  "Seconds": 45.0675019,
+  "Status": {
+    "IsRunning": true,
+    "TargetProcessId": 33892,
+    "IsFollowing": true,
+    "IsConnected": true,
+    "ColorWrites": 1443,
+    "Failure": null
+  },
+  "Audio": {
+    "SampleRate": 48000,
+    "Samples": 2083200,
+    "SamplesPerSecond": 46223.99538857067,
+    "Reads": 1447,
+    "ReadsPerSecond": 32.1073931102447,
+    "EmptyReads": 1,
+    "Rms": 0.045723642837053165,
+    "Peak": 0.45550537
+  },
+  "Colors": {
+    "Writes": 1444,
+    "WritesPerSecond": 32.04082629660908,
+    "WriteMsMedian": 0.2991,
+    "WriteMsMax": 1.5745,
+    "NearestRainbowColorCounts": [
+      190,
+      246,
+      363,
+      345,
+      149,
+      55,
+      95
+    ],
+    "ColorChangesPerSecond": 6.878570742346826,
+    "BrightnessMin": 38,
+    "BrightnessMedian": 221,
+    "BrightnessMax": 255,
+    "NotFullySaturated": 0
+  },
+  "Failure": null
+}

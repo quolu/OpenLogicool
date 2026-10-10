@@ -191,6 +191,16 @@ public sealed class WorkspaceCompilerTests
     }
 
     [Fact]
+    public void G13_backlight_audio_setting_is_copied_to_all_workspace_profiles()
+    {
+        var on = WorkspaceCompiler.Compile(Document() with { G13BacklightFollowsAudio = true });
+        var off = WorkspaceCompiler.Compile(Document());
+
+        Assert.All(on.Profiles, profile => Assert.True(profile.G13BacklightFollowsAudio));
+        Assert.All(off.Profiles, profile => Assert.False(profile.G13BacklightFollowsAudio));
+    }
+
+    [Fact]
     public void G13_lcd_setting_is_validated_and_copied_to_all_workspace_profiles()
     {
         var setting = new WorkspaceG13LcdSetting(

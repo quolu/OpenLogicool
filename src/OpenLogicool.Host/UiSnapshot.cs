@@ -53,6 +53,10 @@ public static class UiSnapshot
                 written.Add(Save(InputStudio(selectActionIndex: 4, showG600: false), outputDirectory, "input-studio-g13"));
                 written.Add(Save(InputStudio(selectActionIndex: 4, showG600: true), outputDirectory, "input-studio-g600"));
                 written.Add(Save(InputStudio(selectActionIndex: -1, showG600: false), outputDirectory, "input-studio-no-selection"));
+                written.Add(Save(
+                    ((InputStudioWindow)InputStudio(selectActionIndex: 4, showG600: false, lcdAndLight: true)).DetachLcdAndLightPanelForSnapshot(),
+                    outputDirectory,
+                    "input-studio-lcd-and-light"));
                 written.Add(Save(new KeyCaptureDialog("回避", "Space", overwritesExisting: true, canAssignByDevicePress: true), outputDirectory, "key-capture"));
                 foreach (var panel in new[] { "bot", "macro", "recording", "research" })
                 {
@@ -82,7 +86,7 @@ public static class UiSnapshot
         return 0;
     }
 
-    private static Window InputStudio(int selectActionIndex, bool showG600)
+    private static Window InputStudio(int selectActionIndex, bool showG600, bool lcdAndLight = false)
     {
         var intents = new FakeWorkspaceEditorIntents();
         var document = intents.LoadDocument("*").Document;
@@ -113,6 +117,11 @@ public static class UiSnapshot
         }
 
         document = WorkspaceDocumentEditor.SetBinding(document, "skill", "G13", "G11", "m2");
+        if (lcdAndLight)
+        {
+            document = WorkspaceDocumentEditor.SetG13BacklightFollowsAudio(document, true);
+        }
+
         var saved = intents.Save(document, "*");
         var window = new InputStudioWindow(
             new WorkspaceScreenSnapshot(
@@ -128,7 +137,8 @@ public static class UiSnapshot
                 ]),
             InputStudioReportBuilder.Build(new DeviceDisplayInput("G13", 1, null, null), new DeviceDisplayInput("G600", 1, null, null)),
             "*",
-            intents);
+            intents,
+            g13LcdSettingsIntent: lcdAndLight ? new HostG13LcdSettingsIntent() : null);
 
         if (selectActionIndex >= 0)
         {

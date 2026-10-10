@@ -21,6 +21,8 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 - **G13 Native LCD campaign Phase 1 Exit成立（2026-08-23）**: Windows標準HidUsbの992-byte output collectionへ`WriteFile`でsolid frameを送り、LCDが白一色へ変化したことをオーナー目視で確認。write後もG1 down/upをsequence 1/2で取得しdrop 0。`HidD_SetOutputReport`はerror 31で不採用、driver差替え不要。判定は[evidence/g13-native-lcd/p1-standard-hid-write-gate.md](evidence/g13-native-lcd/p1-standard-hid-write-gate.md)。campaignはPhase 2 resident LCD runtimeへ進行中。
 - **Input Studio の使い勝手3件を実装（2026-10-10）**: ①窓の位置と大きさの記憶（Input Studio・Game Operator・診断。DBの隣の`<db>.window-placement.json`へ保存し、往復を実processで確認済み）②G13スティックの上下左右を割当先に追加（`STICK_UP`／`STICK_DOWN`／`STICK_LEFT`／`STICK_RIGHT`。判定と根拠は[実測台帳](docs/probes/g13-input-map-2026-08-15.md)。値と向きの対応は強い推定。オーナーが実機で割り当てて動作を報告済みだが、4方向の個別確認は未聴取）③キー録画でEscを録れる（閉じるのは「取り消す」と×だけ）。止めるものが無い画面を閉じると例外で異常終了する欠陥も修理（修理後の実process確認は未実施）。**デザイン刷新（オーナー承認 2026-10-10・見本 [docs/ui-mocks/v2/input-studio.html](docs/ui-mocks/v2/input-studio.html)）をWPFへ反映**: 光るキーキャップの図（選んだ操作のキーが強く光る・押すと輪が広がる・図のM1〜M3で配置を切替）、操作8色、送るキーのキーキャップ表示、Game Operatorの左一覧、暗色タイトルバー、同梱書体（Oxanium・JetBrains Mono／OFL-1.1）。配色・書体・標準コントロールの見た目は`Theme.cs`と`ThemeResources.xaml`だけが持ち、各窓は構築子で`Theme.Apply`を呼ぶ。画面は窓を出さない画像化で確認済み。実機押下での発光と動作チェックの流れ、暗色タイトルバーは実processで未確認。
 
+- **G13 のバックライト色を前面アプリの音に合わせる機能を実装（2026-10-10）**: 設定ごとの入切（Input Studio の「LCDと明かり」）。前面アプリの process の音だけを拾い（[調査記録](rag/openlogicool/windows-process-loopback-audio-2026-10-10.md)）、7 つの帯のうち普段よりいちばん目立つ帯の虹の色を、鮮やかさ最大・音の大きさに合わせた明るさで書く。色の命令は本体へ保存されない（[書き込みの gate](evidence/g13-backlight/p1-standard-hid-feature-write-gate.md)）。追従をやめる時と停止時は、追従前の色へ戻す。runtime 単体はマビノギモバイルの音で実機確認済み（[記録](evidence/g13-backlight/p2-audio-follow-probe.md)）。常駐 Host での入切は開発版の導入後に確認する（未確認）。色の速さ・明るさの振れ・無音時の明るさ・色味はオーナーの目視で決める。
+
 ## プロジェクト固有の裁定（要旨）
 
 1. **根拠4値**: すべての成立性は「確認済み／強い推定／未確認／非対応」で表記する。Unverified を Supported と表示しない。実験失敗を別方式へ黙って fallback して成功扱いしない。
@@ -41,7 +43,7 @@ Logicool G13 / G600 を統合する Windows ネイティブアプリ。LGS 9.04.
 - **BotのAI支援は詰まりイベントを入口にする。** AIの常時監視・定期巡回は行わず、Botが詰まった時だけ担当AIを起こす。担当AIは状況と情報源を確認し、対応をイベント名・NPC名・クエスト名の個別分岐へ固定せず、再利用できる機構へ一般化してBotへ搭載する。情報源は `https://mabimoba.kitepon.dev/`、X、Web。役立つ攻略情報はベルチームのルピーへ伝え、サイト更新を依頼する。
 - **Throughline後もBot支援を継続する。** 新しい会話は[Bot支援の運用と現在地](docs/bot-assistance-workflow.md)を読み、担当・返信先・未処理の詰まりを引き継いでから続行する。旧会話への通知を取り残さない。ユーザーが既に承認した対応方針を再確認しない。
 
-- **画面の見た目の確認は `OpenLogicool.Host ui-snapshot --out <フォルダー>` を使う。** 窓を出さずに、Input Studio・キーを録る画面・Game Operator を見本データで PNG に描く。操作用の通信口と実機に触れないので、常駐 Host が動いている間も使える。実機の押下に反応する動きだけは実際の窓で確かめる。
+- **画面の見た目の確認は `OpenLogicool.Host ui-snapshot --out <フォルダー>` を使う。** 窓を出さずに、Input Studio・「LCDと明かり」の設定・キーを録る画面・Game Operator を見本データで PNG に描く。操作用の通信口と実機に触れないので、常駐 Host が動いている間も使える。実機の押下に反応する動きだけは実際の窓で確かめる。
 - 通し試験は個別機能の動作確認・原因調査に使わない（最終確認だけ）。focused test で閉じる。
 - contract ownership・Lane分割・Definition of Ready/Done は計画 §7 に従う。
 - 調査した外部仕様は `rag/` へ、価値ある出力は `docs/` へ還流する。

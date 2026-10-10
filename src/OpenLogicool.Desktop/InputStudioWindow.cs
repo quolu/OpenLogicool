@@ -147,7 +147,7 @@ public sealed class InputStudioWindow : Window
     private readonly Button _shiftSwitchButton = new();
     private readonly Button _lcdMenuButton = Theme.Quiet(new Button
     {
-        Content = "LCD表示 ▾",
+        Content = "LCDと明かり ▾",
         Height = 30,
         Padding = new Thickness(12, 0, 12, 0),
         Margin = new Thickness(10, 0, 0, 0),
@@ -167,6 +167,13 @@ public sealed class InputStudioWindow : Window
     private readonly Button _g13LcdImageButton = new() { Content = "画像を選ぶ", Height = 32, Padding = new Thickness(10, 0, 10, 0) };
     private readonly Button _g13LcdTextButton = new() { Content = "テキストを表示", Height = 32, Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(6, 0, 0, 0) };
     private readonly Button _g13LcdClearButton = Theme.Quiet(new Button { Content = "共通表示に戻す", Height = 32, Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(6, 0, 0, 0) });
+    private readonly Button _g13BacklightAudioButton = new()
+    {
+        Background = Brushes.Transparent,
+        BorderBrush = Brushes.Transparent,
+        Padding = new Thickness(0, 4, 6, 4),
+        HorizontalAlignment = HorizontalAlignment.Left,
+    };
     private readonly Border _figureHost = new() { Margin = new Thickness(18, 10, 18, 4) };
     private readonly TextBlock _figureNoteText = new()
     {
@@ -1308,7 +1315,7 @@ public sealed class InputStudioWindow : Window
         headRight.Children.Add(_shiftSwitchButton);
         AutomationProperties.SetName(_onboardMenuButton, "G600 本体への書き込み");
         headRight.Children.Add(_onboardMenuButton);
-        AutomationProperties.SetName(_lcdMenuButton, "G13 の LCD 表示");
+        AutomationProperties.SetName(_lcdMenuButton, "G13 の LCD 表示と明かりの色");
         headRight.Children.Add(_lcdMenuButton);
         var headStack = new StackPanel();
         headStack.Children.Add(head);
@@ -1419,6 +1426,44 @@ public sealed class InputStudioWindow : Window
         Grid.SetColumn(_g13LcdClearButton, 3);
         editRow.Children.Add(_g13LcdClearButton);
         stack.Children.Add(editRow);
+
+        stack.Children.Add(new Border { Height = 1, Background = Theme.Line, Margin = new Thickness(0, 14, 0, 11) });
+        var lightTitleRow = new StackPanel { Orientation = Orientation.Horizontal };
+        lightTitleRow.Children.Add(new TextBlock
+        {
+            Text = "明かりの色",
+            Foreground = Theme.Text,
+            FontWeight = FontWeights.Bold,
+            FontSize = 13,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        lightTitleRow.Children.Add(new TextBlock
+        {
+            Text = "このプリセットが前面の時",
+            Foreground = Theme.Muted,
+            FontSize = 11.5,
+            Margin = new Thickness(8, 1, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        stack.Children.Add(lightTitleRow);
+        _g13BacklightAudioButton.Margin = new Thickness(0, 5, 0, 0);
+        _g13BacklightAudioButton.Click += (_, _) =>
+        {
+            if (TryMutateDocument(document =>
+                    WorkspaceDocumentEditor.SetG13BacklightFollowsAudio(document, !document.G13BacklightFollowsAudio)))
+            {
+                Render();
+            }
+        };
+        stack.Children.Add(_g13BacklightAudioButton);
+        stack.Children.Add(new TextBlock
+        {
+            Text = "前面のアプリの音だけを聞いて、キーとLCDの明かりを虹の7色で変えます。低い音は赤、高い音は紫です。明るさは音の大きさに合わせます。",
+            Foreground = Theme.Muted,
+            FontSize = 11.5,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 3, 0, 0),
+        });
 
         _g13LcdImageButton.Click += (_, _) => SelectG13LcdImage();
         _g13LcdTextButton.Click += (_, _) => SetG13LcdText();
@@ -2145,6 +2190,45 @@ public sealed class InputStudioWindow : Window
         }
 
         _g13LcdClearButton.IsEnabled = _document.G13Lcd is not null;
+        RenderG13BacklightAudioSwitch(_document.G13BacklightFollowsAudio);
+    }
+
+    /// <summary>「LCDと明かり」の設定の中身を、窓を出さずに描く見本用の窓へ移す（移した後は元の窓から開けない）。</summary>
+    public Window DetachLcdAndLightPanelForSnapshot()
+    {
+        var content = _lcdPopup.Child;
+        _lcdPopup.Child = null;
+        var preview = new Window { Width = _g13LcdSettingsPanel.Width + 24, Content = content };
+        Theme.Apply(preview);
+        return preview;
+    }
+
+    private void RenderG13BacklightAudioSwitch(bool followsAudio)
+    {
+        var track = new Border
+        {
+            Width = 30,
+            Height = 17,
+            CornerRadius = new CornerRadius(8.5),
+            Background = followsAudio ? Theme.Freeze(Theme.Mix(Theme.SunkenColor, Theme.G13Color, 0.35)) : Theme.Sunken,
+            BorderBrush = Theme.Line2,
+            BorderThickness = new Thickness(1),
+            Margin = new Thickness(0, 0, 8, 0),
+            Child = new Border
+            {
+                Width = 11,
+                Height = 11,
+                CornerRadius = new CornerRadius(5.5),
+                Background = followsAudio ? Theme.G13 : Theme.Muted,
+                HorizontalAlignment = followsAudio ? HorizontalAlignment.Right : HorizontalAlignment.Left,
+                Margin = new Thickness(2, 0, 2, 0),
+            },
+        };
+        var content = new StackPanel { Orientation = Orientation.Horizontal };
+        content.Children.Add(track);
+        content.Children.Add(new TextBlock { Text = "アプリの音に合わせて色を変える", Foreground = Theme.Text, FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center });
+        _g13BacklightAudioButton.Content = content;
+        AutomationProperties.SetName(_g13BacklightAudioButton, followsAudio ? "アプリの音に合わせて色を変える（入）" : "アプリの音に合わせて色を変える（切）");
     }
 
     private Dictionary<string, InputStudioFigures.FigureBinding> BuildFigureBindingLookup(string deviceKind, string layerId)

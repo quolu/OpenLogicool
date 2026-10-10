@@ -158,6 +158,20 @@ public sealed class WorkspaceDocumentEditorTests
     }
 
     [Fact]
+    public void Set_g13_backlight_follows_audio_only_replaces_that_setting()
+    {
+        var draft = WorkspaceDocumentEditor.CreateDraft("ws");
+
+        var on = WorkspaceDocumentEditor.SetG13BacklightFollowsAudio(draft, true);
+        var off = WorkspaceDocumentEditor.SetG13BacklightFollowsAudio(on, false);
+
+        Assert.False(draft.G13BacklightFollowsAudio);
+        Assert.True(on.G13BacklightFollowsAudio);
+        Assert.Equal(draft, off);
+        Assert.Equal(draft with { G13BacklightFollowsAudio = true }, on);
+    }
+
+    [Fact]
     public void Set_and_clear_g13_lcd_only_replace_the_lcd_setting()
     {
         var draft = WorkspaceDocumentEditor.CreateDraft("ws");

@@ -80,6 +80,7 @@ internal static class ApplicationControlRegistration
             outputRoute = resident?.OutputRoute.ToString(), residentFailure = resident?.Failure?.Message,
             processedInputs = resident?.Pump.ProcessedCount, droppedG13 = resident?.DroppedG13InputCount,
             droppedG600 = resident?.DroppedG600InputCount, lcd = resident?.G13LcdStatus,
+            backlight = resident?.G13BacklightStatus,
             bot = services.Bot.Current(), recording = services.Recording.Status(), macro = services.Macro.CurrentRun()
         };
         registry.Add("app.status", async (_, _) => await Dispatch(Status));

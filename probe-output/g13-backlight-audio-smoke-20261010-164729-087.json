@@ -1,0 +1,36 @@
+{
+  "Probe": "g13-backlight-audio-smoke",
+  "CapturedAtUtc": "2026-10-10T07:47:28.8668775Z",
+  "Machine": "FOX",
+  "OsVersion": "Microsoft Windows NT 10.0.26200.0",
+  "Arguments": [
+    "--analyze",
+    "C:/Users/kite_/.claude/jobs/8a0049aa/tmp/mabi.f32"
+  ],
+  "Analysis": {
+    "Seconds": 43.4,
+    "DominantBandShare": [
+      0.219,
+      0.158,
+      0.111,
+      0.134,
+      0.131,
+      0.086,
+      0.16
+    ],
+    "UsualEnergyShare": [
+      0.44725,
+      0.18384,
+      0.0608,
+      0.10338,
+      0.14104,
+      0.05304,
+      0.01064
+    ],
+    "DominantChangesPerSecond": 5.02,
+    "BrightnessP10": 0.512,
+    "BrightnessMedian": 0.821,
+    "BrightnessP90": 0.943
+  },
+  "Failure": null
+}

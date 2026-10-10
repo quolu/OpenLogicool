@@ -117,6 +117,9 @@ public static class WorkspaceDocumentEditor
     public static WorkspaceDocument ClearG13Lcd(WorkspaceDocument document) =>
         document with { G13Lcd = null };
 
+    public static WorkspaceDocument SetG13BacklightFollowsAudio(WorkspaceDocument document, bool follows) =>
+        document with { G13BacklightFollowsAudio = follows };
+
     /// <summary>
     /// G600 の G-Shift（G6）を層切替から通常ボタンへ変える——hold selector と shift 層を layout から外し、
     /// G6 を割当可能にする。shift 層に割当が残っている場合は黙って消さず拒否する。

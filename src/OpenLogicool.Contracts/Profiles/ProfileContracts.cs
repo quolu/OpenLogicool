@@ -43,7 +43,8 @@ public sealed record MappingProfileDocument(
     IReadOnlyList<LayerSelectorEntry> LatchSelectors,
     IReadOnlyList<LayerSelectorEntry> HoldSelectors,
     IReadOnlyList<MappingBindingEntry> Bindings,
-    WorkspaceG13LcdSetting? G13Lcd = null);
+    WorkspaceG13LcdSetting? G13Lcd = null,
+    bool G13BacklightFollowsAudio = false);
 
 /// <summary>mapping profile の保存 port（実装は Persistence、意味 owner は Profiles）。</summary>
 public interface IMappingProfileStore

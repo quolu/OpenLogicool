@@ -15,7 +15,7 @@ public sealed class UiSnapshotTests
 
             string[] expected =
             [
-                "input-studio-g13.png", "input-studio-g600.png", "input-studio-no-selection.png", "key-capture.png",
+                "input-studio-g13.png", "input-studio-g600.png", "input-studio-no-selection.png", "input-studio-lcd-and-light.png", "key-capture.png",
                 "game-operator-bot.png", "game-operator-macro.png", "game-operator-recording.png", "game-operator-research.png",
             ];
             Assert.Equal(expected.Order(), Directory.GetFiles(directory).Select(Path.GetFileName).Order());

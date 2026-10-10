@@ -1,3 +1,4 @@
+using OpenLogicool.Capture;
 using System.IO;
 using Microsoft.Data.Sqlite;
 using OpenLogicool.Contracts.Profiles;
@@ -36,6 +37,7 @@ public sealed class ResidentInputHost : IDisposable
     private readonly G600OnboardModeStore? _onboardMode;
     private readonly Func<IResidentOutputSession> _outputSessionFactory;
     private readonly Func<G13LcdRuntime> _g13LcdRuntimeFactory;
+    private readonly Func<G13AudioBacklightRuntime> _g13BacklightRuntimeFactory;
     private readonly IMacroInvocationSink? _macroInvocations;
     private volatile bool _g600OnboardSuppressed;
     private bool _g600Managed;
@@ -43,6 +45,7 @@ public sealed class ResidentInputHost : IDisposable
     private G13RawInputSource? _g13Source;
     private G600RawInputSource? _g600Source;
     private G13LcdRuntime? _g13LcdRuntime;
+    private G13AudioBacklightRuntime? _g13BacklightRuntime;
     private IResidentOutputSession? _outputSession;
     private FastPathPump? _pump;
     private Thread? _foregroundPollThread;
@@ -63,7 +66,8 @@ public sealed class ResidentInputHost : IDisposable
         G600OnboardModeStore? onboardMode = null,
         Func<IResidentOutputSession>? outputSessionFactory = null,
         Func<G13LcdRuntime>? g13LcdRuntimeFactory = null,
-        IMacroInvocationSink? macroInvocations = null)
+        IMacroInvocationSink? macroInvocations = null,
+        Func<G13AudioBacklightRuntime>? g13BacklightRuntimeFactory = null)
     {
         _databasePath = databasePath;
         _enableTrace = enableTrace;
@@ -73,6 +77,10 @@ public sealed class ResidentInputHost : IDisposable
             ?? (() => new SendInputResidentOutputSession(watchdogExePath));
         _g13LcdRuntimeFactory = g13LcdRuntimeFactory
             ?? (() => new G13LcdRuntime(new G13LcdHidTransport()));
+        _g13BacklightRuntimeFactory = g13BacklightRuntimeFactory
+            ?? (() => new G13AudioBacklightRuntime(
+                new G13BacklightHidTransport(),
+                processId => new ProcessLoopbackAudioSource(processId)));
         _macroInvocations = macroInvocations;
     }
 
@@ -112,6 +120,8 @@ public sealed class ResidentInputHost : IDisposable
 
     /// <summary>G13 LCDはfast pathと独立しているため、faultはresident停止原因へ丸めず個別状態で公開する。</summary>
     public G13LcdRuntimeStatus? G13LcdStatus => _g13LcdRuntime?.Status;
+
+    public G13AudioBacklightStatus? G13BacklightStatus => _g13BacklightRuntime?.Status;
 
     public ResidentHostStatus Start()
     {
@@ -156,6 +166,9 @@ public sealed class ResidentInputHost : IDisposable
                 ?? throw new InvalidOperationException("G13 LCD runtime factoryがnullを返しました。");
             _g13LcdRuntime.RequestFrame(G13LcdDisplayFrameSelector.Select(initialG13Document?.G13Lcd).Span);
             _g13LcdRuntime.Start();
+            _g13BacklightRuntime = _g13BacklightRuntimeFactory()
+                ?? throw new InvalidOperationException("G13 backlight runtime factoryがnullを返しました。");
+            _g13BacklightRuntime.Start();
         }
 
         // onboard 書込み中は本体がハードウェアとして送るため、常駐側の G600 送出を抑止し
@@ -285,6 +298,7 @@ public sealed class ResidentInputHost : IDisposable
             ForegroundApplicationIdentity? previousIdentity = null;
             string? lastKey = null;
             var first = true;
+            var backlightFollowsAudio = false;
 
             while (!_foregroundPollStop)
             {
@@ -356,16 +370,23 @@ public sealed class ResidentInputHost : IDisposable
                             $"profile switch: {outcome.DeviceKind} -> '{outcome.SelectedProfileId}'（{DescribeSwitchReason(outcome.MatchKind, identity)}）");
                     }
 
+                    var defaultG13Document = resolver.DefaultByKind.GetValueOrDefault("G13");
                     var lcdSetting = G13LcdProfileSettingSelector.Select(
                         decision,
                         documentsById,
-                        resolver.DefaultByKind.TryGetValue("G13", out var defaultG13Document)
-                            ? defaultG13Document
-                            : null);
+                        defaultG13Document);
                     UpdateG13Lcd(lcdSetting);
+                    backlightFollowsAudio = G13BacklightProfileSettingSelector.FollowsAudio(
+                        decision,
+                        documentsById,
+                        defaultG13Document);
 
                     previousIdentity = identity;
                 }
+
+                // 設定の一致は path／package で決まるが、音を追う対象は前面の process そのもの
+                // （同じアプリの起動し直しで process が替わっても追い直す）。
+                _g13BacklightRuntime?.SetTarget(backlightFollowsAudio ? identity?.ProcessId : null);
 
                 Thread.Sleep(200);
             }
@@ -421,6 +442,7 @@ public sealed class ResidentInputHost : IDisposable
         }
 
         _g13LcdRuntime?.Stop(clearDisplay: true);
+        _g13BacklightRuntime?.Stop();
 
         if (!_g600OnboardSuppressed)
         {
@@ -489,6 +511,7 @@ public sealed class ResidentInputHost : IDisposable
         _g13Source?.Dispose();
         _g600Source?.Dispose();
         _g13LcdRuntime?.Dispose();
+        _g13BacklightRuntime?.Dispose();
         _connection?.Dispose();
     }
 

@@ -41,6 +41,7 @@ public sealed record WorkspaceG13LcdSetting(
 /// Action-centric binding editor の編集単位（APP-003）の wire type。
 /// Semantic Action の一覧・device 種別ごとの layer 構成・action→control の binding を一冊で持ち、
 /// compile で device 種別ごとの MappingProfileDocument（ProfileId = "{WorkspaceId}-{DeviceKind}"）を得る。
+/// G13BacklightFollowsAudio は、workspace適用中に前面アプリの音へG13のバックライト色を合わせるかを持つ。
 /// </summary>
 public sealed record WorkspaceDocument(
     string SchemaVersion,
@@ -50,7 +51,8 @@ public sealed record WorkspaceDocument(
     IReadOnlyList<WorkspaceActionEntry> Actions,
     IReadOnlyList<WorkspaceDeviceLayout> Devices,
     IReadOnlyList<WorkspaceActionBinding> Bindings,
-    WorkspaceG13LcdSetting? G13Lcd = null);
+    WorkspaceG13LcdSetting? G13Lcd = null,
+    bool G13BacklightFollowsAudio = false);
 
 /// <summary>保存済み workspace revision 1件（MAP-009）。RevisionNumber は workspace ごとの連番。</summary>
 public sealed record WorkspaceRevisionRecord(

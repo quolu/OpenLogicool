@@ -27,6 +27,7 @@
 - [G13 LCD Windows標準HID write調査](openlogicool/g13-lcd-windows-write-2026-08-23.md) — 960-byte framebuffer＋32-byte header、標準HidUsbの`WriteFile`でLCD反映、write後もG1 down/up・drop 0、driver差替え不要。取得日: 2026-08-23、確度: 高（Microsoft公式仕様＋G13公開一次コード＋Windows実機）
 - [G13 input report の bit 順（公開実装 libg13）](openlogicool/g13-key-bit-order-libg13-2026-10-10.md) — `G13_KEY_SEQ` の bit 順。LCD の列（BD・L1〜L4）とスティック脇（LEFT・DOWN）の対応。取得日: 2026-10-10、確度: 高（公開一次コード。実機での個別確認とは別）
 - [G13 のバックライト色を変える命令（公開実装 libg13）](openlogicool/g13-backlight-color-2026-10-10.md) — SET_REPORT feature report ID 7 の 5 bytes、M ランプは ID 5。Windows 標準 HID の `HidD_SetFeature` で成立、色は本体に保存されない、毎秒 30 回の連続書き込み可。取得日: 2026-10-10、確度: 高（公開一次コード＋Windows 実機）
+- [一つのアプリの音だけを拾う（Windows の process loopback）](openlogicool/windows-process-loopback-audio-2026-10-10.md) — `ActivateAudioInterfaceAsync`＋`VAD\Process_Loopback` で process ID を指定して音を受け取る呼び方と実測。取得日: 2026-10-10、確度: 高（Microsoft 公式＋Windows 実機）
 
 実測で確定した仕様知識（正本は docs/ 側・ここは索引のみ）:
 

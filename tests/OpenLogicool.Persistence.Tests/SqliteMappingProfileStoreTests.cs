@@ -54,6 +54,34 @@ public sealed class SqliteMappingProfileStoreTests : IDisposable
     }
 
     [Fact]
+    public void G13_backlight_audio_setting_survives_reopening_and_is_off_in_rows_saved_before_it_existed()
+    {
+        using (var connection = OpenMigrated())
+        {
+            var store = new SqliteMappingProfileStore(connection);
+            store.Upsert(Document("profile-on") with { G13BacklightFollowsAudio = true });
+            store.Upsert(Document("profile-old"));
+            using var command = connection.CreateCommand();
+            command.CommandText =
+                "UPDATE mapping_profiles SET document_json = replace(document_json, ',\"G13BacklightFollowsAudio\":false', '') " +
+                "WHERE profile_id = 'profile-old'";
+            Assert.Equal(1, command.ExecuteNonQuery());
+        }
+
+        using (var connection = OpenMigrated())
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = "SELECT document_json FROM mapping_profiles WHERE profile_id = 'profile-old'";
+            Assert.DoesNotContain("G13BacklightFollowsAudio", (string)command.ExecuteScalar()!);
+
+            var restored = new SqliteMappingProfileStore(connection).ListAll()
+                .ToDictionary(document => document.ProfileId, StringComparer.Ordinal);
+            Assert.True(restored["profile-on"].G13BacklightFollowsAudio);
+            Assert.False(restored["profile-old"].G13BacklightFollowsAudio);
+        }
+    }
+
+    [Fact]
     public void Upsert_overwrites_by_profile_id()
     {
         using var connection = OpenMigrated();

@@ -154,7 +154,8 @@ public static class WorkspaceCompiler
                 device.LatchSelectors,
                 device.HoldSelectors,
                 bindingsByKind[device.DeviceKind],
-                document.G13Lcd);
+                document.G13Lcd,
+                document.G13BacklightFollowsAudio);
 
             // binding 重複・selector 衝突・layer 不整合・空 outputs は Domain 検証をそのまま通す
             _ = MappingProfileMaterializer.ToProfile(profile);
