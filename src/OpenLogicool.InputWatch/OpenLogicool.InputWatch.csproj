@@ -9,5 +9,8 @@
     <!-- 管理者権限で動くため、実行時の部品を環境変数で差し替えられない単体の実行ファイルにする。 -->
     <PublishAot>true</PublishAot>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- 出力へ git の情報（commit の番号）を入れない。入れると、監視のソースが同じでも commit のたびに実行ファイルの中身が変わり、
+         Botの修理を導入するたびにUACの確認が出る。版の欄だけでなく、デバッグ情報にも commit の番号が入る。 -->
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
   </PropertyGroup>
 </Project>
