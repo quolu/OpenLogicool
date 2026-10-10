@@ -1,0 +1,32 @@
+[
+  {
+    "InputAtMs": 52778,
+    "NextObservationAtMs": 53391,
+    "DelayMs": 613
+  },
+  {
+    "InputAtMs": 71204,
+    "NextObservationAtMs": 71979,
+    "DelayMs": 775
+  },
+  {
+    "InputAtMs": 81336,
+    "NextObservationAtMs": 82086,
+    "DelayMs": 750
+  },
+  {
+    "InputAtMs": 92328,
+    "NextObservationAtMs": 93031,
+    "DelayMs": 703
+  },
+  {
+    "InputAtMs": 103190,
+    "NextObservationAtMs": 103896,
+    "DelayMs": 706
+  },
+  {
+    "InputAtMs": 115493,
+    "NextObservationAtMs": 116253,
+    "DelayMs": 760
+  }
+]

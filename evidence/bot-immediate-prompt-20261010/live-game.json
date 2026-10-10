@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-immediate-prompt-20261010\\live-game.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "2ba6bea4008e483db2b9a420ce76fc003ff65659656d7fa60ee1f10d4718ec49",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}

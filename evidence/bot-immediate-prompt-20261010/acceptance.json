@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "821467a",
+  "requests": [
+    "通常Space後の進行判定が次の判定を待たせる非効率を解消",
+    "画面を押してくださいの表示で即Space",
+    "開発中もBotを継続"
+  ],
+  "implementation": {
+    "continueOnReviewResultComparison": "省略。入力前後の意味解析・1秒待機・結果比較を呼ばない",
+    "screenPrompt": "画面内全体の文字条件・即時入力・優先度60",
+    "sameDisplayRepeat": "送出済みの表示は一回だけ。消失600ms確認後に再表示で再開",
+    "userInputAndStopPriority": "維持",
+    "recoveryMonitoring": "独立処理を維持"
+  },
+  "tests": {
+    "changedBehavior": 2,
+    "related": 107,
+    "failed": 0,
+    "releaseBuildErrors": 0,
+    "releaseBuildWarnings": 0
+  },
+  "installation": {
+    "entry": "scripts/install-development-app.ps1",
+    "hostDllMatchesBuild": true,
+    "progressProfileMatchesSource": true,
+    "startup": "Nano通信エラーなしで再開成功",
+    "developmentBotStop": false,
+    "installationRestart": true
+  },
+  "live": {
+    "evidenceDirectory": "C:\\Users\\kite_\\AppData\\Local\\OpenLogicool\\bot-runs\\mabinogi-mobile\\20261010-115014-794-9f2be114",
+    "phase": "Running",
+    "observedGame": "Lv53・迷路の果てへ",
+    "normalTimedInput": "確認済み。通常Space後に1秒の比較待ちを通らず次のprogress-observationへ進む。",
+    "screenPromptInput": "実録画像のOCR・同じ回での即時選択は試験で確認済み。導入後は該当表示がなく実機送出は未確認。",
+    "npcDialogueSpace": "確認済み",
+    "comparisonEvents": 0,
+    "timedSpaceContinuationEvidence": "timed-space-continuation.json"
+  },
+  "updatedUtc": "2026-10-10T02:53:00.6073801+00:00"
+}

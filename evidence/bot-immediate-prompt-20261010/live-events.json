@@ -1,0 +1,242 @@
+[
+  {
+    "Event": "run-started",
+    "DurationMs": null,
+    "AutomaticRulesContinue": true,
+    "NotificationGraceMs": 60000
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 33743,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:タルラーああ来ましたかティルナノイへ行くには隠し扉を見つけなければなりません0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "RepeatIntervalMs": 0,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:105",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:50:48.6750776+09:00",
+      "CompletedUtc": "2026-10-10T11:50:48.680828+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 36406,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:ここマスダンジョンのどこかに他の世界へと繋がる扉があるはず0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "RepeatIntervalMs": 0,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:113",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:50:51.3403544+09:00",
+      "CompletedUtc": "2026-10-10T11:50:51.3441074+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 38944,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:ナオまずはダンジョン内の秘密の道を調べてみましよう一緒に探せばきっと見つかります0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "RepeatIntervalMs": 0,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:121",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:50:53.8779335+09:00",
+      "CompletedUtc": "2026-10-10T11:50:53.8820238+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 41318,
+    "RuleId": "npc-dialogue-cue",
+    "Signature": "npc-dialogue-cue:扉の向こうにはグラスギブネンがしつかり準備していきましようね0",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": false,
+    "RepeatIntervalMs": 0,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:129",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:50:56.2533682+09:00",
+      "CompletedUtc": "2026-10-10T11:50:56.2560406+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 52778,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:169",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:51:07.7127133+09:00",
+      "CompletedUtc": "2026-10-10T11:51:07.7155946+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "progress-input",
+    "AtMs": 58509,
+    "RuleId": "compass-space",
+    "Signature": "compass-space",
+    "Key": "Key:Space",
+    "Point": null,
+    "Immediate": true,
+    "RepeatIntervalMs": 0,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:190",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:51:13.4441334+09:00",
+      "CompletedUtc": "2026-10-10T11:51:13.4468786+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 71204,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:232",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:51:26.1386225+09:00",
+      "CompletedUtc": "2026-10-10T11:51:26.1413944+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 81336,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:257",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:51:36.2702675+09:00",
+      "CompletedUtc": "2026-10-10T11:51:36.2739871+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 92328,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:286",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:51:47.2626268+09:00",
+      "CompletedUtc": "2026-10-10T11:51:47.2653666+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 103190,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:322",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:51:58.1242892+09:00",
+      "CompletedUtc": "2026-10-10T11:51:58.1278541+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  },
+  {
+    "Event": "input",
+    "Decision": "Timed",
+    "AtMs": 115493,
+    "dispatch": {
+      "SchemaVersion": "0.3.0",
+      "Operation": "key-tap",
+      "Status": 0,
+      "ObservationId": "visual-key:window:bot:44864:progress:352",
+      "TargetWindowSourceId": "window:bot:44864:progress",
+      "Route": "NanoSerialHid",
+      "DispatchCount": 1,
+      "StartedUtc": "2026-10-10T11:52:10.4268707+09:00",
+      "CompletedUtc": "2026-10-10T11:52:10.4305233+09:00",
+      "CandidateId": null,
+      "TransportReceiptId": "keys:Key:Space:down-up",
+      "FailureReason": null
+    }
+  }
+]
