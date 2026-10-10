@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-dialogue-choice-20261010\\risita-after.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "4ce5aeee2d708d4c16196b876f437263623f70de156a1d8cb78aa33777b88e6f",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
