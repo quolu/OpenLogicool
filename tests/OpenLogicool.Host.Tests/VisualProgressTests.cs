@@ -573,9 +573,36 @@ public sealed class VisualProgressTests
         Assert.Equal(VisualProgressAction.Key, choice.Action);
         Assert.Equal("screen-prompt", choice.RuleId);
         Assert.Equal("Key:Space", choice.Key);
+        Assert.True(choice.Immediate);
+        var schedule = new VisualProgressSchedule(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
+        schedule.RecordInput(0, new(VisualProgressAction.Key, "previous", "前の会話", "Key:Space"));
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(1, choice, false, false, due: false).Action);
+        schedule.RecordInput(1, choice);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2, choice, false, false, due: true).Action);
         var defeat = ReadFrame(Path.Combine(fixture, "../../../evidence/mabinogi-key-assist-20261008/potion-monitor-defeat.png"));
         var defeatOcr = await new WindowsGameOcrRecognizer().RecognizeAsync(defeat);
         Assert.True(recovery.HasIncapacitatedDisplay(defeatOcr.Text));
+    }
+
+    [Fact]
+    public void 画面を押してくださいは表示位置や通常入力の期限を待たず停止表示と手動選択は優先する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var profile = VisualProgressProfile.Load(Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008/progress.json"));
+        var recognizer = new VisualProgressRecognizer(profile);
+        var ocr = Ocr([new("画 面 を 押 し て く だ さ い", 30, 30, 300, 30)]);
+        var choice = recognizer.Recognize(ocr, 1000, 600, new(0, 0, 1000, 600));
+        Assert.Equal("screen-prompt", choice.RuleId);
+        Assert.True(choice.Immediate);
+        var schedule = new VisualProgressSchedule(profile);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(0, choice, false, true, due: false).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, choice, true, true, due: false).Action);
+        Assert.Equal(VisualProgressAction.Review, recognizer.Recognize(Ocr([
+            new("画面を押してください", 30, 30, 300, 30), new("ボーナスを選択してください", 300, 150, 300, 30)]),
+            1000, 600, new(0, 0, 1000, 600)).Action);
+        Assert.NotEqual("screen-prompt", recognizer.Recognize(Ocr([new("画面の設定を選択してください", 30, 30, 300, 30)]),
+            1000, 600, new(0, 0, 1000, 600)).RuleId);
     }
 
     [Fact]

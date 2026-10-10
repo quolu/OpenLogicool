@@ -561,7 +561,9 @@ public static class VisualKeyAssistRuntime
                             Title = ForegroundAppTracker.GetForegroundWindowTitle()
                         });
                         var beforeObservation = Observation(frame);
-                        var beforeScene = decision == VisualKeyAssistDecision.Timed ? await Scene(frame, beforeObservation, token) : null;
+                        // 継続運転では通常Spaceの成否で操作を分岐しないため、結果比較を実行しない。
+                        var beforeScene = !continueRules && decision == VisualKeyAssistDecision.Timed
+                            ? await Scene(frame, beforeObservation, token) : null;
                         await inputGate.WaitAsync(token);
                         try
                         {

@@ -44,9 +44,9 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("送り印の色は回転画像にRGBの3成分で指定します。");
             if (rule.ImageStableRegions is not null && (rule.Image is null || rule.ImageRotates || rule.ImageStableRegions.Length == 0))
                 throw new InvalidDataException("固定部分の照合には画像と一つ以上の領域が必要です。");
-            if (rule.Immediate && (rule.Image is null || rule.When.Length != 0 || rule.Timed || rule.Key is null))
-                throw new InvalidDataException("即時入力には文字条件や時間待ちを持たない画像キー規則を指定します。");
-            if (rule.RepeatIntervalMs < 0 || rule.RepeatIntervalMs > 0 && !rule.Immediate)
+            if (rule.Immediate && (rule.Timed || rule.Key is null || rule.Image is not null && rule.When.Length != 0))
+                throw new InvalidDataException("即時入力には時間待ちのない画像または文字のキー規則を指定します。");
+            if (rule.RepeatIntervalMs < 0 || rule.RepeatIntervalMs > 0 && (!rule.Immediate || rule.Image is null))
                 throw new InvalidDataException("反復間隔は即時画像キー規則に正の時間で指定します。");
         }
         foreach (var bounds in value.Rules.SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }))
@@ -175,7 +175,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 : rule.Click is null && !rule.ClickImage ? VisualProgressAction.Key : VisualProgressAction.Click,
                 rule.Id, rule.Id + ":" + string.Join("|", rule.When.Select((condition, i) =>
                     string.IsNullOrWhiteSpace(condition.Text) ? texts[i] : Normalize(condition.Text))), rule.Key, point,
-                AllowWhileInhibited: rule.AllowWhileInhibited));
+                Immediate: rule.Immediate, AllowWhileInhibited: rule.AllowWhileInhibited));
         }
         var priority = candidates.Count == 0 ? 0 : candidates.Max(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority);
         var preferred = candidates.Where(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority == priority).ToArray();
@@ -188,7 +188,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
     }
 
     public VisualProgressChoice? RecognizeImmediateImage(CapturedFrame frame, FrameRect viewport) =>
-        RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.Immediate && rule.RepeatIntervalMs == 0));
+        RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.Immediate && rule.Image is not null && rule.RepeatIntervalMs == 0));
 
     public VisualProgressChoice? RecognizeRepeatingImage(CapturedFrame frame, FrameRect viewport,
         Func<VisualProgressRule, bool> isDue) =>
