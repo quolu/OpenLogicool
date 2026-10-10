@@ -1,0 +1,12 @@
+[
+  {
+    "InstanceId": "USB\\VID_1A86&PID_7523\\9&2704C166&0&1",
+    "FriendlyName": "USB-SERIAL CH340 (COM4)",
+    "Status": "OK"
+  },
+  {
+    "InstanceId": "USB\\VID_1B4F&PID_9206&MI_00\\A&3662A262&0&0000",
+    "FriendlyName": "USB シリアル デバイス (COM3)",
+    "Status": "OK"
+  }
+]

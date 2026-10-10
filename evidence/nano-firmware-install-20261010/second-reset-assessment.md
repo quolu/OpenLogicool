@@ -1,0 +1,11 @@
+# 2回目の操作回答後の確認
+
+2026-10-10 11:01 JST、利用者が修正版待機に対して操作実行を回答した。flash evidenceはなく、AVR書込みprocessもなく、待機表示のままだった。追加操作を止めるよう伝え、待機だけをCtrl-Cで停止した。
+
+COM3のruntime本体のLastArrivalは01:37のまま、同じ接続口のLeonardo履歴は9/26のままだった。Fableも独立に再取得して一致を確認した。今回の対象USB機器の新規arrivalは確認できず、PID選択修理を今回のreset成功とは扱わない。
+
+全量のPresent Portsを読むと、COM3 HID機器のほかにCOM4 USB-SERIAL CH340（1A86/7523）が接続中だった。親は利用者が触った『Nano』とCOM3の実物を同一視していたが、実物と接続先の対応を確認していなかった。CH340側のMCUがresetしてもUSB bridgeのarrivalが変わるとは限らず、USB履歴だけで利用者が触ったMCUのreset有無を断定しない。
+
+Fableの追加反証は、同じ接続口のLeonardoをbootloaderとする根拠を強い推定とし、単発resetでも書込みモードへ入るLeonardoと2回操作のSparkFunを区別した。親の8件のselector試験と同じ接続口の制約は妥当とされた。実機のbootloaderの確定は初回のlive捕捉まで保留する。
+
+K-SAVDGFは会話の実行回答を受領して取り下げた。新しい写真依頼は一般的な機種確認の反復ではなく、現在存在する2台のUSB機器と操作した実物を対応づけるためである。実物を確認するまで追加reset・別機器へのflash・serial接続は行わない。Botは停止中、firmware導入は未完了。

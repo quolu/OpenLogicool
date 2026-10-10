@@ -131,8 +131,8 @@
     "objective": "Nanoの通信停止を修理してBotを動かす",
     "sourceCommit": "9f53d60",
     "rootCauseReproduced": "旧firmwareで全解放後200ms通信を空けるとSequenceViolation。修正版とnative試験・AVR build済み",
-    "firmwareInstallation": "検出処理のPID限定欠陥を6199f6eで修理・push、8件試験成功。修正版の正規WaitForResetを同じAiterm PTYで起動し、10:59:41作成のpwsh process36780と新しいbuild完了・待機表示を11:00頃に確認。K-SAVDGFで同じ接点操作を再依頼。まだupload evidenceなし。",
-    "manualDecisionId": "K-SAVDGF",
+    "firmwareInstallation": "修正版待機でも利用者の2回目操作後に新arrival・uploadを確認できず、待機をCtrl-Cで停止。COM3 HIDFGに加えてCH340 COM4が接続中と判明。ソフト上の対象と利用者が触った実物の対応は未確認。追加resetは依頼せず、今回は2台の対応を確認する写真を待つ。",
+    "manualDecisionId": "K-JHXMCC",
     "waitingShellSessionId": null,
     "expectedDeviceInstanceId": "USB\\VID_1B4F&PID_9206\\HIDFG",
     "evidenceDirectory": "evidence/nano-idle-lease-20261009",
@@ -158,7 +158,7 @@
       "sourceCommit": "5d3445786b5e735ea969f29b881e6d222ead40c3",
       "hex": "evidence/nano-firmware-install-20261010/firmware-1.1.4.hex",
       "sha256": "b50c316a6776dd46692c8ec8575105c514d7cfbbff2607140beab0d9f11e3751",
-      "status": "waiting-with-repaired-bootloader-selector",
+      "status": "built-awaiting-physical-device-binding",
       "uploadStarted": false
     },
     "advisor": {
@@ -168,21 +168,22 @@
       "sessionId": "nano-firmware-fable",
       "parentThreadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
       "deliveryId": "c2ccd339-89f5-463e-b417-d110d04a9faa",
-      "status": "running",
+      "status": "done",
       "completion": "Aiterm managed_completionによる自動配送。ポーリングしない。",
       "mission": "親の自動reset阻害の判断を反証し、既存記録と旧firmware・Arduino coreを照合して、利用者の写真や未理解の操作なしに正規更新できるか助言する。",
       "authority": "調査だけ。ファイル変更・Bot操作・serial接続・device操作・flash禁止をpromptへ明記。",
       "readOnlyEnforcement": "Claude入口ではツールによる強制は非対応。promptによる範囲指定。",
-      "replyPending": true,
-      "acceptedConclusion": "親が固定CDC.cpp・Caterina.c・旧版導入実測を照合。旧版の給餌が1200-baud watchdog resetを阻害。現行正規入口では本体のdouble-resetが必要。1.1.4導入後の標準自動upload再実測を受入に追加。"
+      "replyPending": false,
+      "acceptedConclusion": "親が固定CDC.cpp・Caterina.c・旧版導入実測を照合。旧版の給餌が1200-baud watchdog resetを阻害。現行正規入口では本体のdouble-resetが必要。1.1.4導入後の標準自動upload再実測を受入に追加。",
+      "followupConclusion": "Leonardo履歴は同じ口のbootloaderの強い推定で確認済みではない。PID固定は欠陥だが、今回の対象devnodeに新arrivalはない。CH340側MCUのreset有無はUSB devnodeだけでは判定できず、実物対応を確認する。"
     },
     "waitingAitermSessionId": "nano-firmware-upload",
-    "waitingProcessId": 36780,
+    "waitingProcessId": null,
     "waitingObservedAt": "2026-10-10T11:00:05+09:00"
   },
   "continuation": {
     "threadId": "01a12189-3064-70c3-85fc-ea19c17fea2e",
-    "updatedUtc": "2026-10-10T02:00:53.7854552+00:00",
+    "updatedUtc": "2026-10-10T02:05:21.2444790+00:00",
     "assistanceGeneration": 5,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -195,11 +196,11 @@
       "e4367d3f-c5d1-4359-8f82-3ae8af00b24f"
     ],
     "pendingDecisionIds": [
-      "K-SAVDGF"
+      "K-JHXMCC"
     ],
     "botPhase": "Stopped",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "修正版の待機を起動済み。K-SAVDGFの操作回答後、Aiterm nano-firmware-uploadの最新画面とflash evidenceを確認し、標準自動更新・idle診断・Bot再開を進める。",
+    "nextAction": "追加操作を止め、K-JHXMCCで操作した実物の写真を待つ。COM3 HID機器とCOM4 CH340機器の実物対応を確認してから書込み対象を決める。",
     "firmware": "1.1.3のまま。手動リセット依頼は取り下げ済みで再依頼しない。",
     "unfinishedRepair": "送受信工程・経過時間・読取済みbyte・直前bufferの診断を導入済み。HELLO無応答の根本原因は未解明で再現待ち。",
     "captureRepair": {
