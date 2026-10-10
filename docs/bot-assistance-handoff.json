@@ -48,8 +48,8 @@
         "サキュバス討伐とクエスト完了時の表示名"
       ],
       "handoffAction": "新しい会話でcall_openし、旧通話へ移動先を知らせ、新通話へ返答待ちを引き継いで旧通話を閉じる。返信のポーリングは行わない。Claudeの会話では返信が自動で届かないため、返答を待つ依頼を出した時だけcall_pollで読む",
-      "replyThreadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74",
-      "note": "この会話ではCall Bridgeの接続が切れている（CONNECTION_CLOSED）。ルピーへの連絡が要る時は接続を確かめる。"
+      "replyThreadId": "8c733340-ff46-419b-bbe8-ed61e54565ab",
+      "note": "後継の会話ではCall Bridgeへ接続できている。通話312a385cをそのまま使い、返答を待つ依頼を出した時だけcall_pollで読む。ルピーへの移動の連絡は、返答待ちが無いため送っていない。"
     }
   ],
   "currentAssistance": {
@@ -92,10 +92,15 @@
           "16:43 52/100",
           "17:22 54",
           "18:32 76/100",
-          "18:40ごろ 46/100"
+          "18:40ごろ 46/100",
+          "18:45 66（所持品の上端の表示）",
+          "18:48 97/100（利用者が手で箱を開けた後）",
+          "18:56 87/100",
+          "19:21 88/100",
+          "19:22 98/100（Botの補充の試験で10個開けた後）"
         ],
-        "guess": "18:33のダンジョン入場の前後で76から46へ30減った。入場で消費した見込み（入場の瞬間の前後を並べて確かめてはいない）。時間で増える見込み。",
-        "botBehavior": "Botはこの数字を読んでいない。入場の確認が出たらそのまま進む。"
+        "measured": "18:48の入場1回の前後で97から87へ減った。19:21ごろに87から88へ増えた。",
+        "botBehavior": "Botは左上の「現在値/100」を読み、30以下になったら所持品の小さなシルバーコインボックス（1個を獲得）を70個開けて補充する。規則はprogress.jsonのcoin-refill-*。受入記録は evidence/bot-silver-coin-refill-20261010/acceptance.json。本番設定（30以下・70個）での実行は未確認。"
       }
     }
   },
@@ -198,9 +203,9 @@
     "residualUnknown": "過去のHELLO無応答を含む全通信停止の根本原因は特定済みと扱わない。今回の実機hard kill再測定は未実施。"
   },
   "continuation": {
-    "threadId": "139bd3b5-97c0-45ee-9738-3ea86a598d74",
-    "updatedUtc": "2026-10-10T09:42:09.074061+00:00",
-    "assistanceGeneration": 7,
+    "threadId": "8c733340-ff46-419b-bbe8-ed61e54565ab",
+    "updatedUtc": "2026-10-10T10:30:00+00:00",
+    "assistanceGeneration": 8,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
       "842bfff3-1588-44f9-88ab-8b0fe08c2610",
@@ -217,7 +222,7 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "次の「届いていません」の知らせで、回答の読み取りと送り直しを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。会話の選択で1分以上止まった時に通知が出るかを確かめる。",
+    "nextAction": "コインが30以下になった時に、本番設定の補充（70個）が最後まで進むかを確かめる。次の「届いていません」の知らせで、回答の読み取りと送り直しを確かめる。次の戦利品の画面で、1回のSpaceで閉じるかを確かめる。会話の選択で1分以上止まった時に通知が出るかを確かめる。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -401,7 +406,21 @@
       "execution": "Botを止めてgame-index click-pointで1回クリックし、会話が進んだ画面を確認してBotを再開した。",
       "evidence": "evidence/bot-dialogue-choice-20261010/click.json"
     },
-    "botRun": "bot-runs/mabinogi-mobile/20261010-171608-438-54ce2106",
+    "botRun": "bot-runs/mabinogi-mobile/20261010-192308-661-7cbae397",
+    "silverCoinRefill": {
+      "status": "installed-test-setting-live-verified",
+      "ownerRule": "シルバーコインは30以下になったら、70個使って補充する。",
+      "live": "数量を10にした試験設定で一巡を実機確認（88→98/100）。本番設定での実行は未確認。",
+      "evidence": "evidence/bot-silver-coin-refill-20261010/acceptance.json"
+    },
+    "throughlineTerminalWindows": {
+      "callSessionId": "4f08513c-77ae-443a-9d74-93dae67f8040",
+      "member": "リヴァリン",
+      "status": "Throughline 0.16.17で修理・導入済み（リヴァリンの報告 seq3）。後継の番が終わった時（Stopのhookから起きた回）の窓は未確認。",
+      "pendingReply": null
+    },
+    "idleAtStatue": "18:53から19:13まで、Botは像の前でコンパスのSpaceを1回送った後に何も送らず、通知も出なかった。原因は未調査。",
+    "coreSessionAddress": "本体改良の会話の宛先は「core-ui-improvements｜OpenLogicool本体の改良（自動引き継ぎ）」。こちらの宛先は「OpenLogicool｜マビノギ BOT 開発（自動引き継ぎ） [cce395]」と伝えてある。先方は許可の問いで止まっていて（リヴァリンの報告）、連絡が読まれた確認は無い。",
     "narrationCue": {
       "sourceCommit": "3f3bdf2",
       "status": "installed-and-live-verified",

@@ -8,7 +8,9 @@ namespace OpenLogicool.Host;
 
 public sealed record VisualProgressText(string Text, double[] Bounds, double[][]? ChoiceBounds = null,
     bool AskUserImmediately = false, VisualProgressText? Confirm = null, string? ConfirmKey = null,
-    double[]? ChoiceBand = null, VisualProgressText? Recommended = null);
+    double[]? ChoiceBand = null, VisualProgressText? Recommended = null, bool Exact = false);
+/// <summary>画面の数値の条件。OutOf を指定した表示は「現在値/上限」の形で、上限まで読めた時だけ現在値を使う。</summary>
+public sealed record VisualProgressNumber(double[] Bounds, int? AtMost = null, int? Exactly = null, int? OutOf = null);
 public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     string? Key = null, VisualProgressText? Click = null, bool Timed = false, int Priority = 0,
     string? Image = null, double[]? ImageBounds = null, int ImageClientWidth = 0, bool ImageSilhouette = false,
@@ -16,7 +18,8 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     int MinimumVisibleMs = 600, bool ClickImage = false, double[]? FilledQuantitiesBounds = null,
     double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false,
     int RepeatIntervalMs = 0, string? AfterClickKey = null, double[]? ClickImagePoint = null, int ImageSearchStep = 1,
-    bool ImageClipsAtBottom = false, bool RepeatAfterChange = false);
+    bool ImageClipsAtBottom = false, bool RepeatAfterChange = false, VisualProgressNumber? Number = null,
+    string? Stage = null, string? NextStage = null, string[]? ThenKeys = null);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
     VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000,
     double[][]? WhiteTextBounds = null)
@@ -31,7 +34,7 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             throw new InvalidDataException("進行設定の形式が不正です。");
         foreach (var rule in value.Rules)
         {
-            if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null || (rule.When.Length == 0 && rule.Image is null)
+            if (string.IsNullOrWhiteSpace(rule.Id) || rule.When is null || (rule.When.Length == 0 && rule.Image is null && rule.Number is null)
                 || (rule.Key is null ? 0 : 1) + (rule.Click is null ? 0 : 1) + (rule.WaitForChange ? 1 : 0) + (rule.ClickImage ? 1 : 0) != 1)
                 throw new InvalidDataException("進行規則には条件と、キー・クリック・待機のいずれか一つが必要です。");
             if (rule.MinimumVisibleMs < 0)
@@ -68,6 +71,22 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("即時入力には時間待ちのない画像または文字のキー規則を指定します。");
             if (rule.RepeatIntervalMs < 0 || rule.RepeatIntervalMs > 0 && (!rule.Immediate || rule.Image is null))
                 throw new InvalidDataException("反復間隔は即時画像キー規則に正の時間で指定します。");
+            if (rule.Number is { } number && ((number.AtMost is null) == (number.Exactly is null) || number.OutOf <= 0
+                || rule.Immediate || rule.RepeatIntervalMs > 0))
+                throw new InvalidDataException("数値の条件は、上限か一致のどちらか一つを、即時・反復でない規則に指定します。");
+            if (rule.Stage == "" || rule.NextStage == "" || rule.NextStage is not null && rule.WaitForChange
+                || rule.Stage is not null && (rule.Immediate || rule.RepeatIntervalMs > 0))
+                throw new InvalidDataException("段階は、即時・反復でない規則に名前で指定します。次の段階は操作を送る規則に指定します。");
+            if (rule.Number is not null && rule.When.Length == 0 && rule.Key is null && !rule.ClickImage)
+                throw new InvalidDataException("文字の条件を持たない数値の規則には、キーまたは画像のクリックを指定します。");
+            if (rule.When.Any(text => text.Exact && string.IsNullOrWhiteSpace(text.Text)))
+                throw new InvalidDataException("完全一致の条件には文字を指定します。");
+            if (rule.ThenKeys is not null)
+            {
+                if (rule.ThenKeys.Length == 0 || rule.WaitForChange || rule.Immediate || rule.RepeatAfterChange)
+                    throw new InvalidDataException("続けて送るキーは、即時・反復でないキーまたはクリックの規則に一つ以上指定します。");
+                foreach (var key in rule.ThenKeys) OpenLogicool.Input.OutputTokens.Parse(key);
+            }
         }
         foreach (var bounds in value.Rules.SelectMany(rule => rule.When.Concat(rule.Click is null ? [] : new[] { rule.Click }))
             .Concat(value.ReviewWhen).Concat(value.ReviewWhen.Where(text => text.Confirm is not null).Select(text => text.Confirm!))
@@ -78,6 +97,7 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             .Concat(value.Rules.Where(rule => rule.Image is not null).Select(rule => rule.ImageBounds!))
             .Concat(value.Rules.Where(rule => rule.FilledQuantitiesBounds is not null).Select(rule => rule.FilledQuantitiesBounds!))
             .Concat(value.Rules.Where(rule => rule.SingleTextRunBounds is not null).Select(rule => rule.SingleTextRunBounds!))
+            .Concat(value.Rules.Where(rule => rule.Number is not null).Select(rule => rule.Number!.Bounds))
             .Concat(value.Rules.SelectMany(rule => rule.ImageStableRegions ?? []))
             .Concat(value.WhiteTextBounds ?? []))
             if (bounds is not { Length: 4 } || bounds.Any(x => !double.IsFinite(x) || x < 0 || x > 1)
@@ -101,7 +121,9 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
         // Spaceを送る規則は、停止表示より優先すると明示したものだけを停止表示中に評価する。
         return value with { Rules = value.Rules.Select(rule => (rule.Image is null ? rule
             : rule with { Image = Path.GetFullPath(rule.Image, Path.GetDirectoryName(Path.GetFullPath(path))!) })
-            with { AllowWhileInhibited = rule.AllowWhileInhibited || !PressesSpace(rule.Key) && !PressesSpace(rule.AfterClickKey) }).ToArray() };
+            // 段階を始める規則と段階の中の規則は、続きでSpaceを押すため、明示した時だけ停止表示中に評価する。
+            with { AllowWhileInhibited = rule.AllowWhileInhibited || !PressesSpace(rule.Key) && !PressesSpace(rule.AfterClickKey)
+                && rule.ThenKeys?.Any(PressesSpace) != true && rule.Stage is null && rule.NextStage is null }).ToArray() };
     }
 
     private static bool PressesSpace(string? key) => key?.Contains("Key:Space", StringComparison.OrdinalIgnoreCase) == true;
@@ -113,7 +135,8 @@ public sealed record VisualProgressChoice(VisualProgressAction Action, string? R
     string? Signature = null, string? Key = null, double[]? Point = null, string? Detail = null,
     VisualProgressOption[]? Options = null, bool Immediate = false, bool AllowWhileInhibited = false,
     int RepeatIntervalMs = 0, string? AfterClickKey = null, bool AskUserImmediately = false,
-    VisualProgressText? ReviewSource = null, double[][]? OptionPoints = null);
+    VisualProgressText? ReviewSource = null, double[][]? OptionPoints = null, string? NextStage = null,
+    string[]? ThenKeys = null);
 
 /// <summary>ゲーム固有の操作条件は設定に置き、文字・配置・画像を照合する。</summary>
 public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
@@ -146,6 +169,23 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 .Where(word => !Inside(word, area, viewport))
                 .Concat(quantities.Words.Select(word => word with { X = word.X + x, Y = word.Y + y })).ToArray() };
         }
+        foreach (var rule in profile.Rules.Where(rule => rule.Number is not null && rule.When.Length > 0))
+        {
+            // 小さい数字と1桁の数字は通常の読み取りで落ちる。条件の画面の時だけ、数値の領域を拡大して読み直す。
+            if (!rule.When.All(condition => Matches(Normalize(string.Concat(ocr.Words
+                .Where(word => Inside(word, condition.Bounds, viewport)).Select(word => word.Text))), condition))) continue;
+            var area = rule.Number!.Bounds;
+            var words = ocr.Words.Where(word => !Inside(word, area, viewport));
+            if (await ReadNumberAsync(frame, viewport, rule.Number, token) is { } reading)
+            {
+                var text = rule.Number.OutOf is { } outOf ? FormattableString.Invariant($"{reading}/{outOf}")
+                    : reading.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                words = words.Append(new(text, viewport.X + area[0] * viewport.Width, viewport.Y + area[1] * viewport.Height,
+                    area[2] * viewport.Width, area[3] * viewport.Height));
+                ocr = ocr with { Text = ocr.Text + " " + text };
+            }
+            ocr = ocr with { Words = words.ToArray() };
+        }
         foreach (var area in profile.WhiteTextBounds ?? [])
         {
             // 明るい背景に重なった白文字は通常の読み取りで落ちる。純白の画素だけを残した画像を読み、元の読み取りへ足す。
@@ -171,10 +211,112 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         return ocr;
     }
 
-    public VisualProgressChoice Recognize(WindowsGameOcrResult ocr, int width, int height, FrameRect viewport,
-        CapturedFrame? frame = null, bool inhibited = false)
+    /// <summary>
+    /// 数値の領域を、拡大率を変えて読む。小さい数字は拡大率によって読めない回があるため、
+    /// 読めた回の値がすべて一致した時だけ、その値を返す。
+    /// </summary>
+    private static async ValueTask<int?> ReadNumberAsync(CapturedFrame frame, FrameRect viewport, VisualProgressNumber number,
+        CancellationToken token)
     {
-        if (frame is not null && RecognizeImmediateImage(frame, viewport, inhibited) is { } immediate) return immediate;
+        int? value = null;
+        foreach (var zoom in new[] { 2, 3, 4 })
+        {
+            var read = await ReadAreaAsync(frame, viewport, number.Bounds, zoom, token);
+            if (ReadNumber(string.Concat(read.Words.OrderBy(word => word.X).Select(word => word.Text)), number) is not { } reading) continue;
+            if (value is not null && value != reading) return null;
+            value = reading;
+        }
+        return value;
+    }
+
+    /// <summary>領域を切り出し、拡大して読む。</summary>
+    private static async ValueTask<WindowsGameOcrResult> ReadAreaAsync(CapturedFrame frame, FrameRect viewport, double[] area,
+        int zoom, CancellationToken token)
+    {
+        var x = (int)(viewport.X + area[0] * viewport.Width);
+        var y = (int)(viewport.Y + area[1] * viewport.Height);
+        var width = (int)(area[2] * viewport.Width);
+        var height = (int)(area[3] * viewport.Height);
+        var pixels = frame.Pixels ?? throw new InvalidOperationException("数値の読み取りには画像が必要です。");
+        var bytes = new byte[width * height * 4];
+        for (var row = 0; row < height; row++)
+            pixels.Bgra8.Span.Slice((y + row) * pixels.Stride + x * 4, width * 4).CopyTo(bytes.AsSpan(row * width * 4));
+        var cropped = frame with { Width = width, Height = height, Pixels = new FramePixels(bytes, width * 4), Crop = null };
+        return await new WindowsGameOcrRecognizer(zoom).RecognizeAsync(cropped, token);
+    }
+
+    /// <summary>
+    /// 領域の文字から数値を読む。数字が一つだけの時にその値を返す。上限つきの表示は「現在値/上限」の形で、
+    /// 上限が設定と一致した時だけ現在値を返す。読み違いで操作を始めないよう、それ以外は読めなかったものとする。
+    /// </summary>
+    internal static int? ReadNumber(string text, VisualProgressNumber number)
+    {
+        var normalized = string.Concat(text.Normalize(NormalizationForm.FormKC).Where(c => c != ',' && !char.IsWhiteSpace(c)));
+        var digits = Regex.Matches(normalized, @"\d+");
+        if (number.OutOf is not { } outOf)
+            return digits.Count == 1 && int.TryParse(digits[0].Value, out var only) ? only : null;
+        var pair = Regex.Match(normalized, @"(?<!\d)(\d+)/(\d+)(?!\d)");
+        return digits.Count == 2 && pair.Success && int.TryParse(pair.Groups[2].Value, out var limit) && limit == outOf
+            && int.TryParse(pair.Groups[1].Value, out var value) && value <= outOf ? value : null;
+    }
+
+    private static bool Satisfies(int reading, VisualProgressNumber number) =>
+        number.AtMost is { } most ? reading <= most : reading == number.Exactly;
+
+    private VisualKeyTemplateMatch FindImage(VisualProgressRule rule, CapturedFrame frame, FrameRect viewport)
+    {
+        var area = rule.ImageBounds!;
+        double[] mapped = [(viewport.X + area[0] * viewport.Width) / frame.Width,
+            (viewport.Y + area[1] * viewport.Height) / frame.Height,
+            area[2] * viewport.Width / frame.Width, area[3] * viewport.Height / frame.Height];
+        return templates[rule.Id].FindAtWindowScale(frame, mapped, viewport.Width / rule.ImageClientWidth);
+    }
+
+    /// <summary>
+    /// 文字の条件を持たない数値の規則を読む。画面の種類でなく数値で始める操作なので、文字を読む前に評価し、
+    /// ほかの規則との優先は Prefer で決める。
+    /// 数値を読めて条件を外れていた規則は unmet へ知らせ、mayStart が許さない規則は選ばない。
+    /// </summary>
+    public async ValueTask<VisualProgressChoice?> RecognizeNumberRuleAsync(CapturedFrame frame, FrameRect viewport,
+        string? stage, Func<VisualProgressRule, bool> mayStart, Action<VisualProgressRule> unmet, bool inhibited = false,
+        CancellationToken token = default)
+    {
+        foreach (var rule in profile.Rules.Where(rule => rule.Number is not null && rule.When.Length == 0 && rule.Stage == stage
+            && (!inhibited || rule.AllowWhileInhibited)).OrderByDescending(rule => rule.Priority))
+        {
+            if (await ReadNumberAsync(frame, viewport, rule.Number!, token) is not { } reading) continue;
+            if (!Satisfies(reading, rule.Number!)) { unmet(rule); continue; }
+            if (!mayStart(rule)) continue;
+            double[]? point = null;
+            if (rule.Image is not null)
+            {
+                var match = FindImage(rule, frame, viewport);
+                if (!match.Matches) continue;
+                if (rule.ClickImage) point = [match.Bounds[0] + match.Bounds[2] * (rule.ClickImagePoint?[0] ?? 0.5),
+                    match.Bounds[1] + match.Bounds[3] * (rule.ClickImagePoint?[1] ?? 0.5)];
+            }
+            return new(rule.ClickImage ? VisualProgressAction.Click : VisualProgressAction.Key, rule.Id,
+                FormattableString.Invariant($"{rule.Id}:{reading}"), rule.Key, point,
+                AllowWhileInhibited: rule.AllowWhileInhibited, NextStage: rule.NextStage, ThenKeys: rule.ThenKeys);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 数値で始める規則は、ほかに進める表示が無い時と、ほかの規則より優先度が高い時に選ぶ。
+    /// 利用者や担当の確認が要る表示には譲る。
+    /// </summary>
+    public VisualProgressChoice Prefer(VisualProgressChoice? numbered, VisualProgressChoice recognized)
+    {
+        int Priority(string id) => profile.Rules.Single(rule => rule.Id == id).Priority;
+        return numbered is not null && (recognized.Action == VisualProgressAction.Normal
+            || recognized.RuleId is not null && Priority(numbered.RuleId!) > Priority(recognized.RuleId)) ? numbered : recognized;
+    }
+
+    public VisualProgressChoice Recognize(WindowsGameOcrResult ocr, int width, int height, FrameRect viewport,
+        CapturedFrame? frame = null, bool inhibited = false, string? stage = null)
+    {
+        if (frame is not null && RecognizeImmediateImage(frame, viewport, inhibited, stage) is { } immediate) return immediate;
         string Read(VisualProgressText area) => Normalize(string.Concat(ocr.Words
             .Where(word => Inside(word, area.Bounds, viewport))
             .Select(word => word.Text)));
@@ -194,7 +336,9 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     OptionPoints: choices.Select(choice => choice.Point).ToArray());
             }
         var candidates = new List<VisualProgressChoice>();
-        foreach (var rule in profile.Rules.Where(rule => rule.RepeatIntervalMs == 0))
+        // 段階の中では、その段階の規則だけを評価する。文字の条件を持たない数値の規則は RecognizeNumberRuleAsync が読む。
+        foreach (var rule in profile.Rules.Where(rule => rule.RepeatIntervalMs == 0 && rule.Stage == stage
+            && (rule.Number is null || rule.When.Length > 0)))
         {
             if (inhibited && !rule.AllowWhileInhibited) continue;
             double[]? point = null;
@@ -214,7 +358,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     match.Bounds[1] + match.Bounds[3] * (rule.ClickImagePoint?[1] ?? 0.5)];
             }
             var texts = rule.When.Select(Read).ToArray();
-            if (!rule.When.Select((condition, i) => Matches(texts[i], condition.Text)).All(x => x)) continue;
+            if (!rule.When.Select((condition, i) => Matches(texts[i], condition)).All(x => x)) continue;
             if (rule.SingleTextRunBounds is { } labelBounds
                 && !HasSingleTextRun(ocr, labelBounds, viewport, width, height)) continue;
             if (rule.FilledQuantitiesBounds is { } quantityBounds)
@@ -222,6 +366,8 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 var quantities = string.Join(" ", ocr.Words.Where(word => Inside(word, quantityBounds, viewport)).Select(word => word.Text));
                 if (!QuantitiesFilled(quantities)) continue;
             }
+            if (rule.Number is { } number && !(ReadNumber(string.Concat(ocr.Words.Where(word => Inside(word, number.Bounds, viewport))
+                .OrderBy(word => word.X).Select(word => word.Text)), number) is { } reading && Satisfies(reading, number))) continue;
             if (rule.Click is not null)
             {
                 var spans = WindowsGameOcrSpanBuilder.Build(ocr, width, height)
@@ -249,7 +395,8 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                     // 指し示す先が別の場所へ移ったら、同じ操作の結果待ちではなく次の操作として扱う。
                     + (rule.ClickImagePoint is null ? "" : FormattableString.Invariant(
                         $"@{Math.Round(point![0] * 20) / 20:0.00},{Math.Round(point[1] * 20) / 20:0.00}")), rule.Key, point,
-                Immediate: rule.Immediate, AllowWhileInhibited: rule.AllowWhileInhibited, AfterClickKey: rule.AfterClickKey));
+                Immediate: rule.Immediate, AllowWhileInhibited: rule.AllowWhileInhibited, AfterClickKey: rule.AfterClickKey,
+                NextStage: rule.NextStage, ThenKeys: rule.ThenKeys));
         }
         var priority = candidates.Count == 0 ? 0 : candidates.Max(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority);
         var preferred = candidates.Where(c => profile.Rules.Single(r => r.Id == c.RuleId).Priority == priority).ToArray();
@@ -324,13 +471,15 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         }).Where(choice => choice.label.Length >= 2).ToArray();
     }
 
-    public VisualProgressChoice? RecognizeImmediateImage(CapturedFrame frame, FrameRect viewport, bool inhibited = false) =>
-        RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.Immediate && rule.Image is not null && rule.RepeatIntervalMs == 0
+    // 即時・反復の画像規則は段階を持たない。段階の中では評価しない。
+    public VisualProgressChoice? RecognizeImmediateImage(CapturedFrame frame, FrameRect viewport, bool inhibited = false,
+        string? stage = null) => stage is not null ? null
+        : RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.Immediate && rule.Image is not null && rule.RepeatIntervalMs == 0
             && (!inhibited || rule.AllowWhileInhibited)));
 
     public VisualProgressChoice? RecognizeRepeatingImage(CapturedFrame frame, FrameRect viewport,
-        Func<VisualProgressRule, bool> isDue) =>
-        RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.RepeatIntervalMs > 0 && isDue(rule)));
+        Func<VisualProgressRule, bool> isDue, string? stage = null) => stage is not null ? null
+        : RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.RepeatIntervalMs > 0 && isDue(rule)));
 
     private VisualProgressChoice? RecognizeImageKey(CapturedFrame frame, FrameRect viewport, IEnumerable<VisualProgressRule> rules)
     {
@@ -382,6 +531,9 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
         return count == 1;
     }
 
+    private static bool Matches(string observed, VisualProgressText condition) => condition.Exact
+        ? observed.Contains(Normalize(condition.Text), StringComparison.Ordinal) : Matches(observed, condition.Text);
+
     internal static bool Matches(string observed, string expected)
     {
         expected = Normalize(expected);
@@ -423,6 +575,18 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     private long? immediateMissingAt;
     private bool wasInhibited;
     private readonly Dictionary<string, long> repeatedAt = [];
+    private readonly HashSet<string> started = [];
+    private long? stageHudAt;
+    // 段階の途中で通常の画面がこの時間続いたら、段階を終える。画面を開くキーを送ってから切り替わるまでの間は終えない。
+    private const int StageEndMs = 3000;
+
+    /// <summary>進行中の段階。段階の中では、その段階の規則だけを評価する。</summary>
+    public string? Stage { get; private set; }
+
+    /// <summary>段階を始めた数値の規則は、数値が条件を外れたのを見るまで、もう一度は始めない。</summary>
+    public bool MayStart(VisualProgressRule rule) => rule.NextStage is null || !started.Contains(rule.Id);
+
+    public void ObserveUnmet(VisualProgressRule rule) => started.Remove(rule.Id);
     // 同じ待機画面とみなす読みの類似度の境。利用者の指定で0.5とする。
     // 実測: 同じ会話の選択画面を続けて読んだ読みどうしは0.61以上、別の会話の画面の読みとは0.12以下。
     private const double SameWaitSimilarity = 0.5;
@@ -433,6 +597,12 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
     public VisualProgressChoice Decide(long now, VisualProgressChoice candidate, bool inhibited,
         bool hudVisible, bool due, bool sceneChanged = false)
     {
+        if (Stage is not null && candidate.Action == VisualProgressAction.Normal && hudVisible)
+        {
+            stageHudAt ??= now;
+            if (now - stageHudAt >= StageEndMs) { Stage = null; stageHudAt = null; }
+        }
+        else stageHudAt = null;
         if (inhibited && !candidate.AllowWhileInhibited)
         {
             pending = null; stableSignature = null; waitingSignature = null;
@@ -507,6 +677,12 @@ public sealed class VisualProgressSchedule(VisualProgressProfile profile)
 
     public void RecordInput(long now, VisualProgressChoice choice)
     {
+        if (choice.NextStage is not null)
+        {
+            if (Stage is null) started.Add(choice.RuleId!);
+            Stage = choice.NextStage;
+            stageHudAt = null;
+        }
         if (choice.RepeatIntervalMs > 0) { repeatedAt[choice.RuleId!] = now; return; }
         if (choice.Immediate) { consumedImmediate = choice.Signature; pending = null; ResetUnresolved(); return; }
         pending = choice; pendingChanged = false; unknownAt = now; unresolvedObservations = 0;
