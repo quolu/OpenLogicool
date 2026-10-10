@@ -1,0 +1,11 @@
+# 基板写真の確認
+
+2026-10-10、利用者が操作した基板の写真を受領した。写真は会話の添付として保持し、リポジトリへ複製しない。
+
+写真でATmega32U4、16MHzの発振子、Pro Micro表記、USB直結の基板を確認した。写真の上側にRAW・GND・RST・VCCと並ぶ穴があり、対象は中央のGNDとRST。ピンヘッダは未実装で、接触先は穴の金属の縁になる。COM4のCH340搭載機器の写真とは区別できる。COM3のruntimeとの最終対応は、reset時のUSB捕捉で確認する。
+
+正規flash待機へUSB通常動作の消失・復帰と同じ接続口の書込み機器検出の表示を追加した。PowerShell構文確認成功。selectorとfirmwareは変更していないため既存green testは再実行していない。
+
+旧待機processがないことと対象USB本体のStatus OKを確認し、新しいAiterm PTY `nano-firmware-verified-board`で正規WaitForResetを開始した。build完了と待機表示を確認済み。写真のGND/RSTの金属縁へ同時に1秒ほど当てて離し、0.75秒以内にもう一度同時に当てて離す操作を依頼する。最後は離した状態にし、接触位置が不明なら追加操作をしない。
+
+まだflash完了とは扱わない。回答後はPTYの実結果を確認し、READY1.1.4・標準自動upload・idle診断・Bot再開の受入へ進む。
