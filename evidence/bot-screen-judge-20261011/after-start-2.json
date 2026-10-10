@@ -1,0 +1,16 @@
+{
+  "Mode": "capture",
+  "ProductHostEntry": true,
+  "Image": "C:\\Users\\kite_\\Developer\\OpenLogicool\\evidence\\bot-screen-judge-20261011\\after-start-2.png",
+  "Width": 1713,
+  "Height": 1117,
+  "ClientBounds": {
+    "X": 1,
+    "Y": 31,
+    "Width": 1711,
+    "Height": 1085
+  },
+  "Sha256": "1a9569765f3517234d65429ec5ad4d0f15b51ef3fa6c9ee083f97786c525c47a",
+  "FreshnessMs": 0,
+  "AiCallCount": 0
+}
