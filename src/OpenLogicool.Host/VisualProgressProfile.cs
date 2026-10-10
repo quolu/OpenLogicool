@@ -16,7 +16,8 @@ public sealed record VisualProgressRule(string Id, VisualProgressText[] When,
     double[]? SingleTextRunBounds = null, int[]? ImageForegroundRgb = null, bool AllowWhileInhibited = false,
     int RepeatIntervalMs = 0, string? AfterClickKey = null, double[]? ClickImagePoint = null, int ImageSearchStep = 1);
 public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule[] Rules,
-    VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000)
+    VisualProgressText[] ReviewWhen, int ResultTimeoutMs = 5000, int UnknownTimeoutMs = 10000,
+    double[][]? WhiteTextBounds = null)
 {
     public static VisualProgressProfile Load(string path)
     {
@@ -69,7 +70,8 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
             .Concat(value.Rules.Where(rule => rule.Image is not null).Select(rule => rule.ImageBounds!))
             .Concat(value.Rules.Where(rule => rule.FilledQuantitiesBounds is not null).Select(rule => rule.FilledQuantitiesBounds!))
             .Concat(value.Rules.Where(rule => rule.SingleTextRunBounds is not null).Select(rule => rule.SingleTextRunBounds!))
-            .Concat(value.Rules.SelectMany(rule => rule.ImageStableRegions ?? [])))
+            .Concat(value.Rules.SelectMany(rule => rule.ImageStableRegions ?? []))
+            .Concat(value.WhiteTextBounds ?? []))
             if (bounds is not { Length: 4 } || bounds.Any(x => !double.IsFinite(x) || x < 0 || x > 1)
                 || bounds[2] <= 0 || bounds[3] <= 0
                 || bounds[0] + bounds[2] > 1 || bounds[1] + bounds[3] > 1)
@@ -87,9 +89,14 @@ public sealed record VisualProgressProfile(int SchemaVersion, VisualProgressRule
                 throw new InvalidDataException("選択後の確定は、利用者への即時申請に確定の表示とキーの組で指定します。");
             OpenLogicool.Input.OutputTokens.Parse(review.ConfirmKey);
         }
-        return value with { Rules = value.Rules.Select(rule => rule.Image is null ? rule
-            : rule with { Image = Path.GetFullPath(rule.Image, Path.GetDirectoryName(Path.GetFullPath(path))!) }).ToArray() };
+        // 停止表示が止めるのはSpaceを押す操作だけ。Spaceを送らない規則は停止表示中も評価する。
+        // Spaceを送る規則は、停止表示より優先すると明示したものだけを停止表示中に評価する。
+        return value with { Rules = value.Rules.Select(rule => (rule.Image is null ? rule
+            : rule with { Image = Path.GetFullPath(rule.Image, Path.GetDirectoryName(Path.GetFullPath(path))!) })
+            with { AllowWhileInhibited = rule.AllowWhileInhibited || !PressesSpace(rule.Key) && !PressesSpace(rule.AfterClickKey) }).ToArray() };
     }
+
+    private static bool PressesSpace(string? key) => key?.Contains("Key:Space", StringComparison.OrdinalIgnoreCase) == true;
 }
 
 public enum VisualProgressAction { Wait, Normal, Key, Click, Review }
@@ -131,13 +138,35 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 .Where(word => !Inside(word, area, viewport))
                 .Concat(quantities.Words.Select(word => word with { X = word.X + x, Y = word.Y + y })).ToArray() };
         }
+        foreach (var area in profile.WhiteTextBounds ?? [])
+        {
+            // 明るい背景に重なった白文字は通常の読み取りで落ちる。純白の画素だけを残した画像を読み、元の読み取りへ足す。
+            var x = (int)(viewport.X + area[0] * viewport.Width);
+            var y = (int)(viewport.Y + area[1] * viewport.Height);
+            var width = (int)(area[2] * viewport.Width);
+            var height = (int)(area[3] * viewport.Height);
+            var pixels = frame.Pixels ?? throw new InvalidOperationException("白文字の読み直しには画像が必要です。");
+            var bytes = new byte[width * height * 4];
+            for (var row = 0; row < height; row++)
+                pixels.Bgra8.Span.Slice((y + row) * pixels.Stride + x * 4, width * 4).CopyTo(bytes.AsSpan(row * width * 4));
+            for (var i = 0; i < bytes.Length; i += 4)
+            {
+                var pure = bytes[i] >= 250 && bytes[i + 1] >= 250 && bytes[i + 2] >= 250;
+                bytes[i] = bytes[i + 1] = bytes[i + 2] = (byte)(pure ? 0 : 255);
+                bytes[i + 3] = 255;
+            }
+            var cropped = frame with { Width = width, Height = height, Pixels = new FramePixels(bytes, width * 4), Crop = null };
+            var white = await new WindowsGameOcrRecognizer().RecognizeAsync(cropped, token);
+            ocr = ocr with { Text = ocr.Text + " " + white.Text, Words = ocr.Words
+                .Concat(white.Words.Select(word => word with { X = word.X + x, Y = word.Y + y })).ToArray() };
+        }
         return ocr;
     }
 
     public VisualProgressChoice Recognize(WindowsGameOcrResult ocr, int width, int height, FrameRect viewport,
         CapturedFrame? frame = null, bool inhibited = false)
     {
-        if (!inhibited && frame is not null && RecognizeImmediateImage(frame, viewport) is { } immediate) return immediate;
+        if (frame is not null && RecognizeImmediateImage(frame, viewport, inhibited) is { } immediate) return immediate;
         string Read(VisualProgressText area) => Normalize(string.Concat(ocr.Words
             .Where(word => Inside(word, area.Bounds, viewport))
             .Select(word => word.Text)));
@@ -236,8 +265,9 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
             (viewport.Y + (bounds[1] + bounds[3] / 2) * viewport.Height) / height];
     }
 
-    public VisualProgressChoice? RecognizeImmediateImage(CapturedFrame frame, FrameRect viewport) =>
-        RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.Immediate && rule.Image is not null && rule.RepeatIntervalMs == 0));
+    public VisualProgressChoice? RecognizeImmediateImage(CapturedFrame frame, FrameRect viewport, bool inhibited = false) =>
+        RecognizeImageKey(frame, viewport, profile.Rules.Where(rule => rule.Immediate && rule.Image is not null && rule.RepeatIntervalMs == 0
+            && (!inhibited || rule.AllowWhileInhibited)));
 
     public VisualProgressChoice? RecognizeRepeatingImage(CapturedFrame frame, FrameRect viewport,
         Func<VisualProgressRule, bool> isDue) =>
@@ -253,7 +283,7 @@ public sealed class VisualProgressRecognizer(VisualProgressProfile profile)
                 area[2] * viewport.Width / frame.Width, area[3] * viewport.Height / frame.Height];
             if (templates[rule.Id].FindAtWindowScale(frame, mapped, viewport.Width / rule.ImageClientWidth).Matches)
                 return new(VisualProgressAction.Key, rule.Id, rule.Id, rule.Key, Immediate: true,
-                    RepeatIntervalMs: rule.RepeatIntervalMs);
+                    AllowWhileInhibited: rule.AllowWhileInhibited, RepeatIntervalMs: rule.RepeatIntervalMs);
         }
         return null;
     }

@@ -38,7 +38,9 @@ public sealed class MerchantGreetingSkipTests
         Assert.Null(choice.Key);
         var schedule = new VisualProgressSchedule(Profile());
         Assert.Equal(VisualProgressAction.Click, schedule.Decide(0, choice, false, false, true).Action);
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, choice, true, false, true).Action);
+        // 停止表示が止めるのはSpaceを押す操作だけ。クリックとEscのこの規則は停止表示中も選ぶ。
+        Assert.True(choice.AllowWhileInhibited);
+        Assert.Equal(VisualProgressAction.Click, schedule.Decide(0, choice, true, false, true).Action);
     }
 
     [Theory]

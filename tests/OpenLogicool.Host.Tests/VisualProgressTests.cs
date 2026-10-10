@@ -922,6 +922,20 @@ public sealed class VisualProgressTests
         Assert.True(choice.Immediate);
     }
 
+    [Fact]
+    public async Task 狩り場クリアの実画面でも画面を押してくださいを読み取り即Spaceを選ぶ()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var fixture = Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008");
+        var recognizer = new VisualProgressRecognizer(VisualProgressProfile.Load(Path.Combine(fixture, "progress.json")));
+        var frame = ReadFrame(Path.Combine(fixture, "hunting-clear-prompt.png"));
+        var viewport = new FrameRect(1, 31, frame.Width - 2, frame.Height - 32);
+        var ocr = await recognizer.ReadOcrAsync(frame, viewport);
+        var choice = recognizer.Recognize(ocr, frame.Width, frame.Height, viewport, frame);
+        Assert.True(choice.RuleId == "screen-prompt", $"選ばれた規則: {choice.RuleId}／読んだ文字: {VisualProgressRecognizer.Normalize(ocr.Text)}");
+        Assert.Equal("Key:Space", choice.Key);
+    }
     [Theory]
     // 実測: 「画面を押してください」を「画面押してください」「画面押してくだい」、飾り文字の題を崩して読んだ。
     [InlineData("画面押してください", "画面を押してください", true)]

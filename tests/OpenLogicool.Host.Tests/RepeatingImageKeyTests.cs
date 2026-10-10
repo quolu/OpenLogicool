@@ -102,6 +102,39 @@ public sealed class RepeatingImageKeyTests
         Assert.Equal(VisualProgressAction.Wait, schedule.Decide(7000, compass, false, true, true).Action);
     }
 
+    [Fact]
+    public void 停止表示が出ている自動移動中の実画面でも羽根を検出しTを押してよい規則として選ぶ()
+    {
+        // 実測: 羽根は自動移動中（右下に停止ボタンがある間）にだけ出る。
+        var frame = Read("feather-auto-move.png");
+        var choice = new VisualProgressRecognizer(Profile()).RecognizeRepeatingImage(frame, Viewport(frame), rule => rule.Id == "feather-t");
+        Assert.NotNull(choice);
+        Assert.Equal("Key:T", choice.Key);
+        Assert.True(choice.AllowWhileInhibited);
+    }
+
+    [Fact]
+    public void 停止表示が止めるのはSpaceを押す規則だけでSpaceを送らない規則は停止表示中も評価する()
+    {
+        var rules = Profile().Rules.ToDictionary(rule => rule.Id);
+        foreach (var id in new[] { "feather-t", "top-left-b", "pointer-guide", "level-guide-recommended", "merchant-greeting-skip" })
+            Assert.True(rules[id].AllowWhileInhibited, id);
+        foreach (var id in new[] { "compass-space", "space-confirm", "screen-prompt", "npc-dialogue-cue", "quest-reward-prompt", "dungeon-clear-prompt" })
+            Assert.False(rules[id].AllowWhileInhibited, id);
+        // Spaceを送る規則でも、停止表示より優先すると明示した休憩の退出だけは評価する。
+        Assert.True(rules["rest-exit"].AllowWhileInhibited);
+
+        // 停止表示中の同じ画面で、Spaceの規則は選ばず、Spaceを送らない規則は選ぶ。
+        var recognizer = new VisualProgressRecognizer(Profile());
+        var frame = Read("pointer-guide-screen.png");
+        var inhibited = recognizer.Recognize(new("", "ja", 0, [new("画面を押してください", 700, 1040, 240, 24)]),
+            frame.Width, frame.Height, Viewport(frame), frame, inhibited: true);
+        Assert.Equal("pointer-guide", inhibited.RuleId);
+        var spaceOnly = recognizer.Recognize(new("", "ja", 0, [new("画面を押してください", 700, 1040, 240, 24)]),
+            1000, 600, new(0, 0, 1000, 600), inhibited: true);
+        Assert.NotEqual("screen-prompt", spaceOnly.RuleId);
+    }
+
     [Theory]
     [InlineData("top-left-b-screen.png")]
     [InlineData("before.png")] // 窓の大きさが違う別の日の実画面。

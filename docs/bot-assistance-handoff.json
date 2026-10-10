@@ -61,8 +61,8 @@
   "gameFacts": {
     "waterBottleLastObserved": "所持3本・納品登録2/2",
     "waterBottleAcquisitionComplete": true,
-    "nextCheck": "Lv54。南の廃墟ダンジョン2F エリア1をクリアし、宝箱の演出へ進行。",
-    "botRun": "bot-runs/mabinogi-mobile/20261010-132335-230-fdb1cbbb",
+    "nextCheck": "氷の峡谷の狩り場をクリアし、レベルアップの演出中。",
+    "botRun": "bot-runs/mabinogi-mobile/20261010-134317-474-fa2927ca",
     "levelProgression": {
       "currentLevel": 53,
       "targetLevel": 42,
@@ -181,7 +181,7 @@
   },
   "continuation": {
     "threadId": "01a123a0-7d3a-7143-aa5b-e3b9f61951a2",
-    "updatedUtc": "2026-10-10T04:24:34.8823900+00:00",
+    "updatedUtc": "2026-10-10T04:44:37.0830139+00:00",
     "assistanceGeneration": 6,
     "openIncidentIds": [
       "d4442ccd-e082-4779-90a8-c5a4e8328135",
@@ -195,7 +195,7 @@
     "pendingDecisionIds": [],
     "botPhase": "Running",
     "gameRestart": "K-JANNVFで利用者がログイン復帰を回答。Lv50の通常HUD、Nano診断成功、Bot再開とコンパスSpace、ティルコネイルへの移動を確認。",
-    "nextAction": "Jevの実測（K-5V3KM4）と、通知の宛先・保存先の統一（K-X9E7Z7）を進める。Botの詰まり通知は今もCodexの会話宛てなので、詰まりは担当AIが記録を直接読んで確認する。",
+    "nextAction": "ボーナス回答のBot実行と羽根のTの実機確認（表示機会待ち）。Jevの実測結果への利用者の判断。通知の宛先・保存先の統一（K-X9E7Z7）は未着手。",
     "restartEvidence": "evidence/bot-resume-20261010/restart-1126.json",
     "firmware": "実機READY1.1.4確認済み。標準自動uploadもverify成功。",
     "unfinishedRepair": "HELLOの0byte無応答がfirmware1.1.4導入後もアプリ更新直後に再現した。PnP再起動で復旧したが根本原因は未解明。",
@@ -211,7 +211,7 @@
       "status": "installed",
       "intervalMs": 1000,
       "evidence": "evidence/bot-feather-t-20261010/acceptance.json",
-      "liveDispatch": "羽根の表示機会待ち"
+      "liveDispatch": "停止表示中は評価されない欠陥を修理。修理後の実機送出は表示機会待ち。"
     },
     "immediateScreenPrompt": {
       "sourceCommit": "821467a",
@@ -294,12 +294,11 @@
       "evidence": "evidence/bot-pointer-guide-20261010/acceptance.json"
     },
     "textGuide": {
-      "status": "decided-measure-first",
+      "status": "measured",
       "decisionId": "K-5V3KM4",
-      "answer": "Jevに押す先を選ばせる。まず実画面で実測する。",
-      "ownerNote": "利用者の発言: JEVで汎用的にできる気はする。",
-      "fixedRule": "成長ガイド用の固定の規則は導入せず取り除いた。",
-      "next": "保存した実画面のOCRをJevへ送り、押す先と確率・所要時間を実測する。製品への接続は実測の後に決める。"
+      "result": "1回157〜252ms。素朴な聞き方では8画面中4つが正解。チャット欄の「ゲーム終了を押してください」を0.93で取り違えた。",
+      "record": "rag/openlogicool/jev-press-target-2026-10-10.md",
+      "next": "実測結果を利用者へ報告済み。製品へ繋ぐかと聞き方の改善は利用者の判断を待つ。"
     },
     "bonusAnswerExecution": {
       "status": "installed",
@@ -318,6 +317,21 @@
       "status": "installed-and-live-verified",
       "behavior": "ダンジョンクリアと画面を押してくださいの2フレーズで即Space。OCR照合は6文字以上で長さの4分の1までの抜け・余分・読み違いを許す。",
       "evidence": "evidence/bot-dungeon-clear-20261010/acceptance.json"
+    },
+    "stopDisplaySpaceOnly": {
+      "status": "installed",
+      "ownerRule": "停止表示で処理を止めるのは、Spaceを押す操作だけ。",
+      "live": "羽根のTは自動移動の表示機会待ち。",
+      "evidence": "evidence/bot-stop-display-space-only-20261010/acceptance.json"
+    },
+    "whiteTextReread": {
+      "status": "installed-and-live-verified",
+      "behavior": "下中央の帯の白文字を、純白の画素だけ残して読み直す。",
+      "live": "狩り場クリアの画面をscreen-promptのSpaceで通過。"
+    },
+    "coreSession": {
+      "note": "本体の改良は別の会話が別worktreeで進めている。mainへ入ったcommitは担当AIの次回導入に乗せる。導入前にgit pull --rebaseする。",
+      "hostLaunchRule": "app closeとbot startには必ず--dbを付ける。常駐でない画面も同じ操作用の通信口で待ち受ける。"
     }
   }
 }

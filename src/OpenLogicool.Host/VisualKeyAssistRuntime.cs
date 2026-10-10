@@ -456,8 +456,7 @@ public static class VisualKeyAssistRuntime
                     var inhibitMatch = inhibit.FindAtWindowScale(frame, region, windowScale);
                     var cueMatch = inhibitMatch.Matches || cues.Length == 0 ? null : cues.Select(cue => cue.FindAtWindowScale(frame, region, windowScale))
                         .OrderBy(match => match.Difference).First();
-                    var immediate = inhibitMatch.Matches || progressRecognizer is null ? null
-                        : progressRecognizer.RecognizeImmediateImage(frame, viewport!);
+                    var immediate = progressRecognizer?.RecognizeImmediateImage(frame, viewport!, inhibitMatch.Matches);
                     var ocr = immediate is null && (!inhibitMatch.Matches || readWhileInhibited) && (progressProfile is not null || cueTexts.Length > 0 || !string.IsNullOrWhiteSpace(recoveryProfile?.IncapacitatedText))
                         ? progressRecognizer is null ? await new WindowsGameOcrRecognizer().RecognizeAsync(frame, token)
                             : await progressRecognizer.ReadOcrAsync(frame, viewport!, token) : null;
@@ -591,9 +590,11 @@ public static class VisualKeyAssistRuntime
                                 return review;
                             }
                         }
-                        if (!flowInhibited && flowChoice.Action is VisualProgressAction.Normal or VisualProgressAction.Wait)
+                        // 停止表示中は、停止表示中でも押してよいと設定した反復画像だけを評価する。
+                        if (flowChoice.Action is VisualProgressAction.Normal or VisualProgressAction.Wait)
                             flowChoice = progressRecognizer!.RecognizeRepeatingImage(frame, viewport!,
-                                rule => progressSchedule!.RepeatIsDue(clock.ElapsedMilliseconds, rule)) ?? flowChoice;
+                                rule => (!flowInhibited || rule.AllowWhileInhibited)
+                                    && progressSchedule!.RepeatIsDue(clock.ElapsedMilliseconds, rule)) ?? flowChoice;
                         if (flowChoice.Action is VisualProgressAction.Key or VisualProgressAction.Click)
                         {
                             await inputGate.WaitAsync(token);
@@ -604,9 +605,10 @@ public static class VisualKeyAssistRuntime
                                 var fresh = await frames.CaptureAsync(token);
                                 var freshInhibited = Inhibited(fresh);
                                 var freshViewport = WindowsGameTargetLocator.CaptureClientBounds(target.Window);
-                                var current = freshInhibited ? null : completingClick ? flowChoice : flowChoice.RepeatIntervalMs > 0
+                                var current = freshInhibited && !flowChoice.AllowWhileInhibited ? null
+                                    : completingClick ? flowChoice : flowChoice.RepeatIntervalMs > 0
                                     ? progressRecognizer!.RecognizeRepeatingImage(fresh, freshViewport, rule => rule.Id == flowChoice.RuleId)
-                                    : progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport);
+                                    : progressRecognizer!.RecognizeImmediateImage(fresh, freshViewport, freshInhibited);
                                 if (current is null)
                                 {
                                     var freshOcr = await progressRecognizer!.ReadOcrAsync(fresh, freshViewport, token);
