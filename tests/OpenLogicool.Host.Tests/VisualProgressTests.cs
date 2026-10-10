@@ -307,7 +307,7 @@ public sealed class VisualProgressTests
     }
 
     [Fact]
-    public async Task 戦利品のSpaceは見出しを十秒確認して一回だけ送る()
+    public async Task 戦利品のSpaceは見出しを読めた回に待たず一回だけ送る()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
@@ -322,12 +322,13 @@ public sealed class VisualProgressTests
         Assert.Equal("Key:Space", candidate.Key);
         Assert.Null(candidate.Point);
         var schedule = new VisualProgressSchedule(profile);
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, candidate, false, false, true).Action);
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(9999, candidate, false, false, true, sceneChanged: true).Action);
-        Assert.Equal(VisualProgressAction.Key, schedule.Decide(10000, candidate, false, false, true, sceneChanged: true).Action);
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(10000, candidate, true, false, true).Action);
-        schedule.RecordInput(10000, candidate);
-        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(12000, candidate, false, false, true).Action);
+        // 以前は戦利品が開ききるまで10秒待っていた。利用者の指示で、開いている途中でも読めた回に送る。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(0, candidate, true, false, true).Action);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(0, candidate, false, false, true, sceneChanged: true).Action);
+        schedule.RecordInput(0, candidate);
+        // 送った後は、同じ表示が続いても再送しない。
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(2000, candidate, false, false, true, sceneChanged: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(4000, candidate, false, false, true).Action);
     }
 
     [Fact]
@@ -514,6 +515,28 @@ public sealed class VisualProgressTests
         Assert.Equal("dungeon-exit", new VisualProgressRecognizer(exitProfile).Recognize(ocr, frame.Width, frame.Height, viewport, frame).RuleId);
     }
 
+    [Fact]
+    public void 発見した戦利品の表示は読めた回に待たずSpaceを選び自動着用がある時はそちらを優先する()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "fixtures"))) directory = directory.Parent;
+        var profile = VisualProgressProfile.Load(Path.Combine(directory!.FullName, "fixtures/visual-recovery/mabinogi-20261008/progress.json"));
+        var recognizer = new VisualProgressRecognizer(profile);
+        var loot = recognizer.Recognize(Ocr([new("発見した戦利品", 430, 60, 140, 20)]), 1000, 600, new(0, 0, 1000, 600));
+        Assert.Equal("loot-continue", loot.RuleId);
+        Assert.Equal("Key:Space", loot.Key);
+        // 以前は表示から10秒待っていた。読めた最初の回に送る。
+        var schedule = new VisualProgressSchedule(profile);
+        Assert.Equal(VisualProgressAction.Key, schedule.Decide(0, loot, false, false, due: true).Action);
+        // 送った後に同じ表示のまま止まった時は、再送せず確認へ回す。
+        schedule.RecordInput(0, loot);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(1000, loot, false, false, due: true).Action);
+        Assert.Equal(VisualProgressAction.Wait, schedule.Decide(3000, loot, false, false, due: true).Action);
+        Assert.Equal(VisualProgressAction.Review, schedule.Decide(5000, loot, false, false, due: true).Action);
+        var withEquip = recognizer.Recognize(Ocr([new("発見した戦利品", 430, 60, 140, 20), new("自動着用", 650, 480, 120, 24)]),
+            1000, 600, new(0, 0, 1000, 600));
+        Assert.Equal("loot-auto-equip", withEquip.RuleId);
+    }
     [Fact]
     public void 既知の待機画面も複数回観測して静止が続けば入力せず通知する()
     {
